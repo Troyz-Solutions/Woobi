@@ -1,0 +1,192 @@
+﻿Fashion App Product and Launch Plan
+Prepared for Suriya R V   |   5 October 2026   |   India first Android launch
+The product decision
+Build a personal digital wardrobe that gives users three useful outfit choices each day from clothes, footwear and accessories they already own. Users choose a look, replace individual pieces if needed, and mark what they actually wore. Start with a small wardrobe and improve recommendations through feedback.
+This plan covers product scope, screens, recommendation logic, architecture, delivery, subscriptions and the first paid customer campaign. It is a build blueprint, not a completed app. Timelines, prices, budgets and conversion targets below are planning hypotheses to test, not guaranteed outcomes.
+The core loop
+Add items → choose today’s occasion → receive three outfits → swap or select → mark worn → improve tomorrow’s choices.
+Who to start with
+Start with adults aged 18 to 30 in Chennai who attend college or work regularly, own at least 15 usable items and struggle to decide what to wear. Recruit both men and women, then focus the first launch on the segment with stronger repeat use and payment evidence. Launch in English; add Tamil when interview evidence supports it.
+What right fit means
+The first version matches style, comfort, occasion and available clothing. Let users record whether an item fits comfortably, feels tight or feels loose. Do not promise body sizing from photographs, accurate virtual try on or guaranteed attractiveness.
+Competition and the reason to choose us
+Whering already offers wardrobe uploads and daily outfit suggestions using personal style and weather. Indyx offers digital wardrobes and outfit planning [1–3]. The concept is established. Test differentiation through faster setup, hot weather relevance, Indian clothing combinations and helpful explanations. These are proposed advantages, not proven market gaps.
+Success before scale
+First useful outfits after roughly 8 to 12 items, without requiring the entire wardrobe.
+At least 30 activated testers, 10 real paid customers and visible repeat use before broader advertising.
+Keep shopping, public feeds, resale, body scans and influencer marketplaces outside this product scope.
+1 Product scope and daily experience
+Start with a starter wardrobe
+Ask for style preferences, typical occasions and optional city. Show a short photo guide and batch upload. Suggest 3 tops, 2 bottoms or one piece garments, 1 footwear item and optional accessories. Generate early when a valid combination exists; explain missing categories when it does not. Add the remaining wardrobe gradually.
+Screen
+Required behavior
+Today
+Occasion and optional weather input; three distinct outfit boards; short reasons; Choose, Swap and Mark worn.
+Wardrobe
+Category filters; item photos; edit tags; clean, laundry or unavailable state; archive and delete.
+Add items
+Camera or gallery; crop; background cleanup if reliable; suggested tags; user confirmation; retry failed uploads.
+Item detail
+Category, colors, occasion, warmth, fit note and availability; pin this item for an outfit.
+Saved and history
+Save outfits, view wear history, repeat a favorite and remove saved looks.
+Profile and plan
+Preferences, reminders, subscription management, restore purchases, export and delete account.
+The minimum viable product
+Ship wardrobe capture, editable tagging, occasion selection, three owned item outfits, single item swaps, feedback, wear history, saved looks and subscription handling. Optional notifications should open a ready outfit list. Weather can start as a manual choice so the core loop does not depend on an external service.
+Edge cases that must work
+Allow one piece outfits and optional layers. Indian garments need appropriate templates, such as kurta plus bottom or saree plus user confirmed blouse; do not force every wardrobe into shirt and trousers.
+If a user has only two valid outfits, show two. Never invent a garment or suggest deleted, unavailable or laundry items.
+If photos or processing fail, keep the original and allow manual tags. Changes to availability must immediately affect new suggestions.
+Do not mark all pieces as worn merely because an outfit was viewed. Worn confirmation creates the history event.
+2 Recommendation engine and learning
+Separate recognition from outfit selection
+Use an image model to suggest item tags once at upload, then let users correct them. Start outfit selection with transparent rules and ranking rather than training a new AI model. Display actual wardrobe thumbnails in a clean outfit board; generated clothing images could misrepresent what the user owns.
+Item metadata
+Required fields: owner, item identifier, photo, category, primary color and availability. Optional fields: secondary colors, pattern, material, warmth, occasion suitability, style, fit note, brand and purchase price. Unknown values remain unknown; the system should not confidently infer fabric or physical fit from a photo.
+Generation sequence
+Load only this user’s available items. Choose an outfit template supported by their wardrobe and occasion.
+Create candidates using compatibility rules; filter invalid category combinations, explicit dislikes and occasion conflicts.
+Rank candidates using occasion 30%, preferences 25%, color and pattern compatibility 20%, weather comfort 15% and novelty 10%. These are starting weights to tune.
+Choose three diverse results, varying more than one accessory when possible. A pinned item must remain included.
+Validate every returned item identifier against the user’s wardrobe before saving or displaying the outfit.
+Examples of feedback
+Collect Wear this, Save, Not my style, Too warm, Wrong occasion and Item unavailable. Use explicit reasons to adjust preferences; do not treat every rejection as dislike of every garment. Record swaps because they show which part of an outfit needs improvement.
+Explanations and fallbacks
+Use explanations grounded in metadata, such as “Your navy shirt and beige trousers suit your selected office occasion.” If weather is missing, avoid a weather claim. Cache daily outfits by wardrobe version, occasion and preferences. If image AI is down, manual tagging and rule based outfits should continue.
+Quality checks before launch
+Create a reviewed set of at least 100 outfit requests across small wardrobes, Indian garments, mixed patterns, unavailable items and repeated looks. Require zero invented or cross user items. Have testers rate appropriateness and explain failures. Target at least 70% of generated sets containing one outfit the tester would wear; validate this target rather than advertising it as achieved.
+3 Build architecture and data structure
+Recommended starting stack: React Native with Expo and TypeScript for the mobile client; Supabase Auth, PostgreSQL and private Storage for the backend; a server side image tagging adapter; scheduled or queued processing for uploads. Expo supports one project across Android, iOS and web [4]. Launch Android first and defer iOS release work until retention is demonstrated.
+System boundaries
+Mobile app → authenticated API → wardrobe database and private images. Upload jobs → tagging provider → editable metadata. Recommendation service → validated outfit records. Store purchase → backend verification and notifications → subscription entitlement. Keep AI keys and privileged database credentials exclusively on the server.
+Record
+Main fields
+profiles
+user_id, style preferences, occasion defaults, optional city, reminder preference
+wardrobe_items
+id, user_id, photo_path, category, tags, fit_note, availability, version
+outfits and outfit_items
+id, user_id, occasion, wardrobe_version; outfit_id, item_id, slot
+wear_events and feedback
+user_id, outfit_id, worn_at; reason, swapped_item_ids, timestamp
+processing_jobs
+user_id, item_id, status, retry_count, model_version, error
+subscriptions
+user_id, store, verified_purchase_reference, status, expires_at
+product_events
+user_id or pseudonymous id, event_name, timestamp, allowed properties
+API contract
+Define POST /items, PATCH /items/{id}, POST /outfits/generate, POST /outfits/{id}/swap, POST /wear-events, POST /feedback and GET /entitlement. Authenticate every request, validate payloads and ownership, enforce generation limits and make upload and purchase processing idempotent.
+Privacy and reliability
+Use per user access policies for database rows and image objects; Supabase supports storage access through row level security [5]. Strip image location metadata, use private buckets with short lived links and request only needed photo permissions. No body measurements or identity documents are required. Obtain clear permission for image processing, disclose providers, avoid wardrobe photos in analytics and offer export and deletion. Set a documented backup deletion window.
+Verify purchases on the backend and process store notifications; never trust a client premium flag [6]. Test renewals, cancellation, grace periods, refunds and restored purchases. Save wardrobe browsing and previously generated outfits locally for useful offline access; queue writes safely when reconnecting.
+4 Delivery roadmap and launch gates
+Allow approximately 10 to 12 weeks for one capable developer working consistently, with part time design and tester support. A beginner or part time schedule may need longer. Suriya owns product decisions and acquisition; engineering owns implementation and verification. Recruit testers before coding.
+Phase
+Deliverable
+Gate to continue
+Week 1
+20 interviews and a manually prepared outfit pilot for 10 users
+At least 6 pilot users use outfits on 3 days; identify upload objections.
+Week 2
+Clickable screens, wardrobe schema and rule templates
+5 users complete setup without instruction; revise confusing steps.
+Weeks 3 to 4
+Authentication, photos, wardrobe CRUD and upload queue
+Reliable retries; user A cannot access user B’s items or images.
+Weeks 5 to 6
+Generation, swaps, feedback and worn history
+Valid owned item combinations; useful choices in reviewed cases.
+Weeks 7 to 8
+Billing, entitlements, analytics and deletion
+Purchase lifecycle tests pass; deletion works; no blocking crashes.
+Weeks 9 to 10
+30 to 50 user closed beta and quality fixes
+Retention and usefulness targets support a paid offer.
+Weeks 11 to 12
+Small paid launch, support and acquisition tests
+10 paying customers; understand cancellations before scaling.
+Implementation order for AI assisted development
+Build one complete vertical flow first: add six manually tagged items, generate an outfit, swap a piece and record worn. Then add accounts, real uploads, tagging automation and billing. Give coding tools small tasks with defined acceptance criteria, review generated migrations and access rules, and commit working increments to Git. Avoid building all screens before the loop works.
+Acceptance checklist
+Deleting or archiving an item invalidates affected suggestions; small wardrobes and missing categories show useful messages.
+Upload progress survives retry; duplicate requests do not create duplicate items or purchases.
+On representative midrange Android devices, cached outfits feel immediate; set a measured fresh generation target of 5 seconds excluding photo processing.
+Screen reader labels, readable contrast, loading states and recoverable network errors work.
+Support contact, subscription terms, privacy notice and current store submission requirements are reviewed before release.
+Immediate next seven days
+Day 1: choose a working name and recruit interviewees. Days 2–3: interview and gather consented starter wardrobes. Days 4–5: deliver manual outfits and observe choices. Day 6: test a paid offer and record objections. Day 7: decide whether to build the pilot, revise the audience or improve the setup flow.
+5 Pricing costs and paid user economics
+Offer to test
+Plan
+Proposed price
+Included value
+Free
+₹0
+Up to 30 items, one daily set of three outfits, swaps and basic history.
+Premium monthly
+₹149 per month
+Up to 300 items, multiple occasion sets, weekly planning, stronger preferences and wardrobe insights.
+Premium annual
+₹999 per year
+Same premium features; introduce after monthly demand is proven.
+These are test prices, not market rates. Keep basic wardrobe access after cancellation. Cap expensive processing with clearly stated fair use. Show a premium offer after the user has worn useful outfits on several days, rather than blocking the first recommendation. Test ₹99 versus ₹149 in comparable cohorts before choosing the permanent price. Avoid lifetime plans while ongoing AI costs remain uncertain.
+Illustrative monthly unit economics
+Google Play lists a 15% fee for automatically renewing subscriptions [7]. The illustration below assumes that fee, ₹20 variable cost per payer per month and monthly paying users only. It excludes taxes, refunds, discounts, free user costs, fixed operations and founder salary; it is not net profit. Confirm applicable taxes and billing conditions before launch.
+Monthly payers
+Gross at ₹149
+After 15% fee
+After ₹20 variable cost
+100
+₹14,900
+₹12,665
+₹10,665
+500
+₹74,500
+₹63,325
+₹53,325
+1000
+₹1,49,000
+₹1,26,650
+₹1,06,650
+Per monthly payer contribution in this simplified model is ₹106.65. A ₹250 acquisition cost takes about 2.34 paid months to recover before fixed costs and churn. At ₹999 annually, gross monthly equivalent is ₹83.25; under the same fee and cost assumptions, contribution is about ₹50.76 per month. Model annual cash collection separately from monthly revenue.
+Founder led budget envelope
+Reserve ₹30,000 to ₹60,000 cash for a lean pilot, excluding your development time, outsourced development and new hardware. Planning allocations: ₹10,000–₹20,000 infrastructure and processing experiments; ₹5,000–₹10,000 design and testing help; ₹10,000–₹20,000 acquisition experiments; ₹5,000–₹10,000 contingency. Obtain actual provider quotes and measure cost per upload, active free user and payer before committing.
+Control costs
+Tag each item once, compress uploads, cache outfit results and reuse metadata. Log processing spend and set daily alerts and limits. Free users still cost money: if 1,000 free active users cost an assumed ₹5 each monthly, subtract another ₹5,000 from contribution. Avoid large paid campaigns until repeat use and payment support the economics.
+6 First paid users and operating metrics
+Start with a wardrobe service pilot
+Recruit 30 to 50 suitable testers through your college, friends of friends and Chennai communities where promotion is permitted. Personally help the first 10 upload a small wardrobe, watch them choose outfits and ask what they actually wore. Invite payment after demonstrated value. Founder support is a learning tool; measure how much of it the app must replace.
+A measurable first customer campaign
+Weeks 1–2: recruit and activate 30 testers; collect upload time and daily outfit feedback.
+Weeks 3–4 after beta is usable: invite 20 engaged users to the ₹149 monthly offer. Aim for 5 payments and document every refusal; this is a target, not an expected conversion.
+Run 2 to 3 small creator experiments only after the app works. Demonstrate three looks from the creator’s own wardrobe, a real setup walkthrough and actual outfit choices.
+Use a unique link or code per creator. Track activated users, paid users and later retention; follower count and views alone do not justify spending.
+Offer a time limited premium referral reward only after the referred user activates. Prevent self referral abuse and monitor reward cost.
+Campaign arithmetic
+Illustrative funnel: 400 qualified visits × 25% signup × 60% activation × 20% activation to paid = 12 payers. None of these conversion rates is established. Spending ₹3,000 would produce a ₹250 customer acquisition cost only if those 12 users actually pay. Stop or revise campaigns that produce uploads but no repeat outfit use.
+Metric
+Definition
+Initial decision target
+Activation
+At least 8 items plus one selected outfit within 48 hours
+60% of signups
+Week one retention
+Activated users returning during days 7 to 13
+35% or more
+Outfit usefulness
+Sets containing at least one user approved wearable look
+70% or more
+Paid conversion
+Activated users paying within 30 days
+10% or more
+Paid continuation
+Monthly subscribers successfully renewing once
+70% or more
+Acquisition payback
+CAC divided by measured monthly contribution
+Within 3 paid months
+Treat these as internal launch hypotheses. Review by signup cohort and channel, show raw counts and exclude staff/test payments. With small samples, interview evidence matters alongside percentages. If setup is weak, simplify uploads; if retention is weak, improve outfits; if payment is weak, test the premium value before increasing traffic.
+Source notes and final decision
+Sources checked 5 October 2026. [1] Whering how it works: https://whering.co.uk/how-it-works  [2] Whering daily suggestions: https://whering.co.uk/faq/outfit-suggestions-on-Whering  [3] Indyx: https://www.myindyx.com/  [4] Expo: https://docs.expo.dev/get-started/create-a-project/  [5] Supabase: https://supabase.com/docs/guides/storage/security/access-control  [6] Play backend: https://developer.android.com/google/play/billing/backend  [7] Play fees: https://support.google.com/googleplay/android-developer/answer/112622

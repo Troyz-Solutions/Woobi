@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    window.app = window.app || {};
+    var app = window.app;
+    window.studioErrorLogs = [];
+    window.addEventListener('error', function(e) {
+      console.error('GLOBAL_ERROR:', e.message, e.filename, e.lineno);
+      window.studioErrorLogs.push(e.message + ' at ' + e.filename + ':' + e.lineno);
+      document.title = 'ERR: ' + e.message;
+    });
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>AURA Wardrobe | Good outfits. Already yours.</title>
+  <meta name="description" content="Personal digital wardrobe for India. Choose what to wear from your own wardrobe. Built for Chennai & Indian climates. Complete 32-Screen UI Replica.">
+  
+  <!-- Premium Editorial Serif & Modern Sans Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+  
+  <!-- Three.js 3D WebGL Engine, OrbitControls, MeshoptDecoder & GLTFLoader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/meshoptimizer@0.18.1/meshopt_decoder.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- =========================================================================
+       MAIN APPLICATION VIEWPORT
+       ========================================================================= -->
+    <!-- Desktop Editorial Studio Layout Frame (Matching Reference D) -->
+  <div class="desktop-editorial-frame" id="desktopEditorialFrame">
+    <!-- Left Editorial Banner -->
+    <aside class="desktop-editorial-left">
+      <div class="desktop-brand-header">
+        <h1 class="desktop-brand-title">sérén</h1>
+        <span class="desktop-brand-tagline">VIRTUAL STYLING</span>
+      </div>
+      <div class="desktop-hero-pitch">
+        <h2 class="desktop-pitch-head">Try. Discover.<br>A More You.</h2>
+        <p class="desktop-pitch-sub">Your personal styling studio in a calmer, kinder, more inspired way.</p>
+      </div>
+      <div class="desktop-feature-list">
+        <div class="desktop-feat-item">
+          <span class="feat-icon">👗</span>
+          <div class="feat-text">
+            <strong>EXPLORE</strong>
+            <span>YOUR STYLE</span>
+          </div>
+        </div>
+        <div class="desktop-feat-item">
+          <span class="feat-icon">✦</span>
+          <div class="feat-text">
+            <strong>TRY ON</strong>
+            <span>IN 3D</span>
+          </div>
+        </div>
+        <div class="desktop-feat-item">
+          <span class="feat-icon">💬</span>
+          <div class="feat-text">
+            <strong>GET THOUGHTFUL</strong>
+            <span>FEEDBACK</span>
+          </div>
+        </div>
+        <div class="desktop-feat-item">
+          <span class="feat-icon">🛍️</span>
+          <div class="feat-text">
+            <strong>BUILD</strong>
+            <span>A WARDROBE YOU LOVE</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+<main class="app-viewport" id="appViewport">
+    <!-- Scrollable Screen Container -->
+    <div class="phone-screen-container" id="phoneScreenContainer">
+
+        <!-- ===================================================================
+             SCREEN 1: WELCOME
+             =================================================================== -->
+        <section class="phone-screen" id="screen-welcome">
+          <div class="welcome-hero-media">
+            <img src="assets/welcome_hero.jpg" alt="Curated wardrobe essentials" class="welcome-hero-img">
+          </div>
+          <div class="welcome-content-body">
+            <div class="welcome-text-block">
+              <h1 class="editorial-title">Good outfits.<br>Already yours.</h1>
+              <p class="welcome-sub">Choose what to wear from your own wardrobe.</p>
+            </div>
+            <div class="welcome-actions-wrap">
+              <button class="btn-olive-primary" onclick="app.goToScreen('style-pref')">
+                Get started <span class="arrow-right">→</span>
+              </button>
+              <button class="btn-link-simple" onclick="app.goToScreen('signin')">
+                Sign in
+              </button>
+            </div>
+            <div class="phone-home-indicator"></div>
+          </div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 2: STYLE PREFERENCES
+             =================================================================== -->
+        <section class="phone-screen" id="screen-style-pref">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('welcome')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div class="step-progress-dots">
+              <span class="progress-pill active"></span>
+              <span class="progress-pill"></span>
+              <span class="progress-pill"></span>
+              <span class="progress-pill"></span>
+            </div>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h2 class="screen-headline-serif">What feels like you?</h2>
+            <p class="screen-caption-sub">Choose one or more styles.</p>
+
+            <div class="style-choice-grid">
+              <div class="style-card selected" onclick="app.toggleStyleChoice(this)">
+                <div class="style-thumb-wrap">
+                  <img src="assets/style_casual.jpg" alt="Casual style">
+                  <div class="choice-checkbox checked">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                </div>
+                <span class="style-name-label">Casual</span>
+              </div>
+
+              <div class="style-card" onclick="app.toggleStyleChoice(this)">
+                <div class="style-thumb-wrap">
+                  <img src="assets/minimal_style.jpg" alt="Minimal style">
+                  <div class="choice-checkbox"></div>
+                </div>
+                <span class="style-name-label">Minimal</span>
+              </div>
+
+              <div class="style-card" onclick="app.toggleStyleChoice(this)">
+                <div class="style-thumb-wrap">
+                  <img src="assets/smart_blazer.jpg" alt="Smart style">
+                  <div class="choice-checkbox"></div>
+                </div>
+                <span class="style-name-label">Smart</span>
+              </div>
+
+              <div class="style-card" onclick="app.toggleStyleChoice(this)">
+                <div class="style-thumb-wrap">
+                  <img src="assets/traditional_kurta.jpg" alt="Traditional style">
+                  <div class="choice-checkbox"></div>
+                </div>
+                <span class="style-name-label">Traditional</span>
+              </div>
+            </div>
+
+            <div class="screen-section-block">
+              <span class="question-label">What are your common occasions?</span>
+              <div class="occasion-pills-row" id="prefOccasionRow">
+                <button class="pill-chip active" onclick="this.classList.toggle('active')">
+                  <span class="chk-icon">✓</span> College
+                </button>
+                <button class="pill-chip" onclick="this.classList.toggle('active')">
+                  Office
+                </button>
+                <button class="pill-chip" onclick="this.classList.toggle('active')">
+                  Everyday
+                </button>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.goToScreen('add-wardrobe')">
+                Continue <span class="arrow-right">→</span>
+              </button>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 3: ADD YOUR WARDROBE
+             =================================================================== -->
+        <section class="phone-screen" id="screen-add-wardrobe">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('style-pref')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div class="step-progress-dots">
+              <span class="progress-pill"></span>
+              <span class="progress-pill active"></span>
+              <span class="progress-pill"></span>
+              <span class="progress-pill"></span>
+            </div>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h2 class="screen-headline-serif">Start with a few favorites</h2>
+            
+            <div class="tracker-header-row">
+              <span class="tracker-label">Add 4 of 8 items</span>
+              <span class="tracker-count" id="trackerCountText">4 of 8</span>
+            </div>
+            <div class="tracker-progress-bar">
+              <div class="tracker-fill" style="width: 50%;"></div>
+            </div>
+
+            <div class="mini-garments-grid" id="starterGrid">
+              <div class="mini-garment-card" onclick="app.goToScreen('review-item')">
+                <div class="garment-pic-wrap"><img src="assets/navy_shirt.jpg" alt="Shirt"></div>
+                <div class="garment-card-footer">
+                  <span>Shirt</span>
+                  <button class="card-dots-btn">⋮</button>
+                </div>
+              </div>
+
+              <div class="mini-garment-card">
+                <div class="garment-pic-wrap"><img src="assets/beige_chinos.jpg" alt="Trousers"></div>
+                <div class="garment-card-footer">
+                  <span>Trousers</span>
+                  <button class="card-dots-btn">⋮</button>
+                </div>
+              </div>
+
+              <div class="mini-garment-card">
+                <div class="garment-pic-wrap"><img src="assets/white_sneakers.jpg" alt="Sneakers"></div>
+                <div class="garment-card-footer">
+                  <span>Sneakers</span>
+                  <button class="card-dots-btn">⋮</button>
+                </div>
+              </div>
+
+              <div class="mini-garment-card">
+                <div class="garment-pic-wrap"><img src="assets/olive_kurta.jpg" alt="Kurta"></div>
+                <div class="garment-card-footer">
+                  <span>Kurta</span>
+                  <button class="card-dots-btn">⋮</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="upload-dual-actions">
+              <button class="btn-outline-action" onclick="app.goToScreen('crop-photo')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                <span>Add photos</span>
+              </button>
+              <button class="btn-outline-action" onclick="app.goToScreen('crop-photo')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                <span>Take photo</span>
+              </button>
+            </div>
+
+            <p class="center-hint-text">You can add more later.</p>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.goToScreen('today')">
+                View my first outfits <span class="arrow-right">→</span>
+              </button>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 4: REVIEW ITEM
+             =================================================================== -->
+        <section class="phone-screen" id="screen-review-item">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('add-wardrobe')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="sub-header-title">Review item</span>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <div class="review-image-frame">
+              <img src="assets/navy_shirt.jpg" alt="Review Garment">
+              <button class="btn-pencil-edit" onclick="app.goToScreen('crop-photo')" title="Crop or rotate photo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              </button>
+            </div>
+
+            <div class="review-form-fields">
+              <div class="form-field-row">
+                <label>Category</label>
+                <div class="input-select-box">
+                  <span class="field-icon">👕</span>
+                  <span class="field-val">Shirt</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <div class="form-field-row">
+                <label>Color</label>
+                <div class="input-select-box">
+                  <span class="color-dot navy"></span>
+                  <span class="field-val">Navy</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <div class="form-field-row">
+                <label>Occasion</label>
+                <div class="input-select-box">
+                  <span class="field-icon">📅</span>
+                  <span class="field-val">Casual</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <div class="form-field-row">
+                <label>Fit / notes</label>
+                <div class="input-select-box">
+                  <span class="field-icon">📋</span>
+                  <span class="field-val">Comfortable</span>
+                </div>
+              </div>
+
+              <div class="form-field-row">
+                <label>Availability</label>
+                <div class="input-select-box">
+                  <span class="field-icon">🥼</span>
+                  <span class="field-val">Clean</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.goToScreen('today')">
+                Save item
+              </button>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 5: TODAY (WHAT WILL YOU WEAR?)
+             =================================================================== -->
+                <!-- ===================================================================
+             SCREEN: SÉRÉN 3D VIRTUAL FASHION STUDIO (PRIMARY HOMEPAGE)
+             =================================================================== -->
+        <section class="phone-screen active" id="screen-today">
+          <!-- Sérén Studio Minimal Header Overlay -->
+          <header class="seren-header">
+            <div class="seren-header-left">
+              <div class="seren-branding">
+                <span class="seren-brand-name">sérén</span>
+                <span class="seren-brand-sub">STUDIO</span>
+              </div>
+            </div>
+            <div class="seren-header-right">
+              <button class="seren-icon-btn" onclick="app.serenToggleWardrobe()" title="Wardrobe Closet">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 4a3 3 0 0 0-3 3v2h6V7a3 3 0 0 0-3-3z"/>
+                  <path d="M20 21V9a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12"/>
+                  <path d="M12 9v12"/>
+                </svg>
+              </button>
+              <button class="seren-icon-btn" onclick="app.goToScreen('profile')" title="User Profile">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </button>
+            </div>
+          </header>
+
+          <!-- Real 3D WebGL Studio Viewport -->
+          <div class="seren-stage-viewport" id="seren3dContainer">
+            <!-- Real Three.js 3D WebGL Canvas -->
+            <canvas id="seren3dCanvas" class="seren-3d-canvas"></canvas>
+
+            <!-- 3D Spatial Floating Interactive Hints -->
+            <div class="spatial-3d-hint wardrobe-hint" onclick="app.serenInteract('wardrobe')">
+              <span class="hint-icon">👆</span>
+              <span class="hint-text">Wardrobe</span>
+            </div>
+
+            <div class="spatial-3d-hint mirror-hint" onclick="app.serenInteract('mirror')">
+              <span class="hint-icon">🪞</span>
+              <span class="hint-text">Vanity</span>
+            </div>
+
+            <div class="spatial-3d-hint avatar-hint" id="serenDragHint" onclick="app.serenInteract('avatar')">
+              <span class="hint-icon">✦</span>
+              <span class="hint-text">Drag to Rotate</span>
+            </div>
+
+            <!-- Contextual Return to Studio Pill (Appears during close-up views) -->
+            <button class="seren-back-studio-btn hidden" id="serenBackStudioBtn" onclick="app.setStudioCamera('STUDIO_OVERVIEW')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg>
+              <span>Studio View</span>
+            </button>
+
+            <!-- Sparkle Radiance Effect on Outfit Switch -->
+            <div class="seren-sparkles" id="serenSparkles">
+              <span class="sparkle-ray r1">✦</span>
+              <span class="sparkle-ray r2">✧</span>
+              <span class="sparkle-ray r3">✦</span>
+              <span class="sparkle-ray r4">✧</span>
+            </div>
+          </div>
+
+          <!-- Floating Bottom Navigation Bar (Pill) matching Reference D -->
+          <div class="seren-bottom-bar-wrap">
+            <nav class="seren-bottom-bar">
+              <button class="seren-bar-tab" id="serenTabWardrobe" onclick="app.serenToggleWardrobe()">
+                <div class="seren-tab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M12 4a3 3 0 0 0-3 3v2h6V7a3 3 0 0 0-3-3z"/>
+                    <path d="M20 21V9a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12"/>
+                    <path d="M12 9v12"/>
+                  </svg>
+                </div>
+                <span class="seren-tab-label">Wardrobe</span>
+                <span class="seren-tab-dot"></span>
+              </button>
+
+              <button class="seren-bar-tab" id="serenTabLooks" onclick="app.serenToggleDailyLooks()">
+                <div class="seren-tab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                  </svg>
+                </div>
+                <span class="seren-tab-label">Looks</span>
+                <span class="seren-tab-dot"></span>
+              </button>
+
+              <button class="seren-center-plus" onclick="app.serenCenterAction()" title="Quick Action">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </button>
+
+              <button class="seren-bar-tab" id="serenTabSave" onclick="app.serenSaveCurrentLook()">
+                <div class="seren-tab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
+                </div>
+                <span class="seren-tab-label">Save</span>
+                <span class="seren-tab-dot"></span>
+              </button>
+
+              <button class="seren-bar-tab" id="serenTabHint" onclick="app.serenOpenStylingReview()">
+                <div class="seren-tab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                  </svg>
+                </div>
+                <span class="seren-tab-label">Style Hint</span>
+                <span class="seren-tab-dot"></span>
+              </button>
+            </nav>
+          </div>
+
+          <!-- Sliding Wardrobe Sheet (Step 2 of Reference D) -->
+          <div class="seren-wardrobe-sheet hidden" id="serenWardrobeSheet">
+            <div class="seren-sheet-backdrop" onclick="app.serenToggleWardrobe(false)"></div>
+            <div class="seren-sheet-card">
+              <div class="seren-sheet-header">
+                <button class="seren-sheet-back" onclick="app.serenToggleWardrobe(false)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <h3 class="seren-sheet-title">Wardrobe</h3>
+                <div class="seren-sheet-space"></div>
+              </div>
+
+              <!-- Category Filter Tabs -->
+              <div class="seren-cat-tabs" id="serenCatTabs">
+                <button class="seren-cat-tab active" onclick="app.serenFilterCat('all', this)">All</button>
+                <button class="seren-cat-tab" onclick="app.serenFilterCat('tops', this)">Tops</button>
+                <button class="seren-cat-tab" onclick="app.serenFilterCat('bottoms', this)">Bottoms</button>
+                <button class="seren-cat-tab" onclick="app.serenFilterCat('outerwear', this)">Outerwear</button>
+                <button class="seren-cat-tab" onclick="app.serenFilterCat('shoes', this)">Shoes</button>
+              </div>
+
+              <!-- Garment Grid (Dynamic & Database Linked) -->
+              <div class="seren-garment-grid" id="serenGarmentGrid">
+                <!-- Populated dynamically by app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Styling Review Modal Sheet (Step 4 of Reference D) -->
+          <div class="seren-review-modal hidden" id="serenReviewModal">
+            <div class="seren-sheet-backdrop" onclick="app.serenCloseReview()"></div>
+            <div class="seren-review-card">
+              <div class="seren-review-header">
+                <h3 class="seren-review-title">Styling Review</h3>
+                <span class="seren-review-counter" id="serenReviewCounter">1/3</span>
+                <button class="seren-review-close" onclick="app.serenCloseReview()">✕</button>
+              </div>
+
+              <div class="seren-review-top">
+                <div class="seren-review-model-thumb">
+                  <img src="assets/model_tryon_linen.jpg" alt="Current Outfit Look" id="serenReviewThumb" class="review-thumb-img">
+                </div>
+                <div class="seren-score-box">
+                  <div class="seren-score-ring">
+                    <span class="score-val" id="serenScoreVal">78</span>
+                    <span class="score-max">/100</span>
+                  </div>
+                  <p class="score-summary-text" id="serenScoreSummary">
+                    A soft, effortless look for everyday sophistication.
+                  </p>
+                </div>
+              </div>
+
+              <!-- What Works Section -->
+              <div class="seren-review-section works-sec">
+                <div class="review-sec-title">
+                  <span class="sec-badge green">✓</span>
+                  <h4>What works</h4>
+                </div>
+                <ul class="review-bullet-list" id="serenWorksList">
+                  <li>Soft, cohesive tones that suit your coloring</li>
+                  <li>Relaxed silhouette creates a balanced look</li>
+                  <li>Looks effortless and modern</li>
+                </ul>
+              </div>
+
+              <!-- Could be better Section -->
+              <div class="seren-review-section improve-sec">
+                <div class="review-sec-title">
+                  <span class="sec-badge orange">!</span>
+                  <h4>Could be better</h4>
+                </div>
+                <ul class="review-bullet-list" id="serenImproveList">
+                  <li>Top feels a bit plain</li>
+                  <li>Try adding a belt for more shape</li>
+                  <li>Consider a pop of color or an accessory to elevate the look</li>
+                </ul>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="seren-review-actions">
+                <button class="btn-review-alt" onclick="app.serenApplySuggestion()">Try Alternative</button>
+                <button class="btn-review-save" onclick="app.serenSaveCurrentLook()">Save Look</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Daily Recommendations / "What will you wear?" Collapsible Drawer -->
+          <div class="daily-looks-drawer hidden" id="dailyLooksDrawer">
+            <div class="daily-drawer-backdrop" onclick="app.serenToggleDailyLooks(false)"></div>
+            <div class="daily-drawer-card">
+              <div class="daily-drawer-header">
+                <div>
+                  <span class="greeting-kicker">Morning, Suriya</span>
+                  <h3 class="daily-drawer-title">Daily Recommendations</h3>
+                </div>
+                <button class="daily-drawer-close" onclick="app.serenToggleDailyLooks(false)">✕</button>
+              </div>
+              <div class="daily-drawer-content" id="dailyDrawerFeed">
+                <!-- Occasion Filter Pills -->
+                <div class="occasion-pills-row" style="margin-bottom: 14px;">
+                  <button class="pill-chip active" onclick="app.setTodayOccasion('college', this)">College</button>
+                  <button class="pill-chip" onclick="app.setTodayOccasion('office', this)">Office</button>
+                  <button class="pill-chip" onclick="app.setTodayOccasion('casual', this)">Casual</button>
+                </div>
+                <!-- Outfit Card Carousel -->
+                <div id="todayOutfitCardMount" style="margin-bottom: 16px;">
+                  <!-- Rendered by app.js: renderCurrentLook() -->
+                </div>
+                <!-- Style Studio Quick Actions -->
+                <div class="drawer-studio-actions">
+                  <button class="drawer-action-btn" onclick="app.goToScreen('ai-stylist'); app.serenToggleDailyLooks(false);">
+                    <span>✦ AI Stylist Questionnaire</span>
+                    <span class="arrow">→</span>
+                  </button>
+                  <button class="drawer-action-btn" onclick="app.goToScreen('custom-builder'); app.serenToggleDailyLooks(false);">
+                    <span>🎨 Custom Outfit Studio</span>
+                    <span class="arrow">→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+<section class="phone-screen" id="screen-ai-stylist">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('today')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="sub-header-title">AURA AI Stylist</span>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <!-- Questionnaire State -->
+            <div id="stylistQuestionnaireView">
+              <div class="stylist-intro-badge">
+                <span>🪄</span> Smart Wardrobe Assistant
+              </div>
+              <h2 class="screen-headline-serif" style="margin-top: 6px;">Need an outfit?</h2>
+              <p class="screen-caption-sub">Answer 3 quick questions. We will analyse your clean clothes and show you styled on a model.</p>
+
+              <!-- Wardrobe Status Pills -->
+              <div class="wardrobe-live-status-card">
+                <div class="status-summary-row">
+                  <div class="status-item clean">
+                    <span class="status-icon">✨</span>
+                    <span class="status-text"><strong id="stylistCleanCount">21</strong> clean ready</span>
+                  </div>
+                  <div class="status-item laundry">
+                    <span class="status-icon">🧺</span>
+                    <span class="status-text"><strong id="stylistDirtyCount">3</strong> in laundry (excluded)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Question 1: Occasion -->
+              <div class="stylist-q-group">
+                <label class="q-group-title">1. What's the occasion?</label>
+                <div class="stylist-pill-grid" id="stylistOccasionGrid">
+                  <button class="pill-chip active" onclick="app.selectStylistOption('occasion', 'College', this)">College</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('occasion', 'Office', this)">Office</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('occasion', 'Casual', this)">Casual Outing</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('occasion', 'Date', this)">Date Night</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('occasion', 'Festive', this)">Festive</button>
+                </div>
+              </div>
+
+              <!-- Question 2: Vibe -->
+              <div class="stylist-q-group">
+                <label class="q-group-title">2. What feels like your vibe?</label>
+                <div class="stylist-pill-grid" id="stylistVibeGrid">
+                  <button class="pill-chip active" onclick="app.selectStylistOption('vibe', 'Relaxed', this)">Relaxed & Easy</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('vibe', 'Sharp', this)">Sharp & Tailored</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('vibe', 'Minimal', this)">Clean Minimal</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('vibe', 'Bold', this)">Bold & Distinct</button>
+                </div>
+              </div>
+
+              <!-- Question 3: Weather & Setting -->
+              <div class="stylist-q-group">
+                <label class="q-group-title">3. Setting & Weather</label>
+                <div class="stylist-pill-grid" id="stylistWeatherGrid">
+                  <button class="pill-chip active" onclick="app.selectStylistOption('weather', 'Chennai 29°C', this)">☀️ Chennai (29°C)</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('weather', 'AC Office', this)">❄️ AC Indoors</button>
+                  <button class="pill-chip" onclick="app.selectStylistOption('weather', 'Evening Breeze', this)">🌙 Evening Breeze</button>
+                </div>
+              </div>
+
+              <div class="screen-footer-action" style="margin-top: 24px;">
+                <button class="btn-olive-primary" onclick="app.generateStylistOutfit()">
+                  Analyse Wardrobe & Style Me <span class="arrow-right">→</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading / Analyzing State (hidden initially) -->
+            <div id="stylistAnalyzingView" class="hidden">
+              <div class="analyzing-spinner-box">
+                <div class="pulsing-halo"></div>
+                <div class="analyzing-icon">✨</div>
+              </div>
+              <h3 class="screen-headline-serif center-text" id="aiAnalysisHeadline" style="margin-top: 18px;">AI Stylist Working...</h3>
+              <p class="screen-caption-sub center-text" id="aiAnalysisSub" style="margin-bottom: 10px;">Synthesizing full-body outfit on model</p>
+              
+              <!-- Live Animated Progress Track -->
+              <div class="ai-progress-track">
+                <div class="ai-progress-fill" id="aiProgressBar"></div>
+              </div>
+
+              <!-- AI Generation Live Progress Stages -->
+              <div class="analysis-progress-steps" id="aiProgressSteps">
+                <div class="step-check current" id="aiStep1"><span class="step-bullet">1</span> <span>Scanning clean items & laundry telemetry</span></div>
+                <div class="step-check pending" id="aiStep2"><span class="step-bullet">2</span> <span>Formulating style prompt for <strong id="aiPromptOccasionTag">College</strong></span></div>
+                <div class="step-check pending" id="aiStep3"><span class="step-bullet">3</span> <span>Instant Diffusion synthesizing full-body look...</span></div>
+                <div class="step-check pending" id="aiStep4"><span class="step-bullet">4</span> <span>Finalizing footwear & head-to-toe styling</span></div>
+              </div>
+            </div>
+
+            <!-- Resulting Outfit View (hidden initially) -->
+            <div id="stylistResultView" class="hidden">
+              <div class="stylist-result-top-banner">
+                <span class="banner-pill clean">✨ 100% Clean Garments</span>
+                <span class="banner-pill perfect">📏 Perfect Fit</span>
+                <span class="banner-pill ai-gen" id="stylistAiBadge">🤖 AI Synthesized</span>
+              </div>
+
+              <h2 class="screen-headline-serif center-text" id="stylistLookTitle" style="margin-top: 8px;">Easy Everyday Contrast</h2>
+              <p class="screen-caption-sub center-text" id="stylistLookCaption">Optimized for College in Chennai 29°C</p>
+
+              <!-- Main Model Try-On Frame -->
+              <div class="stylist-model-frame">
+                <img id="stylistResultModelImg" src="assets/model_tryon_navy.jpg" alt="Model Try-On Preview">
+                <div class="model-tryon-chip-tag" id="stylistModelTagText">
+                  <span>👤</span> Styled on model (Full Look)
+                </div>
+              </div>
+
+              <!-- View Switcher: Model vs Flat-lay -->
+              <div class="stylist-view-switcher">
+                <button type="button" class="stylist-switch-btn active" id="stylistBtnModel" onclick="app.setStylistViewMode('model')">
+                  <span>👤</span> Full Look (On Model)
+                </button>
+                <button type="button" class="stylist-switch-btn" id="stylistBtnFlat" onclick="app.setStylistViewMode('flat')">
+                  <span>👔</span> Studio Flat-Lay
+                </button>
+              </div>
+
+              <!-- Wardrobe Garments Used -->
+              <div class="garment-breakdown-list" style="margin-top: 16px;">
+                <div class="breakdown-row">
+                  <img class="breakdown-thumb" id="stylistThumbTop" src="assets/navy_shirt.jpg" alt="Top">
+                  <div class="breakdown-meta-col">
+                    <span class="breakdown-name" id="stylistNameTop">Navy shirt</span>
+                    <span class="badge-status clean">✨ Clean</span>
+                  </div>
+                </div>
+                <div class="breakdown-row">
+                  <img class="breakdown-thumb" id="stylistThumbBot" src="assets/beige_chinos.jpg" alt="Bottom">
+                  <div class="breakdown-meta-col">
+                    <span class="breakdown-name" id="stylistNameBot">Beige chinos</span>
+                    <span class="badge-status clean">✨ Clean</span>
+                  </div>
+                </div>
+                <div class="breakdown-row">
+                  <img class="breakdown-thumb" id="stylistThumbShoe" src="assets/white_sneakers.jpg" alt="Footwear">
+                  <div class="breakdown-meta-col">
+                    <span class="breakdown-name" id="stylistNameShoe">White sneakers</span>
+                    <span class="badge-status clean">✨ Clean</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Stylist Insight Box -->
+              <div class="ai-rationale-box" id="stylistRationaleBox">
+                <div class="rationale-header">💡 Why this outfit works</div>
+                <p class="rationale-text" id="stylistRationaleText">
+                  Navy and beige offer a timeless high-contrast palette. Breathable cotton shirt prevents heat retention in Chennai's 29°C temperature. We avoided items currently marked in the laundry.
+                </p>
+              </div>
+
+              <!-- KEY USER REQUIREMENT: "DO YOU PREFER OTHER OPTIONS?" -->
+              <div class="alternative-options-block">
+                <span class="alt-question-label">Not feeling this combination?</span>
+                <button class="btn-outline-action btn-alt-cycle" onclick="app.cycleStylistOption()">
+                  <span class="cycle-icon">↺</span> Do you prefer other options?
+                </button>
+                <button class="btn-outline-action btn-ai-regenerate" onclick="app.regenerateAIOutfit()" style="margin-top: 8px;">
+                  <span class="cycle-icon">⚡</span> Synthesize fresh look with AI
+                </button>
+                <span class="alt-counter-hint" id="stylistOptionHint">Showing Option 1 of 4 · Tap to cycle alternatives</span>
+              </div>
+
+              <!-- Final Confirmation Actions -->
+              <div class="dual-button-stack" style="margin-top: 16px;">
+                <button class="btn-olive-primary" onclick="app.confirmStylistOutfit()">
+                  ✓ Wear this outfit today
+                </button>
+                <button class="btn-outline-white" onclick="app.resetStylistQuestionnaire()">
+                  Change questions & preferences
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN: CUSTOM OUTFIT BUILDER ("MAKE YOUR OWN OUTFIT")
+             =================================================================== -->
+        <section class="phone-screen" id="screen-custom-builder">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('today')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="sub-header-title">Outfit Studio</span>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <!-- Builder Selection View -->
+            <div id="builderSelectionView">
+              <div class="stylist-intro-badge">
+                <span>🪡</span> Custom Outfit Studio
+              </div>
+              <h2 class="screen-headline-serif" style="margin-top: 6px;">Make your own outfit</h2>
+              <p class="screen-caption-sub">Pick pieces from your wardrobe and see how you look wearing them.</p>
+
+              <!-- Category Step Tabs -->
+              <div class="builder-cat-step-bar" id="builderCategoryTabs">
+                <button class="cat-pill active" onclick="app.setBuilderTab('Tops', this)">1. Tops</button>
+                <button class="cat-pill" onclick="app.setBuilderTab('Bottoms', this)">2. Bottoms</button>
+                <button class="cat-pill" onclick="app.setBuilderTab('Shoes', this)">3. Shoes</button>
+                <button class="cat-pill" onclick="app.setBuilderTab('Accessories', this)">4. Accessories</button>
+              </div>
+
+              <!-- Available Items Grid for Selected Category -->
+              <div class="builder-items-grid" id="builderItemsGrid">
+                <!-- Populated dynamically via JS -->
+              </div>
+
+              <!-- Docked Selected Outfit Tray -->
+              <div class="builder-selected-tray-card">
+                <div class="tray-title-row">
+                  <span class="tray-title">Your Curated Look</span>
+                  <button class="tray-clear-btn" onclick="app.resetBuilderSelections()">Reset</button>
+                </div>
+                <div class="tray-slots-row">
+                  <div class="tray-slot" id="traySlotTop">
+                    <div class="slot-thumb"><img id="trayThumbTop" src="assets/navy_shirt.jpg" alt="Top"></div>
+                    <span class="slot-label" id="trayLabelTop">Navy shirt</span>
+                  </div>
+                  <div class="tray-slot" id="traySlotBot">
+                    <div class="slot-thumb"><img id="trayThumbBot" src="assets/beige_chinos.jpg" alt="Bottom"></div>
+                    <span class="slot-label" id="trayLabelBot">Beige chinos</span>
+                  </div>
+                  <div class="tray-slot" id="traySlotShoe">
+                    <div class="slot-thumb"><img id="trayThumbShoe" src="assets/white_sneakers.jpg" alt="Shoes"></div>
+                    <span class="slot-label" id="trayLabelShoe">White sneakers</span>
+                  </div>
+                </div>
+
+                <button class="btn-olive-primary" style="margin-top: 14px;" onclick="app.previewCustomOutfitOnModel()">
+                  <span>👤</span> See me wearing this look <span class="arrow-right">→</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Model Try-On Generated View (hidden initially) -->
+            <div id="builderModelPreviewView" class="hidden">
+              <div class="stylist-intro-badge">
+                <span>✨</span> Rendered Try-On
+              </div>
+              <h2 class="screen-headline-serif" style="margin-top: 6px;">Your Custom Look</h2>
+              <p class="screen-caption-sub">Styled and rendered on a model from your selected wardrobe pieces.</p>
+
+              <!-- Try on image -->
+              <div class="stylist-model-frame">
+                <img id="builderPreviewModelImg" src="assets/model_tryon_navy.jpg" alt="Custom Model Try-On">
+                <div class="model-tryon-chip-tag">
+                  <span>👤</span> Styled on model
+                </div>
+              </div>
+
+              <!-- Selected Pieces List -->
+              <div class="garment-breakdown-list" style="margin-top: 16px;">
+                <div class="breakdown-row">
+                  <img class="breakdown-thumb" id="customThumbTop" src="assets/navy_shirt.jpg" alt="Top">
+                  <div class="breakdown-meta-col">
+                    <span class="breakdown-name" id="customNameTop">Navy shirt</span>
+                    <span class="badge-status clean">✨ Clean</span>
+                  </div>
+                </div>
+                <div class="breakdown-row">
+                  <img class="breakdown-thumb" id="customThumbBot" src="assets/beige_chinos.jpg" alt="Bottom">
+                  <div class="breakdown-meta-col">
+                    <span class="breakdown-name" id="customNameBot">Beige chinos</span>
+                    <span class="badge-status clean">✨ Clean</span>
+                  </div>
+                </div>
+                <div class="breakdown-row">
+                  <img class="breakdown-thumb" id="customThumbShoe" src="assets/white_sneakers.jpg" alt="Shoes">
+                  <div class="breakdown-meta-col">
+                    <span class="breakdown-name" id="customNameShoe">White sneakers</span>
+                    <span class="badge-status clean">✨ Clean</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dual-button-stack" style="margin-top: 18px;">
+                <button class="btn-olive-primary" onclick="app.confirmCustomOutfit()">
+                  ✓ Wear this outfit today
+                </button>
+                <button class="btn-outline-white" onclick="app.backToBuilderSelection()">
+                  Change selected pieces
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 6: OUTFIT DETAILS
+             =================================================================== -->
+        <section class="phone-screen" id="screen-outfit-details">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('today')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button class="btn-icon-right" onclick="app.toggleBookmarkCurrent()" title="Save outfit">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+            </button>
+          </div>
+
+          <div class="screen-body-padded">
+            <h2 class="screen-headline-serif center-text" id="detailsOutfitTitle">Easy everyday</h2>
+            
+            <div class="outfit-board-card">
+              <div class="quad-item top-left"><img id="detImgTop" src="assets/navy_shirt.jpg" alt="Shirt"></div>
+              <div class="quad-item top-right"><img id="detImgBot" src="assets/beige_chinos.jpg" alt="Chinos"></div>
+              <div class="quad-item bot-left"><img id="detImgShoe" src="assets/white_sneakers.jpg" alt="Sneakers"></div>
+              <div class="quad-item bot-right"><img id="detImgAcc" src="assets/leather_watch.jpg" alt="Watch"></div>
+            </div>
+
+            <p class="outfit-editorial-caption" id="detailsCaptionText">
+              A relaxed look for your college day.
+            </p>
+
+            <div class="garment-breakdown-list">
+              <div class="breakdown-row">
+                <img class="breakdown-thumb" id="rowThumbTop" src="assets/navy_shirt.jpg" alt="Navy shirt">
+                <span class="breakdown-name" id="rowNameTop">Navy shirt</span>
+                <button class="btn-swap-pill" onclick="app.openSwapScreen('top')">Swap</button>
+              </div>
+
+              <div class="breakdown-row">
+                <img class="breakdown-thumb" id="rowThumbBot" src="assets/beige_chinos.jpg" alt="Beige trousers">
+                <span class="breakdown-name" id="rowNameBot">Beige trousers</span>
+                <button class="btn-swap-pill" onclick="app.openSwapScreen('bottom')">Swap</button>
+              </div>
+
+              <div class="breakdown-row">
+                <img class="breakdown-thumb" id="rowThumbShoe" src="assets/white_sneakers.jpg" alt="White sneakers">
+                <span class="breakdown-name" id="rowNameShoe">White sneakers</span>
+                <button class="btn-swap-pill" onclick="app.openSwapScreen('footwear')">Swap</button>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.goToScreen('outfit-ready')">
+                Choose this outfit
+              </button>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 7: SWAP AN ITEM
+             =================================================================== -->
+        <section class="phone-screen" id="screen-swap-item">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('outfit-details')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h2 class="screen-headline-serif center-text" id="swapHeaderTitle">Choose different shoes</h2>
+            <p class="screen-caption-sub center-text">Only available items</p>
+
+            <div class="swap-options-grid" id="swapGrid">
+              <div class="swap-card selected" onclick="app.selectSwapOption('white_sneakers', 'White sneakers', 'assets/white_sneakers.jpg', this)">
+                <div class="swap-img-box">
+                  <img src="assets/white_sneakers.jpg" alt="White sneakers">
+                  <div class="choice-checkbox checked">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                </div>
+                <span class="swap-title">White sneakers</span>
+              </div>
+
+              <div class="swap-card" onclick="app.selectSwapOption('black_trainers', 'Black trainers', 'assets/black_trainers.jpg', this)">
+                <div class="swap-img-box">
+                  <img src="assets/black_trainers.jpg" alt="Black trainers">
+                  <div class="choice-checkbox"></div>
+                </div>
+                <span class="swap-title">Black trainers</span>
+              </div>
+
+              <div class="swap-card" onclick="app.selectSwapOption('tan_loafers', 'Brown loafers', 'assets/tan_loafers.jpg', this)">
+                <div class="swap-img-box">
+                  <img src="assets/tan_loafers.jpg" alt="Brown loafers">
+                  <div class="choice-checkbox"></div>
+                </div>
+                <span class="swap-title">Brown loafers</span>
+              </div>
+
+              <div class="swap-card" onclick="app.selectSwapOption('sandals', 'Sandals', 'assets/brown_sandals.jpg', this)">
+                <div class="swap-img-box">
+                  <img src="assets/brown_sandals.jpg" alt="Sandals">
+                  <div class="choice-checkbox"></div>
+                </div>
+                <span class="swap-title">Sandals</span>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.confirmSwap()">
+                Use these shoes
+              </button>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 8: OUTFIT SELECTED
+             =================================================================== -->
+        <section class="phone-screen" id="screen-outfit-ready">
+          <div class="screen-body-padded" style="padding-top: 24px;">
+            <div class="big-check-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            
+            <h1 class="screen-headline-serif center-text" style="margin-top: 10px;">Your outfit is ready</h1>
+
+            <div class="outfit-board-card" style="margin-top: 14px;">
+              <div class="quad-item top-left"><img id="readyImgTop" src="assets/navy_shirt.jpg" alt="Shirt"></div>
+              <div class="quad-item top-right"><img id="readyImgBot" src="assets/beige_chinos.jpg" alt="Chinos"></div>
+              <div class="quad-item bot-left"><img id="readyImgShoe" src="assets/tan_loafers.jpg" alt="Loafers"></div>
+              <div class="quad-item bot-right"><img id="readyImgAcc" src="assets/leather_watch.jpg" alt="Watch"></div>
+            </div>
+
+            <p class="center-hint-text" style="margin-top: 14px; font-weight: 500; color: #2D312E;">Planning to wear this today?</p>
+
+            <div class="dual-button-stack">
+              <button class="btn-olive-primary" onclick="app.markAsWorn()">
+                Mark as worn
+              </button>
+              <button class="btn-outline-white" onclick="app.saveForLater()">
+                Save for later
+              </button>
+            </div>
+
+            <p class="caption-muted-sub">Only mark it after you wear it.</p>
+          </div>
+
+          <!-- Bottom Navigation Bar -->
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab active" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 9: YOUR WARDROBE
+             =================================================================== -->
+        <section class="phone-screen" id="screen-wardrobe">
+          <div class="screen-body-padded" style="padding-top: 14px;">
+            <div class="wardrobe-header-row">
+              <div>
+                <h1 class="screen-headline-serif">Your wardrobe</h1>
+                <span class="wardrobe-items-count" id="wardrobeCountLabel">24 items</span>
+              </div>
+              <button class="btn-circle-add" onclick="app.goToScreen('add-wardrobe')" title="Add item">+</button>
+            </div>
+
+            <div class="search-input-box">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A8073" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" placeholder="Search your wardrobe..." id="wardrobeSearchInput" oninput="app.filterWardrobeGrid()">
+            </div>
+
+            <!-- Wardrobe Condition Summary Banner -->
+            <div class="wardrobe-condition-banner">
+              <span class="banner-stat clean">✨ <strong id="wardrobeCleanCount">21</strong> Clean & Ready</span>
+              <span class="banner-stat laundry">🧺 <strong id="wardrobeLaundryCount">3</strong> In Laundry</span>
+              <span class="banner-hint">Tap badge to toggle status</span>
+            </div>
+
+            <div class="category-filter-bar" id="wardrobeCatFilter">
+              <button class="cat-pill active" onclick="app.filterWardrobeCategory('All', this)">All</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Clean', this)">✨ Clean</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Laundry', this)">🧺 In Laundry</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Tops', this)">Tops</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Bottoms', this)">Bottoms</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Shoes', this)">Shoes</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Accessories', this)">Accessories</button>
+            </div>
+
+            <div class="wardrobe-2col-grid" id="wardrobeCardsGrid">
+              <div class="wardrobe-item-box" onclick="app.goToScreen('edit-item')">
+                <div class="w-img-wrap"><img src="assets/navy_shirt.jpg" alt="Navy shirt"></div>
+                <div class="w-meta">
+                  <div class="w-name">Navy shirt</div>
+                  <div class="w-sub">Top</div>
+                </div>
+                <button class="w-dots">⋮</button>
+              </div>
+
+              <div class="wardrobe-item-box">
+                <div class="w-img-wrap"><img src="assets/beige_chinos.jpg" alt="Beige trousers"></div>
+                <div class="w-meta">
+                  <div class="w-name">Beige trousers</div>
+                  <div class="w-sub">Bottom</div>
+                </div>
+                <button class="w-dots">⋮</button>
+              </div>
+
+              <div class="wardrobe-item-box">
+                <div class="w-img-wrap"><img src="assets/olive_kurta.jpg" alt="Cream kurta"></div>
+                <div class="w-meta">
+                  <div class="w-name">Cream kurta</div>
+                  <div class="w-sub">Top</div>
+                </div>
+                <button class="w-dots">⋮</button>
+              </div>
+
+              <div class="wardrobe-item-box">
+                <div class="w-img-wrap"><img src="assets/white_sneakers.jpg" alt="White sneakers"></div>
+                <div class="w-meta">
+                  <div class="w-name">White sneakers</div>
+                  <div class="w-sub">Shoes</div>
+                </div>
+                <button class="w-dots">⋮</button>
+              </div>
+
+              <div class="wardrobe-item-box">
+                <div class="w-img-wrap"><img src="assets/maroon_top.jpg" alt="Maroon top"></div>
+                <div class="w-meta">
+                  <div class="w-name">Maroon top</div>
+                  <div class="w-sub">Top</div>
+                </div>
+                <button class="w-dots">⋮</button>
+              </div>
+
+              <div class="wardrobe-item-box">
+                <div class="w-img-wrap"><img src="assets/dark_skirt.jpg" alt="Dark skirt"></div>
+                <div class="w-meta">
+                  <div class="w-name">Dark skirt</div>
+                  <div class="w-sub">Bottom</div>
+                </div>
+                <button class="w-dots">⋮</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Bar -->
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab active" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 10: YOUR SAVED LOOKS
+             =================================================================== -->
+        <section class="phone-screen" id="screen-saved">
+          <div class="screen-body-padded" style="padding-top: 14px;">
+            <h1 class="screen-headline-serif">Your saved looks</h1>
+            
+            <div class="category-filter-bar" style="margin-top: 10px;">
+              <button class="cat-pill active">All</button>
+              <button class="cat-pill">Casual</button>
+              <button class="cat-pill">Office</button>
+              <button class="cat-pill">Traditional</button>
+            </div>
+
+            <div class="saved-looks-grid">
+              <div class="saved-look-tile" onclick="app.goToScreen('outfit-details')">
+                <div class="saved-preview-box single-img">
+                  <img src="assets/welcome_hero.jpg" alt="Easy everyday">
+                  <div class="saved-ribbon-flag">🔖</div>
+                </div>
+                <div class="saved-tile-footer">
+                  <span>Easy everyday</span>
+                  <button class="w-dots">⋮</button>
+                </div>
+              </div>
+
+              <div class="saved-look-tile">
+                <div class="saved-preview-box single-img">
+                  <img src="assets/office_ready.jpg" alt="Office ready">
+                  <div class="saved-ribbon-flag">🔖</div>
+                </div>
+                <div class="saved-tile-footer">
+                  <span>Office ready</span>
+                  <button class="w-dots">⋮</button>
+                </div>
+              </div>
+
+              <div class="saved-look-tile">
+                <div class="saved-preview-box single-img">
+                  <img src="assets/traditional_kurta.jpg" alt="Weekend casual">
+                  <div class="saved-ribbon-flag">🔖</div>
+                </div>
+                <div class="saved-tile-footer">
+                  <span>Weekend casual</span>
+                  <button class="w-dots">⋮</button>
+                </div>
+              </div>
+
+              <div class="saved-look-tile">
+                <div class="saved-preview-box single-img">
+                  <img src="assets/festive_look.jpg" alt="Festive favorite">
+                  <div class="saved-ribbon-flag">🔖</div>
+                </div>
+                <div class="saved-tile-footer">
+                  <span>Festive favorite</span>
+                  <button class="w-dots">⋮</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab active" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 11: WEAR HISTORY (WHAT YOU WORE)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-wear-history">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('profile')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="sub-header-title">What you wore</span>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <div class="week-calendar-strip">
+              <div class="day-col"><span class="d-name">Mon</span><span class="d-num">12</span></div>
+              <div class="day-col"><span class="d-name">Tue</span><span class="d-num">13</span></div>
+              <div class="day-col"><span class="d-name">Wed</span><span class="d-num">14</span></div>
+              <div class="day-col active"><span class="d-name">Thu</span><span class="d-num active-bubble">15</span></div>
+              <div class="day-col"><span class="d-name">Fri</span><span class="d-num">16</span></div>
+              <div class="day-col"><span class="d-name">Sat</span><span class="d-num">17</span></div>
+              <div class="day-col"><span class="d-name">Sun</span><span class="d-num">18</span></div>
+            </div>
+
+            <div class="history-timeline-cards">
+              <div class="history-date-block">
+                <div class="hist-date-heading">
+                  <strong>Today</strong>
+                  <span>Thu, 15 May</span>
+                </div>
+                <div class="hist-card-row" onclick="app.goToScreen('outfit-details')">
+                  <div class="hist-collage-mini">
+                    <img src="assets/navy_shirt.jpg">
+                    <img src="assets/beige_chinos.jpg">
+                    <img src="assets/white_sneakers.jpg">
+                  </div>
+                  <span class="hist-look-title">Easy everyday</span>
+                  <span class="hist-chevron">›</span>
+                </div>
+              </div>
+
+              <div class="history-date-block">
+                <div class="hist-date-heading">
+                  <strong>Yesterday</strong>
+                  <span>Wed, 14 May</span>
+                </div>
+                <div class="hist-card-row">
+                  <div class="hist-collage-mini">
+                    <img src="assets/olive_kurta.jpg">
+                    <img src="assets/cream_palazzo.jpg">
+                    <img src="assets/tan_loafers.jpg">
+                  </div>
+                  <span class="hist-look-title">Office ready</span>
+                  <span class="hist-chevron">›</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="activity-summary-card">
+              <span class="summary-calendar-icon">📅</span>
+              <div class="summary-text-box">
+                <strong>Worn 6 times this week</strong>
+                <p>You've been active with your wardrobe this week.</p>
+              </div>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 12: PROFILE
+             =================================================================== -->
+        <section class="phone-screen" id="screen-profile">
+          <div class="screen-body-padded" style="padding-top: 20px;">
+            <div class="profile-user-card">
+              <div class="user-avatar-circle">S</div>
+              <div class="user-meta-info">
+                <h2 class="user-name">Suriya</h2>
+                <span class="user-plan-label">Free plan</span>
+              </div>
+              <button class="btn-upgrade-link" onclick="app.goToScreen('premium')">
+                Upgrade ›
+              </button>
+            </div>
+
+            <div class="profile-menu-list">
+              <div class="menu-item-row" onclick="app.goToScreen('style-pref')">
+                <span class="menu-icon">⚙️</span>
+                <span class="menu-text">Style preferences</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('weekly-planning')">
+                <span class="menu-icon">🗓️</span>
+                <span class="menu-text">Weekly planning</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('wear-history')">
+                <span class="menu-icon">📅</span>
+                <span class="menu-text">Wear history</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('reminders')">
+                <span class="menu-icon">🔔</span>
+                <span class="menu-text">Reminders</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('help-support')">
+                <span class="menu-icon">❓</span>
+                <span class="menu-text">Help and support</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('account-privacy')">
+                <span class="menu-icon">⚙️</span>
+                <span class="menu-text">Account and privacy</span>
+                <span class="menu-chevron">›</span>
+              </div>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab active" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 13: SIGN IN
+             =================================================================== -->
+        <section class="phone-screen" id="screen-signin">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('welcome')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">Welcome back</h1>
+            <p class="screen-caption-sub" style="margin-bottom: 24px;">Your wardrobe is waiting.</p>
+
+            <div class="signin-form-box">
+              <div class="signin-input-wrap">
+                <span class="input-icon">✉️</span>
+                <input type="email" placeholder="Email address" value="suriya@example.com">
+              </div>
+
+              <div class="signin-input-wrap">
+                <span class="input-icon">🔒</span>
+                <input type="password" placeholder="Password" value="••••••••••••">
+                <button class="btn-pwd-eye" type="button">👁️</button>
+              </div>
+
+              <div class="forgot-pwd-wrap">
+                <a href="#forgot" onclick="event.preventDefault(); app.goToScreen('reset-password');">Forgot password?</a>
+              </div>
+
+              <button class="btn-olive-primary" onclick="app.goToScreen('today')">
+                Sign in
+              </button>
+            </div>
+
+            <div class="auth-divider-or"><span>or</span></div>
+
+            <button class="btn-google-oauth" onclick="app.goToScreen('today')">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <div class="auth-bottom-link">
+              Don't have an account? <a href="#create" onclick="event.preventDefault(); app.goToScreen('create-account');">Create account</a>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 14: PREMIUM
+             =================================================================== -->
+        <section class="phone-screen" id="screen-premium">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('profile')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">More possibilities from your wardrobe.</h1>
+
+            <div class="premium-hero-card">
+              <img src="assets/navy_shirt.jpg" class="p-top" alt="Shirt">
+              <img src="assets/beige_chinos.jpg" class="p-bot" alt="Chinos">
+              <img src="assets/white_sneakers.jpg" class="p-shoe" alt="Sneakers">
+            </div>
+
+            <div class="premium-features-list">
+              <div class="p-feat-row">
+                <div class="feat-icon-bubble">👔</div>
+                <div class="feat-text-box">
+                  <strong>Larger wardrobe</strong>
+                  <p>Keep all your outfits in one place.</p>
+                </div>
+              </div>
+
+              <div class="p-feat-row">
+                <div class="feat-icon-bubble">🪟</div>
+                <div class="feat-text-box">
+                  <strong>More daily outfit choices</strong>
+                  <p>Get fresh outfit ideas from what you own.</p>
+                </div>
+              </div>
+
+              <div class="p-feat-row">
+                <div class="feat-icon-bubble">📅</div>
+                <div class="feat-text-box">
+                  <strong>Weekly outfit planning</strong>
+                  <p>Plan ahead and save time each week.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="premium-pricing-choices">
+              <label class="pricing-radio-card active" onclick="app.selectPlan('monthly', this)">
+                <input type="radio" name="planChoice" checked>
+                <span class="custom-radio"></span>
+                <span class="plan-price-label">₹149 / month</span>
+              </label>
+
+              <label class="pricing-radio-card" onclick="app.selectPlan('annual', this)">
+                <input type="radio" name="planChoice">
+                <span class="custom-radio"></span>
+                <span class="plan-price-label">₹999 / year</span>
+              </label>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" id="btnContinuePlan" onclick="app.activatePremium()">
+                Continue with monthly
+              </button>
+            </div>
+
+            <p class="center-hint-text" style="font-size: 0.72rem; margin-top: 8px;">
+              Renews at ₹149 each month until cancelled.
+            </p>
+
+            <div class="legal-links-row">
+              <a href="#manage" onclick="event.preventDefault(); app.goToScreen('manage-subscription');">Manage subscription</a>
+              <span>|</span>
+              <a href="#terms" onclick="event.preventDefault();">Terms</a>
+              <span>|</span>
+              <a href="#privacy" onclick="event.preventDefault(); app.goToScreen('account-privacy');">Privacy</a>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 15: REMINDERS
+             =================================================================== -->
+        <section class="phone-screen" id="screen-reminders">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('profile')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">Your morning reminder</h1>
+            <p class="screen-caption-sub">Get a nudge to check your outfits and start the day with confidence.</p>
+
+            <div class="reminder-settings-card">
+              <div class="reminder-row">
+                <div class="r-icon-label">
+                  <span class="r-icon">🔔</span>
+                  <span>Daily outfit reminder</span>
+                </div>
+                <label class="switch-toggle">
+                  <input type="checkbox" checked id="toggleReminder">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="reminder-row">
+                <div class="r-icon-label">
+                  <span class="r-icon">🕒</span>
+                  <span>Time</span>
+                </div>
+                <div class="r-time-select">
+                  <span>7:30 AM</span>
+                  <span class="menu-chevron">›</span>
+                </div>
+              </div>
+
+              <div class="reminder-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <div class="r-icon-label">
+                  <span class="r-icon">📅</span>
+                  <span>Repeat on</span>
+                </div>
+                <div class="day-bubbles-row">
+                  <button class="day-bubble active">M</button>
+                  <button class="day-bubble active">T</button>
+                  <button class="day-bubble active">W</button>
+                  <button class="day-bubble active">T</button>
+                  <button class="day-bubble active">F</button>
+                  <button class="day-bubble">S</button>
+                  <button class="day-bubble">S</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="push-notification-preview">
+              <div class="notif-header">
+                <div class="notif-app-mark">🌿 Wardrobe</div>
+                <span class="notif-time">7:30 AM</span>
+              </div>
+              <strong class="notif-title">Your outfits are ready</strong>
+              <p class="notif-msg">Time to look good today ✨</p>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.saveReminderPreferences()">
+                Save preferences
+              </button>
+            </div>
+
+            <p class="center-hint-text" style="font-size: 0.72rem; margin-top: 10px;">
+              You can turn reminders off anytime.
+            </p>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 16: ACCOUNT AND PRIVACY
+             =================================================================== -->
+        <section class="phone-screen" id="screen-account-privacy">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('profile')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">Account and privacy</h1>
+
+            <div class="profile-menu-list" style="margin-top: 16px;">
+              <div class="menu-item-row">
+                <span class="menu-icon">👤</span>
+                <span class="menu-text">suriya@example.com</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.exportWardrobe()">
+                <span class="menu-icon">📥</span>
+                <span class="menu-text">Export my wardrobe</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="alert('Privacy policy: Zero photo selling. Local-first encryption.');">
+                <span class="menu-icon">🛡️</span>
+                <span class="menu-text">Privacy policy</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('manage-subscription')">
+                <span class="menu-icon">💳</span>
+                <span class="menu-text">Manage subscription</span>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('welcome')">
+                <span class="menu-icon">🚪</span>
+                <span class="menu-text">Sign out</span>
+                <span class="menu-chevron">›</span>
+              </div>
+            </div>
+
+            <div class="danger-zone-box">
+              <div class="danger-row" onclick="app.goToScreen('delete-account')">
+                <span class="danger-icon">🗑️</span>
+                <span class="danger-label">Delete account</span>
+                <span class="danger-chevron">›</span>
+              </div>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 17: EMPTY WARDROBE (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-empty-wardrobe">
+          <div class="screen-body-padded" style="padding-top: 24px; text-align: center;">
+            <h1 class="screen-headline-serif" style="text-align: left; margin-bottom: 24px;">Your wardrobe</h1>
+
+            <div class="empty-hanger-circle">
+              <svg class="hanger-svg" viewBox="0 0 100 80">
+                <path d="M 50 18 C 50 8, 42 8, 42 16 C 42 22, 50 24, 50 28 L 50 34 L 14 56 C 11 58, 12 62, 16 62 L 84 62 C 88 62, 89 58, 86 56 L 50 34" fill="none" stroke="#4E5C49" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+
+            <h2 class="screen-headline-serif" style="font-size: 1.65rem; margin-top: 20px;">Start with what<br>you love</h2>
+            <p class="screen-caption-sub" style="max-width: 250px; margin: 8px auto 28px;">
+              Add a few clothes and shoes to get your first outfit choices.
+            </p>
+
+            <div class="dual-button-stack">
+              <button class="btn-olive-primary" onclick="app.goToScreen('crop-photo')">
+                <span>+</span> Add photos
+              </button>
+              <button class="btn-outline-white" onclick="app.goToScreen('crop-photo')">
+                <span>📷</span> Take photo
+              </button>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab active" onclick="app.goToScreen('empty-wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('weekly-planning')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+              <span>Outfits</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 18: UPLOAD FAILED (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-upload-failed">
+          <div class="screen-body-padded" style="padding-top: 18px;">
+            <h1 class="screen-headline-serif">Add your wardrobe</h1>
+
+            <!-- Red Alert Banner -->
+            <div class="upload-error-banner">
+              <div class="error-badge-icon">!</div>
+              <div class="error-text">
+                <strong>One photo could not upload.</strong>
+                <p>Your other items are saved.</p>
+              </div>
+            </div>
+
+            <!-- Upload items status list -->
+            <div class="upload-status-list">
+              <div class="status-item-row">
+                <img src="assets/navy_shirt.jpg" class="status-thumb">
+                <div class="status-meta">
+                  <strong>Navy shirt</strong>
+                  <span class="text-uploaded">Uploaded</span>
+                </div>
+                <div class="status-check-circle">✓</div>
+              </div>
+
+              <div class="status-item-row">
+                <img src="assets/beige_chinos.jpg" class="status-thumb">
+                <div class="status-meta">
+                  <strong>Beige trousers</strong>
+                  <span class="text-uploaded">Uploaded</span>
+                </div>
+                <div class="status-check-circle">✓</div>
+              </div>
+
+              <div class="status-item-row failed-row">
+                <img src="assets/white_sneakers.jpg" class="status-thumb">
+                <div class="status-meta">
+                  <strong>White sneakers</strong>
+                  <span class="text-failed">Failed</span>
+                </div>
+                <div class="status-exclamation-circle">!</div>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <div class="dual-button-stack">
+                <button class="btn-olive-primary" onclick="app.retryUpload()">
+                  <span>🔄</span> Retry photo
+                </button>
+                <button class="btn-outline-white" onclick="app.goToScreen('crop-photo')">
+                  <span>🖼️</span> Choose another photo
+                </button>
+              </div>
+              <p class="center-hint-text" style="margin-top: 14px;">
+                <a href="#skip" class="skip-link" onclick="event.preventDefault(); app.goToScreen('today');">Skip for now</a>
+              </p>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 19: NOT ENOUGH ITEMS (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-not-enough-items">
+          <div class="screen-sub-header">
+            <span style="font-family: var(--font-serif); font-size: 1.25rem;">Today</span>
+            <span style="font-size: 1.1rem;">🗓️</span>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif center-text" style="margin: 10px 0 16px;">Almost ready</h1>
+
+            <div class="almost-ready-board">
+              <div class="ready-piece"><img src="assets/navy_shirt.jpg"></div>
+              <div class="ready-piece"><img src="assets/beige_chinos.jpg"></div>
+              <div class="dashed-missing-slot">
+                <div class="missing-shoe-icon">👟</div>
+              </div>
+            </div>
+
+            <p class="center-hint-text" style="font-size: 0.88rem; color: var(--text-sub); margin-bottom: 24px;">
+              Add footwear to complete this outfit.
+            </p>
+
+            <div class="dual-button-stack">
+              <button class="btn-olive-primary" onclick="app.goToScreen('crop-photo')">
+                <span>+</span> Add shoes
+              </button>
+              <button class="btn-outline-white" onclick="app.goToScreen('wardrobe')">
+                Open wardrobe
+              </button>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('weekly-planning')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+              <span>Outfits</span>
+            </button>
+            <button class="nav-tab active" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 20: OFFLINE MODE (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-offline-mode">
+          <div class="screen-body-padded" style="padding-top: 12px;">
+            <!-- Offline Pill Banner -->
+            <div class="offline-pill-top">
+              <span>📶</span> You are offline.
+            </div>
+
+            <h1 class="screen-headline-serif" style="margin-top: 18px;">Your saved outfits</h1>
+            <p class="screen-caption-sub">You can view saved outfits. Reconnect for new suggestions.</p>
+
+            <div class="wardrobe-2col-grid">
+              <div class="saved-look-tile">
+                <div class="saved-preview-box">
+                  <div class="quad-item top-left"><img src="assets/navy_shirt.jpg"></div>
+                  <div class="quad-item top-right"><img src="assets/beige_chinos.jpg"></div>
+                  <div class="quad-item bot-left"><img src="assets/white_sneakers.jpg"></div>
+                  <div class="quad-item bot-right"><img src="assets/leather_watch.jpg"></div>
+                </div>
+                <div class="saved-tile-footer">
+                  <div>
+                    <strong>Casual weekend</strong>
+                    <div style="font-size: 0.72rem; color: var(--text-muted);">4 items</div>
+                  </div>
+                  <button class="w-dots">⋮</button>
+                </div>
+              </div>
+
+              <div class="saved-look-tile">
+                <div class="saved-preview-box">
+                  <div class="quad-item top-left"><img src="assets/white_linen_shirt.jpg"></div>
+                  <div class="quad-item top-right"><img src="assets/dark_denim.jpg"></div>
+                  <div class="quad-item bot-left"><img src="assets/white_sneakers.jpg"></div>
+                  <div class="quad-item bot-right"><img src="assets/leather_watch.jpg"></div>
+                </div>
+                <div class="saved-tile-footer">
+                  <div>
+                    <strong>Everyday classic</strong>
+                    <div style="font-size: 0.72rem; color: var(--text-muted);">4 items</div>
+                  </div>
+                  <button class="w-dots">⋮</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.tryReconnect()">
+                <span>🔄</span> Try again
+              </button>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('weekly-planning')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+              <span>Outfits</span>
+            </button>
+            <button class="nav-tab active" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 21: NEW PASSWORD (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-new-password">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('signin')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="sub-header-title">Set a new password</span>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <div class="signin-form-box" style="margin-top: 18px;">
+              <div class="form-field-vertical">
+                <label class="field-label">New password</label>
+                <div class="signin-input-wrap">
+                  <input type="password" value="••••••••••••">
+                  <button class="btn-pwd-eye" type="button">👁️</button>
+                </div>
+              </div>
+
+              <div class="form-field-vertical">
+                <label class="field-label">Confirm password</label>
+                <div class="signin-input-wrap">
+                  <input type="password" value="••••••••••••">
+                  <button class="btn-pwd-eye" type="button">👁️</button>
+                </div>
+              </div>
+
+              <p class="field-subnote">Use at least 8 characters with a mix of letters, numbers and symbols.</p>
+
+              <div class="screen-footer-action">
+                <button class="btn-olive-primary" onclick="app.goToScreen('signin')">
+                  Save password
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 22: PREPARING OUTFITS (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-preparing-outfits">
+          <div class="screen-body-padded center-text" style="padding-top: 48px;">
+            <h1 class="screen-headline-serif">Finding your next look</h1>
+            <p class="screen-caption-sub">Matching your available clothes.</p>
+
+            <div class="spinning-loader-ring"></div>
+
+            <!-- Ghost Silhouette Cards -->
+            <div class="ghost-cards-row">
+              <div class="ghost-card">
+                <div class="ghost-line tall"></div>
+                <div class="ghost-line"></div>
+              </div>
+              <div class="ghost-card">
+                <div class="ghost-line tall"></div>
+                <div class="ghost-line"></div>
+              </div>
+              <div class="ghost-card">
+                <div class="ghost-line tall"></div>
+                <div class="ghost-line"></div>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <a href="#cancel" class="skip-link" onclick="event.preventDefault(); app.goToScreen('today');">Cancel</a>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab active" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 23: PHOTO ACCESS (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-photo-access">
+          <div class="screen-body-padded center-text" style="padding-top: 36px;">
+            <h1 class="screen-headline-serif">Choose your clothing photos</h1>
+
+            <div class="photo-access-fan-cards">
+              <div class="fan-card c-left"><img src="assets/olive_kurta.jpg"></div>
+              <div class="fan-card c-center"><img src="assets/dark_denim.jpg"></div>
+              <div class="fan-card c-right"><img src="assets/white_sneakers.jpg"></div>
+            </div>
+
+            <strong style="font-size: 0.95rem; display: block; margin-top: 24px;">Photo access is turned off.</strong>
+            <p class="screen-caption-sub">You can change it in your phone settings.</p>
+
+            <div class="dual-button-stack" style="margin-top: 18px;">
+              <button class="btn-olive-primary" onclick="alert('Phone settings dialog opened.'); app.goToScreen('crop-photo');">
+                Open settings
+              </button>
+              <button class="btn-outline-white" onclick="app.goToScreen('crop-photo')">
+                Take a photo instead
+              </button>
+            </div>
+
+            <p class="center-hint-text" style="margin-top: 14px;">
+              <a href="#notnow" class="skip-link" onclick="event.preventDefault(); app.goToScreen('add-wardrobe');">Not now</a>
+            </p>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab active" onclick="app.goToScreen('today')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 24: DELETE ACCOUNT (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-delete-account">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('account-privacy')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="sub-header-title">Delete your account?</span>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <p class="screen-caption-sub" style="margin-top: 6px;">
+              Your wardrobe, saved outfits and history will be deleted.
+            </p>
+
+            <!-- Warning Card -->
+            <div class="upload-error-banner" style="margin-bottom: 20px;">
+              <div class="error-badge-icon">!</div>
+              <div class="error-text">
+                <strong>Deleting your account does not cancel a Google Play subscription.</strong>
+                <p>Manage your subscription first.</p>
+              </div>
+            </div>
+
+            <p style="text-align: center; margin-bottom: 18px;">
+              <a href="#manage" class="skip-link" onclick="event.preventDefault(); app.goToScreen('manage-subscription');">Manage subscription</a>
+            </p>
+
+            <div class="form-field-vertical" style="margin-bottom: 16px;">
+              <label class="field-label">To confirm, enter your password</label>
+              <div class="signin-input-wrap">
+                <input type="password" placeholder="Password">
+                <button class="btn-pwd-eye" type="button">👁️</button>
+              </div>
+            </div>
+
+            <div class="dual-button-stack">
+              <button class="btn-danger-solid" onclick="app.confirmDeleteAccount()">
+                Delete account
+              </button>
+              <button class="btn-outline-white" onclick="app.goToScreen('account-privacy')">
+                Keep my account
+              </button>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 25: WEEKLY PLANNING (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-weekly-planning">
+          <div class="screen-body-padded" style="padding-top: 14px;">
+            <h1 class="screen-headline-serif">Your week, dressed</h1>
+            <p class="screen-caption-sub">Plan your outfits for the days ahead.</p>
+
+            <div class="weekly-schedule-stream">
+              <!-- Mon -->
+              <div class="day-plan-card" onclick="app.goToScreen('outfit-details')">
+                <div class="dp-day-info">
+                  <strong>Mon</strong>
+                  <span>3 Nov</span>
+                </div>
+                <div class="dp-outfit-preview">
+                  <span class="dp-occ-tag">College</span>
+                  <div class="dp-thumbs-row">
+                    <img src="assets/terracotta_tee.jpg">
+                    <img src="assets/dark_denim.jpg">
+                    <img src="assets/white_sneakers.jpg">
+                  </div>
+                </div>
+                <span class="dp-chevron">›</span>
+              </div>
+
+              <!-- Tue -->
+              <div class="day-plan-card" onclick="app.goToScreen('outfit-details')">
+                <div class="dp-day-info">
+                  <strong>Tue</strong>
+                  <span>4 Nov</span>
+                </div>
+                <div class="dp-outfit-preview">
+                  <span class="dp-occ-tag">Office</span>
+                  <div class="dp-thumbs-row">
+                    <img src="assets/navy_shirt.jpg">
+                    <img src="assets/beige_chinos.jpg">
+                    <img src="assets/tan_loafers.jpg">
+                  </div>
+                </div>
+                <span class="dp-chevron">›</span>
+              </div>
+
+              <!-- Wed -->
+              <div class="day-plan-card empty-day">
+                <div class="dp-day-info">
+                  <strong>Wed</strong>
+                  <span>5 Nov</span>
+                </div>
+                <span class="dp-empty-text">Choose an outfit</span>
+                <button class="btn-circle-add-sm" onclick="app.goToScreen('today')">+</button>
+              </div>
+
+              <!-- Thu -->
+              <div class="day-plan-card empty-day">
+                <div class="dp-day-info">
+                  <strong>Thu</strong>
+                  <span>6 Nov</span>
+                </div>
+                <button class="btn-circle-add-sm" onclick="app.goToScreen('today')">+</button>
+              </div>
+
+              <!-- Fri -->
+              <div class="day-plan-card empty-day">
+                <div class="dp-day-info">
+                  <strong>Fri</strong>
+                  <span>7 Nov</span>
+                </div>
+                <button class="btn-circle-add-sm" onclick="app.goToScreen('today')">+</button>
+              </div>
+
+              <!-- Sat -->
+              <div class="day-plan-card empty-day">
+                <div class="dp-day-info">
+                  <strong>Sat</strong>
+                  <span>8 Nov</span>
+                </div>
+                <button class="btn-circle-add-sm" onclick="app.goToScreen('today')">+</button>
+              </div>
+
+              <!-- Sun -->
+              <div class="day-plan-card empty-day">
+                <div class="dp-day-info">
+                  <strong>Sun</strong>
+                  <span>9 Nov</span>
+                </div>
+                <button class="btn-circle-add-sm" onclick="app.goToScreen('today')">+</button>
+              </div>
+            </div>
+          </div>
+
+          <nav class="phone-bottom-nav">
+            <button class="nav-tab active" onclick="app.goToScreen('weekly-planning')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Today</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>
+              <span>Wardrobe</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('saved')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+              <span>Saved</span>
+            </button>
+            <button class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 26: HELP AND SUPPORT (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-help-support">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('profile')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">How can we help?</h1>
+            <p class="screen-caption-sub">Search for help or browse common questions.</p>
+
+            <div class="search-input-box" style="margin-bottom: 18px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A8073" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" placeholder="Search help articles...">
+            </div>
+
+            <span class="control-sublabel">Popular topics</span>
+            <div class="profile-menu-list" style="margin-bottom: 20px;">
+              <div class="menu-item-row">
+                <span class="menu-icon">🖼️</span>
+                <div class="menu-text">
+                  <strong>Add clothing photos</strong>
+                  <p style="font-size: 0.74rem; color: var(--text-muted); font-weight: normal;">Learn how to add items to your wardrobe.</p>
+                </div>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('today')">
+                <span class="menu-icon">🔄</span>
+                <div class="menu-text">
+                  <strong>Change an outfit</strong>
+                  <p style="font-size: 0.74rem; color: var(--text-muted); font-weight: normal;">Edit or replace a planned outfit.</p>
+                </div>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('manage-subscription')">
+                <span class="menu-icon">🔁</span>
+                <div class="menu-text">
+                  <strong>Restore purchases</strong>
+                  <p style="font-size: 0.74rem; color: var(--text-muted); font-weight: normal;">Get your premium features back.</p>
+                </div>
+                <span class="menu-chevron">›</span>
+              </div>
+
+              <div class="menu-item-row" onclick="app.goToScreen('delete-account')">
+                <span class="menu-icon">👤</span>
+                <div class="menu-text">
+                  <strong>Delete my account</strong>
+                  <p style="font-size: 0.74rem; color: var(--text-muted); font-weight: normal;">Learn how to delete your account.</p>
+                </div>
+                <span class="menu-chevron">›</span>
+              </div>
+            </div>
+
+            <!-- Message form -->
+            <span class="control-sublabel">Still need help?</span>
+            <p class="screen-caption-sub" style="margin-top: 0; margin-bottom: 10px;">Send us a message and we'll get back to you.</p>
+
+            <div class="form-field-vertical" style="margin-bottom: 8px;">
+              <label class="field-label">Topic</label>
+              <div class="input-select-box">
+                <span class="field-val">Select a topic</span>
+                <span class="dropdown-chevron">∨</span>
+              </div>
+            </div>
+
+            <div class="form-field-vertical" style="margin-bottom: 14px;">
+              <label class="field-label">Message</label>
+              <textarea class="feedback-textarea" placeholder="Tell us more..."></textarea>
+            </div>
+
+            <button class="btn-olive-primary" onclick="alert('Message sent! Our support team will reply within 24 hours.'); app.goToScreen('profile');">
+              Send message
+            </button>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 27: MANAGE SUBSCRIPTION (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-manage-subscription">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('profile')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">Your premium plan</h1>
+            <p class="screen-caption-sub">Get more from your wardrobe with Premium.</p>
+
+            <!-- Plan Badge Card -->
+            <div class="plan-status-card">
+              <div class="plan-top-row">
+                <span class="crown-icon">👑</span>
+                <div style="flex: 1;">
+                  <strong>Monthly plan</strong>
+                  <div class="plan-price-lg">₹149 <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">per month</span></div>
+                </div>
+                <span class="gold-pill-badge">Premium</span>
+              </div>
+
+              <div class="renewal-row">
+                <span style="color: var(--text-muted);">Next renewal</span>
+                <strong>5 November 2026</strong>
+              </div>
+
+              <p class="plan-disclaimer-text">
+                Your plan will automatically renew each month unless you cancel. You'll be charged ₹149 through Google Play.
+              </p>
+
+              <button class="btn-googleplay-solid" onclick="alert('Redirecting to Google Play subscription management.');">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#34A853" d="M3.6 1.8l11.4 11.4-2.8 2.8L3.6 1.8z"/><path fill="#4285F4" d="M17.8 9.4L4.8 2.2l10.2 11 2.8-3.8z"/><path fill="#FBBC05" d="M17.8 14.6l-2.8-3.8-10.2 11 13-7.2z"/><path fill="#EA4335" d="M20.6 11l-2.8-1.6-2.8 2.6 2.8 2.6 2.8-1.6c.9-.5.9-1.5 0-2z"/></svg>
+                <span>Manage in Google Play</span>
+              </button>
+            </div>
+
+            <div class="profile-menu-list" style="margin-top: 14px; margin-bottom: 14px;">
+              <div class="menu-item-row" onclick="alert('Purchases restored.');">
+                <span class="menu-icon">🔁</span>
+                <span class="menu-text">Restore purchases</span>
+                <span class="menu-chevron">›</span>
+              </div>
+              <div class="menu-item-row" onclick="app.goToScreen('help-support')">
+                <span class="menu-icon">❓</span>
+                <span class="menu-text">Get help with your subscription</span>
+                <span class="menu-chevron">›</span>
+              </div>
+            </div>
+
+            <div class="cancellation-info-box">
+              <span class="info-icon">ℹ️</span>
+              <p>Cancellation stops the next renewal. Access continues until the paid period ends.</p>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 28: OUTFIT FEEDBACK (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-outfit-feedback">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('today')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">What could be better?</h1>
+            <p class="screen-caption-sub">Your feedback helps us suggest better outfits.</p>
+
+            <!-- Outfit mini board preview -->
+            <div class="outfit-board-card" style="max-width: 240px; margin: 0 auto 16px;">
+              <div class="quad-item top-left"><img src="assets/navy_shirt.jpg"></div>
+              <div class="quad-item top-right"><img src="assets/beige_chinos.jpg"></div>
+              <div class="quad-item bot-left"><img src="assets/white_sneakers.jpg"></div>
+              <div class="quad-item bot-right"><img src="assets/leather_watch.jpg"></div>
+            </div>
+
+            <!-- Feedback reason options -->
+            <div class="feedback-radio-list">
+              <label class="feedback-option" onclick="app.selectFeedbackOption(this)">
+                <input type="radio" name="feedbackReason">
+                <span class="custom-radio"></span>
+                <span>Not my style</span>
+              </label>
+
+              <label class="feedback-option" onclick="app.selectFeedbackOption(this)">
+                <input type="radio" name="feedbackReason">
+                <span class="custom-radio"></span>
+                <span>Too warm for the weather</span>
+              </label>
+
+              <label class="feedback-option" onclick="app.selectFeedbackOption(this)">
+                <input type="radio" name="feedbackReason">
+                <span class="custom-radio"></span>
+                <span>Wrong occasion</span>
+              </label>
+
+              <label class="feedback-option" onclick="app.selectFeedbackOption(this)">
+                <input type="radio" name="feedbackReason">
+                <span class="custom-radio"></span>
+                <span>Item unavailable</span>
+              </label>
+            </div>
+
+            <div class="form-field-vertical" style="margin-top: 14px;">
+              <label class="field-label">Add an optional note</label>
+              <textarea class="feedback-textarea" placeholder="Tell us more (optional)..." maxlength="200" oninput="document.getElementById('feedbackCounter').textContent = this.value.length + '/200'"></textarea>
+              <span class="char-counter" id="feedbackCounter">0/200</span>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="alert('Thank you! Feedback recorded to tune tomorrow’s outfit choices.'); app.goToScreen('today');">
+                Send feedback
+              </button>
+              <p class="center-hint-text" style="margin-top: 10px;">
+                <a href="#skip" class="skip-link" onclick="event.preventDefault(); app.goToScreen('today');">Skip for now</a>
+              </p>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 29: CREATE ACCOUNT (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-create-account">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('welcome')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">Your wardrobe starts here</h1>
+            <p class="screen-caption-sub">Create an account to save your items, organize your outfits and keep your wardrobe with you.</p>
+
+            <div class="signin-form-box">
+              <div class="form-field-vertical">
+                <label class="field-label">Full name</label>
+                <div class="signin-input-wrap">
+                  <input type="text" placeholder="Full name" value="Alex Taylor">
+                </div>
+              </div>
+
+              <div class="form-field-vertical">
+                <label class="field-label">Email address</label>
+                <div class="signin-input-wrap">
+                  <input type="email" placeholder="Email address" value="alex.taylor@email.com">
+                </div>
+              </div>
+
+              <div class="form-field-vertical">
+                <label class="field-label">Password</label>
+                <div class="signin-input-wrap">
+                  <input type="password" value="••••••••••">
+                  <button class="btn-pwd-eye" type="button">👁️</button>
+                </div>
+              </div>
+
+              <label class="terms-checkbox-row">
+                <input type="checkbox" checked>
+                <span>I agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a></span>
+              </label>
+
+              <button class="btn-olive-primary" onclick="app.goToScreen('style-pref')">
+                Create account
+              </button>
+            </div>
+
+            <div class="auth-divider-or"><span>OR</span></div>
+
+            <button class="btn-google-oauth" onclick="app.goToScreen('style-pref')">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <div class="auth-bottom-link">
+              Already have an account? <a href="#signin" onclick="event.preventDefault(); app.goToScreen('signin');">Sign in</a>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 30: RESET PASSWORD (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-reset-password">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('signin')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">Forgot your password?</h1>
+            <p class="screen-caption-sub">No problem. Enter your email address and we'll send you a link to reset your password.</p>
+
+            <div class="signin-form-box" style="margin-top: 14px;">
+              <div class="form-field-vertical">
+                <label class="field-label">Email address</label>
+                <div class="signin-input-wrap">
+                  <input type="email" placeholder="Email address" value="alex.taylor@email.com">
+                </div>
+              </div>
+
+              <button class="btn-olive-primary" onclick="document.getElementById('resetSuccessBanner').classList.remove('hidden');">
+                Send reset link
+              </button>
+            </div>
+
+            <!-- Sent Success Banner -->
+            <div class="reset-success-card hidden" id="resetSuccessBanner">
+              <div class="reset-check-circle">✓</div>
+              <div class="reset-success-text">
+                <strong>We've sent a reset link to alex.taylor@email.com</strong>
+                <p>If you don't see it, check your spam folder. The link will expire in 1 hour.</p>
+              </div>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 31: CROP PHOTO (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-crop-photo">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('add-wardrobe')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded center-text">
+            <h1 class="screen-headline-serif">Keep your item in focus</h1>
+            <p class="screen-caption-sub">Crop the photo so your item is clearly visible and centered.</p>
+
+            <!-- Interactive Cropping Box with Grid Overlay -->
+            <div class="crop-editor-container">
+              <img src="assets/navy_shirt.jpg" class="crop-target-img" id="cropTargetImg">
+              <div class="crop-grid-overlay">
+                <div class="grid-line v1"></div>
+                <div class="grid-line v2"></div>
+                <div class="grid-line h1"></div>
+                <div class="grid-line h2"></div>
+                <div class="crop-handle tl"></div>
+                <div class="crop-handle tr"></div>
+                <div class="crop-handle bl"></div>
+                <div class="crop-handle br"></div>
+              </div>
+            </div>
+
+            <button class="btn-rotate-link" onclick="app.rotateCropImage()">
+              <span>🔄</span> Rotate
+            </button>
+
+            <!-- Aspect ratio choices -->
+            <div class="aspect-ratio-selector">
+              <button class="aspect-box active" onclick="app.setAspectRatio('1:1', this)">
+                <div class="ratio-shape sq"></div>
+                <span>1:1</span>
+              </button>
+              <button class="aspect-box" onclick="app.setAspectRatio('3:4', this)">
+                <div class="ratio-shape p34"></div>
+                <span>3:4</span>
+              </button>
+              <button class="aspect-box" onclick="app.setAspectRatio('4:3', this)">
+                <div class="ratio-shape p43"></div>
+                <span>4:3</span>
+              </button>
+              <button class="aspect-box" onclick="app.setAspectRatio('Free', this)">
+                <div class="ratio-shape free"></div>
+                <span>Free</span>
+              </button>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="app.goToScreen('review-item')">
+                Use photo
+              </button>
+              <p class="center-hint-text" style="margin-top: 10px;">
+                <a href="#keep" class="skip-link" onclick="event.preventDefault(); app.goToScreen('review-item');">Keep original</a>
+              </p>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+        <!-- ===================================================================
+             SCREEN 32: EDIT ITEM (NEW)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-edit-item">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('wardrobe')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <span class="sub-header-title">Edit navy shirt</span>
+            <div style="width: 20px;"></div>
+          </div>
+
+          <div class="screen-body-padded">
+            <div class="review-image-frame" style="max-width: 140px; margin: 0 auto 16px;">
+              <img src="assets/navy_shirt.jpg" alt="Edit Garment">
+            </div>
+
+            <div class="review-form-fields">
+              <div class="form-field-row">
+                <label>Category</label>
+                <div class="input-select-box">
+                  <span class="field-icon">👕</span>
+                  <span class="field-val">Shirt</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <div class="form-field-row">
+                <label>Color</label>
+                <div class="input-select-box">
+                  <span class="color-dot navy"></span>
+                  <span class="field-val">Navy</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <div class="form-field-row">
+                <label>Occasion</label>
+                <div class="input-select-box">
+                  <span class="field-icon">📅</span>
+                  <span class="field-val">Casual</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <div class="form-field-row">
+                <label>Fit</label>
+                <div class="input-select-box">
+                  <span class="field-icon">🥼</span>
+                  <span class="field-val">Comfortable</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <!-- Availability Dropdown with open state simulation -->
+              <div class="form-field-row">
+                <label>Availability</label>
+                <div class="input-select-box active" onclick="document.getElementById('availDropdownMenu').classList.toggle('hidden')">
+                  <span class="field-icon">✨</span>
+                  <span class="field-val" id="selectedAvailLabel">Clean</span>
+                  <span class="dropdown-chevron">∨</span>
+                </div>
+              </div>
+
+              <!-- Dropdown Menu -->
+              <div class="dropdown-popover-menu" id="availDropdownMenu">
+                <div class="dropdown-option active" onclick="app.setAvailability('Clean')">
+                  <span>✓</span> Clean
+                </div>
+                <div class="dropdown-option" onclick="app.setAvailability('Laundry')">
+                  <span>🧺</span> Laundry
+                </div>
+                <div class="dropdown-option" onclick="app.setAvailability('Unavailable')">
+                  <span>🚫</span> Unavailable
+                </div>
+              </div>
+            </div>
+
+            <div class="screen-footer-action">
+              <button class="btn-olive-primary" onclick="alert('Changes saved to your wardrobe.'); app.goToScreen('wardrobe');">
+                Save changes
+              </button>
+
+              <div class="edit-bottom-links-row">
+                <a href="#archive" class="skip-link" onclick="event.preventDefault(); alert('Item moved to archive.'); app.goToScreen('wardrobe');">Archive item</a>
+                <a href="#delete" class="danger-link" onclick="event.preventDefault(); if(confirm('Delete this item from wardrobe?')) app.goToScreen('wardrobe');">
+                  <span>🗑️</span> Delete item
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
+        </section>
+
+      </div><!-- /.phone-screen-container -->
+  </main>
+    <!-- Right Editorial Step Guides (Matching Reference D) -->
+    <aside class="desktop-editorial-right">
+      <div class="desktop-step-card" onclick="app.serenInteract('wardrobe')">
+        <span class="step-badge">1</span>
+        <div>
+          <strong>Tap the wardrobe</strong>
+          <p>Get closer to explore your pieces.</p>
+        </div>
+      </div>
+      <div class="desktop-step-card" onclick="app.serenToggleWardrobe(true)">
+        <span class="step-badge">2</span>
+        <div>
+          <strong>Choose and drag</strong>
+          <p>Pick a piece and drag it onto your avatar.</p>
+        </div>
+      </div>
+      <div class="desktop-step-card" onclick="app.setStudioCamera('AVATAR_TRYON')">
+        <span class="step-badge">3</span>
+        <div>
+          <strong>It's on – instantly</strong>
+          <p>The outfit is automatically worn.</p>
+        </div>
+      </div>
+      <div class="desktop-step-card" onclick="app.serenOpenStylingReview()">
+        <span class="step-badge">4</span>
+        <div>
+          <strong>Get a styling review</strong>
+          <p>See what works and how to make it even better.</p>
+        </div>
+      </div>
+    </aside>
+  </div><!-- /.desktop-editorial-frame -->
+<!-- /.app-viewport -->
+
+  <!-- Item Condition & Fit Modal Sheet -->
+  <div class="condition-modal-backdrop hidden" id="itemConditionModal">
+    <div class="condition-modal-sheet">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header-row">
+        <div class="sheet-item-preview">
+          <img id="modalItemImg" src="assets/navy_shirt.jpg" alt="Item Preview">
+          <div>
+            <h4 class="sheet-item-title" id="modalItemTitle">Navy shirt</h4>
+            <span class="sheet-item-cat" id="modalItemCat">Top · Navy</span>
+          </div>
+        </div>
+        <button class="sheet-close-btn" onclick="app.closeConditionModal()">✕</button>
+      </div>
+
+      <!-- Section 1: Laundry Status -->
+      <div class="sheet-section-block">
+        <label class="sheet-label">Laundry & Availability</label>
+        <p class="sheet-hint">Dirty / in-laundry items will be skipped by daily outfit suggestions.</p>
+        <div class="condition-option-row">
+          <button class="condition-select-pill active" id="btnCondClean" onclick="app.selectModalCondition('clean')">
+            <span class="opt-icon">✨</span>
+            <div class="opt-text">
+              <span class="opt-name">Clean & Ready</span>
+              <span class="opt-sub">Available for daily styling</span>
+            </div>
+          </button>
+          <button class="condition-select-pill" id="btnCondDirty" onclick="app.selectModalCondition('dirty')">
+            <span class="opt-icon">🧺</span>
+            <div class="opt-text">
+              <span class="opt-name">In Laundry (Dirty)</span>
+              <span class="opt-sub">Excluded from outfits</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 2: Fit & Sizing -->
+      <div class="sheet-section-block">
+        <label class="sheet-label">Fit & Sizing</label>
+        <p class="sheet-hint">Used to prioritize the right fit for your preferred vibe.</p>
+        <div class="fit-option-grid">
+          <button class="fit-select-pill" id="btnFitTight" onclick="app.selectModalFit('tight')">
+            <span class="opt-icon">📏</span>
+            <span class="opt-name">Small / Tight</span>
+            <span class="opt-sub">Occasional / snug</span>
+          </button>
+          <button class="fit-select-pill active" id="btnFitPerfect" onclick="app.selectModalFit('perfect')">
+            <span class="opt-icon">✨</span>
+            <span class="opt-name">Perfect Fit</span>
+            <span class="opt-sub">Everyday comfort</span>
+          </button>
+          <button class="fit-select-pill" id="btnFitLoose" onclick="app.selectModalFit('loose')">
+            <span class="opt-icon">📐</span>
+            <span class="opt-name">Large / Loose</span>
+            <span class="opt-sub">Relaxed / oversize</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="sheet-footer-action">
+        <button class="btn-olive-primary" onclick="app.saveModalConditionChanges()">
+          Save Condition & Fit
+        </button>
+      </div>
+    </div>
+  </div>
+
+        <!-- ===================================================================
+             SCREEN: 3D VIRTUAL FASHION STUDIO
+             =================================================================== -->
+                
+
+  <!-- Notification Toast -->
+  <div class="toast-popup" id="toastPopup"></div>
+
+  <!-- Application Logic -->
+  <script src="studio3d.js?v=20261011_3"></script>
+  <script src="app.js?v=20261011_3"></script>
+</body>
+</html>

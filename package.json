@@ -1,0 +1,17 @@
+{
+  "name": "fashion-app",
+  "version": "1.0.0",
+  "description": "AURA Wardrobe - Editorial Minimalist Fashion Showcase",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "fashion",
+    "wardrobe",
+    "showcase"
+  ],
+  "author": "",
+  "license": "ISC"
+}

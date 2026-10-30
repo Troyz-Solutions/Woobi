@@ -15,3 +15,6 @@ android-app/.kotlin/
 .DS_Store
 Thumbs.db
 *.log
+
+# Local Firebase project configuration (copy the tracked example to set up)
+/login/firebase-config.js

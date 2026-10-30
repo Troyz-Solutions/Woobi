@@ -363,6 +363,21 @@
                 <span class="seren-brand-sub">STUDIO</span>
               </div>
             </div>
+            <!-- Daily Outfit Streak & Countdown Timer Pill -->
+            <div class="streak-header-pill" id="streakHeaderPill" onclick="app.openStreakModal()" title="View Daily Outfit Streak & Upload">
+              <div class="streak-flame-wrapper" id="streakFlameWrapper">
+                <span class="streak-flame-emoji" id="streakFlameIcon">🔥</span>
+                <div class="smoke-particles" id="smokeParticles">
+                  <span class="smoke-particle p1"></span>
+                  <span class="smoke-particle p2"></span>
+                  <span class="smoke-particle p3"></span>
+                </div>
+              </div>
+              <span class="streak-count" id="streakCount">1</span>
+              <span class="streak-sep">·</span>
+              <span class="streak-timer" id="streakTimer">24:00:00</span>
+            </div>
+
             <div class="seren-header-right">
               <button class="seren-icon-btn" onclick="app.serenToggleWardrobe()" title="Wardrobe Closet">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -569,7 +584,13 @@
                   <span class="greeting-kicker">Morning, Suriya</span>
                   <h3 class="daily-drawer-title">Daily Recommendations</h3>
                 </div>
-                <button class="daily-drawer-close" onclick="app.serenToggleDailyLooks(false)">✕</button>
+                <div class="daily-drawer-header-actions">
+                  <div class="streak-drawer-badge" onclick="app.openStreakModal()" title="View Daily Outfit Streak">
+                    <span class="streak-flame-icon">🔥</span>
+                    <span class="streak-drawer-count">1</span>
+                  </div>
+                  <button class="daily-drawer-close" onclick="app.serenToggleDailyLooks(false)">✕</button>
+                </div>
               </div>
               <div class="daily-drawer-content" id="dailyDrawerFeed">
                 <!-- Occasion Filter Pills -->
@@ -1027,6 +1048,27 @@
               <div class="quad-item top-right"><img id="readyImgBot" src="assets/beige_chinos.jpg" alt="Chinos"></div>
               <div class="quad-item bot-left"><img id="readyImgShoe" src="assets/tan_loafers.jpg" alt="Loafers"></div>
               <div class="quad-item bot-right"><img id="readyImgAcc" src="assets/leather_watch.jpg" alt="Watch"></div>
+            </div>
+
+            <!-- Streak Camera Upload Action Card -->
+            <div class="streak-ready-card" id="streakReadyCard">
+              <div class="streak-ready-badge-row">
+                <span class="streak-ready-pill">🔥 Daily Streak Feature</span>
+                <span class="streak-ready-timer-mini" id="streakReadyTimerMini">⏳ 24h left</span>
+              </div>
+              <div class="streak-ready-body">
+                <div class="streak-ready-text">
+                  <strong>Snap your actual look today!</strong>
+                  <p>Upload a quick photo of yourself wearing this outfit to advance your streak by <strong>+1 🔥</strong>.</p>
+                </div>
+                <button class="btn-camera-upload" onclick="app.triggerOutfitPhotoUpload()" title="Upload outfit photo">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  <span>Upload Look (+1 🔥)</span>
+                </button>
+              </div>
             </div>
 
             <p class="center-hint-text" style="margin-top: 14px; font-weight: 500; color: #2D312E;">Planning to wear this today?</p>
@@ -2821,6 +2863,153 @@
              SCREEN: 3D VIRTUAL FASHION STUDIO
              =================================================================== -->
                 
+
+  <!-- In-App Daily Reminder Notification Banner -->
+  <div class="in-app-reminder-banner hidden" id="inAppReminderBanner">
+    <div class="reminder-banner-content">
+      <div class="reminder-banner-icon-wrap" id="reminderBannerIcon">
+        <span>🔥</span>
+      </div>
+      <div class="reminder-banner-text">
+        <strong id="reminderBannerTitle">Upload Today's Look</strong>
+        <p id="reminderBannerBody">Snap your recommended outfit before the deadline to keep your streak going!</p>
+      </div>
+      <div class="reminder-banner-actions">
+        <button class="btn-banner-snap" onclick="app.triggerOutfitPhotoUpload()">
+          <span>📷 Snap</span>
+        </button>
+        <button class="btn-banner-close" onclick="app.dismissReminderBanner()">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden File Input for Native Camera / Gallery Upload -->
+  <input type="file" id="outfitPhotoInput" accept="image/*" capture="environment" style="display:none;" onchange="app.handleOutfitPhotoSelected(event)">
+
+  <!-- Modal: Confirm Daily Outfit Photo Upload -->
+  <div class="streak-modal-backdrop hidden" id="outfitPhotoConfirmModal">
+    <div class="streak-modal-card">
+      <div class="streak-modal-header">
+        <h3 class="streak-modal-title">Confirm Outfit Photo</h3>
+        <button class="streak-modal-close" onclick="app.closePhotoConfirmModal()">✕</button>
+      </div>
+      <div class="streak-photo-preview-wrap">
+        <img id="outfitPhotoPreviewImg" src="" alt="Outfit Preview">
+        <div class="streak-verify-badge">
+          <span>✓ Today's Outfit Verified</span>
+        </div>
+      </div>
+      <div class="streak-confirm-meta">
+        <div class="streak-current-banner">
+          <span>Current Streak: <strong>🔥 <span id="confirmCurrentStreakVal">1</span> Days</strong></span>
+          <span class="streak-next-arrow">➔</span>
+          <span class="streak-next-highlight">New: <strong>🔥 <span id="confirmNewStreakVal">2</span> Days</strong></span>
+        </div>
+      </div>
+      <p class="streak-modal-hint">Looks sharp! Confirming this photo completes today's challenge and adds <strong>+1 🔥</strong> to your streak.</p>
+      <div class="streak-modal-actions">
+        <button class="btn-olive-primary" onclick="app.confirmOutfitPhotoUpload()">
+          Confirm Upload (+1 🔥)
+        </button>
+        <button class="btn-outline-white" onclick="app.triggerOutfitPhotoUpload()">
+          Retake Photo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Missed Upload Broken Streak & Monthly Restore -->
+  <div class="streak-modal-backdrop hidden" id="missedStreakModal">
+    <div class="streak-modal-card missed-streak-card">
+      <div class="extinguished-flame-wrap">
+        <div class="smoke-extinguished-graphic">
+          <span class="smoke-drift d1">💨</span>
+          <span class="smoke-drift d2">💨</span>
+        </div>
+        <span class="extinguished-ember" id="missedModalEmber">🔥</span>
+      </div>
+      <h2 class="missed-modal-headline">Oops! Your outfit streak has ended! 🔥</h2>
+      <p class="missed-modal-lead">Your streak is waiting to be restored. Don't give up!</p>
+      
+      <div class="lost-streak-stat-box">
+        <span class="stat-lbl">Lost Streak</span>
+        <span class="stat-num" id="missedStreakLostCount">5 Days</span>
+      </div>
+
+      <!-- Monthly Restoration Status Card -->
+      <div class="restore-status-card" id="restoreStatusCard">
+        <div class="restore-status-indicator">
+          <span class="restore-status-icon" id="restoreStatusIcon">✨</span>
+          <div class="restore-status-text">
+            <strong id="restoreStatusTitle">Monthly Restoration Available</strong>
+            <span id="restoreStatusSubtitle">Refreshes on the 3rd of every month</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="missed-modal-actions">
+        <button class="btn-olive-primary btn-restore-action" id="btnRestoreStreak" onclick="app.restoreMonthlyStreak()">
+          Restore Streak 🔥
+        </button>
+        <button class="btn-outline-white" onclick="app.startNewStreak()">
+          Start New Streak
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Streak Details, History & Developer Simulation Controls -->
+  <div class="streak-modal-backdrop hidden" id="streakDetailsModal">
+    <div class="streak-modal-card streak-details-card">
+      <div class="streak-modal-header">
+        <h3 class="streak-modal-title">Outfit Upload Streak</h3>
+        <button class="streak-modal-close" onclick="app.closeStreakModal()">✕</button>
+      </div>
+      
+      <div class="streak-hero-display">
+        <div class="streak-hero-flame-box">
+          <span class="streak-hero-flame" id="modalHeroFlame">🔥</span>
+        </div>
+        <div class="streak-hero-count" id="modalHeroStreakCount">5</div>
+        <div class="streak-hero-label">Days Consecutive Streak</div>
+      </div>
+
+      <div class="streak-info-grid">
+        <div class="streak-info-box">
+          <span class="info-label">TIME REMAINING</span>
+          <span class="info-val" id="modalHeroCountdown">24h 00m</span>
+        </div>
+        <div class="streak-info-box">
+          <span class="info-label">MONTHLY RESTORE</span>
+          <span class="info-val" id="modalHeroRestoreStatus">Available (3rd)</span>
+        </div>
+      </div>
+
+      <div class="streak-rules-box">
+        <div class="rule-item">📸 Snap & upload your daily Woobi look to add +1 🔥.</div>
+        <div class="rule-item">⏰ Upload within 24 hours of your recommendation.</div>
+        <div class="rule-item">🔄 1 free streak restore per calendar month (refreshes every 3rd).</div>
+      </div>
+
+      <div class="streak-main-action">
+        <button class="btn-olive-primary" onclick="app.triggerOutfitPhotoUpload(); app.closeStreakModal();">
+          📷 Snap Today's Outfit Photo
+        </button>
+      </div>
+
+      <!-- Developer / QA Testing Controls -->
+      <details class="streak-dev-details">
+        <summary class="streak-dev-summary">⚙️ QA & Feature Testing Tools</summary>
+        <div class="streak-dev-controls">
+          <button class="dev-btn" onclick="app.devSimulateUpload()">⚡ Instant Upload (+1)</button>
+          <button class="dev-btn" onclick="app.devSimulateTwoHoursLeft()">⏱️ Set 1h 59m (2h Warning)</button>
+          <button class="dev-btn" onclick="app.devSimulateStreakBreak()">💥 Force Streak Break</button>
+          <button class="dev-btn" onclick="app.devToggleRestoreToken()">🔄 Toggle Monthly Restore</button>
+          <button class="dev-btn" onclick="app.devResetStreak()">🗑️ Reset Streak to Default</button>
+        </div>
+      </details>
+    </div>
+  </div>
 
   <!-- Notification Toast -->
   <div class="toast-popup" id="toastPopup"></div>

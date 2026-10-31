@@ -1761,17 +1761,25 @@
   function triggerFlameBlowoutAnimation() {
     const flameWrapper = document.getElementById('streakFlameWrapper');
     if (flameWrapper) {
-      flameWrapper.classList.remove('reignited');
+      flameWrapper.classList.remove('reignited', 'inactive');
       flameWrapper.classList.add('blown-out');
+
+      // Seamlessly transition to resting inactive state once smoke rises and disperses (~2.2s)
+      setTimeout(() => {
+        if (state.streak && state.streak.isStreakBroken) {
+          flameWrapper.classList.add('inactive');
+        }
+      }, 2200);
     }
 
     const pill = document.getElementById('streakHeaderPill');
     if (pill) {
       pill.classList.remove('urgent', 'completed');
+      pill.classList.add('inactive');
     }
 
     const timer = document.getElementById('streakTimer');
-    if (timer) timer.textContent = '00:00:00';
+    if (timer) timer.textContent = '⏱️';
   }
 
   function updateStreakUI() {
@@ -1787,49 +1795,45 @@
 
     if (streakCountEl) streakCountEl.textContent = streak.currentStreak;
     if (streakDrawerCountEl) streakDrawerCountEl.textContent = streak.currentStreak;
+    if (streakTimerEl) streakTimerEl.textContent = '⏱️';
+    if (readyTimerMini) readyTimerMini.textContent = '⏱️';
 
     if (streak.isStreakBroken) {
-      if (streakTimerEl) streakTimerEl.textContent = 'Ended';
       if (streakPillEl) {
         streakPillEl.classList.remove('urgent', 'completed');
+        streakPillEl.classList.add('inactive');
       }
       if (flameWrapper && !flameWrapper.classList.contains('blown-out')) {
-        flameWrapper.classList.add('blown-out');
+        flameWrapper.classList.add('inactive');
       }
       return;
     }
 
-    // Flame should be active
-    if (flameWrapper && flameWrapper.classList.contains('blown-out')) {
-      flameWrapper.classList.remove('blown-out');
+    // Flame is active
+    if (flameWrapper) {
+      flameWrapper.classList.remove('blown-out', 'inactive');
+    }
+
+    if (streakPillEl) {
+      streakPillEl.classList.remove('inactive');
     }
 
     if (streak.uploadedToday) {
-      if (streakTimerEl) streakTimerEl.textContent = '✓ Done';
       if (streakPillEl) {
-        streakPillEl.classList.remove('urgent');
+        streakPillEl.classList.remove('urgent', 'inactive');
         streakPillEl.classList.add('completed');
       }
-      if (readyTimerMini) readyTimerMini.textContent = '✓ Uploaded';
       return;
     }
 
     const now = Date.now();
     const diff = Math.max(0, streak.deadline - now);
 
-    const hours = Math.floor(diff / (3600 * 1000));
-    const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
-    const secs = Math.floor((diff % (60 * 1000)) / 1000);
-
-    const formattedTime = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    if (streakTimerEl) streakTimerEl.textContent = formattedTime;
-    if (readyTimerMini) readyTimerMini.textContent = `⏳ ${hours}h ${mins}m left`;
-
     // Last 2 Hours Warning Threshold: <= 2 hours (7200 seconds)
     const isUrgent = diff <= (2 * 3600 * 1000);
     if (streakPillEl) {
       streakPillEl.classList.toggle('urgent', isUrgent);
-      streakPillEl.classList.remove('completed');
+      streakPillEl.classList.remove('completed', 'inactive');
     }
   }
 
@@ -1889,7 +1893,7 @@
     // Re-ignite flame animation
     const flameWrapper = document.getElementById('streakFlameWrapper');
     if (flameWrapper) {
-      flameWrapper.classList.remove('blown-out');
+      flameWrapper.classList.remove('blown-out', 'inactive');
       flameWrapper.classList.add('reignited');
       setTimeout(() => flameWrapper.classList.remove('reignited'), 1000);
     }
@@ -1970,7 +1974,7 @@
     // Re-ignite flame
     const flameWrapper = document.getElementById('streakFlameWrapper');
     if (flameWrapper) {
-      flameWrapper.classList.remove('blown-out');
+      flameWrapper.classList.remove('blown-out', 'inactive');
       flameWrapper.classList.add('reignited');
       setTimeout(() => flameWrapper.classList.remove('reignited'), 1200);
     }
@@ -2009,7 +2013,7 @@
       const diff = Math.max(0, streak.deadline - now);
       const hours = Math.floor(diff / (3600 * 1000));
       const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
-      heroCountdown.textContent = streak.uploadedToday ? 'Completed Today' : `${hours}h ${mins}m`;
+      heroCountdown.textContent = streak.uploadedToday ? '⏱️ Uploaded Today' : (streak.isStreakBroken ? '⏱️ Inactive' : '⏱️ 24h Window Active');
     }
 
     const currentCycleKey = getMonthlyRestoreCycleKey(new Date());

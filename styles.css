@@ -7900,6 +7900,19 @@ html, body {
   color: #455230;
 }
 
+.btn-notification-toggle:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.notification-support-note {
+  font-size: 0.72rem;
+  color: #7E7060;
+  text-align: center;
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
 /* 1. Outfit History Gallery inside modal */
 .streak-gallery-section {
   background: #FFFFFF;

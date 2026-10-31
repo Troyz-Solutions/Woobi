@@ -1664,6 +1664,16 @@
     });
   }
 
+  function initServiceWorker() {
+    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      navigator.serviceWorker.register('sw.js').then((reg) => {
+        // Service Worker registered successfully
+      }).catch((err) => {
+        console.warn('Woobi Service Worker registration error:', err);
+      });
+    }
+  }
+
   function initStreakState() {
     let saved = null;
     try {
@@ -1675,6 +1685,7 @@
 
     const now = Date.now();
     const defaultDeadline = now + (24 * 3600 * 1000); // 24-hour window from outfit recommendation
+    const todayStr = getLocalDateString(new Date());
 
     if (!saved) {
       state.streak = {
@@ -1682,23 +1693,28 @@
         savedPreviousStreak: 5,
         isStreakBroken: false,
         deadline: defaultDeadline,
-        lastUploadTimestamp: now - (12 * 3600 * 1000),
-        lastUploadDateStr: getLocalDateString(new Date(now - 12 * 3600 * 1000)),
+        lastUploadTimestamp: now - (24 * 3600 * 1000),
+        lastUploadDateStr: getLocalDateString(new Date(now - 24 * 3600 * 1000)),
         outfitHistory: [],
         breakNotified: false,
         lastRestoredCycleKey: null, // Eligible for restore!
         uploadedToday: false,
         morningReminderSent: false,
+        middayReminderSent: false,
         urgentReminderSent: false
       };
       saveStreakState();
     } else {
       state.streak = saved;
-      const todayStr = getLocalDateString(new Date());
+      if (typeof state.streak.morningReminderSent === 'undefined') state.streak.morningReminderSent = false;
+      if (typeof state.streak.middayReminderSent === 'undefined') state.streak.middayReminderSent = false;
+      if (typeof state.streak.urgentReminderSent === 'undefined') state.streak.urgentReminderSent = false;
+
+      // Consistent calendar date check
       state.streak.uploadedToday = (state.streak.lastUploadDateStr === todayStr);
     }
 
-    // Check deadline on launch
+    // Check deadline on launch (triggers breakStreak if expired)
     checkStreakDeadline();
 
     // Start 1-second countdown ticker
@@ -1708,23 +1724,15 @@
     // Initial UI render
     updateStreakUI();
 
-    // If streak broke (or broke while user was away), trigger blowout + smoke animation then pop up
-    if (state.streak.isStreakBroken) {
-      if (!state.streak.breakNotified) {
-        state.streak.breakNotified = true;
-        saveStreakState();
-        setTimeout(() => {
-          triggerFlameBlowoutAnimation();
-          setTimeout(() => {
-            showMissedStreakModal();
-          }, 1400);
-        }, 500);
-      } else {
-        // Already notified in a previous visit; ensure UI shows resting broken state
-        setTimeout(() => {
-          showMissedStreakModal();
-        }, 700);
-      }
+    // If streak was already marked broken in storage but was never notified to the user
+    if (state.streak.isStreakBroken && !state.streak.breakNotified) {
+      state.streak.breakNotified = true;
+      saveStreakState();
+      triggerFlameBlowoutAnimation();
+      if (window._missedStreakTimer) clearTimeout(window._missedStreakTimer);
+      window._missedStreakTimer = setTimeout(() => {
+        showMissedStreakModal();
+      }, 1200);
     }
 
     // QA & Dev Controls visibility check
@@ -1761,28 +1769,48 @@
       return;
     }
 
-    // 2. Last 2 Hours Warning Threshold: msRemaining <= 2 hours
     const TWO_HOURS_MS = 2 * 3600 * 1000;
+    const SIX_HOURS_MS = 6 * 3600 * 1000;
+    const TWELVE_HOURS_MS = 12 * 3600 * 1000;
+
+    // Issue 1: Prevent multiple / simultaneous reminder notifications.
+    // If user opens with only 1 hour left, ONLY the urgent 2-hour reminder triggers.
     if (msRemaining <= TWO_HOURS_MS) {
       if (!streak.urgentReminderSent) {
         streak.urgentReminderSent = true;
+        streak.middayReminderSent = true;
+        streak.morningReminderSent = true;
         saveStreakState();
         sendDailyNotification(
           '⚠️ 2 Hours Left on Your Outfit Streak!',
           `Only 2 hours left to upload today's outfit photo before your 🔥 ${streak.currentStreak}-day streak ends!`,
-          true
+          true,
+          'woobi-reminder-urgent'
         );
       }
-    } else {
-      // Normal Reminder: e.g. 8 hours remaining
-      const EIGHT_HOURS_MS = 8 * 3600 * 1000;
-      if (msRemaining <= EIGHT_HOURS_MS && !streak.morningReminderSent) {
+    } else if (msRemaining <= SIX_HOURS_MS) {
+      // Midday Reminder: triggers only if within (2h, 6h]
+      if (!streak.middayReminderSent) {
+        streak.middayReminderSent = true;
+        streak.morningReminderSent = true;
+        saveStreakState();
+        sendDailyNotification(
+          'Midday Outfit Check ☀️',
+          `Halfway through today's challenge! Snap your recommended outfit to maintain your 🔥 ${streak.currentStreak}-day streak.`,
+          false,
+          'woobi-reminder-midday'
+        );
+      }
+    } else if (msRemaining <= TWELVE_HOURS_MS) {
+      // Morning Reminder: triggers only if within (6h, 12h]
+      if (!streak.morningReminderSent) {
         streak.morningReminderSent = true;
         saveStreakState();
         sendDailyNotification(
           'Woobi Daily Outfit Reminder 🔥',
-          `Don't forget to snap and upload your recommended outfit to maintain your 🔥 ${streak.currentStreak}-day streak!`,
-          false
+          `Good morning! Don't forget to snap and upload your outfit to maintain your 🔥 ${streak.currentStreak}-day streak!`,
+          false,
+          'woobi-reminder-morning'
         );
       }
     }
@@ -1790,9 +1818,10 @@
 
   function breakStreak() {
     const streak = state.streak;
-    if (streak.isStreakBroken) return;
+    if (!streak || streak.isStreakBroken) return;
 
     streak.isStreakBroken = true;
+    streak.breakNotified = true;
     if (streak.currentStreak > 0) {
       streak.savedPreviousStreak = streak.currentStreak;
     } else if (!streak.savedPreviousStreak) {
@@ -1802,11 +1831,12 @@
     streak.uploadedToday = false;
     saveStreakState();
 
-    // Trigger visual flame blowout and smoke animation
+    // Trigger visual flame blowout and smoke animation once
     triggerFlameBlowoutAnimation();
 
-    // Show missed upload modal
-    setTimeout(() => {
+    // Show missed upload modal once
+    if (window._missedStreakTimer) clearTimeout(window._missedStreakTimer);
+    window._missedStreakTimer = setTimeout(() => {
       showMissedStreakModal();
     }, 1200);
   }
@@ -1814,13 +1844,16 @@
   function triggerFlameBlowoutAnimation() {
     const flameWrapper = document.getElementById('streakFlameWrapper');
     if (flameWrapper) {
+      if (flameWrapper.classList.contains('blown-out')) return; // Guard against duplicate animation
       flameWrapper.classList.remove('reignited', 'inactive');
       flameWrapper.classList.add('blown-out');
 
       // Seamlessly transition to resting inactive state once smoke rises and disperses (~2.2s)
-      setTimeout(() => {
+      if (window._flameBlowoutTimer) clearTimeout(window._flameBlowoutTimer);
+      window._flameBlowoutTimer = setTimeout(() => {
         if (state.streak && state.streak.isStreakBroken) {
           flameWrapper.classList.add('inactive');
+          flameWrapper.classList.remove('blown-out');
         }
       }, 2200);
     }
@@ -1848,10 +1881,18 @@
 
     if (streakCountEl) streakCountEl.textContent = streak.currentStreak;
     if (streakDrawerCountEl) streakDrawerCountEl.textContent = streak.currentStreak;
-    if (streakTimerEl) streakTimerEl.textContent = '⏱️';
-    if (readyTimerMini) readyTimerMini.textContent = '⏱️';
+
+    const now = Date.now();
+    const diff = Math.max(0, streak.deadline - now);
+    const hours = Math.floor(diff / (3600 * 1000));
+    const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
 
     if (streak.isStreakBroken) {
+      if (streakTimerEl) {
+        streakTimerEl.textContent = '⏱️';
+        streakTimerEl.title = 'Streak Ended';
+      }
+      if (readyTimerMini) readyTimerMini.textContent = '⏱️ Streak Ended';
       if (streakPillEl) {
         streakPillEl.classList.remove('urgent', 'completed');
         streakPillEl.classList.add('inactive');
@@ -1872,6 +1913,11 @@
     }
 
     if (streak.uploadedToday) {
+      if (streakTimerEl) {
+        streakTimerEl.textContent = '✓';
+        streakTimerEl.title = "Today's outfit uploaded";
+      }
+      if (readyTimerMini) readyTimerMini.textContent = '✓ Uploaded Today';
       if (streakPillEl) {
         streakPillEl.classList.remove('urgent', 'inactive');
         streakPillEl.classList.add('completed');
@@ -1879,8 +1925,14 @@
       return;
     }
 
-    const now = Date.now();
-    const diff = Math.max(0, streak.deadline - now);
+    // Active uncompleted countdown
+    if (streakTimerEl) {
+      streakTimerEl.textContent = '⏱️';
+      streakTimerEl.title = `${hours}h ${mins}m left`;
+    }
+    if (readyTimerMini) {
+      readyTimerMini.textContent = `⏳ ${hours}h ${mins}m left`;
+    }
 
     // Last 2 Hours Warning Threshold: <= 2 hours (7200 seconds)
     const isUrgent = diff <= (2 * 3600 * 1000);
@@ -1951,14 +2003,34 @@
   }
 
   function openPhotoConfirmModal(imgDataUrl) {
+    if (imgDataUrl) {
+      state.pendingOutfitPhoto = imgDataUrl;
+    }
     const modal = document.getElementById('outfitPhotoConfirmModal');
     const previewImg = document.getElementById('outfitPhotoPreviewImg');
     const currVal = document.getElementById('confirmCurrentStreakVal');
     const newVal = document.getElementById('confirmNewStreakVal');
+    const confirmBtn = modal ? modal.querySelector('.btn-olive-primary') : null;
+    const hintEl = modal ? modal.querySelector('.streak-modal-hint') : null;
+
+    const streak = state.streak;
+    const currentCount = streak ? (streak.currentStreak || 0) : 0;
+    const todayStr = getLocalDateString(new Date());
+    // Strict calendar day check: based consistently on lastUploadDateStr
+    const alreadyUploadedToday = !!(streak && streak.lastUploadDateStr === todayStr);
 
     if (previewImg) previewImg.src = imgDataUrl || 'assets/welcome_hero.jpg';
-    if (currVal) currVal.textContent = state.streak ? state.streak.currentStreak : 0;
-    if (newVal) newVal.textContent = (state.streak ? state.streak.currentStreak : 0) + 1;
+    if (currVal) currVal.textContent = currentCount;
+    if (newVal) newVal.textContent = alreadyUploadedToday ? currentCount : currentCount + 1;
+
+    if (confirmBtn) {
+      confirmBtn.textContent = alreadyUploadedToday ? 'Save Look to History' : 'Confirm Upload (+1 🔥)';
+    }
+    if (hintEl) {
+      hintEl.innerHTML = alreadyUploadedToday
+        ? 'You have already increased your streak today! Confirming will save this photo to your history without increasing your streak again.'
+        : 'Looks sharp! Confirming this photo completes today\'s challenge and adds <strong>+1 🔥</strong> to your streak.';
+    }
 
     if (modal) modal.classList.remove('hidden');
   }
@@ -1969,22 +2041,59 @@
     state.pendingOutfitPhoto = null;
   }
 
-  // 1. Photo Upload Implementation & Persistence
+  // 1. Photo Upload Implementation & Strict Calendar-Day Streak Increment Restriction
   function confirmOutfitPhotoUpload() {
     const photoToSave = state.pendingOutfitPhoto || 'assets/welcome_hero.jpg';
     closePhotoConfirmModal();
 
     const streak = state.streak;
+    if (!streak) return;
+
+    const todayStr = getLocalDateString(new Date());
+    // Strict calendar day check: validate lastUploadDateStr consistently
+    const alreadyUploadedToday = (streak.lastUploadDateStr === todayStr);
+
+    // If an upload has already been recorded for this calendar day, do not increment streak again
+    if (alreadyUploadedToday) {
+      streak.lastUploadedPhoto = photoToSave;
+      streak.lastUploadTimestamp = Date.now();
+      streak.uploadedToday = true;
+
+      if (!Array.isArray(streak.outfitHistory)) {
+        streak.outfitHistory = [];
+      }
+      streak.outfitHistory.unshift({
+        id: 'outfit_' + Date.now(),
+        timestamp: Date.now(),
+        dateStr: todayStr,
+        timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        streakCount: streak.currentStreak,
+        photoUrl: photoToSave
+      });
+      if (streak.outfitHistory.length > 15) {
+        streak.outfitHistory = streak.outfitHistory.slice(0, 15);
+      }
+
+      saveStreakState();
+      updateStreakUI();
+      renderOutfitHistoryGallery();
+      dismissReminderBanner();
+
+      showToast(`📸 Outfit photo saved! Today's streak (+1 🔥) was already recorded.`);
+      return;
+    }
+
+    // First upload of this calendar day: Advance streak by +1
     streak.currentStreak = (streak.currentStreak || 0) + 1;
     streak.savedPreviousStreak = streak.currentStreak;
     streak.isStreakBroken = false;
     streak.breakNotified = false;
     streak.uploadedToday = true;
     streak.lastUploadTimestamp = Date.now();
-    // 2. Local date calculation (replaces toISOString UTC bug)
-    streak.lastUploadDateStr = getLocalDateString(new Date());
+    streak.lastUploadDateStr = todayStr;
     streak.deadline = Date.now() + (24 * 3600 * 1000); // Reset next 24h deadline
     streak.morningReminderSent = false;
+    streak.middayReminderSent = false;
     streak.urgentReminderSent = false;
 
     // Persist to outfit history gallery
@@ -1994,7 +2103,7 @@
     streak.outfitHistory.unshift({
       id: 'outfit_' + Date.now(),
       timestamp: Date.now(),
-      dateStr: getLocalDateString(new Date()),
+      dateStr: todayStr,
       timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       streakCount: streak.currentStreak,
       photoUrl: photoToSave
@@ -2026,6 +2135,8 @@
   function showMissedStreakModal() {
     const modal = document.getElementById('missedStreakModal');
     if (!modal) return;
+    // Issue 3: Prevent duplicate modal openings when repeatedly clicked or already open
+    if (!modal.classList.contains('hidden')) return;
 
     const streak = state.streak;
     const lostCountEl = document.getElementById('missedStreakLostCount');
@@ -2076,6 +2187,7 @@
     const streak = state.streak;
     const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
 
+    // Issue 4: Preserve monthly restore restriction: disallow restoring multiple times in same cycle
     if (streak.lastRestoredCycleKey === currentCycleKey) {
       showToast('⚠️ Monthly restore already used. Refreshes on the 3rd.');
       return;
@@ -2086,6 +2198,17 @@
     streak.breakNotified = false;
     streak.lastRestoredCycleKey = currentCycleKey;
     streak.deadline = Date.now() + (24 * 3600 * 1000);
+
+    // Issue 2 & 4: Do not allow restoring to bypass the daily upload restriction.
+    // If an upload was already done today, uploadedToday remains true.
+    const todayStr = getLocalDateString(new Date());
+    streak.uploadedToday = (streak.lastUploadDateStr === todayStr);
+
+    // Issue 4: Reset only the appropriate reminder flags for the restored deadline cycle
+    streak.morningReminderSent = false;
+    streak.middayReminderSent = false;
+    streak.urgentReminderSent = false;
+
     saveStreakState();
 
     closeMissedStreakModal();
@@ -2108,8 +2231,14 @@
     streak.savedPreviousStreak = 0;
     streak.isStreakBroken = false;
     streak.breakNotified = false;
-    streak.uploadedToday = false;
     streak.deadline = Date.now() + (24 * 3600 * 1000);
+
+    const todayStr = getLocalDateString(new Date());
+    streak.uploadedToday = (streak.lastUploadDateStr === todayStr);
+
+    streak.morningReminderSent = false;
+    streak.middayReminderSent = false;
+    streak.urgentReminderSent = false;
     saveStreakState();
 
     closeMissedStreakModal();
@@ -2119,10 +2248,17 @@
 
   // Streak Details Modal
   function openStreakModal() {
+    const streak = state.streak;
+    // Issue 3: If streak is broken, allow direct manual access to missed streak modal for restore/restart
+    if (streak && streak.isStreakBroken) {
+      showMissedStreakModal();
+      return;
+    }
+
     const modal = document.getElementById('streakDetailsModal');
     if (!modal) return;
+    if (!modal.classList.contains('hidden')) return; // Guard against duplicate openings
 
-    const streak = state.streak;
     const heroCount = document.getElementById('modalHeroStreakCount');
     const heroCountdown = document.getElementById('modalHeroCountdown');
     const heroRestore = document.getElementById('modalHeroRestoreStatus');
@@ -2133,7 +2269,9 @@
       const diff = Math.max(0, streak.deadline - now);
       const hours = Math.floor(diff / (3600 * 1000));
       const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
-      heroCountdown.textContent = streak.uploadedToday ? '⏱️ Uploaded Today' : (streak.isStreakBroken ? '⏱️ Inactive' : '⏱️ 24h Window Active');
+      heroCountdown.textContent = streak.uploadedToday
+        ? '⏱️ Uploaded Today'
+        : (streak.isStreakBroken ? '⏱️ Inactive' : `⏱️ ${hours}h ${mins}m left`);
     }
 
     const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
@@ -2179,19 +2317,21 @@
     `).join('');
   }
 
-  // 4. User-Triggered Notification Permission Request
+  // 4. User-Triggered Notification Permission Request with Honest Support Checks
   async function requestNotificationPermission() {
     if (!('Notification' in window)) {
-      showToast('⚠️ Web notifications are not supported by this browser.');
+      showToast('⚠️ Web notifications are not supported by this browser or device.');
+      updateNotificationToggleUI();
       return;
     }
     if (Notification.permission === 'granted') {
-      showToast('🔔 Daily reminders are already enabled!');
+      showToast('🔔 Daily reminders are already active while browser is running!');
       updateNotificationToggleUI();
       return;
     }
     if (Notification.permission === 'denied') {
       showToast('⚠️ Notifications are blocked in browser settings. Please allow notifications for this site.');
+      updateNotificationToggleUI();
       return;
     }
     try {
@@ -2199,8 +2339,12 @@
       if (permission === 'granted') {
         showToast('🔔 Daily reminders enabled! You will be reminded before upload deadlines.');
         updateNotificationToggleUI();
+      } else if (permission === 'denied') {
+        showToast('⚠️ Notifications blocked. You can enable them anytime in browser settings.');
+        updateNotificationToggleUI();
       } else {
         showToast('Notification permission dismissed. You can enable it anytime.');
+        updateNotificationToggleUI();
       }
     } catch (err) {
       console.warn('Error requesting notification permission:', err);
@@ -2209,17 +2353,32 @@
 
   function updateNotificationToggleUI() {
     const btn = document.getElementById('btnStreakNotificationToggle');
+    const note = document.getElementById('streakNotificationSupportNote');
     if (!btn) return;
+
     if (!('Notification' in window)) {
-      btn.style.display = 'none';
+      btn.innerHTML = '<span>⚠️ Notifications Unsupported</span>';
+      btn.classList.remove('active');
+      btn.disabled = true;
+      if (note) note.textContent = 'Browser notifications are not supported by your current browser or device.';
       return;
     }
+
     if (Notification.permission === 'granted') {
       btn.innerHTML = '<span>🔔 Reminders Active</span>';
       btn.classList.add('active');
+      btn.disabled = false;
+      if (note) note.textContent = 'Active: Reminders trigger while browser is running. (Note: Closed-browser background alerts require an installed PWA or Push service).';
+    } else if (Notification.permission === 'denied') {
+      btn.innerHTML = '<span>🚫 Notifications Blocked</span>';
+      btn.classList.remove('active');
+      btn.disabled = false;
+      if (note) note.textContent = 'Notifications are blocked in your browser settings. Enable them to receive reminders.';
     } else {
       btn.innerHTML = '<span>🔔 Enable Daily Reminders</span>';
       btn.classList.remove('active');
+      btn.disabled = false;
+      if (note) note.textContent = 'Get notified in morning, midday, and 2 hours before the deadline to protect your streak.';
     }
   }
 
@@ -2249,17 +2408,35 @@
     if (modal) modal.classList.add('hidden');
   }
 
-  // 4. Daily Reminder Notifications System (Request permission only on user action)
-  function sendDailyNotification(title, body, isUrgent) {
-    // 1. Web Notification API only if ALREADY granted by user action
+  // 4. Daily Reminder Notifications System (Browser Notification & Service Worker Support)
+  function sendDailyNotification(title, body, isUrgent = false, tag = 'woobi-reminder') {
+    // 1. Browser & OS System Notification via Service Worker or Web Notification API
     if ('Notification' in window && Notification.permission === 'granted') {
-      try {
-        new Notification(title, {
-          body: body,
-          icon: 'assets/welcome_hero.jpg'
+      const notifOptions = {
+        body: body,
+        icon: 'assets/welcome_hero.jpg',
+        badge: 'assets/welcome_hero.jpg',
+        tag: tag, // Deduplicates notifications in system tray
+        renotify: false,
+        data: { url: './' }
+      };
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((reg) => {
+          if (reg && typeof reg.showNotification === 'function') {
+            reg.showNotification(title, notifOptions);
+          } else {
+            new Notification(title, notifOptions);
+          }
+        }).catch(() => {
+          try { new Notification(title, notifOptions); } catch (e) {}
         });
-      } catch (e) {
-        console.warn('System notification error', e);
+      } else {
+        try {
+          new Notification(title, notifOptions);
+        } catch (e) {
+          console.warn('System notification error:', e);
+        }
       }
     }
 
@@ -2293,6 +2470,8 @@
     if (!state.streak) return;
     state.streak.deadline = Date.now() + (1 * 3600 * 1000 + 59 * 60 * 1000); // 1h 59m
     state.streak.urgentReminderSent = false;
+    state.streak.middayReminderSent = true;
+    state.streak.morningReminderSent = true;
     state.streak.uploadedToday = false;
     state.streak.isStreakBroken = false;
     saveStreakState();
@@ -2307,6 +2486,7 @@
       state.streak.savedPreviousStreak = state.streak.currentStreak;
     }
     state.streak.deadline = Date.now() - 1000;
+    state.streak.isStreakBroken = false; // Allow breakStreak to execute fresh
     saveStreakState();
     breakStreak();
     showToast('💥 Simulated deadline expiration: Streak broken!');
@@ -2334,7 +2514,24 @@
   }
 
   function init() {
+    initServiceWorker();
     initStreakState();
+
+    // Tab visibility & focus handlers: attached only once to prevent duplicate listeners
+    if (!window._streakListenersAttached) {
+      window._streakListenersAttached = true;
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          checkStreakDeadline();
+          updateStreakUI();
+        }
+      });
+
+      window.addEventListener('focus', () => {
+        checkStreakDeadline();
+        updateStreakUI();
+      });
+    }
 
     renderCurrentLook();
     renderWardrobeGrid();
@@ -2350,7 +2547,6 @@
       goToScreen('today');
     }
   }
-
   // Expose public API to window for inline HTML onclick handlers
   const appExports = {
     goToScreen,
@@ -2429,6 +2625,7 @@
     serenInteract,
 
     // Daily Outfit-Upload Streak & Countdown Timer API
+    initStreakState,
     openStreakModal,
     closeStreakModal,
     triggerOutfitPhotoUpload,
@@ -2447,6 +2644,7 @@
     devToggleRestoreToken,
     devResetStreak,
     requestNotificationPermission,
+    updateNotificationToggleUI,
     enableDevMode,
     disableDevMode,
     renderOutfitHistoryGallery

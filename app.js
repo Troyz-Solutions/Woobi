@@ -332,6 +332,38 @@
     if (rBot) rBot.src = look.bottom.photo;
     if (rShoe) rShoe.src = look.footwear.photo;
     if (rAcc) rAcc.src = look.accessory.photo;
+
+    // Daily Drawer Recommendation Card Mount
+    const mount = document.getElementById('todayOutfitCardMount');
+    if (mount) {
+      mount.innerHTML = `
+        <div class="rec-outfit-preview-card">
+          <div class="rec-card-top-row">
+            <span class="rec-look-title">${look.title}</span>
+            <span class="rec-look-tag">Look ${state.currentLookIndex + 1} of ${LOOKS_DATA.length}</span>
+          </div>
+          <p class="rec-look-caption">${look.caption}</p>
+          <div class="outfit-board-card" style="margin-bottom: 12px;">
+            <div class="quad-item top-left"><img src="${look.top.photo}" alt="${look.top.name}"></div>
+            <div class="quad-item top-right"><img src="${look.bottom.photo}" alt="${look.bottom.name}"></div>
+            <div class="quad-item bot-left"><img src="${look.footwear.photo}" alt="${look.footwear.name}"></div>
+            <div class="quad-item bot-right"><img src="${look.accessory.photo}" alt="${look.accessory.name}"></div>
+          </div>
+          <div class="rec-card-actions">
+            <button class="btn-camera-upload" onclick="app.triggerOutfitPhotoUpload()" title="Upload outfit photo to increase streak">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span>Upload Today's Outfit (+1 🔥)</span>
+            </button>
+            <button class="btn-outline-white" onclick="app.goToScreen('outfit-details'); app.serenToggleDailyLooks(false);">
+              View Look Details & Swap Pieces
+            </button>
+          </div>
+        </div>
+      `;
+    }
   }
 
   function setTodayOccasion(occ, btn) {
@@ -1556,7 +1588,754 @@
     }
   }
 
-function init() {
+  // =========================================================================
+  // 9. DAILY OUTFIT-UPLOAD STREAK & COUNTDOWN TIMER SYSTEM
+  // =========================================================================
+  const STREAK_STORAGE_KEY = 'woobi_outfit_streak_v2';
+
+  // Helper: Determine calendar monthly restore cycle key (refreshes on 3rd of every month)
+  function getMonthlyRestoreCycleKey(dateObj) {
+    const d = dateObj || new Date();
+    const year = d.getFullYear();
+    const month = d.getMonth(); // 0-indexed (0 = Jan, 9 = Oct)
+    const day = d.getDate();
+
+    if (day >= 3) {
+      // Current cycle starts on 3rd of this month
+      return `${year}-${String(month + 1).padStart(2, '0')}`;
+    } else {
+      // Prior cycle: belongs to cycle starting on 3rd of previous month
+      const prev = new Date(year, month - 1, 3);
+      return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+    }
+  }
+
+  // Helper: Format next refresh date string (e.g. "Nov 3, 2026")
+  function getNextRestoreRefreshDateStr(dateObj) {
+    const d = dateObj || new Date();
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const day = d.getDate();
+
+    let targetDate;
+    if (day < 3) {
+      targetDate = new Date(year, month, 3);
+    } else {
+      targetDate = new Date(year, month + 1, 3);
+    }
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${monthNames[targetDate.getMonth()]} 3, ${targetDate.getFullYear()}`;
+  }
+
+  // Local Timezone Date String Helper (fixes UTC toISOString timezone mismatch)
+  function getLocalDateString(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  // Optimize & Compress Photo for safe localStorage persistence
+  function optimizePhotoForStorage(dataUrl, maxDimension = 500, quality = 0.75) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDimension || h > maxDimension) {
+          if (w > h) {
+            h = Math.round((h * maxDimension) / w);
+            w = maxDimension;
+          } else {
+            w = Math.round((w * maxDimension) / h);
+            h = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  function initStreakState() {
+    let saved = null;
+    try {
+      const raw = localStorage.getItem(STREAK_STORAGE_KEY);
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {
+      console.warn('Could not read streak from localStorage', e);
+    }
+
+    const now = Date.now();
+    const defaultDeadline = now + (24 * 3600 * 1000); // 24-hour window from outfit recommendation
+
+    if (!saved) {
+      state.streak = {
+        currentStreak: 5, // Default starter streak of 5 days
+        savedPreviousStreak: 5,
+        isStreakBroken: false,
+        deadline: defaultDeadline,
+        lastUploadTimestamp: now - (12 * 3600 * 1000),
+        lastUploadDateStr: getLocalDateString(new Date(now - 12 * 3600 * 1000)),
+        outfitHistory: [],
+        breakNotified: false,
+        lastRestoredCycleKey: null, // Eligible for restore!
+        uploadedToday: false,
+        morningReminderSent: false,
+        urgentReminderSent: false
+      };
+      saveStreakState();
+    } else {
+      state.streak = saved;
+      const todayStr = getLocalDateString(new Date());
+      state.streak.uploadedToday = (state.streak.lastUploadDateStr === todayStr);
+    }
+
+    // Check deadline on launch
+    checkStreakDeadline();
+
+    // Start 1-second countdown ticker
+    if (window._streakTicker) clearInterval(window._streakTicker);
+    window._streakTicker = setInterval(tickStreakCountdown, 1000);
+
+    // Initial UI render
+    updateStreakUI();
+
+    // If streak broke (or broke while user was away), trigger blowout + smoke animation then pop up
+    if (state.streak.isStreakBroken) {
+      if (!state.streak.breakNotified) {
+        state.streak.breakNotified = true;
+        saveStreakState();
+        setTimeout(() => {
+          triggerFlameBlowoutAnimation();
+          setTimeout(() => {
+            showMissedStreakModal();
+          }, 1400);
+        }, 500);
+      } else {
+        // Already notified in a previous visit; ensure UI shows resting broken state
+        setTimeout(() => {
+          showMissedStreakModal();
+        }, 700);
+      }
+    }
+
+    // QA & Dev Controls visibility check
+    updateDevControlsVisibility();
+  }
+
+  function saveStreakState() {
+    try {
+      localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(state.streak));
+    } catch (e) {
+      console.warn('Could not persist streak to localStorage', e);
+    }
+  }
+
+  function tickStreakCountdown() {
+    if (!state.streak) return;
+    checkStreakDeadline();
+    updateStreakUI();
+  }
+
+  function checkStreakDeadline() {
+    const streak = state.streak;
+    if (!streak) return;
+
+    if (streak.isStreakBroken) return;
+    if (streak.uploadedToday) return;
+
+    const now = Date.now();
+    const msRemaining = streak.deadline - now;
+
+    // 1. Deadline passed: Streak breaks
+    if (msRemaining <= 0) {
+      breakStreak();
+      return;
+    }
+
+    // 2. Last 2 Hours Warning Threshold: msRemaining <= 2 hours
+    const TWO_HOURS_MS = 2 * 3600 * 1000;
+    if (msRemaining <= TWO_HOURS_MS) {
+      if (!streak.urgentReminderSent) {
+        streak.urgentReminderSent = true;
+        saveStreakState();
+        sendDailyNotification(
+          '⚠️ 2 Hours Left on Your Outfit Streak!',
+          `Only 2 hours left to upload today's outfit photo before your 🔥 ${streak.currentStreak}-day streak ends!`,
+          true
+        );
+      }
+    } else {
+      // Normal Reminder: e.g. 8 hours remaining
+      const EIGHT_HOURS_MS = 8 * 3600 * 1000;
+      if (msRemaining <= EIGHT_HOURS_MS && !streak.morningReminderSent) {
+        streak.morningReminderSent = true;
+        saveStreakState();
+        sendDailyNotification(
+          'Woobi Daily Outfit Reminder 🔥',
+          `Don't forget to snap and upload your recommended outfit to maintain your 🔥 ${streak.currentStreak}-day streak!`,
+          false
+        );
+      }
+    }
+  }
+
+  function breakStreak() {
+    const streak = state.streak;
+    if (streak.isStreakBroken) return;
+
+    streak.isStreakBroken = true;
+    if (streak.currentStreak > 0) {
+      streak.savedPreviousStreak = streak.currentStreak;
+    } else if (!streak.savedPreviousStreak) {
+      streak.savedPreviousStreak = 1;
+    }
+    streak.currentStreak = 0;
+    streak.uploadedToday = false;
+    saveStreakState();
+
+    // Trigger visual flame blowout and smoke animation
+    triggerFlameBlowoutAnimation();
+
+    // Show missed upload modal
+    setTimeout(() => {
+      showMissedStreakModal();
+    }, 1200);
+  }
+
+  function triggerFlameBlowoutAnimation() {
+    const flameWrapper = document.getElementById('streakFlameWrapper');
+    if (flameWrapper) {
+      flameWrapper.classList.remove('reignited', 'inactive');
+      flameWrapper.classList.add('blown-out');
+
+      // Seamlessly transition to resting inactive state once smoke rises and disperses (~2.2s)
+      setTimeout(() => {
+        if (state.streak && state.streak.isStreakBroken) {
+          flameWrapper.classList.add('inactive');
+        }
+      }, 2200);
+    }
+
+    const pill = document.getElementById('streakHeaderPill');
+    if (pill) {
+      pill.classList.remove('urgent', 'completed');
+      pill.classList.add('inactive');
+    }
+
+    const timer = document.getElementById('streakTimer');
+    if (timer) timer.textContent = '⏱️';
+  }
+
+  function updateStreakUI() {
+    const streak = state.streak;
+    if (!streak) return;
+
+    const streakCountEl = document.getElementById('streakCount');
+    const streakTimerEl = document.getElementById('streakTimer');
+    const streakPillEl = document.getElementById('streakHeaderPill');
+    const streakDrawerCountEl = document.querySelector('.streak-drawer-count');
+    const readyTimerMini = document.getElementById('streakReadyTimerMini');
+    const flameWrapper = document.getElementById('streakFlameWrapper');
+
+    if (streakCountEl) streakCountEl.textContent = streak.currentStreak;
+    if (streakDrawerCountEl) streakDrawerCountEl.textContent = streak.currentStreak;
+    if (streakTimerEl) streakTimerEl.textContent = '⏱️';
+    if (readyTimerMini) readyTimerMini.textContent = '⏱️';
+
+    if (streak.isStreakBroken) {
+      if (streakPillEl) {
+        streakPillEl.classList.remove('urgent', 'completed');
+        streakPillEl.classList.add('inactive');
+      }
+      if (flameWrapper && !flameWrapper.classList.contains('blown-out')) {
+        flameWrapper.classList.add('inactive');
+      }
+      return;
+    }
+
+    // Flame is active
+    if (flameWrapper) {
+      flameWrapper.classList.remove('blown-out', 'inactive');
+    }
+
+    if (streakPillEl) {
+      streakPillEl.classList.remove('inactive');
+    }
+
+    if (streak.uploadedToday) {
+      if (streakPillEl) {
+        streakPillEl.classList.remove('urgent', 'inactive');
+        streakPillEl.classList.add('completed');
+      }
+      return;
+    }
+
+    const now = Date.now();
+    const diff = Math.max(0, streak.deadline - now);
+
+    // Last 2 Hours Warning Threshold: <= 2 hours (7200 seconds)
+    const isUrgent = diff <= (2 * 3600 * 1000);
+    if (streakPillEl) {
+      streakPillEl.classList.toggle('urgent', isUrgent);
+      streakPillEl.classList.remove('completed', 'inactive');
+    }
+  }
+
+  // Camera upload triggers
+  function triggerOutfitPhotoUpload() {
+    const input = document.getElementById('outfitPhotoInput');
+    if (input) {
+      input.value = '';
+      input.click();
+    }
+  }
+
+  // 3. Image Validation: MIME type, file size (max 10MB), and error handling
+  function handleOutfitPhotoSelected(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    // Validate MIME type
+    const validMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/jpg'];
+    const isImage = file.type ? (file.type.startsWith('image/') || validMimes.includes(file.type.toLowerCase())) : /\.(jpe?g|png|webp|heic)$/i.test(file.name);
+    if (!isImage) {
+      showToast('⚠️ Invalid file type. Please select a valid photo (JPEG, PNG, or WebP).');
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file size: 10MB maximum limit
+    const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      showToast(`⚠️ Image too large (${sizeMb} MB). Maximum allowed size is 10 MB.`);
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+      try {
+        const rawDataUrl = e.target.result;
+        // Optimize and compress for storage & preview
+        const optimized = await optimizePhotoForStorage(rawDataUrl, 600, 0.8);
+        state.pendingOutfitPhoto = optimized;
+        openPhotoConfirmModal(optimized);
+      } catch (err) {
+        console.error('Error optimizing photo:', err);
+        showToast('⚠️ Could not process image preview. Please try another photo.');
+      }
+    };
+
+    reader.onerror = function (err) {
+      console.error('FileReader error:', err);
+      showToast('⚠️ Failed to load the selected photo. Please try again.');
+      event.target.value = '';
+    };
+
+    reader.onabort = function () {
+      showToast('⚠️ Photo reading was cancelled.');
+      event.target.value = '';
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function openPhotoConfirmModal(imgDataUrl) {
+    const modal = document.getElementById('outfitPhotoConfirmModal');
+    const previewImg = document.getElementById('outfitPhotoPreviewImg');
+    const currVal = document.getElementById('confirmCurrentStreakVal');
+    const newVal = document.getElementById('confirmNewStreakVal');
+
+    if (previewImg) previewImg.src = imgDataUrl || 'assets/welcome_hero.jpg';
+    if (currVal) currVal.textContent = state.streak ? state.streak.currentStreak : 0;
+    if (newVal) newVal.textContent = (state.streak ? state.streak.currentStreak : 0) + 1;
+
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function closePhotoConfirmModal() {
+    const modal = document.getElementById('outfitPhotoConfirmModal');
+    if (modal) modal.classList.add('hidden');
+    state.pendingOutfitPhoto = null;
+  }
+
+  // 1. Photo Upload Implementation & Persistence
+  function confirmOutfitPhotoUpload() {
+    const photoToSave = state.pendingOutfitPhoto || 'assets/welcome_hero.jpg';
+    closePhotoConfirmModal();
+
+    const streak = state.streak;
+    streak.currentStreak = (streak.currentStreak || 0) + 1;
+    streak.savedPreviousStreak = streak.currentStreak;
+    streak.isStreakBroken = false;
+    streak.breakNotified = false;
+    streak.uploadedToday = true;
+    streak.lastUploadTimestamp = Date.now();
+    // 2. Local date calculation (replaces toISOString UTC bug)
+    streak.lastUploadDateStr = getLocalDateString(new Date());
+    streak.deadline = Date.now() + (24 * 3600 * 1000); // Reset next 24h deadline
+    streak.morningReminderSent = false;
+    streak.urgentReminderSent = false;
+
+    // Persist to outfit history gallery
+    if (!Array.isArray(streak.outfitHistory)) {
+      streak.outfitHistory = [];
+    }
+    streak.outfitHistory.unshift({
+      id: 'outfit_' + Date.now(),
+      timestamp: Date.now(),
+      dateStr: getLocalDateString(new Date()),
+      timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      streakCount: streak.currentStreak,
+      photoUrl: photoToSave
+    });
+    // Keep last 15 uploads to remain well within localStorage budget
+    if (streak.outfitHistory.length > 15) {
+      streak.outfitHistory = streak.outfitHistory.slice(0, 15);
+    }
+    streak.lastUploadedPhoto = photoToSave;
+
+    saveStreakState();
+
+    // Re-ignite flame animation
+    const flameWrapper = document.getElementById('streakFlameWrapper');
+    if (flameWrapper) {
+      flameWrapper.classList.remove('blown-out', 'inactive');
+      flameWrapper.classList.add('reignited');
+      setTimeout(() => flameWrapper.classList.remove('reignited'), 1000);
+    }
+
+    updateStreakUI();
+    renderOutfitHistoryGallery();
+    dismissReminderBanner();
+
+    showToast(`🔥 Outfit photo uploaded & streak increased to ${streak.currentStreak}!`);
+  }
+
+  // Missed Upload Modal and Monthly Restoration Logic
+  function showMissedStreakModal() {
+    const modal = document.getElementById('missedStreakModal');
+    if (!modal) return;
+
+    const streak = state.streak;
+    const lostCountEl = document.getElementById('missedStreakLostCount');
+    const statusCard = document.getElementById('restoreStatusCard');
+    const statusIcon = document.getElementById('restoreStatusIcon');
+    const statusTitle = document.getElementById('restoreStatusTitle');
+    const statusSubtitle = document.getElementById('restoreStatusSubtitle');
+    const btnRestore = document.getElementById('btnRestoreStreak');
+
+    if (lostCountEl) {
+      lostCountEl.textContent = `${streak.savedPreviousStreak || 1} Days`;
+    }
+
+    // Check Monthly Restore Eligibility (Refreshes on 3rd of month)
+    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
+    const isEligible = streak.lastRestoredCycleKey !== currentCycleKey;
+    const nextRefreshDate = getNextRestoreRefreshDateStr(new Date());
+
+    if (isEligible) {
+      if (statusCard) statusCard.classList.remove('ineligible');
+      if (statusIcon) statusIcon.textContent = '✨';
+      if (statusTitle) statusTitle.textContent = 'Monthly Restoration Available!';
+      if (statusSubtitle) statusSubtitle.textContent = `You have 1 free restore for this monthly cycle. (Refreshes on the 3rd of every month)`;
+      if (btnRestore) {
+        btnRestore.disabled = false;
+        btnRestore.textContent = `Restore Streak (${streak.savedPreviousStreak || 1} Days) 🔥`;
+      }
+    } else {
+      if (statusCard) statusCard.classList.add('ineligible');
+      if (statusIcon) statusIcon.textContent = '🔒';
+      if (statusTitle) statusTitle.textContent = 'Monthly Restore Used for this Cycle';
+      if (statusSubtitle) statusSubtitle.textContent = `Your free restore refreshes on ${nextRefreshDate}.`;
+      if (btnRestore) {
+        btnRestore.disabled = true;
+        btnRestore.textContent = `Restore Used (Refreshes ${nextRefreshDate})`;
+      }
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeMissedStreakModal() {
+    const modal = document.getElementById('missedStreakModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function restoreMonthlyStreak() {
+    const streak = state.streak;
+    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
+
+    if (streak.lastRestoredCycleKey === currentCycleKey) {
+      showToast('⚠️ Monthly restore already used. Refreshes on the 3rd.');
+      return;
+    }
+
+    streak.currentStreak = streak.savedPreviousStreak || 1;
+    streak.isStreakBroken = false;
+    streak.breakNotified = false;
+    streak.lastRestoredCycleKey = currentCycleKey;
+    streak.deadline = Date.now() + (24 * 3600 * 1000);
+    saveStreakState();
+
+    closeMissedStreakModal();
+
+    // Re-ignite flame
+    const flameWrapper = document.getElementById('streakFlameWrapper');
+    if (flameWrapper) {
+      flameWrapper.classList.remove('blown-out', 'inactive');
+      flameWrapper.classList.add('reignited');
+      setTimeout(() => flameWrapper.classList.remove('reignited'), 1200);
+    }
+
+    updateStreakUI();
+    showToast(`✨ Streak restored to ${streak.currentStreak}! Your flame is back! 🔥`);
+  }
+
+  function startNewStreak() {
+    const streak = state.streak;
+    streak.currentStreak = 0;
+    streak.savedPreviousStreak = 0;
+    streak.isStreakBroken = false;
+    streak.breakNotified = false;
+    streak.uploadedToday = false;
+    streak.deadline = Date.now() + (24 * 3600 * 1000);
+    saveStreakState();
+
+    closeMissedStreakModal();
+    updateStreakUI();
+    showToast('Starting a fresh streak! Upload today\'s outfit to light your 🔥 flame.');
+  }
+
+  // Streak Details Modal
+  function openStreakModal() {
+    const modal = document.getElementById('streakDetailsModal');
+    if (!modal) return;
+
+    const streak = state.streak;
+    const heroCount = document.getElementById('modalHeroStreakCount');
+    const heroCountdown = document.getElementById('modalHeroCountdown');
+    const heroRestore = document.getElementById('modalHeroRestoreStatus');
+
+    if (heroCount) heroCount.textContent = streak.currentStreak;
+    if (heroCountdown) {
+      const now = Date.now();
+      const diff = Math.max(0, streak.deadline - now);
+      const hours = Math.floor(diff / (3600 * 1000));
+      const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
+      heroCountdown.textContent = streak.uploadedToday ? '⏱️ Uploaded Today' : (streak.isStreakBroken ? '⏱️ Inactive' : '⏱️ 24h Window Active');
+    }
+
+    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
+    const isEligible = streak.lastRestoredCycleKey !== currentCycleKey;
+    if (heroRestore) {
+      heroRestore.textContent = isEligible ? 'Available (3rd)' : 'Used this month';
+    }
+
+    const heroFlame = document.getElementById('modalHeroFlame');
+    if (heroFlame) {
+      heroFlame.classList.toggle('inactive', !!streak.isStreakBroken);
+    }
+
+    renderOutfitHistoryGallery();
+    updateNotificationToggleUI();
+    updateDevControlsVisibility();
+
+    modal.classList.remove('hidden');
+  }
+
+  // Render recent outfit uploads gallery in streak modal
+  function renderOutfitHistoryGallery() {
+    const container = document.getElementById('streakOutfitGallery');
+    if (!container) return;
+
+    const history = (state.streak && state.streak.outfitHistory) || [];
+    if (history.length === 0) {
+      container.innerHTML = `
+        <div class="gallery-empty-state">
+          <span class="gallery-empty-icon">📷</span>
+          <p>No outfits uploaded yet. Snap your first look today!</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = history.slice(0, 6).map((item) => `
+      <div class="streak-gallery-card" title="Uploaded on ${item.dateStr} at ${item.timeStr}">
+        <img src="${item.photoUrl}" alt="Streak Outfit on ${item.dateStr}" class="gallery-card-img" />
+        <div class="gallery-card-badge">🔥 ${item.streakCount}</div>
+        <div class="gallery-card-meta">${item.dateStr}</div>
+      </div>
+    `).join('');
+  }
+
+  // 4. User-Triggered Notification Permission Request
+  async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+      showToast('⚠️ Web notifications are not supported by this browser.');
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      showToast('🔔 Daily reminders are already enabled!');
+      updateNotificationToggleUI();
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      showToast('⚠️ Notifications are blocked in browser settings. Please allow notifications for this site.');
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        showToast('🔔 Daily reminders enabled! You will be reminded before upload deadlines.');
+        updateNotificationToggleUI();
+      } else {
+        showToast('Notification permission dismissed. You can enable it anytime.');
+      }
+    } catch (err) {
+      console.warn('Error requesting notification permission:', err);
+    }
+  }
+
+  function updateNotificationToggleUI() {
+    const btn = document.getElementById('btnStreakNotificationToggle');
+    if (!btn) return;
+    if (!('Notification' in window)) {
+      btn.style.display = 'none';
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      btn.innerHTML = '<span>🔔 Reminders Active</span>';
+      btn.classList.add('active');
+    } else {
+      btn.innerHTML = '<span>🔔 Enable Daily Reminders</span>';
+      btn.classList.remove('active');
+    }
+  }
+
+  // 5. QA & Developer Controls Production Gating
+  function updateDevControlsVisibility() {
+    const devSection = document.getElementById('streakDevControlsSection');
+    if (!devSection) return;
+    const isDev = window.location.search.includes('dev=true') || 
+                  localStorage.getItem('woobi_dev_mode') === 'true';
+    devSection.style.display = isDev ? 'block' : 'none';
+  }
+
+  function enableDevMode() {
+    localStorage.setItem('woobi_dev_mode', 'true');
+    updateDevControlsVisibility();
+    showToast('🛠️ QA Developer Mode enabled.');
+  }
+
+  function disableDevMode() {
+    localStorage.removeItem('woobi_dev_mode');
+    updateDevControlsVisibility();
+    showToast('🔒 QA Developer Mode disabled.');
+  }
+
+  function closeStreakModal() {
+    const modal = document.getElementById('streakDetailsModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  // 4. Daily Reminder Notifications System (Request permission only on user action)
+  function sendDailyNotification(title, body, isUrgent) {
+    // 1. Web Notification API only if ALREADY granted by user action
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body: body,
+          icon: 'assets/welcome_hero.jpg'
+        });
+      } catch (e) {
+        console.warn('System notification error', e);
+      }
+    }
+
+    // 2. In-App Floating Reminder Banner
+    const banner = document.getElementById('inAppReminderBanner');
+    const titleEl = document.getElementById('reminderBannerTitle');
+    const bodyEl = document.getElementById('reminderBannerBody');
+    const iconEl = document.getElementById('reminderBannerIcon');
+
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) bodyEl.textContent = body;
+    if (iconEl) iconEl.innerHTML = isUrgent ? '<span>⚠️</span>' : '<span>🔥</span>';
+
+    if (banner) {
+      banner.classList.toggle('urgent', isUrgent);
+      banner.classList.remove('hidden');
+    }
+  }
+
+  function dismissReminderBanner() {
+    const banner = document.getElementById('inAppReminderBanner');
+    if (banner) banner.classList.add('hidden');
+  }
+
+  // QA & Developer Simulation Tools
+  function devSimulateUpload() {
+    openPhotoConfirmModal('assets/navy_shirt.jpg');
+  }
+
+  function devSimulateTwoHoursLeft() {
+    if (!state.streak) return;
+    state.streak.deadline = Date.now() + (1 * 3600 * 1000 + 59 * 60 * 1000); // 1h 59m
+    state.streak.urgentReminderSent = false;
+    state.streak.uploadedToday = false;
+    state.streak.isStreakBroken = false;
+    saveStreakState();
+    checkStreakDeadline();
+    updateStreakUI();
+    showToast('⏱️ Simulated: Exactly 1h 59m remaining (2-hour warning triggered)');
+  }
+
+  function devSimulateStreakBreak() {
+    if (!state.streak) return;
+    if (state.streak.currentStreak > 0) {
+      state.streak.savedPreviousStreak = state.streak.currentStreak;
+    }
+    state.streak.deadline = Date.now() - 1000;
+    saveStreakState();
+    breakStreak();
+    showToast('💥 Simulated deadline expiration: Streak broken!');
+  }
+
+  function devToggleRestoreToken() {
+    if (!state.streak) return;
+    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
+    if (state.streak.lastRestoredCycleKey === currentCycleKey) {
+      state.streak.lastRestoredCycleKey = null;
+      showToast('🔄 Restored Monthly Token: Now ELIGIBLE for 3rd date cycle!');
+    } else {
+      state.streak.lastRestoredCycleKey = currentCycleKey;
+      showToast('🔒 Marked Monthly Token as USED for current cycle.');
+    }
+    saveStreakState();
+    checkStreakDeadline();
+    updateStreakUI();
+  }
+
+  function devResetStreak() {
+    localStorage.removeItem(STREAK_STORAGE_KEY);
+    initStreakState();
+    showToast('🗑️ Reset streak to default 5-day active streak.');
+  }
+
+  function init() {
+    initStreakState();
+
     renderCurrentLook();
     renderWardrobeGrid();
     updateWardrobeCounts();
@@ -1647,7 +2426,30 @@ function init() {
     serenCycleLooks: () => serenToggleDailyLooks(true),
     setStudioCamera,
     onStudioCameraChanged,
-    serenInteract
+    serenInteract,
+
+    // Daily Outfit-Upload Streak & Countdown Timer API
+    openStreakModal,
+    closeStreakModal,
+    triggerOutfitPhotoUpload,
+    handleOutfitPhotoSelected,
+    openPhotoConfirmModal,
+    closePhotoConfirmModal,
+    confirmOutfitPhotoUpload,
+    showMissedStreakModal,
+    closeMissedStreakModal,
+    restoreMonthlyStreak,
+    startNewStreak,
+    dismissReminderBanner,
+    devSimulateUpload,
+    devSimulateTwoHoursLeft,
+    devSimulateStreakBreak,
+    devToggleRestoreToken,
+    devResetStreak,
+    requestNotificationPermission,
+    enableDevMode,
+    disableDevMode,
+    renderOutfitHistoryGallery
   };
 
   window.app = Object.assign(window.app || {}, appExports);

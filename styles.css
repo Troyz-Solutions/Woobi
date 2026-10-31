@@ -6606,3 +6606,1389 @@ html, body {
 .seren-back-studio-btn.hidden {
   display: none !important;
 }
+
+/* ==========================================================================
+   DAILY OUTFIT-UPLOAD STREAK & COUNTDOWN TIMER SYSTEM
+   ========================================================================== */
+
+/* 1. Header Streak Pill */
+.streak-header-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(215, 202, 185, 0.8);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(45, 38, 30, 0.08);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.streak-header-pill:hover {
+  background: #FFFFFF;
+  border-color: rgba(180, 160, 135, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(45, 38, 30, 0.12);
+}
+
+.streak-count {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #2F2821;
+}
+
+.streak-sep {
+  color: #C0B4A4;
+  font-weight: 300;
+  font-size: 0.9rem;
+}
+
+.streak-timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.94rem;
+  line-height: 1;
+  transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, filter 0.25s ease;
+  user-select: none;
+}
+
+/* 2. Last 2 Hours Warning Urgent State */
+.streak-header-pill.urgent {
+  background: #FFF3EF !important;
+  border-color: #FF5722 !important;
+  box-shadow: 0 0 18px rgba(255, 87, 34, 0.35) !important;
+  animation: urgentStreakPulse 1.4s ease-in-out infinite alternate;
+}
+
+.streak-header-pill.urgent .streak-timer {
+  animation: timerUrgentTock 1.2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 3px rgba(255, 87, 34, 0.6));
+}
+
+.streak-header-pill.completed {
+  background: #F2F8F3 !important;
+  border-color: #66BB6A !important;
+}
+
+.streak-header-pill.inactive {
+  background: rgba(248, 245, 240, 0.9) !important;
+  border-color: rgba(215, 206, 196, 0.75) !important;
+  box-shadow: 0 2px 8px rgba(45, 38, 30, 0.04) !important;
+  opacity: 0.88;
+}
+
+.streak-header-pill.inactive .streak-count {
+  color: #8A7E72;
+}
+
+.streak-header-pill.inactive .streak-timer {
+  opacity: 0.75;
+}
+
+@keyframes urgentStreakPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(255, 87, 34, 0.25);
+  }
+  100% {
+    transform: scale(1.04);
+    box-shadow: 0 0 22px rgba(255, 87, 34, 0.55);
+  }
+}
+
+@keyframes timerUrgentTock {
+  0% { transform: scale(1) rotate(-4deg); }
+  100% { transform: scale(1.15) rotate(4deg); }
+}
+
+/* 3. Realistic Living Flame & Combustion System */
+.streak-flame-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+}
+
+.realistic-fire-system {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 24px;
+  pointer-events: none;
+  transform-origin: 50% 90%;
+  will-change: transform, filter, opacity;
+  transition: opacity 0.45s ease, filter 0.45s ease, transform 0.45s ease;
+}
+
+/* Atmospheric breathing heat haze aura */
+.fire-ambient-glow {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 120, 0, 0.42) 0%, rgba(255, 60, 0, 0.18) 50%, rgba(255, 40, 0, 0) 75%);
+  pointer-events: none;
+  animation: heatHazePulse 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes heatHazePulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0.88;
+  }
+}
+
+/* Main Vector Flame Canvas */
+.realistic-flame-svg {
+  position: relative;
+  width: 18px;
+  height: 22px;
+  overflow: visible;
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(255, 110, 0, 0.65)) drop-shadow(0 0 7px rgba(255, 60, 0, 0.35));
+}
+
+/* Outer Combustion Envelope: fluid convection swaying and breathing */
+.flame-outer {
+  transform-origin: 16px 35px;
+  animation: flameOuterSway 2.4s cubic-bezier(0.44, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+@keyframes flameOuterSway {
+  0% {
+    transform: translateY(0) scaleY(1) scaleX(1) rotate(-1.5deg);
+  }
+  20% {
+    transform: translateY(-0.8px) scaleY(1.05) scaleX(0.97) rotate(2deg);
+  }
+  42% {
+    transform: translateY(-0.2px) scaleY(0.98) scaleX(1.03) rotate(-2.2deg);
+  }
+  65% {
+    transform: translateY(-1.2px) scaleY(1.06) scaleX(0.96) rotate(1.8deg);
+  }
+  82% {
+    transform: translateY(-0.4px) scaleY(1.01) scaleX(1.01) rotate(-0.8deg);
+  }
+  100% {
+    transform: translateY(0) scaleY(1) scaleX(1) rotate(-1.5deg);
+  }
+}
+
+/* Secondary Dynamic Dancing Tongue: independent phase & fluttering */
+.flame-secondary {
+  transform-origin: 16px 27px;
+  animation: flameSecondaryDance 1.65s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes flameSecondaryDance {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  30% {
+    transform: translateY(-0.6px) scale(1.06, 1.08) rotate(3deg);
+    opacity: 0.96;
+  }
+  70% {
+    transform: translateY(-1px) scale(0.96, 1.04) rotate(-3.5deg);
+    opacity: 0.88;
+  }
+  100% {
+    transform: translateY(-0.3px) scale(1.03, 0.98) rotate(1.5deg);
+    opacity: 0.94;
+  }
+}
+
+/* Mid Convection Tongue: golden internal heat flow */
+.flame-mid {
+  transform-origin: 16px 29px;
+  animation: flameMidConvection 1.95s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes flameMidConvection {
+  0% {
+    transform: translateY(0) scale(1) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-0.9px) scale(1.04, 1.07) rotate(2deg);
+  }
+  100% {
+    transform: translateY(-0.4px) scale(0.98, 1.02) rotate(-1.5deg);
+  }
+}
+
+/* White-Hot Core: rapid plasma micro-flickering */
+.flame-core {
+  transform-origin: 16px 30px;
+  animation: flameCoreFlicker 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes flameCoreFlicker {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 0.95;
+  }
+  25% {
+    transform: scale(1.06, 1.08) translateY(-0.4px);
+    opacity: 1;
+  }
+  55% {
+    transform: scale(0.94, 0.96) translateY(0.2px);
+    opacity: 0.9;
+  }
+  78% {
+    transform: scale(1.04, 1.05) translateY(-0.3px);
+    opacity: 0.98;
+  }
+  100% {
+    transform: scale(0.97, 1.01) translateY(0);
+    opacity: 0.94;
+  }
+}
+
+/* Micro-Ember Sparks Lifting off the flame */
+.fire-embers-field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.fire-spark {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff8e1;
+  box-shadow: 0 0 3px #ff9800, 0 0 6px rgba(255, 87, 34, 0.85);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.fire-spark.s1 {
+  width: 1.8px;
+  height: 1.8px;
+  top: 10px;
+  left: 11px;
+  animation: sparkRise1 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 0.2s;
+}
+
+.fire-spark.s2 {
+  width: 2.2px;
+  height: 2.2px;
+  top: 9px;
+  left: 12px;
+  animation: sparkRise2 2.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 0.9s;
+}
+
+.fire-spark.s3 {
+  width: 1.6px;
+  height: 1.6px;
+  top: 11px;
+  left: 9px;
+  animation: sparkRise3 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 1.6s;
+}
+
+.fire-spark.s4 {
+  width: 2px;
+  height: 2px;
+  top: 8px;
+  left: 13px;
+  animation: sparkRise4 2.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 2.1s;
+}
+
+@keyframes sparkRise1 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-1.5px, -4px) scale(1);
+  }
+  60% {
+    opacity: 0.85;
+    transform: translate(-3px, -11px) scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-4.5px, -18px) scale(0.3);
+  }
+}
+
+@keyframes sparkRise2 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(1.8px, -5px) scale(1.1);
+  }
+  65% {
+    opacity: 0.8;
+    transform: translate(3.2px, -13px) scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(4.5px, -20px) scale(0.2);
+  }
+}
+
+@keyframes sparkRise3 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-0.8px, -4.5px) scale(1);
+  }
+  70% {
+    opacity: 0.75;
+    transform: translate(-1.8px, -12px) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-2.5px, -17px) scale(0.2);
+  }
+}
+
+@keyframes sparkRise4 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(2px, -4px) scale(1);
+  }
+  60% {
+    opacity: 0.85;
+    transform: translate(2.8px, -10px) scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(3.5px, -16px) scale(0.2);
+  }
+}
+
+/* Extinguish Blow-Out Transition */
+.streak-flame-wrapper.blown-out .realistic-fire-system {
+  animation: realisticFlameBlowOut 0.55s cubic-bezier(0.25, 0.9, 0.35, 1) forwards !important;
+}
+
+@keyframes realisticFlameBlowOut {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 5px rgba(255, 120, 0, 0.8)) brightness(1);
+  }
+  25% {
+    transform: translateY(-2px) scale(1.15) rotate(-14deg);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 10px rgba(255, 80, 0, 0.9)) brightness(1.2);
+  }
+  55% {
+    transform: translateY(1.5px) scale(0.65, 0.5) rotate(12deg);
+    opacity: 0.6;
+    filter: drop-shadow(0 0 4px rgba(255, 60, 0, 0.5)) brightness(0.8);
+  }
+  80% {
+    transform: translateY(3px) scale(0.3, 0.2) rotate(-5deg);
+    opacity: 0.2;
+    filter: grayscale(0.9) brightness(0.6);
+  }
+  100% {
+    transform: translateY(4px) scale(0) rotate(0deg);
+    opacity: 0;
+    filter: grayscale(1) opacity(0);
+  }
+}
+
+/* Inactive resting state */
+.streak-flame-wrapper.inactive .realistic-fire-system {
+  animation: none !important;
+  opacity: 0.28;
+  filter: grayscale(1) contrast(0.85);
+  transform: scale(0.88) translateY(0);
+  transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
+}
+
+.streak-flame-wrapper.inactive .fire-ambient-glow,
+.streak-flame-wrapper.inactive .fire-spark,
+.streak-flame-wrapper.blown-out .fire-spark,
+.streak-flame-wrapper.blown-out .fire-ambient-glow {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+/* Re-ignition transition */
+.streak-flame-wrapper.reignited .realistic-fire-system {
+  animation: realisticFlameReignite 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+@keyframes realisticFlameReignite {
+  0% {
+    transform: scale(0) translateY(4px);
+    opacity: 0;
+    filter: drop-shadow(0 0 0 rgba(255, 140, 0, 0));
+  }
+  60% {
+    transform: scale(1.28) translateY(-2px);
+    opacity: 1;
+    filter: drop-shadow(0 -2px 12px rgba(255, 100, 0, 0.95)) brightness(1.25);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    filter: drop-shadow(0 0 3px rgba(255, 110, 0, 0.65)) drop-shadow(0 0 7px rgba(255, 60, 0, 0.35));
+  }
+}
+
+/* Modal Hero Flame Styling */
+.streak-hero-flame-box .realistic-fire-system {
+  width: 48px;
+  height: 56px;
+  margin: 0 auto;
+}
+
+.streak-hero-flame-box .realistic-flame-svg {
+  width: 44px;
+  height: 52px;
+}
+
+.streak-hero-flame-box .fire-ambient-glow {
+  width: 70px;
+  height: 70px;
+}
+
+.streak-hero-flame-box .fire-spark.s1 { top: 22px; left: 20px; }
+.streak-hero-flame-box .fire-spark.s2 { top: 20px; left: 24px; }
+.streak-hero-flame-box .fire-spark.s3 { top: 24px; left: 18px; }
+.streak-hero-flame-box .fire-spark.s4 { top: 19px; left: 26px; }
+
+/* Legacy Fallback for streak-flame-emoji if rendered */
+.streak-flame-emoji {
+  display: inline-block;
+  font-size: 1.18rem;
+  line-height: 1;
+  transform-origin: 50% 88%;
+}
+
+/* Smoke particles that rise after blowout */
+.smoke-particles {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.smoke-particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.25);
+  background: radial-gradient(circle at 38% 38%, rgba(195, 195, 195, 0.85) 0%, rgba(155, 155, 155, 0.5) 45%, rgba(125, 125, 125, 0.2) 70%, rgba(220, 220, 220, 0) 100%);
+  filter: blur(1.2px);
+}
+
+.smoke-particle.p1 { width: 8px; height: 8px; margin-left: -2px; }
+.smoke-particle.p2 { width: 11px; height: 11px; margin-left: 1px; }
+.smoke-particle.p3 { width: 9px; height: 9px; margin-left: 3px; }
+.smoke-particle.p4 { width: 13px; height: 13px; margin-left: -1px; }
+.smoke-particle.p5 { width: 10px; height: 10px; margin-left: -3px; }
+.smoke-particle.p6 { width: 14px; height: 14px; margin-left: 2px; }
+
+/* Smoke animations triggered on .blown-out */
+.streak-flame-wrapper.blown-out .smoke-particle.p1 {
+  animation: smokeRisePuff1 2.0s cubic-bezier(0.22, 0.61, 0.36, 1) 0.18s forwards;
+}
+.streak-flame-wrapper.blown-out .smoke-particle.p2 {
+  animation: smokeRisePuff2 2.2s cubic-bezier(0.22, 0.61, 0.36, 1) 0.30s forwards;
+}
+.streak-flame-wrapper.blown-out .smoke-particle.p3 {
+  animation: smokeRisePuff3 2.1s cubic-bezier(0.22, 0.61, 0.36, 1) 0.44s forwards;
+}
+.streak-flame-wrapper.blown-out .smoke-particle.p4 {
+  animation: smokeRisePuff4 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) 0.58s forwards;
+}
+.streak-flame-wrapper.blown-out .smoke-particle.p5 {
+  animation: smokeRisePuff5 2.3s cubic-bezier(0.22, 0.61, 0.36, 1) 0.72s forwards;
+}
+.streak-flame-wrapper.blown-out .smoke-particle.p6 {
+  animation: smokeRisePuff6 2.5s cubic-bezier(0.22, 0.61, 0.36, 1) 0.86s forwards;
+}
+
+@keyframes smokeRisePuff1 {
+  0% { opacity: 0.85; transform: translate(-50%, -50%) scale(0.3); filter: blur(1px); }
+  35% { opacity: 0.65; transform: translate(-65%, -18px) scale(1.1); filter: blur(2.5px); }
+  70% { opacity: 0.3; transform: translate(-80%, -34px) scale(1.7); filter: blur(4.5px); }
+  100% { opacity: 0; transform: translate(-95%, -48px) scale(2.2); filter: blur(6.5px); }
+}
+
+@keyframes smokeRisePuff2 {
+  0% { opacity: 0.85; transform: translate(-50%, -50%) scale(0.3); filter: blur(1px); }
+  35% { opacity: 0.7; transform: translate(-35%, -22px) scale(1.2); filter: blur(2.8px); }
+  70% { opacity: 0.35; transform: translate(-25%, -40px) scale(1.8); filter: blur(5px); }
+  100% { opacity: 0; transform: translate(-15%, -56px) scale(2.4); filter: blur(7px); }
+}
+
+@keyframes smokeRisePuff3 {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.25); filter: blur(1px); }
+  35% { opacity: 0.6; transform: translate(-20%, -19px) scale(1.15); filter: blur(2.4px); }
+  70% { opacity: 0.28; transform: translate(-10%, -36px) scale(1.6); filter: blur(4.5px); }
+  100% { opacity: 0; transform: translate(0%, -50px) scale(2.1); filter: blur(6.5px); }
+}
+
+@keyframes smokeRisePuff4 {
+  0% { opacity: 0.85; transform: translate(-50%, -50%) scale(0.35); filter: blur(1.2px); }
+  35% { opacity: 0.65; transform: translate(-52%, -25px) scale(1.25); filter: blur(3px); }
+  70% { opacity: 0.3; transform: translate(-55%, -44px) scale(1.9); filter: blur(5.5px); }
+  100% { opacity: 0; transform: translate(-58%, -60px) scale(2.5); filter: blur(8px); }
+}
+
+@keyframes smokeRisePuff5 {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.28); filter: blur(1px); }
+  35% { opacity: 0.58; transform: translate(-70%, -20px) scale(1.2); filter: blur(2.6px); }
+  70% { opacity: 0.25; transform: translate(-88%, -38px) scale(1.7); filter: blur(5px); }
+  100% { opacity: 0; transform: translate(-105%, -52px) scale(2.2); filter: blur(7px); }
+}
+
+@keyframes smokeRisePuff6 {
+  0% { opacity: 0.75; transform: translate(-50%, -50%) scale(0.3); filter: blur(1.2px); }
+  35% { opacity: 0.55; transform: translate(-40%, -26px) scale(1.3); filter: blur(3.2px); }
+  70% { opacity: 0.22; transform: translate(-30%, -46px) scale(1.9); filter: blur(6px); }
+  100% { opacity: 0; transform: translate(-20%, -64px) scale(2.6); filter: blur(8.5px); }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .realistic-fire-system,
+  .fire-ambient-glow,
+  .flame-outer,
+  .flame-secondary,
+  .flame-mid,
+  .flame-core,
+  .fire-spark,
+  .streak-flame-emoji,
+  .smoke-particle,
+  .streak-header-pill.urgent,
+  .streak-header-pill.urgent .streak-timer {
+    animation: none !important;
+    transition: none !important;
+  }
+  .streak-flame-wrapper.blown-out .streak-flame-emoji,
+  .streak-flame-wrapper.inactive .streak-flame-emoji {
+    opacity: 0.35 !important;
+    transform: scale(0.9) !important;
+    filter: grayscale(1) !important;
+  }
+}
+
+
+
+/* 4. Drawer Streak Header Badge */
+.daily-drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.streak-drawer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #F4EDE4;
+  border: 1px solid rgba(210, 196, 178, 0.7);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #3C3023;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.streak-drawer-badge:hover {
+  background: #EFE4D6;
+}
+
+/* 5. Outfit Recommendation Card Mount & Camera Button */
+.rec-outfit-preview-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(225, 215, 202, 0.75);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(45, 38, 30, 0.05);
+}
+
+.rec-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.rec-look-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2F2821;
+}
+
+.rec-look-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #556B2F;
+  background: #F0F4E8;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.rec-look-caption {
+  font-size: 0.82rem;
+  color: #6C5F51;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.rec-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.btn-camera-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #3B4B3D;
+  color: #FAF8F5;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(59, 75, 61, 0.22);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-camera-upload:hover {
+  background: #2E3C30;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(59, 75, 61, 0.32);
+}
+
+.btn-camera-upload svg {
+  stroke-width: 2.2;
+}
+
+/* 6. Outfit Selected Ready Screen Streak Card */
+.streak-ready-card {
+  background: #FAF6F0;
+  border: 1px solid rgba(220, 206, 188, 0.7);
+  border-radius: 18px;
+  padding: 16px;
+  margin-top: 14px;
+  box-shadow: 0 3px 12px rgba(45, 38, 30, 0.04);
+}
+
+.streak-ready-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.streak-ready-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #C85A17;
+  background: #FFF1E6;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.streak-ready-timer-mini {
+  font-family: 'SF Mono', monospace;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #7A6956;
+}
+
+.streak-ready-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.streak-ready-text strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #2F2821;
+  margin-bottom: 2px;
+}
+
+.streak-ready-text p {
+  font-size: 0.8rem;
+  color: #6C5F51;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* 7. In-App Notification Reminder Banner */
+.in-app-reminder-banner {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 120;
+  background: #2D2721;
+  color: #FAF8F5;
+  border-radius: 18px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: slideDownBanner 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+.in-app-reminder-banner.urgent {
+  background: #60140D;
+  border: 1px solid #FF5722;
+  box-shadow: 0 0 24px rgba(255, 87, 34, 0.45);
+}
+
+.in-app-reminder-banner.hidden {
+  display: none !important;
+}
+
+@keyframes slideDownBanner {
+  0% { transform: translateY(-40px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.reminder-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reminder-banner-icon-wrap {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.reminder-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.reminder-banner-text strong {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.reminder-banner-text p {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 2px 0 0 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reminder-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-banner-snap {
+  background: #FAF8F5;
+  color: #2D2721;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-banner-close {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 8. Modals (Photo Confirm, Missed Streak, Streak Details) */
+.streak-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(30, 25, 20, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeInBackdrop 0.25s ease-out;
+}
+
+.streak-modal-backdrop.hidden {
+  display: none !important;
+}
+
+@keyframes fadeInBackdrop {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.streak-modal-card {
+  position: relative;
+  background: #FFFDF9;
+  border: 1px solid rgba(220, 208, 192, 0.85);
+  border-radius: 26px;
+  padding: 24px 22px;
+  width: 100%;
+  max-width: 340px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+  animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+@keyframes scaleInModal {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.streak-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.streak-modal-title {
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2F2821;
+}
+
+.streak-modal-close {
+  background: rgba(220, 210, 195, 0.3);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  color: #5A4C3D;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.streak-photo-preview-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #EFE9DF;
+  margin-bottom: 12px;
+}
+
+.streak-photo-preview-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.streak-verify-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(45, 40, 32, 0.85);
+  backdrop-filter: blur(6px);
+  color: #FAF8F5;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.streak-confirm-meta {
+  margin-bottom: 10px;
+}
+
+.streak-current-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F5EFE6;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  color: #4A3E31;
+}
+
+.streak-next-highlight {
+  color: #C85A17;
+}
+
+.streak-modal-hint {
+  font-size: 0.82rem;
+  color: #6C5F51;
+  line-height: 1.45;
+  margin: 0 0 16px 0;
+}
+
+.streak-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 9. Missed Upload Pop-up Modal Styling */
+.missed-streak-card {
+  text-align: center;
+  padding: 30px 22px;
+}
+
+.extinguished-flame-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  background: #F4EBE1;
+  border-radius: 50%;
+  margin: 0 auto 16px auto;
+}
+
+.extinguished-ember {
+  font-size: 2.2rem;
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.smoke-extinguished-graphic {
+  position: absolute;
+  top: 6px;
+  display: flex;
+  gap: 8px;
+  font-size: 1.2rem;
+  animation: smokePuffWaft 2s ease-in-out infinite alternate;
+}
+
+@keyframes smokePuffWaft {
+  0% { transform: translateY(0) scale(0.9); opacity: 0.4; }
+  100% { transform: translateY(-8px) scale(1.15); opacity: 0.85; }
+}
+
+.missed-modal-headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #2F2821;
+  margin: 0 0 8px 0;
+  line-height: 1.25;
+}
+
+.missed-modal-lead {
+  font-size: 0.88rem;
+  color: #6A5B4C;
+  margin: 0 0 18px 0;
+  line-height: 1.4;
+}
+
+.lost-streak-stat-box {
+  background: #F7EFE6;
+  border: 1px dashed #D5C2AD;
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-bottom: 16px;
+}
+
+.lost-streak-stat-box .stat-lbl {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 700;
+  color: #8C755E;
+}
+
+.lost-streak-stat-box .stat-num {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #A33A2B;
+}
+
+.restore-status-card {
+  background: #FFF8E7;
+  border: 1px solid #FFE082;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.restore-status-card.ineligible {
+  background: #F3F1ED;
+  border-color: #D8D2C7;
+}
+
+.restore-status-indicator {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.restore-status-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.restore-status-text strong {
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #5D4037;
+}
+
+.restore-status-text span {
+  display: block;
+  font-size: 0.74rem;
+  color: #795548;
+  margin-top: 2px;
+}
+
+.btn-restore-action {
+  background: #C85A17 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(200, 90, 23, 0.3) !important;
+}
+
+.btn-restore-action:hover {
+  background: #A8480E !important;
+}
+
+.btn-restore-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 10. Detailed Streak & QA Simulator Modal */
+.streak-details-card {
+  max-width: 360px;
+}
+
+.streak-hero-display {
+  text-align: center;
+  padding: 16px 0;
+  background: #FAF6F0;
+  border-radius: 18px;
+  margin-bottom: 16px;
+}
+
+.streak-hero-flame-box {
+  font-size: 2.8rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.streak-hero-count {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #2F2821;
+  line-height: 1;
+}
+
+.streak-hero-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  color: #8C7A65;
+  margin-top: 6px;
+}
+
+.streak-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.streak-info-box {
+  background: #F5EFE6;
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.streak-info-box .info-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #8C755E;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.streak-info-box .info-val {
+  display: block;
+  font-family: 'SF Mono', monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #2F2821;
+}
+
+.streak-rules-box {
+  background: #FFFFFF;
+  border: 1px solid rgba(220, 208, 192, 0.6);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rule-item {
+  font-size: 0.78rem;
+  color: #5C4F40;
+  line-height: 1.35;
+}
+
+.streak-main-action {
+  margin-bottom: 14px;
+}
+
+.streak-dev-details {
+  background: #F1ECE3;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.76rem;
+}
+
+.streak-dev-summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #55483A;
+  outline: none;
+}
+
+.streak-dev-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dev-btn {
+  background: #FFFFFF;
+  border: 1px solid rgba(195, 180, 160, 0.7);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #3C3023;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.dev-btn:hover {
+  background: #EFE4D6;
+}
+
+/* User Notification Toggle Button */
+.streak-notification-action-row {
+  margin-bottom: 14px;
+}
+
+.btn-notification-toggle {
+  width: 100%;
+  padding: 10px 14px;
+  background: #F5EFE6;
+  border: 1px dashed #C3B4A0;
+  border-radius: 12px;
+  color: #4A3E31;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-notification-toggle:hover {
+  background: #EFE4D6;
+}
+
+.btn-notification-toggle.active {
+  background: rgba(94, 107, 72, 0.12);
+  border: 1px solid #5E6B48;
+  color: #455230;
+}
+
+/* 1. Outfit History Gallery inside modal */
+.streak-gallery-section {
+  background: #FFFFFF;
+  border: 1px solid rgba(220, 208, 192, 0.65);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.streak-gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.gallery-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2F2821;
+}
+
+.gallery-sub {
+  font-size: 0.7rem;
+  color: #8C755E;
+}
+
+.streak-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.streak-gallery-card {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #F5EFE6;
+  border: 1px solid rgba(200, 185, 168, 0.5);
+}
+
+.gallery-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-card-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(20, 15, 10, 0.75);
+  color: #FFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.gallery-card-meta {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  color: #FFF;
+  font-size: 0.62rem;
+  padding: 6px 4px 2px;
+  text-align: center;
+}
+
+.gallery-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 14px 8px;
+  color: #8C755E;
+}
+
+.gallery-empty-icon {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.gallery-empty-state p {
+  font-size: 0.74rem;
+  margin: 0;
+  line-height: 1.3;
+}

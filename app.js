@@ -1688,16 +1688,17 @@
     const todayStr = getLocalDateString(new Date());
 
     if (!saved) {
+      // Issue 2 Fix: New users start at 0 (not 5)
       state.streak = {
-        currentStreak: 5, // Default starter streak of 5 days
-        savedPreviousStreak: 5,
+        currentStreak: 0, // Starts at 0 for new users
+        savedPreviousStreak: 0,
         isStreakBroken: false,
         deadline: defaultDeadline,
-        lastUploadTimestamp: now - (24 * 3600 * 1000),
-        lastUploadDateStr: getLocalDateString(new Date(now - 24 * 3600 * 1000)),
+        lastUploadTimestamp: 0,
+        lastUploadDateStr: '',
         outfitHistory: [],
         breakNotified: false,
-        lastRestoredCycleKey: null, // Eligible for restore!
+        lastRestoredCycleKey: null,
         uploadedToday: false,
         morningReminderSent: false,
         middayReminderSent: false,
@@ -1743,6 +1744,16 @@
     try {
       localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(state.streak));
     } catch (e) {
+      // Issue 3 Fix: Handle localStorage quota exceeded error gracefully by pruning history
+      if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+        if (state.streak && Array.isArray(state.streak.outfitHistory) && state.streak.outfitHistory.length > 3) {
+          state.streak.outfitHistory = state.streak.outfitHistory.slice(0, 3);
+          try {
+            localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(state.streak));
+            return;
+          } catch (e2) {}
+        }
+      }
       console.warn('Could not persist streak to localStorage', e);
     }
   }
@@ -2023,13 +2034,14 @@
     if (currVal) currVal.textContent = currentCount;
     if (newVal) newVal.textContent = alreadyUploadedToday ? currentCount : currentCount + 1;
 
+    // Issue 4 Fix: Clear, non-misleading button label and explanation when already uploaded today
     if (confirmBtn) {
-      confirmBtn.textContent = alreadyUploadedToday ? 'Save Look to History' : 'Confirm Upload (+1 🔥)';
+      confirmBtn.textContent = alreadyUploadedToday ? "Update Today's Look" : "Confirm Upload (+1 🔥)";
     }
     if (hintEl) {
       hintEl.innerHTML = alreadyUploadedToday
-        ? 'You have already increased your streak today! Confirming will save this photo to your history without increasing your streak again.'
-        : 'Looks sharp! Confirming this photo completes today\'s challenge and adds <strong>+1 🔥</strong> to your streak.';
+        ? "You have already completed today's streak challenge. Confirming will update today's photo in your history without increasing your streak count again."
+        : "Looks sharp! Confirming this photo completes today\'s challenge and adds <strong>+1 🔥</strong> to your streak.";
     }
 
     if (modal) modal.classList.remove('hidden');
@@ -2053,7 +2065,8 @@
     // Strict calendar day check: validate lastUploadDateStr consistently
     const alreadyUploadedToday = (streak.lastUploadDateStr === todayStr);
 
-    // If an upload has already been recorded for this calendar day, do not increment streak again
+    // Issue 4 Fix: If an upload has already been confirmed for today, update today's existing look
+    // in outfit history without adding duplicate gallery cards or misleading +1 toast messages
     if (alreadyUploadedToday) {
       streak.lastUploadedPhoto = photoToSave;
       streak.lastUploadTimestamp = Date.now();
@@ -2062,14 +2075,24 @@
       if (!Array.isArray(streak.outfitHistory)) {
         streak.outfitHistory = [];
       }
-      streak.outfitHistory.unshift({
-        id: 'outfit_' + Date.now(),
-        timestamp: Date.now(),
-        dateStr: todayStr,
-        timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        streakCount: streak.currentStreak,
-        photoUrl: photoToSave
-      });
+
+      // Update today's entry in history rather than creating duplicate entries
+      const existingTodayIndex = streak.outfitHistory.findIndex((item) => item.dateStr === todayStr);
+      if (existingTodayIndex !== -1) {
+        streak.outfitHistory[existingTodayIndex].photoUrl = photoToSave;
+        streak.outfitHistory[existingTodayIndex].timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        streak.outfitHistory[existingTodayIndex].timestamp = Date.now();
+      } else {
+        streak.outfitHistory.unshift({
+          id: 'outfit_' + Date.now(),
+          timestamp: Date.now(),
+          dateStr: todayStr,
+          timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          streakCount: streak.currentStreak,
+          photoUrl: photoToSave
+        });
+      }
+
       if (streak.outfitHistory.length > 15) {
         streak.outfitHistory = streak.outfitHistory.slice(0, 15);
       }
@@ -2079,7 +2102,8 @@
       renderOutfitHistoryGallery();
       dismissReminderBanner();
 
-      showToast(`📸 Outfit photo saved! Today's streak (+1 🔥) was already recorded.`);
+      // Honest, non-misleading message (does NOT claim +1)
+      showToast("📸 Today's outfit photo updated in history! Daily streak is already active.");
       return;
     }
 
@@ -2317,8 +2341,8 @@
     `).join('');
   }
 
-  // 4. User-Triggered Notification Permission Request with Honest Support Checks
-  async function requestNotificationPermission() {
+  // Issue 1 Fix: Notification Permission Request with Dual Callback/Promise Support (No un-async await syntax errors)
+  function requestNotificationPermission() {
     if (!('Notification' in window)) {
       showToast('⚠️ Web notifications are not supported by this browser or device.');
       updateNotificationToggleUI();
@@ -2334,10 +2358,10 @@
       updateNotificationToggleUI();
       return;
     }
-    try {
-      const permission = await Notification.requestPermission();
+
+    function onPermissionResult(permission) {
       if (permission === 'granted') {
-        showToast('🔔 Daily reminders enabled! You will be reminded before upload deadlines.');
+        showToast('🔔 Daily reminders enabled! You will be reminded before upload deadlines while the browser is running.');
         updateNotificationToggleUI();
       } else if (permission === 'denied') {
         showToast('⚠️ Notifications blocked. You can enable them anytime in browser settings.');
@@ -2345,6 +2369,15 @@
       } else {
         showToast('Notification permission dismissed. You can enable it anytime.');
         updateNotificationToggleUI();
+      }
+    }
+
+    try {
+      const result = Notification.requestPermission(onPermissionResult);
+      if (result && typeof result.then === 'function') {
+        result.then(onPermissionResult).catch((err) => {
+          console.warn('Error requesting notification permission:', err);
+        });
       }
     } catch (err) {
       console.warn('Error requesting notification permission:', err);
@@ -2368,7 +2401,7 @@
       btn.innerHTML = '<span>🔔 Reminders Active</span>';
       btn.classList.add('active');
       btn.disabled = false;
-      if (note) note.textContent = 'Active: Reminders trigger while browser is running. (Note: Closed-browser background alerts require an installed PWA or Push service).';
+      if (note) note.textContent = 'Active: Reminders trigger while browser is open or backgrounded. Closed-browser alerts require a push server.';
     } else if (Notification.permission === 'denied') {
       btn.innerHTML = '<span>🚫 Notifications Blocked</span>';
       btn.classList.remove('active');
@@ -2382,23 +2415,38 @@
     }
   }
 
-  // 5. QA & Developer Controls Production Gating
+  // Issue 6 Fix: Secure Developer Mode Access Control Gating
+  function isDevEnvironment() {
+    const isLocal = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname === '';
+    // Gated exclusively to local development hosts - completely blocked on production domains
+    if (!isLocal) return false;
+    return window.location.search.includes('dev=true') || 
+           sessionStorage.getItem('woobi_dev_mode') === 'true';
+  }
+
   function updateDevControlsVisibility() {
     const devSection = document.getElementById('streakDevControlsSection');
     if (!devSection) return;
-    const isDev = window.location.search.includes('dev=true') || 
-                  localStorage.getItem('woobi_dev_mode') === 'true';
-    devSection.style.display = isDev ? 'block' : 'none';
+    devSection.style.display = isDevEnvironment() ? 'block' : 'none';
   }
 
   function enableDevMode() {
-    localStorage.setItem('woobi_dev_mode', 'true');
+    const isLocal = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname === '';
+    if (!isLocal) {
+      console.warn('Developer tools are disabled in production.');
+      return;
+    }
+    sessionStorage.setItem('woobi_dev_mode', 'true');
     updateDevControlsVisibility();
-    showToast('🛠️ QA Developer Mode enabled.');
+    showToast('🛠️ QA Developer Mode enabled for local session.');
   }
 
   function disableDevMode() {
-    localStorage.removeItem('woobi_dev_mode');
+    sessionStorage.removeItem('woobi_dev_mode');
     updateDevControlsVisibility();
     showToast('🔒 QA Developer Mode disabled.');
   }
@@ -2461,13 +2509,14 @@
     if (banner) banner.classList.add('hidden');
   }
 
-  // QA & Developer Simulation Tools
+  // QA & Developer Simulation Tools (Gated to local development)
   function devSimulateUpload() {
+    if (!isDevEnvironment()) return;
     openPhotoConfirmModal('assets/navy_shirt.jpg');
   }
 
   function devSimulateTwoHoursLeft() {
-    if (!state.streak) return;
+    if (!isDevEnvironment() || !state.streak) return;
     state.streak.deadline = Date.now() + (1 * 3600 * 1000 + 59 * 60 * 1000); // 1h 59m
     state.streak.urgentReminderSent = false;
     state.streak.middayReminderSent = true;
@@ -2481,7 +2530,7 @@
   }
 
   function devSimulateStreakBreak() {
-    if (!state.streak) return;
+    if (!isDevEnvironment() || !state.streak) return;
     if (state.streak.currentStreak > 0) {
       state.streak.savedPreviousStreak = state.streak.currentStreak;
     }
@@ -2493,7 +2542,7 @@
   }
 
   function devToggleRestoreToken() {
-    if (!state.streak) return;
+    if (!isDevEnvironment() || !state.streak) return;
     const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
     if (state.streak.lastRestoredCycleKey === currentCycleKey) {
       state.streak.lastRestoredCycleKey = null;
@@ -2508,9 +2557,10 @@
   }
 
   function devResetStreak() {
+    if (!isDevEnvironment()) return;
     localStorage.removeItem(STREAK_STORAGE_KEY);
     initStreakState();
-    showToast('🗑️ Reset streak to default 5-day active streak.');
+    showToast('🗑️ Reset streak to 0-day starter streak.');
   }
 
   function init() {
@@ -2647,6 +2697,7 @@
     updateNotificationToggleUI,
     enableDevMode,
     disableDevMode,
+    updateDevControlsVisibility,
     renderOutfitHistoryGallery
   };
 

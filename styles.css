@@ -7867,5 +7867,128 @@ html, body {
 .dev-btn:hover {
   background: #EFE4D6;
 }
-  display: none !important;
+
+/* User Notification Toggle Button */
+.streak-notification-action-row {
+  margin-bottom: 14px;
+}
+
+.btn-notification-toggle {
+  width: 100%;
+  padding: 10px 14px;
+  background: #F5EFE6;
+  border: 1px dashed #C3B4A0;
+  border-radius: 12px;
+  color: #4A3E31;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-notification-toggle:hover {
+  background: #EFE4D6;
+}
+
+.btn-notification-toggle.active {
+  background: rgba(94, 107, 72, 0.12);
+  border: 1px solid #5E6B48;
+  color: #455230;
+}
+
+/* 1. Outfit History Gallery inside modal */
+.streak-gallery-section {
+  background: #FFFFFF;
+  border: 1px solid rgba(220, 208, 192, 0.65);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.streak-gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.gallery-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #2F2821;
+}
+
+.gallery-sub {
+  font-size: 0.7rem;
+  color: #8C755E;
+}
+
+.streak-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.streak-gallery-card {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #F5EFE6;
+  border: 1px solid rgba(200, 185, 168, 0.5);
+}
+
+.gallery-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-card-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(20, 15, 10, 0.75);
+  color: #FFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.gallery-card-meta {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  color: #FFF;
+  font-size: 0.62rem;
+  padding: 6px 4px 2px;
+  text-align: center;
+}
+
+.gallery-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 14px 8px;
+  color: #8C755E;
+}
+
+.gallery-empty-icon {
+  font-size: 1.4rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.gallery-empty-state p {
+  font-size: 0.74rem;
+  margin: 0;
+  line-height: 1.3;
 }

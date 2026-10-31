@@ -3066,8 +3066,26 @@
         </button>
       </div>
 
-      <!-- Developer / QA Testing Controls -->
-      <details class="streak-dev-details">
+      <!-- 4. User Notification Action Button -->
+      <div class="streak-notification-action-row">
+        <button class="btn-notification-toggle" id="btnStreakNotificationToggle" onclick="app.requestNotificationPermission()">
+          <span>🔔 Enable Daily Reminders</span>
+        </button>
+      </div>
+
+      <!-- 1. Recent Outfit Uploads Gallery -->
+      <div class="streak-gallery-section">
+        <div class="streak-gallery-header">
+          <span class="gallery-title">Recent Outfit History</span>
+          <span class="gallery-sub">Uploaded Looks</span>
+        </div>
+        <div class="streak-gallery-grid" id="streakOutfitGallery">
+          <!-- Filled dynamically by renderOutfitHistoryGallery -->
+        </div>
+      </div>
+
+      <!-- 5. Developer / QA Testing Controls (Hidden by default in production) -->
+      <details class="streak-dev-details" id="streakDevControlsSection" style="display: none;">
         <summary class="streak-dev-summary">⚙️ QA & Feature Testing Tools</summary>
         <div class="streak-dev-controls">
           <button class="dev-btn" onclick="app.devSimulateUpload()">⚡ Instant Upload (+1)</button>

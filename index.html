@@ -366,7 +366,54 @@
             <!-- Daily Outfit Streak & Countdown Timer Pill -->
             <div class="streak-header-pill" id="streakHeaderPill" onclick="app.openStreakModal()" title="View Daily Outfit Streak & Upload">
               <div class="streak-flame-wrapper" id="streakFlameWrapper">
-                <span class="streak-flame-emoji" id="streakFlameIcon">🔥</span>
+                <div class="realistic-fire-system" id="streakFlameIcon" aria-label="Living Streak Flame">
+                  <div class="fire-ambient-glow"></div>
+                  <svg class="realistic-flame-svg" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="flameGradOuter" x1="16" y1="38" x2="16" y2="2" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#b71c1c" />
+                        <stop offset="20%" stop-color="#d84315" />
+                        <stop offset="45%" stop-color="#f4511e" />
+                        <stop offset="75%" stop-color="#fb8c00" />
+                        <stop offset="100%" stop-color="#ffd54f" />
+                      </linearGradient>
+                      <linearGradient id="flameGradMid" x1="16" y1="36" x2="16" y2="8" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#e65100" />
+                        <stop offset="35%" stop-color="#f57f17" />
+                        <stop offset="70%" stop-color="#fbc02d" />
+                        <stop offset="100%" stop-color="#fff9c4" />
+                      </linearGradient>
+                      <linearGradient id="flameGradCore" x1="16" y1="34" x2="16" y2="16" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#ff9800" />
+                        <stop offset="30%" stop-color="#fff59d" />
+                        <stop offset="70%" stop-color="#ffffff" />
+                        <stop offset="100%" stop-color="#ffffff" />
+                      </linearGradient>
+                      <filter id="flameGlowFilter" x="-30%" y="-30%" width="160%" height="160%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="0.6" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <path class="flame-layer flame-base-coal" d="M10 35 C10 37.5 22 37.5 22 35 C21 34 11 34 10 35 Z" fill="#d84315" opacity="0.9" />
+                    <path class="flame-layer flame-outer" filter="url(#flameGlowFilter)" fill="url(#flameGradOuter)"
+                      d="M16 2.5 C17 6.5 19 9.5 21.5 12.5 C24.2 15.8 26 19.5 26 24 C26 29.8 21.5 35 16 35 C10.5 35 6 29.8 6 24 C6 18.2 9.2 14.2 11.8 10.8 C13.8 8.2 14.8 5 16 2.5 Z" />
+                    <path class="flame-layer flame-secondary" fill="url(#flameGradMid)"
+                      d="M15.5 8 C17.8 11.5 21.2 14.8 21.5 19 C21.8 23.2 18.8 26.2 16.2 27 C13.8 27.8 10.2 26 10 22.8 C9.8 19.2 12.2 15.8 13.8 12.8 C14.8 10.5 15.2 9 15.5 8 Z" opacity="0.92" />
+                    <path class="flame-layer flame-mid" fill="url(#flameGradMid)"
+                      d="M16 12 C18.2 15.5 19.8 18.2 19.8 22 C19.8 26 17.6 29 16 29 C14.4 29 12.2 26 12.2 22 C12.2 18.2 13.8 15.5 16 12 Z" opacity="0.96" />
+                    <path class="flame-layer flame-core" fill="url(#flameGradCore)"
+                      d="M16 18 C17.2 20.5 18 22.8 18 25.5 C18 28.5 16.8 30.5 16 30.5 C15.2 30.5 14 28.5 14 25.5 C14 22.8 14.8 20.5 16 18 Z" />
+                  </svg>
+                  <div class="fire-embers-field">
+                    <span class="fire-spark s1"></span>
+                    <span class="fire-spark s2"></span>
+                    <span class="fire-spark s3"></span>
+                    <span class="fire-spark s4"></span>
+                  </div>
+                </div>
                 <div class="smoke-particles" id="smokeParticles">
                   <span class="smoke-particle p1"></span>
                   <span class="smoke-particle p2"></span>
@@ -2971,7 +3018,26 @@
       
       <div class="streak-hero-display">
         <div class="streak-hero-flame-box">
-          <span class="streak-hero-flame" id="modalHeroFlame">🔥</span>
+          <div class="realistic-fire-system hero" id="modalHeroFlame" aria-label="Hero Streak Flame">
+            <div class="fire-ambient-glow"></div>
+            <svg class="realistic-flame-svg" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path class="flame-layer flame-base-coal" d="M10 35 C10 37.5 22 37.5 22 35 C21 34 11 34 10 35 Z" fill="#d84315" opacity="0.9" />
+              <path class="flame-layer flame-outer" filter="url(#flameGlowFilter)" fill="url(#flameGradOuter)"
+                d="M16 2.5 C17 6.5 19 9.5 21.5 12.5 C24.2 15.8 26 19.5 26 24 C26 29.8 21.5 35 16 35 C10.5 35 6 29.8 6 24 C6 18.2 9.2 14.2 11.8 10.8 C13.8 8.2 14.8 5 16 2.5 Z" />
+              <path class="flame-layer flame-secondary" fill="url(#flameGradMid)"
+                d="M15.5 8 C17.8 11.5 21.2 14.8 21.5 19 C21.8 23.2 18.8 26.2 16.2 27 C13.8 27.8 10.2 26 10 22.8 C9.8 19.2 12.2 15.8 13.8 12.8 C14.8 10.5 15.2 9 15.5 8 Z" opacity="0.92" />
+              <path class="flame-layer flame-mid" fill="url(#flameGradMid)"
+                d="M16 12 C18.2 15.5 19.8 18.2 19.8 22 C19.8 26 17.6 29 16 29 C14.4 29 12.2 26 12.2 22 C12.2 18.2 13.8 15.5 16 12 Z" opacity="0.96" />
+              <path class="flame-layer flame-core" fill="url(#flameGradCore)"
+                d="M16 18 C17.2 20.5 18 22.8 18 25.5 C18 28.5 16.8 30.5 16 30.5 C15.2 30.5 14 28.5 14 25.5 C14 22.8 14.8 20.5 16 18 Z" />
+            </svg>
+            <div class="fire-embers-field">
+              <span class="fire-spark s1"></span>
+              <span class="fire-spark s2"></span>
+              <span class="fire-spark s3"></span>
+              <span class="fire-spark s4"></span>
+            </div>
+          </div>
         </div>
         <div class="streak-hero-count" id="modalHeroStreakCount">5</div>
         <div class="streak-hero-label">Days Consecutive Streak</div>

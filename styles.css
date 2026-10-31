@@ -6709,7 +6709,7 @@ html, body {
   100% { transform: scale(1.15) rotate(4deg); }
 }
 
-/* 3. Flame Icon & Organic Fire Animation */
+/* 3. Realistic Living Flame & Combustion System */
 .streak-flame-wrapper {
   position: relative;
   display: inline-flex;
@@ -6719,73 +6719,316 @@ html, body {
   height: 22px;
 }
 
-.streak-flame-emoji {
-  display: inline-block;
-  font-size: 1.18rem;
-  line-height: 1;
-  transform-origin: 50% 88%;
-  will-change: transform, filter;
-  animation: fireOrganicFlame 3.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
+.realistic-fire-system {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 24px;
+  pointer-events: none;
+  transform-origin: 50% 90%;
+  will-change: transform, filter, opacity;
+  transition: opacity 0.45s ease, filter 0.45s ease, transform 0.45s ease;
 }
 
-/* Organic flame: floating, wobbling, gentle scaling, vibrant warm glow */
-@keyframes fireOrganicFlame {
-  0% {
-    transform: translateY(0px) scale(1) rotate(-1.5deg);
-    filter: drop-shadow(0 0 2.5px rgba(255, 140, 0, 0.45)) brightness(1);
-  }
-  16% {
-    transform: translateY(-1.2px) scale(1.04) rotate(2.2deg);
-    filter: drop-shadow(0 -1px 4.5px rgba(255, 105, 0, 0.55)) brightness(1.05);
-  }
-  33% {
-    transform: translateY(-0.4px) scale(1.07) rotate(-2deg);
-    filter: drop-shadow(0 -2px 6.5px rgba(255, 75, 0, 0.65)) brightness(1.08);
+/* Atmospheric breathing heat haze aura */
+.fire-ambient-glow {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 120, 0, 0.42) 0%, rgba(255, 60, 0, 0.18) 50%, rgba(255, 40, 0, 0) 75%);
+  pointer-events: none;
+  animation: heatHazePulse 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes heatHazePulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.55;
   }
   50% {
-    transform: translateY(-1.8px) scale(1.02) rotate(2.6deg);
-    filter: drop-shadow(0 -1px 5px rgba(255, 120, 0, 0.5)) brightness(1.04);
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 0.88;
   }
-  68% {
-    transform: translateY(-0.6px) scale(1.06) rotate(-1.2deg);
-    filter: drop-shadow(0 -2px 7px rgba(255, 85, 0, 0.62)) brightness(1.07);
+}
+
+/* Main Vector Flame Canvas */
+.realistic-flame-svg {
+  position: relative;
+  width: 18px;
+  height: 22px;
+  overflow: visible;
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(255, 110, 0, 0.65)) drop-shadow(0 0 7px rgba(255, 60, 0, 0.35));
+}
+
+/* Outer Combustion Envelope: fluid convection swaying and breathing */
+.flame-outer {
+  transform-origin: 16px 35px;
+  animation: flameOuterSway 2.4s cubic-bezier(0.44, 0.05, 0.55, 0.95) infinite;
+  will-change: transform;
+}
+
+@keyframes flameOuterSway {
+  0% {
+    transform: translateY(0) scaleY(1) scaleX(1) rotate(-1.5deg);
   }
-  84% {
-    transform: translateY(-1.4px) scale(1.03) rotate(1.6deg);
-    filter: drop-shadow(0 -1px 4.5px rgba(255, 130, 0, 0.5)) brightness(1.03);
+  20% {
+    transform: translateY(-0.8px) scaleY(1.05) scaleX(0.97) rotate(2deg);
+  }
+  42% {
+    transform: translateY(-0.2px) scaleY(0.98) scaleX(1.03) rotate(-2.2deg);
+  }
+  65% {
+    transform: translateY(-1.2px) scaleY(1.06) scaleX(0.96) rotate(1.8deg);
+  }
+  82% {
+    transform: translateY(-0.4px) scaleY(1.01) scaleX(1.01) rotate(-0.8deg);
   }
   100% {
-    transform: translateY(0px) scale(1) rotate(-1.5deg);
-    filter: drop-shadow(0 0 2.5px rgba(255, 140, 0, 0.45)) brightness(1);
+    transform: translateY(0) scaleY(1) scaleX(1) rotate(-1.5deg);
   }
 }
 
-/* Flame Extinguish Transition When Streak Breaks */
-.streak-flame-wrapper.blown-out .streak-flame-emoji {
-  animation: flameExtinguishFade 0.55s cubic-bezier(0.25, 0.9, 0.35, 1) forwards !important;
+/* Secondary Dynamic Dancing Tongue: independent phase & fluttering */
+.flame-secondary {
+  transform-origin: 16px 27px;
+  animation: flameSecondaryDance 1.65s ease-in-out infinite alternate;
+  will-change: transform, opacity;
 }
 
-@keyframes flameExtinguishFade {
+@keyframes flameSecondaryDance {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  30% {
+    transform: translateY(-0.6px) scale(1.06, 1.08) rotate(3deg);
+    opacity: 0.96;
+  }
+  70% {
+    transform: translateY(-1px) scale(0.96, 1.04) rotate(-3.5deg);
+    opacity: 0.88;
+  }
+  100% {
+    transform: translateY(-0.3px) scale(1.03, 0.98) rotate(1.5deg);
+    opacity: 0.94;
+  }
+}
+
+/* Mid Convection Tongue: golden internal heat flow */
+.flame-mid {
+  transform-origin: 16px 29px;
+  animation: flameMidConvection 1.95s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
+  will-change: transform;
+}
+
+@keyframes flameMidConvection {
+  0% {
+    transform: translateY(0) scale(1) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-0.9px) scale(1.04, 1.07) rotate(2deg);
+  }
+  100% {
+    transform: translateY(-0.4px) scale(0.98, 1.02) rotate(-1.5deg);
+  }
+}
+
+/* White-Hot Core: rapid plasma micro-flickering */
+.flame-core {
+  transform-origin: 16px 30px;
+  animation: flameCoreFlicker 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite alternate;
+  will-change: transform, opacity;
+}
+
+@keyframes flameCoreFlicker {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 0.95;
+  }
+  25% {
+    transform: scale(1.06, 1.08) translateY(-0.4px);
+    opacity: 1;
+  }
+  55% {
+    transform: scale(0.94, 0.96) translateY(0.2px);
+    opacity: 0.9;
+  }
+  78% {
+    transform: scale(1.04, 1.05) translateY(-0.3px);
+    opacity: 0.98;
+  }
+  100% {
+    transform: scale(0.97, 1.01) translateY(0);
+    opacity: 0.94;
+  }
+}
+
+/* Micro-Ember Sparks Lifting off the flame */
+.fire-embers-field {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.fire-spark {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff8e1;
+  box-shadow: 0 0 3px #ff9800, 0 0 6px rgba(255, 87, 34, 0.85);
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.fire-spark.s1 {
+  width: 1.8px;
+  height: 1.8px;
+  top: 10px;
+  left: 11px;
+  animation: sparkRise1 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 0.2s;
+}
+
+.fire-spark.s2 {
+  width: 2.2px;
+  height: 2.2px;
+  top: 9px;
+  left: 12px;
+  animation: sparkRise2 2.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 0.9s;
+}
+
+.fire-spark.s3 {
+  width: 1.6px;
+  height: 1.6px;
+  top: 11px;
+  left: 9px;
+  animation: sparkRise3 2.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 1.6s;
+}
+
+.fire-spark.s4 {
+  width: 2px;
+  height: 2px;
+  top: 8px;
+  left: 13px;
+  animation: sparkRise4 2.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation-delay: 2.1s;
+}
+
+@keyframes sparkRise1 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-1.5px, -4px) scale(1);
+  }
+  60% {
+    opacity: 0.85;
+    transform: translate(-3px, -11px) scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-4.5px, -18px) scale(0.3);
+  }
+}
+
+@keyframes sparkRise2 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(1.8px, -5px) scale(1.1);
+  }
+  65% {
+    opacity: 0.8;
+    transform: translate(3.2px, -13px) scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(4.5px, -20px) scale(0.2);
+  }
+}
+
+@keyframes sparkRise3 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.5);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-0.8px, -4.5px) scale(1);
+  }
+  70% {
+    opacity: 0.75;
+    transform: translate(-1.8px, -12px) scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-2.5px, -17px) scale(0.2);
+  }
+}
+
+@keyframes sparkRise4 {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(2px, -4px) scale(1);
+  }
+  60% {
+    opacity: 0.85;
+    transform: translate(2.8px, -10px) scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(3.5px, -16px) scale(0.2);
+  }
+}
+
+/* Extinguish Blow-Out Transition */
+.streak-flame-wrapper.blown-out .realistic-fire-system {
+  animation: realisticFlameBlowOut 0.55s cubic-bezier(0.25, 0.9, 0.35, 1) forwards !important;
+}
+
+@keyframes realisticFlameBlowOut {
   0% {
     transform: translateY(0) scale(1) rotate(0deg);
     opacity: 1;
-    filter: drop-shadow(0 0 4px rgba(255, 140, 0, 0.6)) brightness(1);
+    filter: drop-shadow(0 0 5px rgba(255, 120, 0, 0.8)) brightness(1);
   }
   25% {
-    transform: translateY(-2px) scale(1.1) rotate(-12deg);
+    transform: translateY(-2px) scale(1.15) rotate(-14deg);
     opacity: 0.95;
-    filter: drop-shadow(0 0 8px rgba(255, 80, 0, 0.85)) brightness(1.15);
+    filter: drop-shadow(0 0 10px rgba(255, 80, 0, 0.9)) brightness(1.2);
   }
   55% {
-    transform: translateY(1px) scale(0.65) rotate(10deg);
+    transform: translateY(1.5px) scale(0.65, 0.5) rotate(12deg);
     opacity: 0.6;
-    filter: drop-shadow(0 0 3px rgba(255, 100, 0, 0.4)) brightness(0.85);
+    filter: drop-shadow(0 0 4px rgba(255, 60, 0, 0.5)) brightness(0.8);
   }
   80% {
-    transform: translateY(3px) scale(0.3) rotate(-6deg);
+    transform: translateY(3px) scale(0.3, 0.2) rotate(-5deg);
     opacity: 0.2;
-    filter: grayscale(0.9) brightness(0.7);
+    filter: grayscale(0.9) brightness(0.6);
   }
   100% {
     transform: translateY(4px) scale(0) rotate(0deg);
@@ -6795,35 +7038,73 @@ html, body {
 }
 
 /* Inactive resting state */
-.streak-flame-wrapper.inactive .streak-flame-emoji {
+.streak-flame-wrapper.inactive .realistic-fire-system {
   animation: none !important;
-  opacity: 0.32;
+  opacity: 0.28;
   filter: grayscale(1) contrast(0.85);
-  transform: scale(0.9) translateY(0);
+  transform: scale(0.88) translateY(0);
   transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
 }
 
-/* Re-ignition transition */
-.streak-flame-wrapper.reignited .streak-flame-emoji {
-  animation: flameReigniteBloom 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+.streak-flame-wrapper.inactive .fire-ambient-glow,
+.streak-flame-wrapper.inactive .fire-spark,
+.streak-flame-wrapper.blown-out .fire-spark,
+.streak-flame-wrapper.blown-out .fire-ambient-glow {
+  opacity: 0 !important;
+  animation: none !important;
 }
 
-@keyframes flameReigniteBloom {
+/* Re-ignition transition */
+.streak-flame-wrapper.reignited .realistic-fire-system {
+  animation: realisticFlameReignite 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+@keyframes realisticFlameReignite {
   0% {
     transform: scale(0) translateY(4px);
     opacity: 0;
     filter: drop-shadow(0 0 0 rgba(255, 140, 0, 0));
   }
-  65% {
+  60% {
     transform: scale(1.28) translateY(-2px);
     opacity: 1;
-    filter: drop-shadow(0 -2px 10px rgba(255, 100, 0, 0.85)) brightness(1.2);
+    filter: drop-shadow(0 -2px 12px rgba(255, 100, 0, 0.95)) brightness(1.25);
   }
   100% {
     transform: scale(1) translateY(0);
     opacity: 1;
-    filter: drop-shadow(0 0 2.5px rgba(255, 140, 0, 0.45)) brightness(1);
+    filter: drop-shadow(0 0 3px rgba(255, 110, 0, 0.65)) drop-shadow(0 0 7px rgba(255, 60, 0, 0.35));
   }
+}
+
+/* Modal Hero Flame Styling */
+.streak-hero-flame-box .realistic-fire-system {
+  width: 48px;
+  height: 56px;
+  margin: 0 auto;
+}
+
+.streak-hero-flame-box .realistic-flame-svg {
+  width: 44px;
+  height: 52px;
+}
+
+.streak-hero-flame-box .fire-ambient-glow {
+  width: 70px;
+  height: 70px;
+}
+
+.streak-hero-flame-box .fire-spark.s1 { top: 22px; left: 20px; }
+.streak-hero-flame-box .fire-spark.s2 { top: 20px; left: 24px; }
+.streak-hero-flame-box .fire-spark.s3 { top: 24px; left: 18px; }
+.streak-hero-flame-box .fire-spark.s4 { top: 19px; left: 26px; }
+
+/* Legacy Fallback for streak-flame-emoji if rendered */
+.streak-flame-emoji {
+  display: inline-block;
+  font-size: 1.18rem;
+  line-height: 1;
+  transform-origin: 50% 88%;
 }
 
 /* Smoke particles that rise after blowout */
@@ -6918,6 +7199,13 @@ html, body {
 
 /* Reduced motion accessibility */
 @media (prefers-reduced-motion: reduce) {
+  .realistic-fire-system,
+  .fire-ambient-glow,
+  .flame-outer,
+  .flame-secondary,
+  .flame-mid,
+  .flame-core,
+  .fire-spark,
   .streak-flame-emoji,
   .smoke-particle,
   .streak-header-pill.urgent,

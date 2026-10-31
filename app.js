@@ -2022,6 +2022,11 @@
       heroRestore.textContent = isEligible ? 'Available (3rd)' : 'Used this month';
     }
 
+    const heroFlame = document.getElementById('modalHeroFlame');
+    if (heroFlame) {
+      heroFlame.classList.toggle('inactive', !!streak.isStreakBroken);
+    }
+
     modal.classList.remove('hidden');
   }
 

@@ -159,7 +159,7 @@
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       if (THREE.ACESFilmicToneMapping) {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.04; // Calibrated for radiant showroom highlights
+        this.renderer.toneMappingExposure = 0.78; // Calibrated for deep contrast and filmic tone
       }
       if (THREE.sRGBEncoding) {
         this.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -283,32 +283,73 @@
       this.textures.marbleRoughness.wrapT = THREE.RepeatWrapping;
       this.textures.marbleRoughness.repeat.set(2.4, 2.4);
 
-      // 2. Honey Natural Oak Wood Grain Texture (1024x1024)
+      // 2. Authentic European Golden Oak Procedural Textures (Uprights, Shelves, Backboard & Pores)
+      // 2A. Vertical Grain European Oak for Cabinet Uprights & Frame (1024x1024)
       const woodCanvas = document.createElement('canvas');
       woodCanvas.width = 1024;
       woodCanvas.height = 1024;
       const wCtx = woodCanvas.getContext('2d');
 
-      wCtx.fillStyle = '#C49764'; // Rich natural honey oak base
+      // Base warm golden honey oak
+      wCtx.fillStyle = '#C9A66B';
       wCtx.fillRect(0, 0, 1024, 1024);
 
-      // Vertical wood grain lines with organic growth ring waves
-      for (let x = 0; x < 1024; x += 2) {
-        const wave = Math.sin(x * 0.015) * 12 + Math.sin(x * 0.08) * 4;
-        const alpha = 0.08 + Math.random() * 0.16;
-        const tone = Math.random() > 0.45 ? 'rgba(122, 86, 50, ' + alpha + ')' : 'rgba(238, 204, 162, ' + alpha + ')';
-        wCtx.fillStyle = tone;
-        wCtx.fillRect(x + wave * 0.2, 0, 1.8, 1024);
+      // Organic subtle timber growth variations across width
+      const wGrad = wCtx.createLinearGradient(0, 0, 1024, 0);
+      wGrad.addColorStop(0, '#C49F63');
+      wGrad.addColorStop(0.22, '#CEAB70');
+      wGrad.addColorStop(0.48, '#C29C60');
+      wGrad.addColorStop(0.72, '#D2AF75');
+      wGrad.addColorStop(1, '#C5A064');
+      wCtx.fillStyle = wGrad;
+      wCtx.fillRect(0, 0, 1024, 1024);
+
+      // Fine longitudinal timber grain lines with natural sinusoidal flow
+      for (let i = 0; i < 54; i++) {
+        const gx = 80 + i * 17.5;
+        wCtx.strokeStyle = (i % 3 === 0) ? 'rgba(152, 116, 66, 0.38)' : 'rgba(182, 146, 96, 0.22)';
+        wCtx.lineWidth = 1.1 + (i % 4) * 0.35;
+        wCtx.beginPath();
+        wCtx.moveTo(gx, 0);
+        for (let y = 0; y <= 1024; y += 32) {
+          const wave = Math.sin(y * 0.007 + i * 0.22) * 14 + Math.sin(y * 0.025) * 3.5;
+          wCtx.lineTo(gx + wave, y);
+        }
+        wCtx.stroke();
       }
 
-      // Wide growth ring bands
-      for (let y = 0; y < 1024; y += 48) {
-        const rGrad = wCtx.createLinearGradient(0, y, 0, y + 48);
-        rGrad.addColorStop(0, 'rgba(132, 92, 54, 0.14)');
-        rGrad.addColorStop(0.5, 'rgba(242, 214, 176, 0.16)');
-        rGrad.addColorStop(1, 'rgba(112, 78, 44, 0.14)');
-        wCtx.fillStyle = rGrad;
-        wCtx.fillRect(0, y, 1024, 48);
+      // Cathedral grain flame peak arches
+      for (let c = 0; c < 3; c++) {
+        const cy = 240 + c * 330;
+        for (let r = 1; r <= 6; r++) {
+          wCtx.strokeStyle = 'rgba(142, 106, 58, ' + (0.16 + r * 0.028) + ')';
+          wCtx.lineWidth = 1.3;
+          wCtx.beginPath();
+          wCtx.ellipse(512, cy, 60 + r * 26, 85 + r * 32, 0, 0, Math.PI);
+          wCtx.stroke();
+        }
+      }
+
+      // Medullary rays (tiger oak / quartersawn flecks across the grain)
+      for (let m = 0; m < 90; m++) {
+        const mx = Math.random() * 960 + 30;
+        const my = Math.random() * 980 + 20;
+        const mLen = Math.random() * 26 + 10;
+        wCtx.strokeStyle = Math.random() > 0.4 ? 'rgba(238, 218, 180, 0.34)' : 'rgba(132, 98, 56, 0.24)';
+        wCtx.lineWidth = Math.random() * 1.8 + 0.8;
+        wCtx.beginPath();
+        wCtx.moveTo(mx, my);
+        wCtx.lineTo(mx + mLen, my + (Math.random() - 0.5) * 3);
+        wCtx.stroke();
+      }
+
+      // High-frequency open timber pores (characteristic of European Oak)
+      for (let p = 0; p < 2800; p++) {
+        const px = Math.random() * 1024;
+        const py = Math.random() * 1024;
+        const pLen = Math.random() * 9 + 4;
+        wCtx.fillStyle = Math.random() > 0.4 ? 'rgba(126, 92, 50, 0.30)' : 'rgba(238, 212, 166, 0.20)';
+        wCtx.fillRect(px, py, 1.1, pLen);
       }
 
       this.textures.oak = new THREE.CanvasTexture(woodCanvas);
@@ -316,7 +357,7 @@
       this.textures.oak.wrapT = THREE.RepeatWrapping;
       this.textures.oak.repeat.set(1.5, 2.2);
 
-      // Oak Bump Map
+      // European Oak Tactile Bump Map
       const wBumpCanvas = document.createElement('canvas');
       wBumpCanvas.width = 512;
       wBumpCanvas.height = 512;
@@ -329,18 +370,136 @@
       this.textures.oakBump.wrapT = THREE.RepeatWrapping;
       this.textures.oakBump.repeat.set(1.5, 2.2);
 
+      // 2B. European Oak Roughness Variation Map (512x512)
+      // Break specular highlights naturally along wood pores and grain
+      const wRoughCanvas = document.createElement('canvas');
+      wRoughCanvas.width = 512;
+      wRoughCanvas.height = 512;
+      const wrCtx = wRoughCanvas.getContext('2d');
+      wrCtx.fillStyle = '#686868'; // Base satin sheen ~0.40
+      wrCtx.fillRect(0, 0, 512, 512);
+      wrCtx.drawImage(wBumpCanvas, 0, 0, 512, 512);
+      this.textures.oakRoughness = new THREE.CanvasTexture(wRoughCanvas);
+      this.textures.oakRoughness.wrapS = THREE.RepeatWrapping;
+      this.textures.oakRoughness.wrapT = THREE.RepeatWrapping;
+      this.textures.oakRoughness.repeat.set(1.5, 2.2);
+
+      // 2C. Horizontal Grain European Oak for Shelves & Plinth (1024x512)
+      // Wood grain runs horizontally along shelf width
+      const woodShelfCanvas = document.createElement('canvas');
+      woodShelfCanvas.width = 1024;
+      woodShelfCanvas.height = 512;
+      const wsCtx = woodShelfCanvas.getContext('2d');
+
+      // Warm honey oak base
+      wsCtx.fillStyle = '#CAA76D';
+      wsCtx.fillRect(0, 0, 1024, 512);
+
+      // Horizontal plank tone gradients
+      const wsGrad = wsCtx.createLinearGradient(0, 0, 0, 512);
+      wsGrad.addColorStop(0, '#C19B5E');
+      wsGrad.addColorStop(0.35, '#D0AD73');
+      wsGrad.addColorStop(0.70, '#C39E62');
+      wsGrad.addColorStop(1, '#CEAA70');
+      wsCtx.fillStyle = wsGrad;
+      wsCtx.fillRect(0, 0, 1024, 512);
+
+      // Longitudinal horizontal grain lines
+      for (let j = 0; j < 36; j++) {
+        const gy = 15 + j * 14;
+        wsCtx.strokeStyle = (j % 3 === 0) ? 'rgba(148, 112, 62, 0.35)' : 'rgba(178, 142, 92, 0.20)';
+        wsCtx.lineWidth = 1.0 + (j % 4) * 0.3;
+        wsCtx.beginPath();
+        wsCtx.moveTo(0, gy);
+        for (let x = 0; x <= 1024; x += 32) {
+          const wave = Math.sin(x * 0.006 + j * 0.24) * 10 + Math.sin(x * 0.022) * 2.5;
+          wsCtx.lineTo(x, gy + wave);
+        }
+        wsCtx.stroke();
+      }
+
+      // Horizontal open pores
+      for (let p = 0; p < 1800; p++) {
+        const px = Math.random() * 1024;
+        const py = Math.random() * 512;
+        const pLen = Math.random() * 10 + 4;
+        wsCtx.fillStyle = Math.random() > 0.4 ? 'rgba(122, 88, 48, 0.28)' : 'rgba(235, 212, 168, 0.20)';
+        wsCtx.fillRect(px, py, pLen, 1.1);
+      }
+
+      this.textures.oakShelf = new THREE.CanvasTexture(woodShelfCanvas);
+      this.textures.oakShelf.wrapS = THREE.RepeatWrapping;
+      this.textures.oakShelf.wrapT = THREE.RepeatWrapping;
+      this.textures.oakShelf.repeat.set(2.0, 1.2);
+
+      const wsBumpCanvas = document.createElement('canvas');
+      wsBumpCanvas.width = 512;
+      wsBumpCanvas.height = 256;
+      const wsbCtx = wsBumpCanvas.getContext('2d');
+      wsbCtx.fillStyle = '#808080';
+      wsbCtx.fillRect(0, 0, 512, 256);
+      wsbCtx.drawImage(woodShelfCanvas, 0, 0, 512, 256);
+      this.textures.oakShelfBump = new THREE.CanvasTexture(wsBumpCanvas);
+      this.textures.oakShelfBump.wrapS = THREE.RepeatWrapping;
+      this.textures.oakShelfBump.wrapT = THREE.RepeatWrapping;
+      this.textures.oakShelfBump.repeat.set(2.0, 1.2);
+
+      // 2D. Architectural Tongue-and-Groove Planked Oak Backboard Texture (1024x1024)
+      // Creates individual vertical timber planks with recessed shadow v-grooves
+      const backboardCanvas = document.createElement('canvas');
+      backboardCanvas.width = 1024;
+      backboardCanvas.height = 1024;
+      const bbCtx = backboardCanvas.getContext('2d');
+
+      const plankColors = ['#936D3E', '#9A7342', '#8C6636', '#9E7746', '#906A39'];
+      const numPlanks = 5;
+      const plankW = 1024 / numPlanks;
+
+      for (let pk = 0; pk < numPlanks; pk++) {
+        const px = pk * plankW;
+        bbCtx.fillStyle = plankColors[pk % plankColors.length];
+        bbCtx.fillRect(px, 0, plankW, 1024);
+
+        // Individual plank vertical grain
+        for (let g = 0; g < 10; g++) {
+          const gx = px + 12 + g * 18;
+          bbCtx.strokeStyle = 'rgba(74, 52, 28, 0.28)';
+          bbCtx.lineWidth = 1.0;
+          bbCtx.beginPath();
+          bbCtx.moveTo(gx, 0);
+          for (let y = 0; y <= 1024; y += 40) {
+            bbCtx.lineTo(gx + Math.sin(y * 0.008 + g) * 5, y);
+          }
+          bbCtx.stroke();
+        }
+
+        // Deep recessed V-groove shadow line between adjacent planks
+        if (pk > 0) {
+          const vGrad = bbCtx.createLinearGradient(px - 4, 0, px + 4, 0);
+          vGrad.addColorStop(0, 'rgba(42, 28, 14, 0.0)');
+          vGrad.addColorStop(0.5, 'rgba(32, 20, 10, 0.72)');
+          vGrad.addColorStop(1, 'rgba(42, 28, 14, 0.0)');
+          bbCtx.fillStyle = vGrad;
+          bbCtx.fillRect(px - 4, 0, 8, 1024);
+        }
+      }
+
+      this.textures.oakBackboard = new THREE.CanvasTexture(backboardCanvas);
+      this.textures.oakBackboard.wrapS = THREE.ClampToEdgeWrapping;
+      this.textures.oakBackboard.wrapT = THREE.RepeatWrapping;
+
       // 3. Circular Woven Wool Rug Texture (512x512)
       const rugCanvas = document.createElement('canvas');
       rugCanvas.width = 512;
       rugCanvas.height = 512;
       const rCtx = rugCanvas.getContext('2d');
 
-      rCtx.fillStyle = '#B4A797';
+      rCtx.fillStyle = '#A68A68'; // Accent #A68A68
       rCtx.fillRect(0, 0, 512, 512);
 
       // Concentric radial woven rings & cross texture
       for (let r = 8; r < 256; r += 3) {
-        rCtx.strokeStyle = (r % 6 === 0) ? 'rgba(146, 132, 118, 0.35)' : 'rgba(208, 196, 182, 0.28)';
+        rCtx.strokeStyle = (r % 6 === 0) ? 'rgba(126, 102, 78, 0.38)' : 'rgba(198, 176, 152, 0.26)';
         rCtx.lineWidth = 1.5;
         rCtx.beginPath();
         rCtx.arc(256, 256, r, 0, Math.PI * 2);
@@ -354,7 +513,7 @@
       boucleCanvas.height = 512;
       const bCtx = boucleCanvas.getContext('2d');
 
-      bCtx.fillStyle = '#F7F3EB';
+      bCtx.fillStyle = '#D8CFC1'; // Secondary surface #D8CFC1
       bCtx.fillRect(0, 0, 512, 512);
 
       // Nubby looped yarn clusters
@@ -362,7 +521,7 @@
         const bx = Math.random() * 512;
         const by = Math.random() * 512;
         const br = Math.random() * 2.8 + 1.2;
-        bCtx.fillStyle = Math.random() > 0.5 ? 'rgba(230, 220, 206, 0.45)' : 'rgba(255, 255, 255, 0.65)';
+        bCtx.fillStyle = Math.random() > 0.5 ? 'rgba(180, 168, 152, 0.45)' : 'rgba(245, 240, 232, 0.60)';
         bCtx.beginPath();
         bCtx.arc(bx, by, br, 0, Math.PI * 2);
         bCtx.fill();
@@ -371,6 +530,136 @@
       this.textures.boucle.wrapS = THREE.RepeatWrapping;
       this.textures.boucle.wrapT = THREE.RepeatWrapping;
       this.textures.boucle.repeat.set(3, 3);
+
+      // 5. Authentic Rustic Linen Fabric Texture (Albert Reference, 512x512)
+      const linenCanvas = document.createElement('canvas');
+      linenCanvas.width = 512;
+      linenCanvas.height = 512;
+      const lCtx = linenCanvas.getContext('2d');
+
+      lCtx.fillStyle = '#EDE5D8'; // Unbleached natural raw linen flax
+      lCtx.fillRect(0, 0, 512, 512);
+
+      // Orthogonal warp (vertical) and weft (horizontal) slub yarn threads
+      const threadStep = 4;
+      for (let x = 0; x < 512; x += threadStep) {
+        const isSlub = Math.random() > 0.84;
+        const alpha = isSlub ? 0.34 : 0.16;
+        lCtx.fillStyle = Math.random() > 0.5 ? 'rgba(138, 122, 104, ' + alpha + ')' : 'rgba(255, 252, 246, ' + alpha + ')';
+        lCtx.fillRect(x, 0, isSlub ? 2.4 : 1.4, 512);
+      }
+      for (let y = 0; y < 512; y += threadStep) {
+        const isSlub = Math.random() > 0.84;
+        const alpha = isSlub ? 0.34 : 0.16;
+        lCtx.fillStyle = Math.random() > 0.5 ? 'rgba(138, 122, 104, ' + alpha + ')' : 'rgba(255, 252, 246, ' + alpha + ')';
+        lCtx.fillRect(0, y, 512, isSlub ? 2.4 : 1.4);
+      }
+
+      // Micro slub knots & organic fiber flecks
+      for (let s = 0; s < 500; s++) {
+        const sx = Math.random() * 512;
+        const sy = Math.random() * 512;
+        lCtx.fillStyle = Math.random() > 0.6 ? 'rgba(120, 105, 88, 0.38)' : 'rgba(255, 255, 255, 0.50)';
+        lCtx.fillRect(sx, sy, Math.random() * 2.8 + 1, Math.random() * 2.2 + 1);
+      }
+
+      this.textures.linen = new THREE.CanvasTexture(linenCanvas);
+      this.textures.linen.wrapS = THREE.RepeatWrapping;
+      this.textures.linen.wrapT = THREE.RepeatWrapping;
+      this.textures.linen.repeat.set(6, 6);
+
+      // Rustic Linen Bump Map
+      const lBumpCanvas = document.createElement('canvas');
+      lBumpCanvas.width = 512;
+      lBumpCanvas.height = 512;
+      const lbCtx = lBumpCanvas.getContext('2d');
+      lbCtx.fillStyle = '#808080';
+      lbCtx.fillRect(0, 0, 512, 512);
+      lbCtx.drawImage(linenCanvas, 0, 0, 512, 512);
+      this.textures.linenBump = new THREE.CanvasTexture(lBumpCanvas);
+      this.textures.linenBump.wrapS = THREE.RepeatWrapping;
+      this.textures.linenBump.wrapT = THREE.RepeatWrapping;
+      this.textures.linenBump.repeat.set(6, 6);
+
+      // 6. Soft Photographic Contact Shadow Maps
+      // 6A. Circular Radial Contact Shadow Map (256x256)
+      const shadowCanvas = document.createElement('canvas');
+      shadowCanvas.width = 256;
+      shadowCanvas.height = 256;
+      const sCtx = shadowCanvas.getContext('2d');
+
+      const sGrad = sCtx.createRadialGradient(128, 128, 6, 128, 128, 126);
+      sGrad.addColorStop(0, 'rgba(16, 12, 8, 0.95)'); // Dense core ambient occlusion
+      sGrad.addColorStop(0.35, 'rgba(26, 20, 14, 0.62)');
+      sGrad.addColorStop(0.70, 'rgba(45, 36, 26, 0.22)');
+      sGrad.addColorStop(1, 'rgba(60, 48, 35, 0.0)'); // Soft feathered falloff
+      sCtx.fillStyle = sGrad;
+      sCtx.fillRect(0, 0, 256, 256);
+
+      this.textures.contactShadow = new THREE.CanvasTexture(shadowCanvas);
+
+      // 6B. Anatomical Foot Sole Grounding Shadow Map (256x256)
+      // Photorealistic sole contact core (heel pad, lateral bridge & metatarsal ball) with directional soft penumbra
+      const footCanvas = document.createElement('canvas');
+      footCanvas.width = 256;
+      footCanvas.height = 256;
+      const fCtx = footCanvas.getContext('2d');
+
+      // Soft feathered outer penumbra with subtle directional drift (+X, -Z matching morning key light)
+      const fOuterGrad = fCtx.createRadialGradient(132, 122, 16, 132, 122, 114);
+      fOuterGrad.addColorStop(0, 'rgba(18, 13, 8, 0.40)');
+      fOuterGrad.addColorStop(0.50, 'rgba(28, 20, 14, 0.18)');
+      fOuterGrad.addColorStop(0.85, 'rgba(45, 34, 24, 0.05)');
+      fOuterGrad.addColorStop(1, 'rgba(60, 48, 35, 0.0)');
+      fCtx.fillStyle = fOuterGrad;
+      fCtx.fillRect(0, 0, 256, 256);
+
+      // Metatarsal ball / forefoot contact core (high weight concentration)
+      const ballGrad = fCtx.createRadialGradient(128, 88, 4, 128, 88, 40);
+      ballGrad.addColorStop(0, 'rgba(12, 8, 5, 0.96)');
+      ballGrad.addColorStop(0.55, 'rgba(20, 14, 9, 0.68)');
+      ballGrad.addColorStop(1, 'rgba(38, 28, 18, 0.0)');
+      fCtx.fillStyle = ballGrad;
+      fCtx.beginPath();
+      fCtx.arc(128, 88, 40, 0, Math.PI * 2);
+      fCtx.fill();
+
+      // Heel pad circular contact core
+      const heelGrad = fCtx.createRadialGradient(128, 172, 3, 128, 172, 32);
+      heelGrad.addColorStop(0, 'rgba(12, 8, 5, 0.96)');
+      heelGrad.addColorStop(0.55, 'rgba(20, 14, 9, 0.65)');
+      heelGrad.addColorStop(1, 'rgba(38, 28, 18, 0.0)');
+      fCtx.fillStyle = heelGrad;
+      fCtx.beginPath();
+      fCtx.arc(128, 172, 32, 0, Math.PI * 2);
+      fCtx.fill();
+
+      // Subtle lateral arch connection strip
+      const archGrad = fCtx.createLinearGradient(140, 95, 140, 160);
+      archGrad.addColorStop(0, 'rgba(18, 13, 8, 0.50)');
+      archGrad.addColorStop(0.5, 'rgba(22, 16, 10, 0.35)');
+      archGrad.addColorStop(1, 'rgba(18, 13, 8, 0.50)');
+      fCtx.fillStyle = archGrad;
+      fCtx.fillRect(132, 105, 16, 52);
+
+      this.textures.footContactShadow = new THREE.CanvasTexture(footCanvas);
+
+      // 6C. Rectangular Linear Furniture Base Grounding Shadow Map (512x256)
+      // Generates intense contact occlusion along cabinet plinth and table leg perimeters
+      const boxShadowCanvas = document.createElement('canvas');
+      boxShadowCanvas.width = 512;
+      boxShadowCanvas.height = 256;
+      const bsCtx = boxShadowCanvas.getContext('2d');
+
+      // Soft perimeter feathering
+      for (let step = 0; step < 28; step++) {
+        const inset = step * 3.5;
+        const alpha = Math.pow(step / 27, 2.2) * 0.92;
+        bsCtx.fillStyle = `rgba(14, 10, 6, ${alpha})`;
+        bsCtx.fillRect(36 + inset, 24 + inset * 0.65, 512 - (36 + inset) * 2, 256 - (24 + inset * 0.65) * 2);
+      }
+
+      this.textures.boxContactShadow = new THREE.CanvasTexture(boxShadowCanvas);
     }
 
     /**
@@ -378,55 +667,66 @@
      * Soft warm directional key light, ambient illumination, architectural spots & cove glows
      */
     setupLighting() {
-      // Warm, flattering ambient fill
-      const ambientLight = new THREE.AmbientLight(0xFFF2E4, 0.46);
+      // Warm, natural ambient fill (Balanced architectural daylight bounce)
+      const ambientLight = new THREE.AmbientLight(0xEAE2D5, 0.22);
       this.scene.add(ambientLight);
 
-      // Primary Key Sunlight (Diagonal morning sunlight casting crisp soft contact shadows from upper left)
-      const keyLight = new THREE.DirectionalLight(0xFFF8EE, 1.22);
-      keyLight.position.set(-2.8, 4.6, 2.8);
+      // Primary Key Sunlight (Directional morning sunbeams, balanced to avoid washing out left side)
+      const keyLight = new THREE.DirectionalLight(0xFFF5E4, 0.72);
+      keyLight.position.set(-3.2, 5.0, 2.8);
       keyLight.castShadow = true;
       keyLight.shadow.mapSize.width = 1024;
       keyLight.shadow.mapSize.height = 1024;
       keyLight.shadow.camera.near = 0.5;
-      keyLight.shadow.camera.far = 12;
-      keyLight.shadow.bias = -0.0003;
-      const d = 2.4;
+      keyLight.shadow.camera.far = 14;
+      keyLight.shadow.bias = -0.0002;
+      const d = 2.6;
       keyLight.shadow.camera.left = -d;
       keyLight.shadow.camera.right = d;
       keyLight.shadow.camera.top = d;
       keyLight.shadow.camera.bottom = -d;
       this.scene.add(keyLight);
 
-      // Warm Gentle Fill Light from right
-      const fillLight = new THREE.DirectionalLight(0xFDF0E0, 0.32);
-      fillLight.position.set(2.6, 3.2, 2.0);
+      // Balanced Soft Daylight Fill from right (elevated from 0.18 to 0.38 to balance left-right contrast)
+      const fillLight = new THREE.DirectionalLight(0xF7EFE5, 0.38);
+      fillLight.position.set(3.0, 3.4, 2.2);
       this.scene.add(fillLight);
 
-      // Golden Rim Light (Soft silhouette on avatar hair, shoulders & stage edge)
-      const rimLight = new THREE.DirectionalLight(0xFFD89B, 0.85);
-      rimLight.position.set(0, 3.8, -2.4);
+      // Right-Side Architectural Wall & Vanity Wash (Gently balances the right half of the scene)
+      const rightBounce = new THREE.DirectionalLight(0xF5ECE0, 0.22);
+      rightBounce.position.set(3.2, 1.8, 0.5);
+      this.scene.add(rightBounce);
+
+      // Golden Rim Light (Creates crisp contour separation around avatar hair, shoulders & ivory top edges)
+      const rimLight = new THREE.DirectionalLight(0xFFE2B8, 0.44);
+      rimLight.position.set(0.3, 3.4, -2.2);
       this.scene.add(rimLight);
 
-      // Architectural Ceiling Spotlights (Warm downlights with subtle downward cones)
+      // Architectural Ceiling Spotlights (Soft warm downward accents balanced symmetrically)
       // 1. Wardrobe Downlight
-      const wardrobeSpot = new THREE.SpotLight(0xFFE8C6, 0.75, 5.5, Math.PI / 4, 0.45, 1.2);
+      const wardrobeSpot = new THREE.SpotLight(0xFFE8C6, 0.30, 5.5, Math.PI / 4, 0.45, 1.2);
       wardrobeSpot.position.set(-1.0, 3.6, 0.3);
       wardrobeSpot.target.position.set(-0.95, 1.2, -0.15);
       this.scene.add(wardrobeSpot);
       this.scene.add(wardrobeSpot.target);
 
       // 2. Center Stage Downlight
-      const stageSpot = new THREE.SpotLight(0xFFF2DC, 0.65, 6.0, Math.PI / 4.2, 0.45, 1.1);
+      const stageSpot = new THREE.SpotLight(0xFFF2DC, 0.26, 6.0, Math.PI / 4.2, 0.45, 1.1);
       stageSpot.position.set(0, 3.8, 0.4);
       stageSpot.target.position.set(0, 0.6, 0);
       this.scene.add(stageSpot);
       this.scene.add(stageSpot.target);
 
-      // 3. Vanity Downlight
-      const vanitySpot = new THREE.SpotLight(0xFFE8C6, 0.70, 5.5, Math.PI / 4, 0.45, 1.2);
+      // 3. Vanity Downlight with directional shadow depth
+      const vanitySpot = new THREE.SpotLight(0xFFE8C6, 0.42, 6.0, Math.PI / 4, 0.48, 1.2);
       vanitySpot.position.set(1.0, 3.6, 0.3);
       vanitySpot.target.position.set(0.95, 1.2, -0.15);
+      vanitySpot.castShadow = true;
+      vanitySpot.shadow.bias = -0.0005;
+      if (vanitySpot.shadow.mapSize) {
+        vanitySpot.shadow.mapSize.width = 1024;
+        vanitySpot.shadow.mapSize.height = 1024;
+      }
       this.scene.add(vanitySpot);
       this.scene.add(vanitySpot.target);
     }
@@ -435,14 +735,14 @@
      * Architecture: Polished Calacatta Gold Marble Floor, Layered Ceiling Soffits & Architectural Walls
      */
     buildRoomArchitecture() {
-      // 1. Polished Italian Calacatta Gold Marble Flooring
+      // 1. Polished Italian Calacatta Gold Marble Flooring (Soft satin sheen avoiding mirror glare)
       const floorGeo = new THREE.PlaneGeometry(16, 16);
       const floorMat = new THREE.MeshStandardMaterial({
         map: this.textures.marble,
         roughnessMap: this.textures.marbleRoughness,
-        roughness: 0.14, // High-gloss polished stone
-        metalness: 0.04,
-        color: 0xFFFFFF
+        roughness: 0.34, // Refined satin hone
+        metalness: 0.02,
+        color: 0xEAE3D8
       });
       const floor = new THREE.Mesh(floorGeo, floorMat);
       floor.rotation.x = -Math.PI / 2;
@@ -450,11 +750,11 @@
       floor.receiveShadow = true;
       this.scene.add(floor);
 
-      // 2. Smooth Architectural Cream Plaster Back Wall
+      // 2. Smooth Architectural Cream Plaster Back Wall (#E9E2D7)
       const wallMat = new THREE.MeshStandardMaterial({
-        color: 0xF2ECE2, // Warm cream architectural plaster
-        roughness: 0.88,
-        metalness: 0.01,
+        color: 0xEDE6DC, // Soft luminous architectural cream plaster
+        roughness: 0.94,
+        metalness: 0.0,
         side: THREE.BackSide
       });
       const wallGeo = new THREE.CylinderGeometry(6.6, 6.6, 6.8, 48, 1, true, -Math.PI * 0.45, Math.PI * 0.9);
@@ -463,13 +763,13 @@
       backWall.receiveShadow = true;
       this.scene.add(backWall);
 
-      // 3. Architectural Center Wall Return / Soft Alcove
-      const alcoveWidth = 2.4;
+      // 3. Architectural Backdrop Wall (Seamless 5.4m breadth eliminating dark vertical crevice behind mirror)
+      const alcoveWidth = 5.4;
       const alcoveHeight = 3.8;
-      const alcoveDepth = 0.28;
+      const alcoveDepth = 0.08;
       const alcoveMat = new THREE.MeshStandardMaterial({
-        color: 0xEEE7DC,
-        roughness: 0.85
+        color: 0xDDD4C7, // Soft harmonious architectural cashmere plaster blending smoothly across room
+        roughness: 0.94
       });
       const alcoveBody = new THREE.Mesh(
         new THREE.BoxGeometry(alcoveWidth, alcoveHeight, alcoveDepth),
@@ -589,12 +889,12 @@
       rugMesh.receiveShadow = true;
       stageGroup.add(rugMesh);
 
-      // Soft Dark Contact Shadow under rug edge
-      const shadowDiscGeo = new THREE.CircleGeometry(1.25, 64);
+      // Soft Ambient Occlusion Contact Shadow under rug edge for grounding depth
+      const shadowDiscGeo = new THREE.CircleGeometry(1.30, 64);
       const shadowDiscMat = new THREE.MeshBasicMaterial({
-        color: 0x362A1E,
+        map: this.textures.contactShadow,
         transparent: true,
-        opacity: 0.28
+        opacity: 0.68
       });
       const shadowDisc = new THREE.Mesh(shadowDiscGeo, shadowDiscMat);
       shadowDisc.rotation.x = -Math.PI / 2;
@@ -604,21 +904,35 @@
       // 2. Lower Tier: Circular Stone Base with Radiant LED Halo Perimeter
       const lowerBaseRadius = 0.94;
       const lowerBaseHeight = 0.045;
+
+      // Soft grounding contact shadow ring under stone base onto rug
+      const baseShadowGeo = new THREE.CircleGeometry(lowerBaseRadius + 0.08, 64);
+      const baseShadowMat = new THREE.MeshBasicMaterial({
+        map: this.textures.contactShadow,
+        transparent: true,
+        opacity: 0.72,
+        depthWrite: false
+      });
+      const baseShadow = new THREE.Mesh(baseShadowGeo, baseShadowMat);
+      baseShadow.rotation.x = -Math.PI / 2;
+      baseShadow.position.y = 0.008;
+      stageGroup.add(baseShadow);
+
       const lowerBaseGeo = new THREE.CylinderGeometry(lowerBaseRadius, lowerBaseRadius, lowerBaseHeight, 64);
       const lowerBaseMat = new THREE.MeshStandardMaterial({
-        color: 0xE8DFC9,
-        roughness: 0.45,
-        metalness: 0.05
+        color: 0xD8CFC1, // Secondary surface #D8CFC1
+        roughness: 0.65,
+        metalness: 0.02
       });
       const lowerBase = new THREE.Mesh(lowerBaseGeo, lowerBaseMat);
       lowerBase.position.y = lowerBaseHeight / 2;
       lowerBase.receiveShadow = true;
       stageGroup.add(lowerBase);
 
-      // Radiant Warm 360° Illuminated LED Halo Ring (Golden Amber Glow)
+      // Radiant Warm 360° Illuminated LED Halo Ring (Subtle Amber Glow)
       const ledHaloGeo = new THREE.TorusGeometry(lowerBaseRadius + 0.012, 0.016, 16, 64);
       const ledHaloMat = new THREE.MeshBasicMaterial({
-        color: 0xFFE29E
+        color: 0xE8C27E
       });
       const ledHalo = new THREE.Mesh(ledHaloGeo, ledHaloMat);
       ledHalo.rotation.x = Math.PI / 2;
@@ -626,18 +940,18 @@
       stageGroup.add(ledHalo);
 
       // Downward halo perimeter light illuminating the woven rug
-      const haloLight = new THREE.PointLight(0xFFD694, 1.2, 2.5);
+      const haloLight = new THREE.PointLight(0xFFD694, 0.35, 2.2);
       haloLight.position.set(0, 0.06, 0);
       stageGroup.add(haloLight);
 
-      // 3. Upper Tier: Refined Polished White Honed Stone Disc
+      // 3. Upper Tier: Refined Polished Disc (Secondary surface #D8CFC1)
       const upperRadius = 0.88;
       const upperHeight = 0.075;
       const upperStageGeo = new THREE.CylinderGeometry(upperRadius, upperRadius + 0.015, upperHeight, 64);
       const upperStageMat = new THREE.MeshStandardMaterial({
-        color: 0xFAF7F2, // Clean warm honed white stone
-        roughness: 0.32,
-        metalness: 0.03
+        color: 0xD8CFC1, // Secondary surface #D8CFC1
+        roughness: 0.58,
+        metalness: 0.02
       });
       const upperStage = new THREE.Mesh(upperStageGeo, upperStageMat);
       upperStage.position.y = lowerBaseHeight + upperHeight / 2;
@@ -647,7 +961,7 @@
       // Chamfered brass accent ring between upper and lower tiers
       const brassBevelGeo = new THREE.TorusGeometry(upperRadius + 0.008, 0.006, 12, 64);
       const brassBevelMat = new THREE.MeshStandardMaterial({
-        color: 0xD8B478,
+        color: 0xA68A68, // Accent #A68A68
         metalness: 0.88,
         roughness: 0.22
       });
@@ -669,16 +983,30 @@
       wardrobeGroup.position.set(-0.88, 0, -0.06);
       wardrobeGroup.rotation.y = 0.38; // Angled gracefully towards stage
 
+      // European Oak Frame Material (Vertical stiles with medullary rays and satin sheen)
       const oakMat = new THREE.MeshStandardMaterial({
         map: this.textures.oak,
         bumpMap: this.textures.oakBump,
         bumpScale: 0.016,
-        color: 0xBD8E5D, // Warm caramelized natural honey oak
-        roughness: 0.42,
-        metalness: 0.02
+        roughnessMap: this.textures.oakRoughness,
+        color: 0xC9A66B, // Authentic European Golden Oak #C9A66B
+        roughness: 0.40, // Soft satin furniture lacquer
+        metalness: 0.01
       });
+
+      // European Oak Shelves Material (Horizontal grain orientation along shelf span with warm honey depth)
+      const oakShelfMat = new THREE.MeshStandardMaterial({
+        map: this.textures.oakShelf,
+        bumpMap: this.textures.oakShelfBump,
+        bumpScale: 0.018,
+        roughnessMap: this.textures.oakRoughness,
+        color: 0xC6A164, // Subtle warm amber-honey variation for horizontal shelving
+        roughness: 0.38,
+        metalness: 0.01
+      });
+
       const brassMat = new THREE.MeshStandardMaterial({
-        color: 0xD8B478,
+        color: 0xA68A68, // Accent #A68A68 brushed metallic
         metalness: 0.88,
         roughness: 0.22
       });
@@ -705,31 +1033,79 @@
       rightSide.castShadow = true;
       wardrobeGroup.add(rightSide);
 
-      // Back Wall Panel
+      // Back Wall Panel with tongue-and-groove planking to eliminate flat appearance
+      const interiorOakMat = new THREE.MeshStandardMaterial({
+        map: this.textures.oakBackboard,
+        bumpMap: this.textures.oakBump,
+        bumpScale: 0.014,
+        color: 0xA47D48, // Rich amber-honey recessed timber tone
+        roughness: 0.56,
+        metalness: 0.01
+      });
       const backBoard = new THREE.Mesh(
         new THREE.BoxGeometry(width - 0.076, height - 0.038, 0.02),
-        oakMat
+        interiorOakMat
       );
       backBoard.position.set(0, height / 2, -depth / 2 + 0.01);
       backBoard.receiveShadow = true;
       wardrobeGroup.add(backBoard);
 
-      // Base Plinth with Kick-Toe Recessed Glow
-      const plinth = new THREE.Mesh(new THREE.BoxGeometry(width, 0.14, depth - 0.04), oakMat);
+      // Base Plinth with Horizontal Grain & Kick-Toe Recessed Glow
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(width, 0.14, depth - 0.04), oakShelfMat);
       plinth.position.set(0, 0.07, 0.02);
       plinth.castShadow = true;
       wardrobeGroup.add(plinth);
 
-      // 2. Horizontal Shelf Tiers with Recessed Warm LED Light Strips
+      // Natural rectangular contact grounding shadow under wardrobe base plinth
+      const wardrobeShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(width + 0.32, depth + 0.28),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.boxContactShadow,
+          transparent: true,
+          opacity: 0.82,
+          depthWrite: false
+        })
+      );
+      wardrobeShadow.rotation.x = -Math.PI / 2;
+      wardrobeShadow.position.set(0.04, 0.003, 0.04);
+      wardrobeGroup.add(wardrobeShadow);
+
+      // Front kickplate tight contact shadow line
+      const kickShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(width, 0.07),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.boxContactShadow,
+          transparent: true,
+          opacity: 0.70,
+          depthWrite: false
+        })
+      );
+      kickShadow.rotation.x = -Math.PI / 2;
+      kickShadow.position.set(0, 0.004, depth / 2 - 0.01);
+      wardrobeGroup.add(kickShadow);
+
+      // 2. Horizontal Shelf Tiers with Recessed Warm LED Light Strips & Front Edge Highlight
       const shelfPositions = [0.14, 0.62, 1.15, 2.18];
       const shelfGeo = new THREE.BoxGeometry(width - 0.076, 0.030, depth - 0.02);
+      const shelfLipGeo = new THREE.BoxGeometry(width - 0.076, 0.008, 0.012);
+      const shelfLipMat = new THREE.MeshStandardMaterial({
+        color: 0xD8B478, // Subtle champagne metallic front edge lip
+        metalness: 0.70,
+        roughness: 0.28
+      });
 
       shelfPositions.forEach((shY) => {
-        const shelf = new THREE.Mesh(shelfGeo, oakMat);
+        // Shelf slab with horizontal wood grain
+        const shelf = new THREE.Mesh(shelfGeo, oakShelfMat);
         shelf.position.set(0, shY, 0);
         shelf.castShadow = true;
         shelf.receiveShadow = true;
         wardrobeGroup.add(shelf);
+
+        // Subtle front edge highlight trim (breaks flat shelf edge)
+        const frontLip = new THREE.Mesh(shelfLipGeo, shelfLipMat);
+        frontLip.position.set(0, shY - 0.011, (depth - 0.02) / 2);
+        wardrobeGroup.add(frontLip);
 
         // Under-shelf warm recessed LED light strip
         if (shY > 0.14) {
@@ -742,16 +1118,16 @@
         }
       });
 
-      // Internal warm ambient shelf lighting
-      const shelfLight1 = new THREE.PointLight(0xFFA834, 1.1, 2.6);
+      // Internal warm ambient shelf lighting (Balanced so left side does not overpower scene)
+      const shelfLight1 = new THREE.PointLight(0xFFA834, 0.85, 2.5);
       shelfLight1.position.set(0, 2.10, 0.14);
       wardrobeGroup.add(shelfLight1);
 
-      const shelfLight2 = new THREE.PointLight(0xFFA834, 0.85, 2.0);
+      const shelfLight2 = new THREE.PointLight(0xFFA834, 0.65, 1.9);
       shelfLight2.position.set(0, 1.08, 0.14);
       wardrobeGroup.add(shelfLight2);
 
-      const shelfLight3 = new THREE.PointLight(0xFFA834, 0.80, 1.8);
+      const shelfLight3 = new THREE.PointLight(0xFFA834, 0.60, 1.7);
       shelfLight3.position.set(0, 0.55, 0.14);
       wardrobeGroup.add(shelfLight3);
 
@@ -1000,8 +1376,9 @@
       const marbleTableMat = new THREE.MeshStandardMaterial({
         map: this.textures.marble,
         roughnessMap: this.textures.marbleRoughness,
-        roughness: 0.14,
-        metalness: 0.04
+        roughness: 0.24, // Tactile honed marble surface
+        metalness: 0.02,
+        color: 0xD8CFC1 // Secondary surface #D8CFC1
       });
       const tableTop = new THREE.Mesh(
         new THREE.BoxGeometry(tableWidth, 0.055, tableDepth),
@@ -1027,53 +1404,191 @@
         const foot = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.025, tableDepth - 0.08), brassMat);
         foot.position.set(lx, 0.015, lz);
         vanityGroup.add(foot);
+
+        // Natural grounding contact shadow under vanity foot stretcher
+        const legShadow = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.20, tableDepth + 0.12),
+          new THREE.MeshBasicMaterial({
+            map: this.textures.boxContactShadow,
+            transparent: true,
+            opacity: 0.78,
+            depthWrite: false
+          })
+        );
+        legShadow.rotation.x = -Math.PI / 2;
+        legShadow.position.set(lx, 0.003, lz);
+        vanityGroup.add(legShadow);
       });
 
-      // 2. Large Arched Capsule Mirror with Champagne-Brass Frame & Halo Glow
+      // Overall architectural ambient contact shadow under vanity table structure
+      const tableAmbientShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(tableWidth + 0.22, tableDepth + 0.16),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.boxContactShadow,
+          transparent: true,
+          opacity: 0.52,
+          depthWrite: false
+        })
+      );
+      tableAmbientShadow.rotation.x = -Math.PI / 2;
+      tableAmbientShadow.position.set(0, 0.002, 0);
+      vanityGroup.add(tableAmbientShadow);
+
+      // 2. Large Arched Capsule Mirror with Filled Half-Circle & Illuminated Perimeter LED Light Strip
       const mirrorWidth = 0.58;
-      const mirrorHeight = 1.15;
+      const mirrorRadius = mirrorWidth / 2; // 0.29m
+      const straightHeight = 0.82; // Height of the rectangular lower portion
+      const mirrorBaseY = tableHeight + 0.0275; // Sits directly atop the table marble slab (y ≈ 0.808m)
+      const mirrorZ = -tableDepth / 2 + 0.035;
 
-      // Arched top rim
-      const mirrorArch = new THREE.Mesh(
-        new THREE.CylinderGeometry(mirrorWidth / 2, mirrorWidth / 2, 0.032, 32, 1, false, 0, Math.PI),
-        brassMat
+      // Refined Satin Champagne Metal (Never turns black/dark under showroom lighting)
+      const mirrorFrameMat = new THREE.MeshStandardMaterial({
+        color: 0xE6D5B4, // Soft luminous satin champagne gold
+        roughness: 0.44,
+        metalness: 0.24
+      });
+
+      // 2A. Continuous Arched Backplate with Deep Architectural Bevel & Ambient Drop Shadow
+      const backplateShape = new THREE.Shape();
+      backplateShape.moveTo(-mirrorRadius, 0);
+      backplateShape.lineTo(mirrorRadius, 0);
+      backplateShape.lineTo(mirrorRadius, straightHeight);
+      backplateShape.absarc(0, straightHeight, mirrorRadius, 0, Math.PI, false);
+      backplateShape.lineTo(-mirrorRadius, straightHeight);
+      backplateShape.closePath();
+
+      // Dimensional Wall Drop Shadow (Casts soft directional occlusion onto the alcove plaster behind mirror)
+      const mirrorWallShadowGeo = new THREE.ShapeGeometry(backplateShape, 24);
+      const mirrorWallShadow = new THREE.Mesh(
+        mirrorWallShadowGeo,
+        new THREE.MeshBasicMaterial({
+          color: 0x18120B,
+          transparent: true,
+          opacity: 0.30,
+          depthWrite: false
+        })
       );
-      mirrorArch.rotation.x = Math.PI / 2;
-      mirrorArch.rotation.z = Math.PI / 2;
-      mirrorArch.position.set(0, tableHeight + mirrorHeight, -tableDepth / 2 + 0.04);
-      vanityGroup.add(mirrorArch);
+      mirrorWallShadow.scale.set(1.05, 1.035, 1.0);
+      mirrorWallShadow.position.set(0.016, mirrorBaseY - 0.014, mirrorZ - 0.024);
+      vanityGroup.add(mirrorWallShadow);
 
-      // Straight lower mirror frame
-      const mirrorBody = new THREE.Mesh(
-        new THREE.BoxGeometry(mirrorWidth, mirrorHeight - mirrorWidth / 2, 0.025),
-        brassMat
-      );
-      mirrorBody.position.set(0, tableHeight + (mirrorHeight - mirrorWidth / 2) / 2 + 0.025, -tableDepth / 2 + 0.04);
-      vanityGroup.add(mirrorBody);
+      // Soft Warm LED Rear Backlight Wash (Radiates warm luminous aura onto the wall behind mirror)
+      const mirrorBackGlow = new THREE.PointLight(0xFFCF88, 0.85, 2.4);
+      mirrorBackGlow.position.set(0, mirrorBaseY + straightHeight * 0.55, mirrorZ - 0.035);
+      vanityGroup.add(mirrorBackGlow);
 
-      // Glowing Warm LED Halo Rim
-      const haloMat = new THREE.MeshBasicMaterial({ color: 0xFFD89B });
-      const haloRing = new THREE.Mesh(
-        new THREE.TorusGeometry(mirrorWidth / 2 + 0.012, 0.014, 16, 48, Math.PI),
-        haloMat
-      );
-      haloRing.position.set(0, tableHeight + mirrorHeight, -tableDepth / 2 + 0.045);
-      vanityGroup.add(haloRing);
+      // Refined Architectural Backplate (Mounted behind the mirror glass)
+      const backplateGeo = new THREE.ExtrudeGeometry(backplateShape, {
+        depth: 0.014,
+        bevelEnabled: false
+      });
+      const mirrorBackplate = new THREE.Mesh(backplateGeo, mirrorFrameMat);
+      mirrorBackplate.position.set(0, mirrorBaseY, mirrorZ);
+      mirrorBackplate.castShadow = true;
+      mirrorBackplate.receiveShadow = true;
+      vanityGroup.add(mirrorBackplate);
 
-      // Mirror Glass Surface
-      const glassGeo = new THREE.PlaneGeometry(mirrorWidth - 0.03, mirrorHeight - 0.03);
+      // 2B. Arched Mirror Glass Surface (Completely fills both rectangle & upper semi-circle dome)
+      const glassInset = 0.007; // 7mm champagne bezel margin
+      const glassR = mirrorRadius - glassInset;
+      const glassStraightH = straightHeight;
+      const glassShape = new THREE.Shape();
+      glassShape.moveTo(-glassR, glassInset);
+      glassShape.lineTo(glassR, glassInset);
+      glassShape.lineTo(glassR, glassStraightH);
+      glassShape.absarc(0, glassStraightH, glassR, 0, Math.PI, false);
+      glassShape.lineTo(-glassR, glassStraightH);
+      glassShape.closePath();
+
+      const glassGeo = new THREE.ShapeGeometry(glassShape, 36);
+
+      // Compute normalized [0, 1] UVs across the entire arched shape so live reflection maps seamlessly
+      if (glassGeo.computeBoundingBox) {
+        glassGeo.computeBoundingBox();
+        const gBBox = glassGeo.boundingBox || { min: { x: -glassR, y: glassInset }, max: { x: glassR, y: glassStraightH + glassR } };
+        const gWidth = Math.max(0.001, gBBox.max.x - gBBox.min.x);
+        const gHeight = Math.max(0.001, gBBox.max.y - gBBox.min.y);
+        const posAttr = glassGeo.attributes ? glassGeo.attributes.position : null;
+        if (posAttr && posAttr.count) {
+          const uvs = new Float32Array(posAttr.count * 2);
+          for (let i = 0; i < posAttr.count; i++) {
+            const x = posAttr.getX(i);
+            const y = posAttr.getY(i);
+            uvs[i * 2] = (x - gBBox.min.x) / gWidth;
+            uvs[i * 2 + 1] = (y - gBBox.min.y) / gHeight;
+          }
+          if (THREE.BufferAttribute) {
+            glassGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+          }
+        }
+      }
+
       const fallbackGlassMat = new THREE.MeshStandardMaterial({
-        color: 0xECE4DA,
-        roughness: 0.08,
+        color: 0xF2ECE2,
+        roughness: 0.06,
         metalness: 0.94
       });
       this.mirrorGlassMesh = new THREE.Mesh(glassGeo, fallbackGlassMat);
-      this.mirrorGlassMesh.position.set(0, tableHeight + mirrorHeight / 2 + 0.03, -tableDepth / 2 + 0.055);
+      this.mirrorGlassMesh.position.set(0, mirrorBaseY, mirrorZ + 0.017); // In front of backplate for unobstructed reflection
       vanityGroup.add(this.mirrorGlassMesh);
 
+      // 2C. Glowing Perimeter LED Light Strip (Framing top arched half-circle, sides & base)
+      const stripRadius = 0.0095; // Defined continuous luminous warm LED ribbon
+      const stripZ = mirrorZ + 0.0175; // Flush along the perimeter of the mirror glass
+      const haloMat = new THREE.MeshBasicMaterial({ color: 0xFFF8E7 }); // Warm white luminous core
+      const haloAuraMat = new THREE.MeshBasicMaterial({
+        color: 0xFFE0B2,
+        transparent: true,
+        opacity: 0.65
+      });
+
+      // Top Semi-Circle Arch Light Strip (Half Torus lying in XY plane, curving over the top half of circle)
+      const archStripGeo = new THREE.TorusGeometry(mirrorRadius, stripRadius, 16, 48, Math.PI);
+      const archStrip = new THREE.Mesh(archStripGeo, haloMat);
+      archStrip.position.set(0, mirrorBaseY + straightHeight, stripZ);
+      vanityGroup.add(archStrip);
+
+      // Top Arch Soft Ambient Halo Glow
+      const archAuraGeo = new THREE.TorusGeometry(mirrorRadius, stripRadius * 1.9, 16, 48, Math.PI);
+      const archAura = new THREE.Mesh(archAuraGeo, haloAuraMat);
+      archAura.position.set(0, mirrorBaseY + straightHeight, stripZ - 0.002);
+      vanityGroup.add(archAura);
+
+      // Left & Right Vertical Side Light Strips (Extending down both sides to the vanity countertop)
+      [-1, 1].forEach((side) => {
+        const sideStripGeo = new THREE.CylinderGeometry(stripRadius, stripRadius, straightHeight, 16);
+        const sideStrip = new THREE.Mesh(sideStripGeo, haloMat);
+        sideStrip.position.set(side * mirrorRadius, mirrorBaseY + straightHeight / 2, stripZ);
+        vanityGroup.add(sideStrip);
+
+        // Soft Halo Aura behind side strips
+        const sideAuraGeo = new THREE.CylinderGeometry(stripRadius * 1.9, stripRadius * 1.9, straightHeight, 16);
+        const sideAura = new THREE.Mesh(sideAuraGeo, haloAuraMat);
+        sideAura.position.set(side * mirrorRadius, mirrorBaseY + straightHeight / 2, stripZ - 0.002);
+        vanityGroup.add(sideAura);
+
+        // Seamless corner elbow spheres connecting straight sides to the top arch and base
+        const topCorner = new THREE.Mesh(new THREE.SphereGeometry(stripRadius, 16, 16), haloMat);
+        topCorner.position.set(side * mirrorRadius, mirrorBaseY + straightHeight, stripZ);
+        vanityGroup.add(topCorner);
+
+        const bottomCorner = new THREE.Mesh(new THREE.SphereGeometry(stripRadius, 16, 16), haloMat);
+        bottomCorner.position.set(side * mirrorRadius, mirrorBaseY, stripZ);
+        vanityGroup.add(bottomCorner);
+      });
+
+      // Bottom Horizontal Light Strip across the tabletop base
+      const bottomStrip = new THREE.Mesh(
+        new THREE.CylinderGeometry(stripRadius, stripRadius, mirrorWidth, 16),
+        haloMat
+      );
+      bottomStrip.rotation.z = Math.PI / 2;
+      bottomStrip.position.set(0, mirrorBaseY, stripZ);
+      vanityGroup.add(bottomStrip);
+
       // Warm Soft Vanity Ambient Glow
-      const mirrorLight = new THREE.PointLight(0xFFA834, 1.05, 2.8);
-      mirrorLight.position.set(0, tableHeight + mirrorHeight / 2 + 0.15, 0.18);
+      const mirrorLight = new THREE.PointLight(0xFFA834, 1.25, 2.8);
+      mirrorLight.position.set(0, mirrorBaseY + straightHeight / 2 + 0.15, 0.18);
       vanityGroup.add(mirrorLight);
 
       // 3. TABLETOP STYLING: Fluted Glass Vase with Eucalyptus, Perfumes & Art Books
@@ -1119,6 +1634,20 @@
         }
       }
 
+      // Soft contact shadow grounding accessories on marble tabletop
+      const tableAccessoryShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.58, 0.22),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.contactShadow,
+          transparent: true,
+          opacity: 0.36,
+          depthWrite: false
+        })
+      );
+      tableAccessoryShadow.rotation.x = -Math.PI / 2;
+      tableAccessoryShadow.position.set(0.12, tableHeight + 0.0285, 0.03);
+      vanityGroup.add(tableAccessoryShadow);
+
       // Stack of 2 Hardcover Fashion Art Books
       const book1 = new THREE.Mesh(
         new THREE.BoxGeometry(0.20, 0.028, 0.15),
@@ -1140,7 +1669,7 @@
       // Luxury Glass Perfume Bottles with Polished Gold Caps
       // Perfume 1: Warm Amber Rectangular Bottle
       const p1Mat = new THREE.MeshStandardMaterial({ color: 0xDDA550, roughness: 0.12, transparent: true, opacity: 0.85 });
-      const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.075, 0.028), p1Mat);
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.075, 0.028), p1Mat); p1.castShadow = true;
       p1.position.set(0.06, tableHeight + 0.065, 0.04);
       vanityGroup.add(p1);
 
@@ -1150,7 +1679,7 @@
 
       // Perfume 2: Rose Translucent Flacon
       const p2Mat = new THREE.MeshStandardMaterial({ color: 0xEAA29B, roughness: 0.15, transparent: true, opacity: 0.82 });
-      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.082, 16), p2Mat);
+      const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.082, 16), p2Mat); p2.castShadow = true;
       p2.position.set(0.12, tableHeight + 0.068, 0.04);
       vanityGroup.add(p2);
 
@@ -1160,7 +1689,7 @@
 
       // Perfume 3: Clear Faceted Bottle
       const p3Mat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.08, transparent: true, opacity: 0.78 });
-      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.065, 8), p3Mat);
+      const p3 = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.065, 8), p3Mat); p3.castShadow = true;
       p3.position.set(0.18, tableHeight + 0.060, 0.04);
       vanityGroup.add(p3);
 
@@ -1168,25 +1697,36 @@
       p3Cap.position.set(0.18, tableHeight + 0.103, 0.04);
       vanityGroup.add(p3Cap);
 
-      // 4. Round Cream Bouclé Upholstered Ottoman Stool
+      // 4. Round Monolithic Bouclé Upholstered Ottoman Stool (#D8CFC1)
       const stoolGroup = new THREE.Group();
       stoolGroup.position.set(0.05, 0, 0.28);
 
+      // Soft natural contact shadow under ottoman stool
+      const stoolShadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.48, 0.48),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.contactShadow,
+          transparent: true,
+          opacity: 0.40,
+          depthWrite: false
+        })
+      );
+      stoolShadow.rotation.x = -Math.PI / 2;
+      stoolShadow.position.set(0, 0.002, 0);
+      stoolGroup.add(stoolShadow);
+
       const boucleMat = new THREE.MeshStandardMaterial({
         map: this.textures.boucle,
-        color: 0xF7F3EA,
-        roughness: 0.88,
-        metalness: 0.01
+        color: 0xD8CFC1, // Secondary surface #D8CFC1
+        roughness: 0.94,
+        metalness: 0.0
       });
-      const cushion = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.36, 32), boucleMat);
-      cushion.position.y = 0.22;
+      // Monolithic upholstered bouclé cushion resting directly on the floor (no dark base strip)
+      const cushion = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.40, 32), boucleMat);
+      cushion.position.y = 0.20;
       cushion.castShadow = true;
+      cushion.receiveShadow = true;
       stoolGroup.add(cushion);
-
-      // Brushed champagne-brass metallic base plinth ring
-      const brassBaseRing = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.205, 0.045, 32), brassMat);
-      brassBaseRing.position.y = 0.025;
-      stoolGroup.add(brassBaseRing);
 
       vanityGroup.add(stoolGroup);
 
@@ -1208,8 +1748,9 @@
      */
     setupMirrorRenderPipeline() {
       try {
+        const renderFormat = (typeof THREE.RGBAFormat !== 'undefined') ? THREE.RGBAFormat : THREE.RGBFormat;
         this.mirrorRenderTarget = new THREE.WebGLRenderTarget(512, 512, {
-          format: THREE.RGBFormat,
+          format: renderFormat,
           generateMipmaps: false,
           minFilter: THREE.LinearFilter,
           magFilter: THREE.LinearFilter
@@ -1224,6 +1765,7 @@
           this.mirrorGlassMesh.material = new THREE.MeshBasicMaterial({
             map: this.mirrorRenderTarget.texture
           });
+          this.mirrorGlassMesh.material.needsUpdate = true;
         }
       } catch (err) {
         console.warn('Studio3D: Mirror render target fallback active', err);
@@ -1238,16 +1780,58 @@
       this.avatarGroup = new THREE.Group();
       this.avatarGroup.position.set(0, 0.14, 0); // Atop limestone circular stage
 
+      // Natural grounding contact shadows tightly calibrated to foot sole footprint (0.09m x 0.20m)
+      const footLeft = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.09, 0.20),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.footContactShadow,
+          transparent: true,
+          opacity: 0.88,
+          depthWrite: false
+        })
+      );
+      footLeft.rotation.x = -Math.PI / 2;
+      footLeft.position.set(-0.074, 0.003, 0.026);
+      this.avatarGroup.add(footLeft);
+
+      const footRight = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.09, 0.20),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.footContactShadow,
+          transparent: true,
+          opacity: 0.88,
+          depthWrite: false
+        })
+      );
+      footRight.rotation.x = -Math.PI / 2;
+      footRight.position.set(0.078, 0.003, 0.026);
+      this.avatarGroup.add(footRight);
+
+      // Subtle, soft directional ambient occlusion wash connecting and grounding both feet
+      const footAmbient = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.34, 0.26),
+        new THREE.MeshBasicMaterial({
+          map: this.textures.contactShadow,
+          transparent: true,
+          opacity: 0.40,
+          depthWrite: false
+        })
+      );
+      footAmbient.rotation.x = -Math.PI / 2;
+      footAmbient.position.set(0.015, 0.002, 0.020);
+      this.avatarGroup.add(footAmbient);
+
       // Group containing refined anatomical sculpt (active immediately)
       this.proceduralAvatarGroup = new THREE.Group();
       this.avatarGroup.add(this.proceduralAvatarGroup);
 
       // Materials
-      const skinMat = new THREE.MeshStandardMaterial({
-        color: 0xF3D5C6, // Soft luminous porcelain/ivory skin tone
-        roughness: 0.38,
-        metalness: 0.02
+      this.avatarSkinMat = new THREE.MeshStandardMaterial({
+        color: 0xD7AC93, // PR #9 calibrated body tone (warm natural skin tone)
+        roughness: 0.46,
+        metalness: 0.01
       });
+      const skinMat = this.avatarSkinMat;
       const hairMat = new THREE.MeshStandardMaterial({
         color: 0x1E120A, // Rich deep espresso with warm undertone
         roughness: 0.28,
@@ -1510,35 +2094,78 @@
       const topParent = new THREE.Group();
       this.avatarGroup.add(topParent);
 
-      // 1. Ribbed Ivory Tank Top (Starting Piece matching Reference D)
+      // 1. Ribbed Rustic Linen Oatmeal Ecru Tank Top (Rich Contrast Oatmeal #D5C5AC)
       const tankGroup = new THREE.Group();
       const tankMat = new THREE.MeshStandardMaterial({
-        color: 0xFAF6EF, // Clean soft ivory
-        roughness: 0.74,
-        metalness: 0.02
+        map: this.textures.linen,
+        bumpMap: this.textures.linenBump,
+        bumpScale: 0.020,
+        color: 0xF2ECE0, // Luminous natural ivory linen weave (calibrated for crisp tripartite contrast)
+        roughness: 0.88, // Tactile matte linen weave
+        metalness: 0.0
       });
       const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.124, 0.106, 0.25, 32), tankMat);
       tank.position.set(0, 1.22, 0);
       tank.castShadow = true;
       tankGroup.add(tank);
 
-      // Fine Vertical Rib Texturing
-      const ribMat = new THREE.MeshStandardMaterial({ color: 0xE8E1D5, roughness: 0.85 });
-      for (let r = 0; r < 12; r++) {
-        const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.0028, 0.0028, 0.24, 6), ribMat);
-        const angle = (r * Math.PI * 2) / 12;
+      // Fine Vertical Rib Texturing with distinct chiaroscuro shadow definition
+      const ribMat = new THREE.MeshStandardMaterial({ color: 0xD0C2AE, roughness: 0.84 });
+      for (let r = 0; r < 16; r++) {
+        const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.0030, 0.0030, 0.24, 6), ribMat);
+        const angle = (r * Math.PI * 2) / 16;
         rib.position.set(Math.sin(angle) * 0.116, 1.22, Math.cos(angle) * 0.116);
         tankGroup.add(rib);
       }
+
+      // Sartorial Edge Piping (Defines clothing silhouette cleanly against bright backdrop)
+      const pipingMat = new THREE.MeshStandardMaterial({
+        color: 0x9E836A, // Tailored contrast camel-biscuit piping defining garment borders against skin
+        roughness: 0.80
+      });
+
+      // Scoop neckline collar trim
+      const collarTrim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.065, 0.0042, 8, 24, Math.PI),
+        pipingMat
+      );
+      collarTrim.position.set(0, 1.338, 0.076);
+      collarTrim.rotation.x = 0.28;
+      tankGroup.add(collarTrim);
+
+      // Armhole contour piping
+      [-1, 1].forEach((side) => {
+        const armTrim = new THREE.Mesh(
+          new THREE.TorusGeometry(0.052, 0.0038, 8, 24),
+          pipingMat
+        );
+        armTrim.rotation.y = Math.PI / 2;
+        armTrim.rotation.x = side * 0.14;
+        armTrim.position.set(side * 0.122, 1.285, 0);
+        tankGroup.add(armTrim);
+      });
+
+      // Bottom waist hem piping
+      const waistTrim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.106, 0.0042, 8, 32),
+        pipingMat
+      );
+      waistTrim.rotation.x = Math.PI / 2;
+      waistTrim.position.set(0, 1.096, 0);
+      tankGroup.add(waistTrim);
+
       topParent.add(tankGroup);
       this.garmentMeshes.top['tank'] = tankGroup;
 
-      // 2. Cream Cozy Knit Cardigan with Tortoiseshell Buttons (Reference D - Step 3)
+      // 2. Cream Cozy Knit Cardigan with Tortoiseshell Buttons (Rich Contrast #D8C8AF)
       const cardiganGroup = new THREE.Group();
       const cardiganMat = new THREE.MeshStandardMaterial({
-        color: 0xF2ECE0,
-        roughness: 0.82,
-        metalness: 0.02
+        map: this.textures.linen,
+        bumpMap: this.textures.linenBump,
+        bumpScale: 0.022,
+        color: 0xD8C8AF, // Warm tactile oatmeal cream
+        roughness: 0.90, // High fabric roughness, soft diffuse reflection
+        metalness: 0.0
       });
       const cardBody = new THREE.Mesh(new THREE.CylinderGeometry(0.142, 0.132, 0.40, 32), cardiganMat);
       cardBody.position.set(0, 1.21, 0);
@@ -1647,12 +2274,15 @@
       const bottomParent = new THREE.Group();
       this.avatarGroup.add(bottomParent);
 
-      // 1. High-Waisted Tailored Fluid Trousers in Warm Taupe (Reference D)
+      // 1. High-Waisted Tailored Fluid Trousers in Warm Taupe (Rustic Linen Slub)
       const taupeGroup = new THREE.Group();
       const taupeMat = new THREE.MeshStandardMaterial({
-        color: 0x6E6350, // Rich warm taupe/olive tone providing clear contrast
-        roughness: 0.72,
-        metalness: 0.02
+        map: this.textures.linen,
+        bumpMap: this.textures.linenBump,
+        bumpScale: 0.016,
+        color: 0x786C58, // Warm earthy taupe
+        roughness: 0.94, // Tactile fabric matte diffusion
+        metalness: 0.0
       });
 
       const taupePelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.124, 0.154, 0.22, 32), taupeMat);
@@ -1730,7 +2360,7 @@
 
       // 1. Barefoot Natural Sculpt (Matching Reference D relaxed studio look)
       const barefootGroup = new THREE.Group();
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xF0CDBC, roughness: 0.36 });
+      const skinMat = this.avatarSkinMat || new THREE.MeshStandardMaterial({ color: 0xD7AC93, roughness: 0.46 });
       [-1, 1].forEach((side) => {
         const foot = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.038, 0.16), skinMat);
         foot.position.set(side * 0.076, 0.02, 0.03);
@@ -2021,6 +2651,17 @@
 
       // 5. Render Main 3D WebGL Scene
       this.renderer.render(this.scene, this.camera);
+    }
+
+    /**
+     * Updates avatar body/skin tone dynamically while maintaining contrast against clothing & background
+     */
+    setAvatarSkinColor(hexColor) {
+      if (this.avatarSkinMat) {
+        const col = typeof hexColor === 'string' ? parseInt(hexColor.replace('#', '0x'), 16) : hexColor;
+        this.avatarSkinMat.color.setHex(col);
+        this.avatarSkinMat.needsUpdate = true;
+      }
     }
 
     /**

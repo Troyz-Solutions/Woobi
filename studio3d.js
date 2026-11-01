@@ -30,10 +30,10 @@
       fovPortrait: 48
     },
     AVATAR_FULL_BODY: {
-      position: new THREE.Vector3(0, 1.10, 2.10),
-      target: new THREE.Vector3(0, 0.95, 0),
-      fovLandscape: 38,
-      fovPortrait: 44
+      position: new THREE.Vector3(0, 1.10, 2.32),
+      target: new THREE.Vector3(0, 0.93, 0),
+      fovLandscape: 52,
+      fovPortrait: 52
     },
     AVATAR_DETAIL: {
       position: new THREE.Vector3(0, 1.42, 1.15),
@@ -81,13 +81,20 @@
       this.garmentMeshes = {
         top: {},
         bottom: {},
-        shoes: {}
+        outerwear: {},
+        shoes: {},
+        accessories: {}
       };
+      this.garmentParents = {};
       this.activeGarments = {
         top: 'tank',
         bottom: 'taupe_wide',
-        shoes: 'barefoot'
+        outerwear: null,
+        shoes: 'barefoot',
+        accessories: null
       };
+      this.avatarGender = 'female';
+      this.zoomFactor = 1;
 
       // Pointer / Drag State
       this.isPointerDown = false;
@@ -98,6 +105,11 @@
       this.avatarRotationY = 0;
       this.targetRotationY = 0;
       this.hasDragged = false;
+      this.pointers = new Map();
+      this.pinchStartDistance = 0;
+      this.pinchStartZoom = 1;
+      this.interactionHandlers = [];
+      this.resizeHandler = this.onResize.bind(this);
 
       // Animation Loop
       this.clock = new THREE.Clock();
@@ -115,6 +127,14 @@
         this.onResize();
         return;
       }
+
+      this.interactiveObjects = [];
+      this.pointers.clear();
+      this.garmentMeshes = { top: {}, bottom: {}, outerwear: {}, shoes: {}, accessories: {} };
+      this.garmentParents = {};
+      this.activeGarments = { top: 'tank', bottom: 'taupe_wide', outerwear: null, shoes: 'barefoot', accessories: null };
+      this.avatarRotationY = 0;
+      this.targetRotationY = 0;
 
       this.container = document.getElementById(containerId);
       this.canvas = document.getElementById(canvasId);
@@ -159,7 +179,7 @@
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       if (THREE.ACESFilmicToneMapping) {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.04; // Calibrated for radiant showroom highlights
+        this.renderer.toneMappingExposure = 0.68;
       }
       if (THREE.sRGBEncoding) {
         this.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -183,7 +203,7 @@
       this.animate = this.animate.bind(this);
       this.animate();
 
-      window.addEventListener('resize', this.onResize.bind(this));
+      window.addEventListener('resize', this.resizeHandler);
       console.log('Studio3D: Luxury Showroom initialized with PBR architecture & lighting!');
     }
 
@@ -371,6 +391,43 @@
       this.textures.boucle.wrapS = THREE.RepeatWrapping;
       this.textures.boucle.wrapT = THREE.RepeatWrapping;
       this.textures.boucle.repeat.set(3, 3);
+
+      const fabricCanvas = document.createElement('canvas');
+      fabricCanvas.width = 128;
+      fabricCanvas.height = 128;
+      const fabricContext = fabricCanvas.getContext('2d');
+      fabricContext.fillStyle = '#F2F0EA';
+      fabricContext.fillRect(0, 0, 128, 128);
+      for (let line = 0; line < 128; line += 3) {
+        fabricContext.strokeStyle = line % 6 === 0 ? 'rgba(110, 102, 91, 0.09)' : 'rgba(255, 255, 255, 0.52)';
+        fabricContext.lineWidth = 1;
+        fabricContext.beginPath();
+        fabricContext.moveTo(0, line + 0.5);
+        fabricContext.lineTo(128, line + 0.5);
+        fabricContext.stroke();
+      }
+      for (let line = 0; line < 128; line += 4) {
+        fabricContext.strokeStyle = line % 8 === 0 ? 'rgba(104, 96, 84, 0.07)' : 'rgba(255, 255, 255, 0.32)';
+        fabricContext.beginPath();
+        fabricContext.moveTo(line + 0.5, 0);
+        fabricContext.lineTo(line + 0.5, 128);
+        fabricContext.stroke();
+      }
+      this.textures.fabric = new THREE.CanvasTexture(fabricCanvas);
+      this.textures.fabric.wrapS = THREE.RepeatWrapping;
+      this.textures.fabric.wrapT = THREE.RepeatWrapping;
+      this.textures.fabric.repeat.set(3, 2);
+      this.textures.fabric.anisotropy = 4;
+    }
+
+    createFabricMaterial(color, roughness = 0.82, extra = {}) {
+      return new THREE.MeshStandardMaterial({
+        color,
+        map: this.textures.fabric,
+        roughness,
+        metalness: 0.01,
+        ...extra
+      });
     }
 
     /**
@@ -1244,9 +1301,9 @@
 
       // Materials
       const skinMat = new THREE.MeshStandardMaterial({
-        color: 0xF3D5C6, // Soft luminous porcelain/ivory skin tone
-        roughness: 0.38,
-        metalness: 0.02
+        color: 0xD7AC93,
+        roughness: 0.46,
+        metalness: 0.01
       });
       const hairMat = new THREE.MeshStandardMaterial({
         color: 0x1E120A, // Rich deep espresso with warm undertone
@@ -1270,10 +1327,32 @@
 
       // Cranium / Face with soft feminine contour
       const faceGeo = new THREE.SphereGeometry(0.095, 32, 32);
-      faceGeo.scale(0.88, 1.15, 0.95);
       const face = new THREE.Mesh(faceGeo, skinMat);
+      face.scale.set(0.88, 1.15, 0.95);
       face.castShadow = true;
       this.headGroup.add(face);
+      this.faceMesh = face;
+
+      const maleFaceGeometry = new THREE.SphereGeometry(0.095, 40, 32);
+      const maleFacePositions = maleFaceGeometry.attributes.position;
+      for (let vertex = 0; vertex < maleFacePositions.count; vertex++) {
+        const x = maleFacePositions.getX(vertex);
+        const y = maleFacePositions.getY(vertex);
+        const z = maleFacePositions.getZ(vertex);
+        const height = y / 0.095;
+        const jawFactor = height < -0.45
+          ? 0.72 + ((height + 1) / 0.55) * 0.34
+          : height < 0.18
+          ? 1.06
+          : 1.06 - ((height - 0.18) / 0.82) * 0.10;
+        maleFacePositions.setXYZ(vertex, x * jawFactor, y * 1.08, z * 0.97);
+      }
+      maleFacePositions.needsUpdate = true;
+      maleFaceGeometry.computeVertexNormals();
+      this.maleFaceMesh = new THREE.Mesh(maleFaceGeometry, skinMat);
+      this.maleFaceMesh.castShadow = true;
+      this.maleFaceMesh.visible = false;
+      this.headGroup.add(this.maleFaceMesh);
 
       // Soft tapered chin
       const chinGeo = new THREE.SphereGeometry(0.032, 20, 20);
@@ -1281,13 +1360,19 @@
       const chin = new THREE.Mesh(chinGeo, skinMat);
       chin.position.set(0, -0.072, 0.038);
       this.headGroup.add(chin);
+      this.chinMesh = chin;
+
+      this.feminineFaceGroup = new THREE.Group();
+      this.headGroup.add(this.feminineFaceGroup);
+      this.maleBrows = [];
+      this.maleEars = [];
 
       // Delicate rosy cheek flush
       [-1, 1].forEach((side) => {
         const blush = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 12), blushMat);
         blush.scale.set(1.2, 0.6, 0.3);
         blush.position.set(side * 0.048, -0.015, 0.076);
-        this.headGroup.add(blush);
+        this.feminineFaceGroup.add(blush);
       });
 
       // Almond Eyes with Sclera, Iris, Pupil, Catchlight & Eyelash Line
@@ -1327,19 +1412,21 @@
         const lash = new THREE.Mesh(new THREE.CylinderGeometry(0.0016, 0.0016, 0.025, 8), lashMat);
         lash.rotation.z = Math.PI / 2 + side * 0.14;
         lash.position.set(eyeX, 0.021, 0.084);
-        this.headGroup.add(lash);
+        this.feminineFaceGroup.add(lash);
 
         // Graceful Arched Eyebrow (Well above eyes so face is clear)
         const brow = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0014, 0.034, 8), browMat);
         brow.rotation.z = side * 0.16;
         brow.position.set(eyeX, 0.035, 0.082);
         this.headGroup.add(brow);
+        this.maleBrows.push(brow);
 
         // Ear Shell
         const ear = new THREE.Mesh(new THREE.SphereGeometry(0.020, 12, 12), skinMat);
         ear.scale.set(0.35, 1.15, 0.65);
         ear.position.set(side * 0.088, 0.008, -0.005);
         this.headGroup.add(ear);
+        this.maleEars.push(ear);
       });
 
       // Refined Feminine Nose Bridge & Tip
@@ -1347,89 +1434,152 @@
       bridge.position.set(0, -0.006, 0.089);
       bridge.rotation.x = -0.16;
       this.headGroup.add(bridge);
+      this.noseBridge = bridge;
 
       const tip = new THREE.Mesh(new THREE.SphereGeometry(0.009, 12, 12), skinMat);
       tip.scale.set(0.9, 0.75, 1.0);
       tip.position.set(0, -0.024, 0.093);
       this.headGroup.add(tip);
+      this.noseTip = tip;
 
       // Contoured Satin Rosy Lips
       const upperLip = new THREE.Mesh(new THREE.SphereGeometry(0.012, 16, 12), lipMat);
       upperLip.scale.set(1.5, 0.45, 0.6);
       upperLip.position.set(0, -0.048, 0.084);
-      this.headGroup.add(upperLip);
+      this.feminineFaceGroup.add(upperLip);
 
       const lowerLip = new THREE.Mesh(new THREE.SphereGeometry(0.014, 16, 12), lipMat);
       lowerLip.scale.set(1.4, 0.55, 0.7);
       lowerLip.position.set(0, -0.058, 0.082);
-      this.headGroup.add(lowerLip);
+      this.feminineFaceGroup.add(lowerLip);
 
       // Elegant High Bun Updo Hairstyle (Forehead & Face 100% Unobstructed!)
+      this.feminineHairGroup = new THREE.Group();
+      this.headGroup.add(this.feminineHairGroup);
       const hairCrownGeo = new THREE.SphereGeometry(0.096, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.52);
       const hairCrown = new THREE.Mesh(hairCrownGeo, hairMat);
       hairCrown.position.set(0, 0.045, -0.022);
       hairCrown.rotation.x = -0.15;
-      this.headGroup.add(hairCrown);
+      this.feminineHairGroup.add(hairCrown);
 
       // Chic Sculpted Top Bun
       const bun = new THREE.Mesh(new THREE.SphereGeometry(0.046, 24, 24), hairMat);
       bun.scale.set(1.15, 0.95, 1.0);
       bun.position.set(0, 0.135, -0.038);
-      this.headGroup.add(bun);
+      this.feminineHairGroup.add(bun);
 
       // Golden Brass Hairpin Accent
       const clipMat = new THREE.MeshStandardMaterial({ color: 0xD8B478, metalness: 0.85, roughness: 0.22 });
       const clip = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.0035, 8, 24), clipMat);
       clip.position.set(0, 0.135, -0.065);
       clip.rotation.y = Math.PI / 2;
-      this.headGroup.add(clip);
+      this.feminineHairGroup.add(clip);
 
       // Soft Wispy Side Locks behind cheekbones
       [-1, 1].forEach((side) => {
         const tendril = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.0015, 0.10, 8), hairMat);
         tendril.position.set(side * 0.082, -0.035, 0.015);
         tendril.rotation.z = side * 0.08;
-        this.headGroup.add(tendril);
+        this.feminineHairGroup.add(tendril);
       });
+
+      this.masculineHairGroup = new THREE.Group();
+      const hairCapGeometry = new THREE.SphereGeometry(0.1, 40, 24, 0, Math.PI * 2, 0, Math.PI * 0.72);
+      const hairPositions = hairCapGeometry.attributes.position;
+      const hairRows = 24;
+      const hairColumns = 40;
+      for (let row = 0; row <= hairRows; row++) {
+        const rowFraction = row / hairRows;
+        for (let column = 0; column <= hairColumns; column++) {
+          const phi = (column / hairColumns) * Math.PI * 2;
+          const thetaMax = 1.42 + 0.82 * ((1 - Math.cos(phi)) / 2);
+          const theta = rowFraction * thetaMax;
+          const radial = 0.102 * Math.sin(theta);
+          const index = row * (hairColumns + 1) + column;
+          hairPositions.setXYZ(
+            index,
+            radial * Math.sin(phi) * 1.03,
+            0.045 + 0.105 * Math.cos(theta),
+            -0.008 + radial * Math.cos(phi) * 1.03
+          );
+        }
+      }
+      hairPositions.needsUpdate = true;
+      hairCapGeometry.computeVertexNormals();
+      const hairCap = new THREE.Mesh(hairCapGeometry, hairMat);
+      hairCap.castShadow = true;
+      this.masculineHairGroup.add(hairCap);
+
+      const forelockPath = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.050, 0.067, 0.048),
+        new THREE.Vector3(-0.031, 0.102, 0.069),
+        new THREE.Vector3(0.006, 0.118, 0.066),
+        new THREE.Vector3(0.034, 0.094, 0.043)
+      ]);
+      const forelock = new THREE.Mesh(
+        new THREE.TubeGeometry(forelockPath, 20, 0.016, 10, false),
+        hairMat
+      );
+      forelock.castShadow = true;
+      this.masculineHairGroup.add(forelock);
+      this.headGroup.add(this.masculineHairGroup);
+      this.masculineHairGroup.visible = false;
 
       this.proceduralAvatarGroup.add(this.headGroup);
 
-      // 2. Neck & Clavicle
-      const neckGeo = new THREE.CylinderGeometry(0.038, 0.046, 0.14, 24);
-      const neck = new THREE.Mesh(neckGeo, skinMat);
-      neck.position.set(0, 1.41, 0);
-      this.proceduralAvatarGroup.add(neck);
-
-      // Delicate Clavicle Collarbones
-      const clavicleMat = new THREE.MeshStandardMaterial({ color: 0xE5C7B5, roughness: 0.42 });
-      const clavicle = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.20, 12), clavicleMat);
-      clavicle.rotation.z = Math.PI / 2;
-      clavicle.position.set(0, 1.345, 0.052);
-      this.proceduralAvatarGroup.add(clavicle);
-
-      // 3. Torso (Bust, Midriff & Pelvis)
+      // Continuous chest, neck, abdomen and pelvis surface.
       this.chestGroup = new THREE.Group();
       this.chestGroup.position.set(0, 1.22, 0);
-
-      // Feminine Bust
-      const bust = new THREE.Mesh(new THREE.CylinderGeometry(0.116, 0.102, 0.22, 32), skinMat);
-      bust.castShadow = true;
-      this.chestGroup.add(bust);
-
-      // Midriff (Showing under cropped tank)
-      const midriff = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.110, 0.14, 32), skinMat);
-      midriff.position.set(0, -0.16, 0);
-      this.chestGroup.add(midriff);
-
+      this.torsoProfiles = {
+        female: [
+          [0.040, -0.43], [0.075, -0.40], [0.105, -0.36], [0.132, -0.31],
+          [0.145, -0.25], [0.128, -0.18], [0.105, -0.11], [0.102, -0.04],
+          [0.119, 0.03], [0.139, 0.10], [0.132, 0.15], [0.112, 0.18],
+          [0.067, 0.215], [0.046, 0.245], [0.039, 0.255], [0.041, 0.26]
+        ],
+        male: [
+          [0.040, -0.43], [0.075, -0.40], [0.105, -0.36], [0.132, -0.31],
+          [0.145, -0.25], [0.128, -0.18], [0.105, -0.11], [0.102, -0.04],
+          [0.119, 0.03], [0.139, 0.10], [0.132, 0.15], [0.112, 0.18],
+          [0.067, 0.215], [0.046, 0.245], [0.039, 0.255], [0.041, 0.26]
+        ]
+      };
+      const makeTorso = gender => new THREE.LatheGeometry(
+        this.torsoProfiles[gender].map(([radius, height]) => new THREE.Vector2(radius, height)), 32
+      );
+      this.torsoMesh = new THREE.Mesh(makeTorso('female'), skinMat);
+      this.torsoMesh.castShadow = true;
+      this.torsoMesh.receiveShadow = true;
+      this.chestGroup.add(this.torsoMesh);
+      this.bustMesh = null;
+      this.makeTorsoGeometry = makeTorso;
       this.proceduralAvatarGroup.add(this.chestGroup);
 
-      // Pelvis
-      const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.110, 0.134, 0.16, 32), skinMat);
-      hips.position.set(0, 0.95, 0);
-      this.proceduralAvatarGroup.add(hips);
+      this.bareLegs = [];
+      [-1, 1].forEach((side) => {
+        const legGroup = new THREE.Group();
+        legGroup.position.x = side * 0.076;
+        const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.058, 0.39, 20), skinMat);
+        thigh.position.y = 0.64;
+        thigh.castShadow = true;
+        legGroup.add(thigh);
+        const shin = new THREE.Mesh(new THREE.CylinderGeometry(0.050, 0.040, 0.40, 20), skinMat);
+        shin.position.y = 0.245;
+        shin.castShadow = true;
+        legGroup.add(shin);
+        const knee = new THREE.Mesh(new THREE.SphereGeometry(0.052, 20, 16), skinMat);
+        knee.position.y = 0.445;
+        legGroup.add(knee);
+        const ankle = new THREE.Mesh(new THREE.SphereGeometry(0.039, 16, 12), skinMat);
+        ankle.position.y = 0.045;
+        legGroup.add(ankle);
+        this.proceduralAvatarGroup.add(legGroup);
+        this.bareLegs.push(legGroup);
+      });
 
       // 4. Arms & Articulated Hands with 5 Fingers
       this.bareArms = [];
+      this.bareHands = [];
       [-1, 1].forEach((side) => {
         const armGroup = new THREE.Group();
         armGroup.position.set(side * 0.168, 1.31, 0);
@@ -1445,6 +1595,10 @@
         upperArm.castShadow = true;
         armGroup.add(upperArm);
 
+        const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.030, 16, 12), skinMat);
+        elbow.position.set(side * 0.006, -0.255, 0);
+        armGroup.add(elbow);
+
         // Forearm
         const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.023, 0.26, 20), skinMat);
         forearm.position.set(side * 0.012, -0.37, 0);
@@ -1456,7 +1610,8 @@
         const hand = new THREE.Group();
         hand.position.set(side * 0.016, -0.52, 0);
 
-        const palm = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.044, 0.014), skinMat);
+        const palm = new THREE.Mesh(new THREE.SphereGeometry(0.026, 16, 12), skinMat);
+        palm.scale.set(0.62, 1.0, 0.48);
         hand.add(palm);
 
         // Thumb
@@ -1464,23 +1619,34 @@
         thumb.rotation.z = side * -0.42;
         thumb.position.set(side * -0.014, 0.004, 0.004);
         hand.add(thumb);
+        const thumbJoint = new THREE.Mesh(new THREE.SphereGeometry(0.006, 10, 8), skinMat);
+        thumbJoint.position.set(side * -0.021, 0.004, 0.006);
+        hand.add(thumbJoint);
 
         // 4 Articulated Resting Fingers
         for (let f = 0; f < 4; f++) {
           const finger = new THREE.Mesh(new THREE.CylinderGeometry(0.0036, 0.0028, 0.038 - f * 0.003, 8), skinMat);
           finger.position.set(side * (0.009 - f * 0.006), -0.036, 0);
           hand.add(finger);
+          const fingertip = new THREE.Mesh(new THREE.SphereGeometry(0.0032, 8, 8), skinMat);
+          fingertip.position.set(side * (0.009 - f * 0.006), -0.056 + f * 0.0015, 0);
+          hand.add(fingertip);
         }
 
-        armGroup.add(hand);
+        hand.position.x += side * 0.168;
+        hand.position.y += 1.31;
+        this.proceduralAvatarGroup.add(hand);
+        this.bareHands.push(hand);
         this.proceduralAvatarGroup.add(armGroup);
         this.bareArms.push(armGroup);
       });
 
       // 5. Build Wearable 3D Garment Meshes
       this.buildWearableTops();
+      this.buildWearableOuterwear();
       this.buildWearableBottoms();
       this.buildWearableShoes();
+      this.buildWearableInventory();
 
       // Equip starting outfit matching Reference A: Ribbed Ivory Tank + Fluid Taupe Trousers
       this.equipGarment('top', 'tank');
@@ -1499,6 +1665,12 @@
 
       this.scene.add(this.avatarGroup);
 
+      this.avatarGroup.traverse(object => {
+        if (!object.isMesh) return;
+        object.castShadow = true;
+        object.receiveShadow = true;
+      });
+
       this.proceduralAvatarGroup.visible = true;
       console.log('Studio3D: Sculpted humanoid mannequin fully active & visible with complete head, face & arms.');
     }
@@ -1509,15 +1681,16 @@
     buildWearableTops() {
       const topParent = new THREE.Group();
       this.avatarGroup.add(topParent);
+      this.garmentParents.top = topParent;
 
       // 1. Ribbed Ivory Tank Top (Starting Piece matching Reference D)
       const tankGroup = new THREE.Group();
-      const tankMat = new THREE.MeshStandardMaterial({
-        color: 0xFAF6EF, // Clean soft ivory
-        roughness: 0.74,
-        metalness: 0.02
-      });
-      const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.124, 0.106, 0.25, 32), tankMat);
+      const tankMat = this.createFabricMaterial(0xFAF6EF, 0.82);
+      const tank = new THREE.Mesh(new THREE.LatheGeometry([
+        new THREE.Vector2(0.122, -0.21), new THREE.Vector2(0.145, -0.18),
+        new THREE.Vector2(0.15, 0.015), new THREE.Vector2(0.139, 0.10),
+        new THREE.Vector2(0.104, 0.13)
+      ], 32), tankMat);
       tank.position.set(0, 1.22, 0);
       tank.castShadow = true;
       tankGroup.add(tank);
@@ -1525,34 +1698,48 @@
       // Fine Vertical Rib Texturing
       const ribMat = new THREE.MeshStandardMaterial({ color: 0xE8E1D5, roughness: 0.85 });
       for (let r = 0; r < 12; r++) {
-        const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.0028, 0.0028, 0.24, 6), ribMat);
+        const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.0028, 0.0028, 0.31, 6), ribMat);
         const angle = (r * Math.PI * 2) / 12;
-        rib.position.set(Math.sin(angle) * 0.116, 1.22, Math.cos(angle) * 0.116);
+        rib.position.set(Math.sin(angle) * 0.151, 1.185, Math.cos(angle) * 0.151);
         tankGroup.add(rib);
       }
+      [-1, 1].forEach(side => {
+        const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.17, 12), tankMat);
+        strap.position.set(side * 0.092, 1.345, 0);
+        strap.rotation.z = side * -0.12;
+        tankGroup.add(strap);
+      });
       topParent.add(tankGroup);
       this.garmentMeshes.top['tank'] = tankGroup;
 
       // 2. Cream Cozy Knit Cardigan with Tortoiseshell Buttons (Reference D - Step 3)
       const cardiganGroup = new THREE.Group();
-      const cardiganMat = new THREE.MeshStandardMaterial({
-        color: 0xF2ECE0,
-        roughness: 0.82,
-        metalness: 0.02
-      });
-      const cardBody = new THREE.Mesh(new THREE.CylinderGeometry(0.142, 0.132, 0.40, 32), cardiganMat);
+      const cardiganMat = this.createFabricMaterial(0xF2ECE0, 0.92);
+      const cardBody = new THREE.Mesh(new THREE.LatheGeometry([
+        new THREE.Vector2(0.137, -0.20), new THREE.Vector2(0.151, -0.16),
+        new THREE.Vector2(0.153, 0.04), new THREE.Vector2(0.166, 0.15),
+        new THREE.Vector2(0.12, 0.20)
+      ], 32), cardiganMat);
       cardBody.position.set(0, 1.21, 0);
       cardBody.castShadow = true;
       cardiganGroup.add(cardBody);
 
       // Cardigan Sleeves
-      const sleeveGeo = new THREE.CylinderGeometry(0.052, 0.044, 0.54, 24);
+      const sleeveGeo = new THREE.CylinderGeometry(0.052, 0.039, 0.54, 24);
       [-1, 1].forEach((side) => {
         const sleeve = new THREE.Mesh(sleeveGeo, cardiganMat);
-        sleeve.position.set(side * 0.182, 1.15, 0);
+        sleeve.position.set(side * 0.182, 1.09, 0);
         sleeve.rotation.z = side * -0.09;
         sleeve.castShadow = true;
         cardiganGroup.add(sleeve);
+        const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.052, 20, 16), cardiganMat);
+        shoulder.scale.set(1.05, 1.28, 1.08);
+        shoulder.position.set(side * 0.17, 1.31, 0);
+        cardiganGroup.add(shoulder);
+        const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.041, 0.004, 8, 24), cardiganMat);
+        cuff.rotation.x = Math.PI / 2;
+        cuff.position.set(side * 0.182, 0.82, 0);
+        cardiganGroup.add(cuff);
       });
 
       // Front Button Placket
@@ -1569,12 +1756,12 @@
 
       // 3. Tailored Camel Smart Blazer
       const blazerGroup = new THREE.Group();
-      const blazerMat = new THREE.MeshStandardMaterial({
-        color: 0xBC9A76,
-        roughness: 0.65,
-        metalness: 0.03
-      });
-      const blazerBody = new THREE.Mesh(new THREE.CylinderGeometry(0.146, 0.136, 0.44, 32), blazerMat);
+      const blazerMat = this.createFabricMaterial(0xBC9A76, 0.78);
+      const blazerBody = new THREE.Mesh(new THREE.LatheGeometry([
+        new THREE.Vector2(0.142, -0.22), new THREE.Vector2(0.157, -0.17),
+        new THREE.Vector2(0.16, 0.04), new THREE.Vector2(0.174, 0.17),
+        new THREE.Vector2(0.126, 0.22)
+      ], 32), blazerMat);
       blazerBody.position.set(0, 1.19, 0);
       blazerBody.castShadow = true;
       blazerGroup.add(blazerBody);
@@ -1586,10 +1773,18 @@
         lapel.rotation.z = side * -0.25;
         blazerGroup.add(lapel);
 
-        const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.054, 0.046, 0.54, 24), blazerMat);
-        sleeve.position.set(side * 0.188, 1.15, 0);
+        const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.041, 0.54, 24), blazerMat);
+        sleeve.position.set(side * 0.188, 1.09, 0);
         sleeve.rotation.z = side * -0.09;
         blazerGroup.add(sleeve);
+        const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.055, 20, 16), blazerMat);
+        shoulder.scale.set(1.15, 1.28, 1.1);
+        shoulder.position.set(side * 0.176, 1.31, 0);
+        blazerGroup.add(shoulder);
+        const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.043, 0.004, 8, 24), blazerMat);
+        cuff.rotation.x = Math.PI / 2;
+        cuff.position.set(side * 0.188, 0.82, 0);
+        blazerGroup.add(cuff);
       });
 
       blazerGroup.visible = false;
@@ -1598,12 +1793,12 @@
 
       // 4. Navy Poplin Oxford Shirt
       const navyGroup = new THREE.Group();
-      const navyMat = new THREE.MeshStandardMaterial({
-        color: 0x1E2B3E,
-        roughness: 0.58,
-        metalness: 0.04
-      });
-      const navyBody = new THREE.Mesh(new THREE.CylinderGeometry(0.138, 0.128, 0.40, 32), navyMat);
+      const navyMat = this.createFabricMaterial(0x1E2B3E, 0.78);
+      const navyBody = new THREE.Mesh(new THREE.LatheGeometry([
+        new THREE.Vector2(0.135, -0.20), new THREE.Vector2(0.149, -0.16),
+        new THREE.Vector2(0.15, 0.04), new THREE.Vector2(0.164, 0.15),
+        new THREE.Vector2(0.12, 0.20)
+      ], 32), navyMat);
       navyBody.position.set(0, 1.21, 0);
       navyGroup.add(navyBody);
 
@@ -1613,10 +1808,18 @@
       navyGroup.add(collar);
 
       [-1, 1].forEach((side) => {
-        const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.042, 0.52, 24), navyMat);
-        sleeve.position.set(side * 0.178, 1.15, 0);
+        const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.049, 0.036, 0.54, 24), navyMat);
+        sleeve.position.set(side * 0.178, 1.09, 0);
         sleeve.rotation.z = side * -0.08;
         navyGroup.add(sleeve);
+        const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.048, 20, 16), navyMat);
+        shoulder.scale.set(1.08, 1.28, 1.08);
+        shoulder.position.set(side * 0.168, 1.31, 0);
+        navyGroup.add(shoulder);
+        const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.003, 8, 24), navyMat);
+        cuff.rotation.x = Math.PI / 2;
+        cuff.position.set(side * 0.178, 0.82, 0);
+        navyGroup.add(cuff);
       });
 
       navyGroup.visible = false;
@@ -1640,31 +1843,53 @@
       this.garmentMeshes.top['striped_sweater'] = stripeGroup;
     }
 
+    buildWearableOuterwear() {
+      const outerwearParent = new THREE.Group();
+      this.avatarGroup.add(outerwearParent);
+      this.garmentParents.outerwear = outerwearParent;
+
+      ['blazer', 'cardigan'].forEach(id => {
+        const garment = this.garmentMeshes.top[id];
+        if (!garment) return;
+        garment.parent.remove(garment);
+        outerwearParent.add(garment);
+        this.garmentMeshes.outerwear[id] = garment;
+        delete this.garmentMeshes.top[id];
+      });
+    }
+
     /**
      * Wearable 3D Bottoms (High-Waisted Tailored Taupe Trousers, Dark Denim, Crisp White Chinos)
      */
     buildWearableBottoms() {
       const bottomParent = new THREE.Group();
       this.avatarGroup.add(bottomParent);
+      this.garmentParents.bottom = bottomParent;
 
       // 1. High-Waisted Tailored Fluid Trousers in Warm Taupe (Reference D)
       const taupeGroup = new THREE.Group();
-      const taupeMat = new THREE.MeshStandardMaterial({
-        color: 0x6E6350, // Rich warm taupe/olive tone providing clear contrast
-        roughness: 0.72,
-        metalness: 0.02
-      });
+      const taupeMat = this.createFabricMaterial(0x9D896D, 0.86);
 
-      const taupePelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.124, 0.154, 0.22, 32), taupeMat);
-      taupePelvis.position.set(0, 0.94, 0);
+      const taupePelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.124, 0.154, 0.30, 32), taupeMat);
+      taupePelvis.position.set(0, 0.96, 0);
       taupePelvis.castShadow = true;
       taupeGroup.add(taupePelvis);
+      const taupeWaist = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.006, 8, 32), taupeMat);
+      taupeWaist.rotation.x = Math.PI / 2;
+      taupeWaist.position.y = 1.105;
+      taupeGroup.add(taupeWaist);
 
-      const wideLegGeo = new THREE.CylinderGeometry(0.086, 0.104, 0.78, 24);
+      const wideLegGeo = new THREE.LatheGeometry([
+        new THREE.Vector2(0.10, -0.39), new THREE.Vector2(0.105, -0.34),
+        new THREE.Vector2(0.098, -0.20), new THREE.Vector2(0.09, -0.02),
+        new THREE.Vector2(0.09, 0.20), new THREE.Vector2(0.097, 0.34),
+        new THREE.Vector2(0.09, 0.39)
+      ], 24);
       [-1, 1].forEach((side) => {
         const leg = new THREE.Mesh(wideLegGeo, taupeMat);
         leg.position.set(side * 0.076, 0.44, 0);
         leg.castShadow = true;
+        leg.receiveShadow = true;
         taupeGroup.add(leg);
 
         // Pressed Front Pleat Crease
@@ -1678,16 +1903,16 @@
 
       // 2. Dark Indigo Denim Straight Jeans
       const denimGroup = new THREE.Group();
-      const denimMat = new THREE.MeshStandardMaterial({
-        color: 0x222C3D,
-        roughness: 0.65,
-        metalness: 0.04
-      });
-      const denimPelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.122, 0.150, 0.22, 32), denimMat);
-      denimPelvis.position.set(0, 0.94, 0);
+      const denimMat = this.createFabricMaterial(0x222C3D, 0.84);
+      const denimPelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.122, 0.150, 0.30, 32), denimMat);
+      denimPelvis.position.set(0, 0.96, 0);
       denimGroup.add(denimPelvis);
 
-      const denimLegGeo = new THREE.CylinderGeometry(0.074, 0.070, 0.78, 24);
+      const denimLegGeo = new THREE.LatheGeometry([
+        new THREE.Vector2(0.075, -0.39), new THREE.Vector2(0.074, -0.32),
+        new THREE.Vector2(0.07, -0.16), new THREE.Vector2(0.07, 0.12),
+        new THREE.Vector2(0.078, 0.32), new THREE.Vector2(0.083, 0.39)
+      ], 24);
       [-1, 1].forEach((side) => {
         const leg = new THREE.Mesh(denimLegGeo, denimMat);
         leg.position.set(side * 0.072, 0.44, 0);
@@ -1700,16 +1925,16 @@
 
       // 3. Crisp Pleated Ivory Chinos
       const chinosGroup = new THREE.Group();
-      const chinosMat = new THREE.MeshStandardMaterial({
-        color: 0xFAF7F0,
-        roughness: 0.68,
-        metalness: 0.02
-      });
-      const chinosPelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.123, 0.152, 0.22, 32), chinosMat);
-      chinosPelvis.position.set(0, 0.94, 0);
+      const chinosMat = this.createFabricMaterial(0xFAF7F0, 0.84);
+      const chinosPelvis = new THREE.Mesh(new THREE.CylinderGeometry(0.123, 0.152, 0.30, 32), chinosMat);
+      chinosPelvis.position.set(0, 0.96, 0);
       chinosGroup.add(chinosPelvis);
 
-      const chinosLegGeo = new THREE.CylinderGeometry(0.080, 0.074, 0.78, 24);
+      const chinosLegGeo = new THREE.LatheGeometry([
+        new THREE.Vector2(0.077, -0.39), new THREE.Vector2(0.078, -0.32),
+        new THREE.Vector2(0.073, -0.16), new THREE.Vector2(0.074, 0.12),
+        new THREE.Vector2(0.081, 0.32), new THREE.Vector2(0.084, 0.39)
+      ], 24);
       [-1, 1].forEach((side) => {
         const leg = new THREE.Mesh(chinosLegGeo, chinosMat);
         leg.position.set(side * 0.074, 0.44, 0);
@@ -1727,13 +1952,16 @@
     buildWearableShoes() {
       const shoesParent = new THREE.Group();
       this.avatarGroup.add(shoesParent);
+      this.garmentParents.shoes = shoesParent;
 
       // 1. Barefoot Natural Sculpt (Matching Reference D relaxed studio look)
       const barefootGroup = new THREE.Group();
-      const skinMat = new THREE.MeshStandardMaterial({ color: 0xF0CDBC, roughness: 0.36 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xD7AC93, roughness: 0.46 });
       [-1, 1].forEach((side) => {
-        const foot = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.038, 0.16), skinMat);
-        foot.position.set(side * 0.076, 0.02, 0.03);
+        const foot = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), skinMat);
+        foot.scale.set(0.052, 0.031, 0.12);
+        foot.position.set(side * 0.076, 0.027, 0.045);
+        foot.castShadow = true;
         barefootGroup.add(foot);
       });
       shoesParent.add(barefootGroup);
@@ -1749,18 +1977,24 @@
         const foot = new THREE.Group();
         foot.position.set(side * 0.076, 0, 0.03);
 
-        const upper = new THREE.Mesh(new THREE.BoxGeometry(0.070, 0.050, 0.18), loaferMat);
-        upper.position.set(0, 0.032, 0);
+        const upper = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), loaferMat);
+        upper.scale.set(0.038, 0.033, 0.09);
+        upper.position.set(0, 0.034, 0.01);
         foot.add(upper);
 
-        const sole = new THREE.Mesh(new THREE.BoxGeometry(0.074, 0.016, 0.19), soleMat);
-        sole.position.set(0, 0.008, 0);
+        const sole = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), soleMat);
+        sole.scale.set(0.041, 0.013, 0.095);
+        sole.position.set(0, 0.009, 0.01);
         foot.add(sole);
 
         const bit = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.032, 8), bitMat);
         bit.rotation.z = Math.PI / 2;
         bit.position.set(0, 0.056, 0.02);
         foot.add(bit);
+
+        const apronSeam = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.0015, 6, 20, Math.PI), bitMat);
+        apronSeam.position.set(0, 0.048, 0.047);
+        foot.add(apronSeam);
 
         loaferGroup.add(foot);
       });
@@ -1777,13 +2011,22 @@
         const foot = new THREE.Group();
         foot.position.set(side * 0.076, 0, 0.03);
 
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.074, 0.056, 0.19), sneakerMat);
-        body.position.set(0, 0.036, 0);
+        const body = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), sneakerMat);
+        body.scale.set(0.04, 0.033, 0.095);
+        body.position.set(0, 0.035, 0.01);
         foot.add(body);
 
-        const sole = new THREE.Mesh(new THREE.BoxGeometry(0.078, 0.020, 0.20), rubberSoleMat);
-        sole.position.set(0, 0.010, 0);
+        const sole = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), rubberSoleMat);
+        sole.scale.set(0.043, 0.014, 0.10);
+        sole.position.set(0, 0.01, 0.01);
         foot.add(sole);
+
+        const laceMat = new THREE.MeshStandardMaterial({ color: 0xD4D0C8, roughness: 0.84 });
+        for (let lace = 0; lace < 3; lace++) {
+          const laceBar = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.0025, 0.004), laceMat);
+          laceBar.position.set(0, 0.061 - lace * 0.006, 0.018 + lace * 0.012);
+          foot.add(laceBar);
+        }
 
         sneakerGroup.add(foot);
       });
@@ -1792,39 +2035,234 @@
       this.garmentMeshes.shoes['sneakers'] = sneakerGroup;
     }
 
+    buildWearableInventory() {
+      const accessoryParent = new THREE.Group();
+      this.avatarGroup.add(accessoryParent);
+      this.garmentParents.accessories = accessoryParent;
+
+      const items = [
+        { category: 'top', id: 'olive_kurta', color: 0x777B4F, length: 0.58, sleeves: 'long' },
+        { category: 'top', id: 'maroon_top', color: 0x773B4A, length: 0.40, sleeves: 'short' },
+        { category: 'top', id: 'white_linen_shirt', color: 0xE8E3D8, length: 0.42, sleeves: 'long' },
+        { category: 'top', id: 'indigo_kurti', color: 0x35466D, length: 0.58, sleeves: 'long' },
+        { category: 'top', id: 'terracotta_tee', color: 0xB9664D, length: 0.40, sleeves: 'short' },
+        { category: 'bottom', id: 'dark_skirt', color: 0x292B33, skirt: true },
+        { category: 'bottom', id: 'cream_palazzo', color: 0xE5DCCB, wide: true },
+        { category: 'shoes', id: 'black_trainers', color: 0x242424 },
+        { category: 'shoes', id: 'brown_sandals', color: 0x8A6848, sandals: true },
+        { category: 'accessories', id: 'watch', color: 0x563C2D }
+      ];
+
+      items.forEach(item => this.createInventoryGarment(item));
+    }
+
+    createInventoryGarment(item) {
+      const parent = this.garmentParents[item.category];
+      if (!parent || !this.garmentMeshes[item.category]) return;
+
+      const group = new THREE.Group();
+      const material = item.category === 'shoes'
+        ? new THREE.MeshStandardMaterial({ color: item.color, roughness: 0.5, metalness: 0.02 })
+        : this.createFabricMaterial(item.color, 0.84);
+      const addMesh = (geometry, meshMaterial = material) => {
+        const mesh = new THREE.Mesh(geometry, meshMaterial);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
+        return mesh;
+      };
+
+      if (item.category === 'top' || item.category === 'outerwear') {
+        const height = item.length || 0.40;
+        const body = addMesh(new THREE.LatheGeometry([
+          new THREE.Vector2(0.137, -height / 2), new THREE.Vector2(0.149, -height * 0.38),
+          new THREE.Vector2(0.15, height * 0.15), new THREE.Vector2(0.164, height * 0.38),
+          new THREE.Vector2(0.12, height / 2)
+        ], 32));
+        body.position.y = 1.41 - height / 2;
+        const hem = addMesh(new THREE.TorusGeometry(0.143, 0.003, 6, 32));
+        hem.rotation.x = Math.PI / 2;
+        hem.position.y = 1.41 - height;
+
+        if (item.sleeves) {
+          const sleeveHeight = item.sleeves === 'long' ? 0.50 : 0.24;
+          [-1, 1].forEach(side => {
+            const sleeve = addMesh(new THREE.CylinderGeometry(0.048, 0.036, sleeveHeight, 20));
+            sleeve.position.set(side * 0.177, 1.30 - sleeveHeight / 2 - (item.sleeves === 'long' ? 0.06 : 0), 0);
+            sleeve.rotation.z = side * -0.08;
+            const shoulder = addMesh(new THREE.SphereGeometry(0.047, 18, 14));
+            shoulder.scale.set(1.08, 1.24, 1.08);
+            shoulder.position.set(side * 0.168, 1.31, 0);
+            const cuff = addMesh(new THREE.TorusGeometry(0.039, 0.003, 6, 20));
+            cuff.rotation.x = Math.PI / 2;
+            cuff.position.set(side * 0.177, 1.30 - sleeveHeight - (item.sleeves === 'long' ? 0.06 : 0), 0);
+          });
+        }
+      } else if (item.category === 'bottom') {
+        const waist = addMesh(new THREE.CylinderGeometry(0.128, 0.148, 0.30, 32));
+        waist.position.y = 0.96;
+        const waistband = addMesh(new THREE.TorusGeometry(0.137, 0.004, 6, 32));
+        waistband.rotation.x = Math.PI / 2;
+        waistband.position.y = 1.105;
+        if (item.skirt) {
+          const skirtProfile = [];
+          for (let step = 0; step <= 16; step++) {
+            const vertical = -0.36 + step * 0.045;
+            const hemFlare = (0.36 - vertical) * 0.17;
+            const softFold = Math.sin(step * 2.4) * 0.004;
+            skirtProfile.push(new THREE.Vector2(0.145 + hemFlare + softFold, vertical));
+          }
+          const skirt = addMesh(new THREE.LatheGeometry(skirtProfile, 32));
+          skirt.position.y = 0.47;
+        } else {
+          const legWidth = item.wide ? 0.095 : 0.075;
+          [-1, 1].forEach(side => {
+            const profile = [
+              [-0.39, 1.02], [-0.32, 1.0], [-0.16, 0.96],
+              [0.12, 0.96], [0.32, 1.02], [0.39, 1.04]
+            ].map(([height, widthFactor]) => new THREE.Vector2(legWidth * widthFactor, height));
+            const leg = addMesh(new THREE.LatheGeometry(profile, 24));
+            leg.position.set(side * 0.076, 0.44, 0);
+          });
+        }
+      } else if (item.category === 'shoes') {
+        [-1, 1].forEach(side => {
+          const foot = new THREE.Group();
+          foot.position.set(side * 0.076, 0, 0.03);
+          group.add(foot);
+          const upper = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), material);
+          upper.scale.set(item.sandals ? 0.039 : 0.041, 0.031, 0.093);
+          upper.position.set(0, 0.034, 0.008);
+          upper.castShadow = true;
+          foot.add(upper);
+          const soleMaterial = new THREE.MeshStandardMaterial({ color: item.sandals ? 0x4C3625 : 0x191919, roughness: 0.82 });
+          const sole = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), soleMaterial);
+          sole.scale.set(0.043, 0.012, 0.098);
+          sole.position.set(0, 0.009, 0.008);
+          sole.castShadow = true;
+          foot.add(sole);
+          if (item.sandals) {
+            [-0.025, 0.025].forEach(z => {
+              const strap = new THREE.Mesh(new THREE.BoxGeometry(0.076, 0.012, 0.018), material);
+              strap.position.set(0, 0.046, z);
+              strap.castShadow = true;
+              foot.add(strap);
+            });
+          }
+        });
+      } else if (item.category === 'accessories') {
+        const watch = new THREE.Group();
+        watch.position.set(-0.177, 0.80, 0);
+        const strap = new THREE.Mesh(new THREE.TorusGeometry(0.015, 0.004, 8, 20), material);
+        strap.rotation.x = Math.PI / 2;
+        watch.add(strap);
+        const dialMaterial = new THREE.MeshStandardMaterial({ color: 0xD5C7A7, metalness: 0.55, roughness: 0.32 });
+        const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.006, 20), dialMaterial);
+        dial.rotation.x = Math.PI / 2;
+        dial.position.z = 0.015;
+        watch.add(dial);
+        group.add(watch);
+      }
+
+      group.visible = false;
+      parent.add(group);
+      this.garmentMeshes[item.category][item.id] = group;
+    }
+
     /**
      * Equips a 3D garment into its corresponding category slot cleanly
      */
     equipGarment(category, garmentId) {
-      let cat = category;
-      if (cat === 'tops' || cat === 'outerwear') cat = 'top';
-      if (cat === 'bottoms') cat = 'bottom';
-      if (cat === 'shoe') cat = 'shoes';
+      const aliases = {
+        top: 'top', tops: 'top',
+        bottom: 'bottom', bottoms: 'bottom',
+        shoe: 'shoes', shoes: 'shoes',
+        outerwear: 'outerwear',
+        accessory: 'accessories', accessories: 'accessories'
+      };
+      const cat = aliases[category];
+      const slot = cat && this.garmentMeshes[cat];
+      const garment = slot && slot[garmentId];
+      if (!garment) return false;
 
-      if (!this.garmentMeshes[cat]) return;
-
-      // Hide all in category
-      Object.keys(this.garmentMeshes[cat]).forEach((id) => {
-        if (this.garmentMeshes[cat][id]) {
-          this.garmentMeshes[cat][id].visible = false;
-        }
+      Object.values(slot).forEach(mesh => {
+        if (mesh) mesh.visible = false;
       });
+      garment.visible = true;
+      this.activeGarments[cat] = garmentId;
+      this.updateArmVisibility();
+      console.log(`Studio3D: Equipped [${cat}] -> ${garmentId}`);
+      return true;
+    }
 
-      // Show requested
-      if (this.garmentMeshes[cat][garmentId]) {
-        this.garmentMeshes[cat][garmentId].visible = true;
-        this.activeGarments[cat] = garmentId;
+    updateArmVisibility() {
+      if (!this.bareArms) return;
+      const sleevedTops = ['blazer', 'cardigan', 'navy_shirt', 'striped_sweater', 'olive_kurta', 'white_linen_shirt', 'indigo_kurti'];
+      const hasSleeves = sleevedTops.includes(this.activeGarments.top) ||
+        ['blazer', 'cardigan'].includes(this.activeGarments.outerwear);
+      this.bareArms.forEach(arm => {
+        arm.visible = !hasSleeves;
+      });
+    }
+
+    setAvatarGender(gender) {
+      if (gender !== 'male' && gender !== 'female' || !this.proceduralAvatarGroup) return false;
+      this.avatarGender = gender;
+      const isMale = gender === 'male';
+      if (this.feminineHairGroup) this.feminineHairGroup.visible = !isMale;
+      if (this.masculineHairGroup) this.masculineHairGroup.visible = isMale;
+      if (this.feminineFaceGroup) this.feminineFaceGroup.visible = !isMale;
+      if (this.faceMesh) this.faceMesh.visible = !isMale;
+      if (this.maleFaceMesh) this.maleFaceMesh.visible = isMale;
+      if (this.faceMesh) this.faceMesh.scale.set(isMale ? 1 : 0.88, isMale ? 1.08 : 1.15, 0.95);
+      if (this.chinMesh) this.chinMesh.scale.set(1, isMale ? 1.08 : 0.8, 0.9);
+      if (this.noseBridge) this.noseBridge.scale.set(isMale ? 1.12 : 1, 1, isMale ? 1.06 : 1);
+      if (this.noseTip) this.noseTip.scale.set(isMale ? 1 : 0.9, isMale ? 0.86 : 0.75, isMale ? 1.05 : 1);
+      if (this.maleBrows) this.maleBrows.forEach(brow => brow.scale.set(1, isMale ? 1.18 : 1, 1));
+      if (this.maleEars) {
+        this.maleEars.forEach(ear => ear.scale.set(isMale ? 0.38 : 0.35, isMale ? 1.18 : 1.15, 0.65));
       }
-
-      // If equipping a top with long sleeves (like blazer, cardigan, navy_shirt), hide bare arms to prevent mesh overlap
-      if (cat === 'top' && this.bareArms) {
-        const hasSleeves = ['blazer', 'cardigan', 'navy_shirt', 'striped_sweater'].includes(garmentId);
-        this.bareArms.forEach((arm) => {
-          arm.visible = !hasSleeves;
+      if (this.bustMesh) this.bustMesh.visible = !isMale;
+      if (this.chestGroup) this.chestGroup.scale.x = 1;
+      if (this.bareArms) {
+        this.bareArms.forEach((arm, index) => {
+          const side = index === 0 ? -1 : 1;
+          arm.position.x = side * 0.168;
+          arm.scale.set(1, 1, 1);
         });
       }
-
-      console.log(`Studio3D: Equipped [${cat}] -> ${garmentId}`);
+      if (this.bareLegs) {
+        this.bareLegs.forEach((leg, index) => {
+          const side = index === 0 ? -1 : 1;
+          leg.position.x = side * 0.076;
+          leg.scale.set(1, 1, 1);
+        });
+      }
+      if (this.bareHands) {
+        this.bareHands.forEach((hand, index) => {
+          const side = index === 0 ? -1 : 1;
+          hand.position.x = side * 0.168 + side * 0.016;
+          hand.scale.setScalar(1);
+        });
+      }
+      Object.values(this.garmentMeshes.top).forEach(garment => {
+        garment.scale.x = 1;
+      });
+      Object.values(this.garmentMeshes.outerwear).forEach(garment => {
+        garment.scale.x = 1;
+      });
+      Object.values(this.garmentMeshes.bottom).forEach(garment => {
+        garment.scale.x = 1.04;
+      });
+      Object.values(this.garmentMeshes.shoes).forEach(garment => {
+        garment.scale.x = 1;
+      });
+      if (this.torsoMesh && this.makeTorsoGeometry) {
+        const previousGeometry = this.torsoMesh.geometry;
+        this.torsoMesh.geometry = this.makeTorsoGeometry(gender);
+        previousGeometry.dispose();
+      }
+      return true;
     }
 
     /**
@@ -1838,8 +2276,9 @@
       }
 
       this.currentCameraState = stateName;
-      this.targetCameraPos.copy(state.position);
+      this.zoomFactor = 1;
       this.targetCameraLookAt.copy(state.target);
+      this.updateZoomTarget(state);
 
       const aspect = this.camera.aspect;
       const isPortrait = aspect < 0.75;
@@ -1853,47 +2292,102 @@
       }
     }
 
+    updateZoomTarget(state = CAMERA_STATES[this.currentCameraState]) {
+      if (!state) return;
+      const direction = state.position.clone().sub(state.target).multiplyScalar(1 / this.zoomFactor);
+      this.targetCameraPos.copy(this.targetCameraLookAt).add(direction);
+    }
+
+    setZoom(zoomFactor) {
+      this.zoomFactor = Math.max(0.72, Math.min(1.65, zoomFactor));
+      this.updateZoomTarget();
+      return this.zoomFactor;
+    }
+
+    setAvatarView(view) {
+      const rotations = { front: 0, side: Math.PI / 2, back: Math.PI };
+      if (view === 'reset') {
+        this.setCameraState('AVATAR_FULL_BODY');
+        view = 'front';
+      } else {
+        this.setCameraState('AVATAR_FULL_BODY');
+      }
+      if (!Object.prototype.hasOwnProperty.call(rotations, view)) return false;
+
+      const fullTurn = Math.PI * 2;
+      const requested = rotations[view];
+      this.targetRotationY = requested + Math.round((this.targetRotationY - requested) / fullTurn) * fullTurn;
+      if (typeof window !== 'undefined' && window.app && window.app.onStudioViewChanged) {
+        window.app.onStudioViewChanged(view);
+      }
+      return true;
+    }
+
     /**
      * Setup touch, pointer, and raycasting listeners
      */
     setupInteractionHandlers() {
       const onPointerDown = (e) => {
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
+        if (e.button !== undefined && e.button !== 0) return;
+        if (this.canvas.setPointerCapture) this.canvas.setPointerCapture(e.pointerId);
+        const point = { x: e.clientX, y: e.clientY };
+        this.pointers.set(e.pointerId, point);
         this.isPointerDown = true;
-        this.pointerStartX = clientX;
-        this.pointerStartY = clientY;
-        this.lastPointerX = clientX;
-        this.lastPointerY = clientY;
+        this.pointerStartX = point.x;
+        this.pointerStartY = point.y;
+        this.lastPointerX = point.x;
+        this.lastPointerY = point.y;
         this.hasDragged = false;
+        if (this.pointers.size === 2) {
+          const points = Array.from(this.pointers.values());
+          this.pinchStartDistance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+          this.pinchStartZoom = this.zoomFactor;
+          this.hasDragged = true;
+        }
+        e.preventDefault();
       };
 
       const onPointerMove = (e) => {
-        if (!this.isPointerDown) return;
+        if (!this.pointers.has(e.pointerId)) return;
+        this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        if (this.pointers.size >= 2) {
+          const points = Array.from(this.pointers.values());
+          const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+          if (this.pinchStartDistance > 0) {
+            this.setZoom(this.pinchStartZoom * distance / this.pinchStartDistance);
+          }
+          this.hasDragged = true;
+          e.preventDefault();
+          return;
+        }
 
-        const dx = clientX - this.lastPointerX;
-        const dy = clientY - this.lastPointerY;
+        const dx = e.clientX - this.lastPointerX;
+        const dy = e.clientY - this.lastPointerY;
 
-        if (Math.hypot(clientX - this.pointerStartX, clientY - this.pointerStartY) > 5) {
+        if (Math.hypot(e.clientX - this.pointerStartX, e.clientY - this.pointerStartY) > 5) {
           this.hasDragged = true;
         }
 
-        // Horizontal Drag rotates avatar smoothly
         this.targetRotationY += dx * 0.012;
-
-        this.lastPointerX = clientX;
-        this.lastPointerY = clientY;
+        this.lastPointerX = e.clientX;
+        this.lastPointerY = e.clientY;
+        e.preventDefault();
       };
 
       const onPointerUp = (e) => {
-        if (!this.isPointerDown) return;
+        if (!this.pointers.has(e.pointerId)) return;
+        this.pointers.delete(e.pointerId);
+        if (this.pointers.size > 0) {
+          const remaining = this.pointers.values().next().value;
+          this.pointerStartX = remaining.x;
+          this.pointerStartY = remaining.y;
+          this.lastPointerX = remaining.x;
+          this.lastPointerY = remaining.y;
+          return;
+        }
         this.isPointerDown = false;
 
-        // If simple tap/click without drag, perform Raycasting
         if (!this.hasDragged && e.target === this.canvas) {
           const rect = this.canvas.getBoundingClientRect();
           const clientX = this.pointerStartX;
@@ -1916,17 +2410,32 @@
             }
           }
         }
+        if (this.canvas.hasPointerCapture && this.canvas.hasPointerCapture(e.pointerId)) {
+          this.canvas.releasePointerCapture(e.pointerId);
+        }
       };
 
-      // Mouse Listeners
-      this.canvas.addEventListener('mousedown', onPointerDown);
-      window.addEventListener('mousemove', onPointerMove);
-      window.addEventListener('mouseup', onPointerUp);
+      const onPointerCancel = (e) => {
+        this.pointers.delete(e.pointerId);
+        this.isPointerDown = this.pointers.size > 0;
+        this.hasDragged = true;
+      };
 
-      // Touch Listeners
-      this.canvas.addEventListener('touchstart', onPointerDown, { passive: true });
-      window.addEventListener('touchmove', onPointerMove, { passive: true });
-      window.addEventListener('touchend', onPointerUp, { passive: true });
+      const onWheel = (e) => {
+        e.preventDefault();
+        this.setZoom(this.zoomFactor * Math.exp(-e.deltaY * 0.001));
+      };
+      const handlers = [
+        ['pointerdown', onPointerDown],
+        ['pointermove', onPointerMove],
+        ['pointerup', onPointerUp],
+        ['pointercancel', onPointerCancel],
+        ['wheel', onWheel, { passive: false }]
+      ];
+      handlers.forEach(([name, handler, options]) => {
+        this.canvas.addEventListener(name, handler, options);
+        this.interactionHandlers.push([name, handler, options]);
+      });
     }
 
     /**
@@ -1985,7 +2494,6 @@
       this.animationFrameId = requestAnimationFrame(this.animate);
 
       const dt = this.clock.getDelta();
-      const time = this.clock.getElapsedTime();
 
       // 1. Smooth Avatar Rotation Damping
       this.avatarRotationY += (this.targetRotationY - this.avatarRotationY) * (1.0 - Math.exp(-8.0 * dt));
@@ -1999,18 +2507,7 @@
       this.currentCameraLookAt.lerp(this.targetCameraLookAt, lerpSpeed);
       this.camera.lookAt(this.currentCameraLookAt);
 
-      // 3. Subtle Idle Breathing Motion on Avatar
-      if (this.chestGroup) {
-        const breath = Math.sin(time * 2.2) * 0.007;
-        this.chestGroup.position.y = 1.22 + breath;
-        this.chestGroup.scale.set(1.0 + breath * 0.4, 1.0, 1.0 + breath * 0.4);
-      }
-      if (this.headGroup) {
-        const microTilt = Math.sin(time * 1.5) * 0.004;
-        this.headGroup.rotation.z = microTilt;
-      }
-
-      // 4. Secondary Live Mirror Reflection Render Pass
+      // 3. Secondary Live Mirror Reflection Pass
       if (this.mirrorRenderTarget && this.mirrorCamera && this.mirrorGlassMesh) {
         this.mirrorGlassMesh.visible = false;
         this.renderer.setRenderTarget(this.mirrorRenderTarget);
@@ -2019,7 +2516,7 @@
         this.mirrorGlassMesh.visible = true;
       }
 
-      // 5. Render Main 3D WebGL Scene
+      // 4. Render Main 3D WebGL Scene
       this.renderer.render(this.scene, this.camera);
     }
 
@@ -2030,12 +2527,36 @@
       if (this.animationFrameId) {
         cancelAnimationFrame(this.animationFrameId);
       }
+      if (this.canvas) {
+        this.interactionHandlers.forEach(([name, handler, options]) => {
+          this.canvas.removeEventListener(name, handler, options);
+        });
+      }
+      this.interactionHandlers = [];
+      window.removeEventListener('resize', this.resizeHandler);
       if (this.mirrorRenderTarget) {
         this.mirrorRenderTarget.dispose();
       }
+      const geometries = new Set();
+      const materials = new Set();
+      if (this.scene) {
+        this.scene.traverse(object => {
+          if (object.geometry) geometries.add(object.geometry);
+          if (Array.isArray(object.material)) object.material.forEach(material => materials.add(material));
+          else if (object.material) materials.add(object.material);
+        });
+      }
+      geometries.forEach(geometry => geometry.dispose());
+      materials.forEach(material => material.dispose());
+      if (this.textures) Object.values(this.textures).forEach(texture => texture.dispose());
       if (this.renderer) {
         this.renderer.dispose();
       }
+      this.pointers.clear();
+      this.scene = null;
+      this.camera = null;
+      this.renderer = null;
+      this.avatarGroup = null;
       this.isInitialized = false;
     }
   }

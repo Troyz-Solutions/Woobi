@@ -385,6 +385,18 @@
             <!-- Real Three.js 3D WebGL Canvas -->
             <canvas id="seren3dCanvas" class="seren-3d-canvas"></canvas>
 
+            <div class="seren-avatar-switch" role="group" aria-label="Mannequin appearance">
+              <button type="button" class="active" data-avatar-gender="female" aria-pressed="true" onclick="app.setAvatarGender('female')">Female</button>
+              <button type="button" data-avatar-gender="male" aria-pressed="false" onclick="app.setAvatarGender('male')">Male</button>
+            </div>
+
+            <div class="seren-view-switch" role="group" aria-label="Mannequin camera view">
+              <button type="button" class="active" data-avatar-view="front" aria-pressed="true" onclick="app.setStudioView('front')">Front</button>
+              <button type="button" data-avatar-view="side" aria-pressed="false" onclick="app.setStudioView('side')">Side</button>
+              <button type="button" data-avatar-view="back" aria-pressed="false" onclick="app.setStudioView('back')">Back</button>
+              <button type="button" data-avatar-view="reset" aria-pressed="false" onclick="app.setStudioView('reset')">Reset</button>
+            </div>
+
             <!-- 3D Spatial Floating Interactive Hints -->
             <div class="spatial-3d-hint wardrobe-hint" onclick="app.serenInteract('wardrobe')">
               <span class="hint-icon">👆</span>
@@ -492,6 +504,7 @@
                 <button class="seren-cat-tab" onclick="app.serenFilterCat('bottoms', this)">Bottoms</button>
                 <button class="seren-cat-tab" onclick="app.serenFilterCat('outerwear', this)">Outerwear</button>
                 <button class="seren-cat-tab" onclick="app.serenFilterCat('shoes', this)">Shoes</button>
+                <button class="seren-cat-tab" onclick="app.serenFilterCat('accessories', this)">Accessories</button>
               </div>
 
               <!-- Garment Grid (Dynamic & Database Linked) -->
@@ -2826,7 +2839,7 @@
   <div class="toast-popup" id="toastPopup"></div>
 
   <!-- Application Logic -->
-  <script src="studio3d.js?v=20261011_3"></script>
-  <script src="app.js?v=20261011_3"></script>
+  <script src="studio3d.js?v=20261101_7"></script>
+  <script src="app.js?v=20261101_7"></script>
 </body>
 </html>

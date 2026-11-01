@@ -5893,6 +5893,87 @@ html, body {
   cursor: grabbing;
 }
 
+.seren-avatar-switch {
+  position: absolute;
+  z-index: 72;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid rgba(220, 208, 192, 0.75);
+  border-radius: 999px;
+  background: rgba(250, 246, 239, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.seren-avatar-switch button {
+  min-width: 74px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #665849;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seren-avatar-switch button.active {
+  background: #52634B;
+  color: #FFFFFF;
+}
+
+.seren-avatar-switch button:focus-visible {
+  outline: 2px solid #52634B;
+  outline-offset: 2px;
+}
+
+.seren-view-switch {
+  position: absolute;
+  z-index: 72;
+  top: 116px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  gap: 2px;
+  max-width: calc(100% - 24px);
+  padding: 3px;
+  border: 1px solid rgba(220, 208, 192, 0.75);
+  border-radius: 999px;
+  background: rgba(250, 246, 239, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.seren-view-switch button {
+  min-width: 52px;
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #665849;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seren-view-switch button.active {
+  background: #E4DDD1;
+  color: #302820;
+}
+
+.seren-view-switch button:focus-visible {
+  outline: 2px solid #52634B;
+  outline-offset: 2px;
+}
+
 /* 3D Spatial Floating Hints */
 .spatial-3d-hint {
   position: absolute;
@@ -6292,12 +6373,27 @@ html, body {
   border-radius: 16px;
   padding: 8px;
   box-shadow: 0 2px 8px rgba(60, 48, 35, 0.04);
+  width: 100%;
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
 }
 
 .seren-garment-item:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 18px rgba(60, 48, 35, 0.08);
   border-color: #A08365;
+}
+
+.seren-garment-item.selected {
+  border-color: #52634B;
+  box-shadow: 0 0 0 2px rgba(82, 99, 75, 0.18), 0 4px 14px rgba(60, 48, 35, 0.08);
+}
+
+.seren-garment-item:focus-visible {
+  outline: 2px solid #52634B;
+  outline-offset: 2px;
 }
 
 .garment-thumb-box {

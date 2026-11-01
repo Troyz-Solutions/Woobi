@@ -52,7 +52,7 @@
   const WARDROBE_ITEMS = [
     { id: 'item_1', name: 'Navy shirt', category: 'Tops', photo: 'assets/navy_shirt.jpg', condition: 'clean', fit: 'perfect' },
     { id: 'item_2', name: 'Beige chinos', category: 'Bottoms', photo: 'assets/beige_chinos.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_3', name: 'Cream kurta', category: 'Tops', photo: 'assets/olive_kurta.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_3', name: 'Olive kurta', category: 'Tops', photo: 'assets/olive_kurta.jpg', condition: 'clean', fit: 'perfect' },
     { id: 'item_4', name: 'White sneakers', category: 'Shoes', photo: 'assets/white_sneakers.jpg', condition: 'clean', fit: 'perfect' },
     { id: 'item_5', name: 'Maroon top', category: 'Tops', photo: 'assets/maroon_top.jpg', condition: 'clean', fit: 'tight' },
     { id: 'item_6', name: 'Dark skirt', category: 'Bottoms', photo: 'assets/dark_skirt.jpg', condition: 'clean', fit: 'perfect' },
@@ -65,7 +65,7 @@
     { id: 'item_13', name: 'Cream palazzo', category: 'Bottoms', photo: 'assets/cream_palazzo.jpg', condition: 'clean', fit: 'loose' },
     { id: 'item_14', name: 'Indigo kurti', category: 'Tops', photo: 'assets/indigo_kurti.jpg', condition: 'dirty', fit: 'perfect' },
     { id: 'item_15', name: 'Terracotta tee', category: 'Tops', photo: 'assets/terracotta_tee.jpg', condition: 'dirty', fit: 'tight' },
-    { id: 'item_16', name: 'Tailored blazer', category: 'Tops', photo: 'assets/smart_blazer.jpg', condition: 'clean', fit: 'tight' }
+    { id: 'item_16', name: 'Tailored blazer', category: 'Outerwear', photo: 'assets/smart_blazer.jpg', condition: 'clean', fit: 'tight' }
   ];
 
   // Pre-calculated AI Stylist Curations for "Need an outfit?" alternative cycling
@@ -1246,22 +1246,42 @@
   // SÉRÉN 3D VIRTUAL FASHION STUDIO CONTROLLER
   // ===================================================================
 
+  const WARDROBE_GARMENT_MODELS = {
+    item_1: { category: 'top', modelId: 'navy_shirt' },
+    item_2: { category: 'bottom', modelId: 'taupe_wide' },
+    item_3: { category: 'top', modelId: 'olive_kurta' },
+    item_4: { category: 'shoes', modelId: 'sneakers' },
+    item_5: { category: 'top', modelId: 'maroon_top' },
+    item_6: { category: 'bottom', modelId: 'dark_skirt' },
+    item_7: { category: 'top', modelId: 'white_linen_shirt' },
+    item_8: { category: 'bottom', modelId: 'dark_denim' },
+    item_9: { category: 'shoes', modelId: 'loafers' },
+    item_10: { category: 'accessories', modelId: 'watch' },
+    item_11: { category: 'shoes', modelId: 'black_trainers' },
+    item_12: { category: 'shoes', modelId: 'brown_sandals' },
+    item_13: { category: 'bottom', modelId: 'cream_palazzo' },
+    item_14: { category: 'top', modelId: 'indigo_kurti' },
+    item_15: { category: 'top', modelId: 'terracotta_tee' },
+    item_16: { category: 'outerwear', modelId: 'blazer' }
+  };
+
   const SEREN_GARMENTS = [
-    { id: 'cardigan', cat: 'tops', name: 'Cream Knit Cardigan', photo: 'assets/style_casual.jpg', is3D: true, sub: 'Cozy drop-shoulder knit' },
-    { id: 'blazer', cat: 'tops', name: 'Camel Smart Blazer', photo: 'assets/smart_blazer.jpg', is3D: true, sub: 'Structured tailored wool' },
-    { id: 'navy_shirt', cat: 'tops', name: 'Navy Oxford Shirt', photo: 'assets/navy_shirt.jpg', is3D: true, sub: 'Crisp button-down collar' },
-    { id: 'striped_sweater', cat: 'tops', name: 'Breton Striped Sweater', photo: 'assets/style_casual.jpg', is3D: true, sub: 'French nautical knit' },
-    { id: 'tank', cat: 'tops', name: 'Ribbed Ivory Tank', photo: 'assets/welcome_hero.jpg', is3D: true, sub: 'Scoop neck luxury cotton' },
-
-    { id: 'taupe_wide', cat: 'bottoms', name: 'Tailored Taupe Trousers', photo: 'assets/beige_chinos.jpg', is3D: true, sub: 'Pleated high-waisted drape' },
-    { id: 'dark_denim', cat: 'bottoms', name: 'Dark Indigo Straight Jeans', photo: 'assets/blue_jeans.jpg', is3D: true, sub: 'Tailored Japanese denim' },
-    { id: 'white_chinos', cat: 'bottoms', name: 'Crisp Ivory Chinos', photo: 'assets/beige_chinos.jpg', is3D: true, sub: 'Clean minimalist cut' },
-
-    { id: 'blazer', cat: 'outerwear', name: 'Camel Smart Blazer', photo: 'assets/smart_blazer.jpg', is3D: true, sub: 'Structured tailored wool' },
-    { id: 'cardigan', cat: 'outerwear', name: 'Cream Knit Cardigan', photo: 'assets/style_casual.jpg', is3D: true, sub: 'Cozy drop-shoulder knit' },
-
-    { id: 'loafers', cat: 'shoes', name: 'Caramel Leather Loafers', photo: 'assets/smart_blazer.jpg', is3D: true, sub: 'Polished brass horsebit' },
-    { id: 'sneakers', cat: 'shoes', name: 'Clean White Sneakers', photo: 'assets/welcome_hero.jpg', is3D: true, sub: 'Minimalist court leather' }
+    ...WARDROBE_ITEMS.map(item => {
+      const mapping = WARDROBE_GARMENT_MODELS[item.id];
+      return {
+        id: item.id,
+        cat: mapping.category === 'top' ? 'tops' : mapping.category === 'bottom' ? 'bottoms' : mapping.category,
+        modelId: mapping.modelId,
+        name: item.name,
+        photo: item.photo,
+        is3D: true,
+        sub: 'Your wardrobe'
+      };
+    }),
+    { id: 'style_cardigan', cat: 'outerwear', modelId: 'cardigan', name: 'Cream Knit Cardigan', photo: 'assets/style_casual.jpg', is3D: true, sub: 'Cozy drop-shoulder knit' },
+    { id: 'style_striped_sweater', cat: 'tops', modelId: 'striped_sweater', name: 'Breton Striped Sweater', photo: 'assets/style_casual.jpg', is3D: true, sub: 'French nautical knit' },
+    { id: 'style_tank', cat: 'tops', modelId: 'tank', name: 'Ribbed Ivory Tank', photo: 'assets/welcome_hero.jpg', is3D: true, sub: 'Scoop neck cotton' },
+    { id: 'style_ivory_chinos', cat: 'bottoms', modelId: 'white_chinos', name: 'Crisp Ivory Chinos', photo: 'assets/cream_palazzo.jpg', is3D: true, sub: 'Clean minimalist cut' }
   ];
 
   const STYLING_REVIEWS = {
@@ -1343,11 +1363,14 @@
   };
 
   let serenCurrentCat = 'all';
+  let serenAvatarGender = 'female';
 
   function initVirtualStudio() {
     if (window.Studio3D) {
       setTimeout(() => {
         window.Studio3D.init('seren3dContainer', 'seren3dCanvas');
+        window.Studio3D.setAvatarGender(serenAvatarGender);
+        window.Studio3D.setCameraState('AVATAR_FULL_BODY');
       }, 50);
     }
     renderSerenGarments('all');
@@ -1364,35 +1387,22 @@
       items = items.filter(i => i.cat === serenCurrentCat);
     }
 
-    if (state.wardrobe && state.wardrobe.length > 0) {
-      const userItems = state.wardrobe.map(item => ({
-        id: item.id,
-        cat: item.category ? item.category.toLowerCase() : 'tops',
-        name: item.name,
-        photo: item.photo,
-        is3D: false,
-        sub: 'Closet Photo'
-      }));
-
-      if (serenCurrentCat === 'all') {
-        items = [...items, ...userItems];
-      } else {
-        items = [...items, ...userItems.filter(i => i.cat === serenCurrentCat)];
-      }
-    }
-
-    grid.innerHTML = items.map(item => `
-      <div class="seren-garment-item" onclick="app.serenWearGarment('${item.cat}', '${item.id}', ${item.is3D})" title="Wear ${item.name}">
+    grid.innerHTML = items.map(item => {
+      const slot = item.cat === 'tops' ? 'top' : item.cat === 'bottoms' ? 'bottom' : item.cat;
+      const isWorn = window.Studio3D && window.Studio3D.activeGarments[slot] === item.modelId;
+      return `
+      <button type="button" class="seren-garment-item${isWorn ? ' selected' : ''}" aria-pressed="${Boolean(isWorn)}" onclick="app.serenWearGarment('${item.id}')" title="Wear ${item.name}">
         <div class="garment-thumb-box">
-          <img src="${item.photo}" alt="${item.name}" onerror="this.src='assets/navy_shirt.jpg'">
-          ${item.is3D ? '<span class="ready-3d-badge">3D READY</span>' : '<span class="ready-2d-badge">2D PHOTO</span>'}
+          <img src="${item.photo}" alt="${item.name}" loading="lazy">
+          <span class="ready-3d-badge">${isWorn ? 'WORN' : '3D READY'}</span>
         </div>
         <div class="garment-item-info">
           <strong class="garment-item-name">${item.name}</strong>
           <span class="garment-item-sub">${item.sub}</span>
         </div>
-      </div>
-    `).join('');
+      </button>
+    `;
+    }).join('');
   }
 
   function serenFilterCat(cat, btn) {
@@ -1432,36 +1442,32 @@
     }
   }
 
-  function serenWearGarment(cat, garmentId, is3D) {
-    if (is3D && window.Studio3D) {
-      let engineCat = 'top';
-      if (cat === 'bottoms' || cat === 'bottom') engineCat = 'bottom';
-      else if (cat === 'shoes' || cat === 'shoe') engineCat = 'shoes';
-      else engineCat = 'top';
+  function serenWearGarment(garmentId) {
+    const garment = SEREN_GARMENTS.find(item => item.id === garmentId);
+    if (!garment) return;
 
-      const mappedId = garmentId === 'wide_linen' ? 'taupe_wide' : garmentId;
-      window.Studio3D.equipGarment(engineCat, mappedId);
+    if (window.Studio3D && window.Studio3D.equipGarment(garment.cat, garment.modelId)) {
       window.Studio3D.setCameraState('AVATAR_FULL_BODY');
-
-      const itemRecord = SEREN_GARMENTS.find(g => g.id === garmentId);
-      const displayName = itemRecord ? itemRecord.name : garmentId.replace('_', ' ');
-      showToast(`Equipped: ${displayName} ♡`);
-
-      const thumb = document.getElementById('serenReviewThumb');
-      if (thumb) {
-        if (garmentId === 'cardigan') thumb.src = 'assets/style_casual.jpg';
-        else if (garmentId === 'blazer') thumb.src = 'assets/smart_blazer.jpg';
-        else if (garmentId === 'navy_shirt') thumb.src = 'assets/navy_shirt.jpg';
-        else if (garmentId === 'striped_sweater') thumb.src = 'assets/style_casual.jpg';
-        else if (garmentId === 'tank') thumb.src = 'assets/welcome_hero.jpg';
-      }
+      renderSerenGarments(serenCurrentCat);
+      showToast(`Equipped: ${garment.name}`);
     } else {
-      showToast(`2D item selected. Previewing in wardrobe catalog.`);
+      showToast('3D preview is not available for this item right now.');
     }
 
     setTimeout(() => {
       serenToggleWardrobe(false);
     }, 450);
+  }
+
+  function setAvatarGender(gender) {
+    if (gender !== 'female' && gender !== 'male') return;
+    serenAvatarGender = gender;
+    if (window.Studio3D) window.Studio3D.setAvatarGender(gender);
+    document.querySelectorAll('[data-avatar-gender]').forEach(button => {
+      const selected = button.dataset.avatarGender === gender;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
   }
 
   function serenOpenStylingReview() {
@@ -1540,6 +1546,20 @@
       } else {
         backBtn.classList.remove('hidden');
       }
+    }
+  }
+
+  function onStudioViewChanged(view) {
+    document.querySelectorAll('[data-avatar-view]').forEach(button => {
+      const selected = button.dataset.avatarView === view;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+  }
+
+  function setStudioView(view) {
+    if (window.Studio3D && window.Studio3D.setAvatarView(view)) {
+      onStudioViewChanged(view === 'reset' ? 'front' : view);
     }
   }
 
@@ -1636,6 +1656,7 @@ function init() {
     serenToggleWardrobe,
     serenToggleDailyLooks,
     serenWearGarment,
+    setAvatarGender,
     serenOpenStylingReview,
     serenOpenReview: serenOpenStylingReview,
     serenCloseReview,
@@ -1646,6 +1667,8 @@ function init() {
     serenQuickAction: serenCenterAction,
     serenCycleLooks: () => serenToggleDailyLooks(true),
     setStudioCamera,
+    setStudioView,
+    onStudioViewChanged,
     onStudioCameraChanged,
     serenInteract
   };

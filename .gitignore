@@ -15,3 +15,8 @@ android-app/.kotlin/
 .DS_Store
 Thumbs.db
 *.log
+*.tmp
+
+# Uploads and temporary test storage
+uploads/streaks/*
+!uploads/streaks/.gitkeep

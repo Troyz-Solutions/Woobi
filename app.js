@@ -1592,43 +1592,22 @@
   // 9. DAILY OUTFIT-UPLOAD STREAK & COUNTDOWN TIMER SYSTEM
   // =========================================================================
   const STREAK_STORAGE_KEY = 'woobi_outfit_streak_v2';
+  const RESTORE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000; // Rolling 30 days
+  const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
+  const TWENTY_HOURS_MS = 20 * 60 * 60 * 1000;
+  const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
-  // Helper: Determine calendar monthly restore cycle key (refreshes on 3rd of every month)
-  function getMonthlyRestoreCycleKey(dateObj) {
-    const d = dateObj || new Date();
-    const year = d.getFullYear();
-    const month = d.getMonth(); // 0-indexed (0 = Jan, 9 = Oct)
-    const day = d.getDate();
-
-    if (day >= 3) {
-      // Current cycle starts on 3rd of this month
-      return `${year}-${String(month + 1).padStart(2, '0')}`;
-    } else {
-      // Prior cycle: belongs to cycle starting on 3rd of previous month
-      const prev = new Date(year, month - 1, 3);
-      return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
-    }
+  // Active user identification for multi-device persistence
+  function getStreakUserId() {
+    return state.userId || localStorage.getItem('woobi_user_id') || 'user_default';
   }
 
-  // Helper: Format next refresh date string (e.g. "Nov 3, 2026")
-  function getNextRestoreRefreshDateStr(dateObj) {
-    const d = dateObj || new Date();
-    const year = d.getFullYear();
-    const month = d.getMonth();
-    const day = d.getDate();
-
-    let targetDate;
-    if (day < 3) {
-      targetDate = new Date(year, month, 3);
-    } else {
-      targetDate = new Date(year, month + 1, 3);
-    }
-
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${monthNames[targetDate.getMonth()]} 3, ${targetDate.getFullYear()}`;
+  // Server Time Synchronization
+  function getNowServer() {
+    return Date.now() + (state.serverTimeOffset || 0);
   }
 
-  // Local Timezone Date String Helper (fixes UTC toISOString timezone mismatch)
+  // Local Timezone Date String Helper
   function getLocalDateString(date = new Date()) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -1636,8 +1615,23 @@
     return `${y}-${m}-${d}`;
   }
 
-  // Optimize & Compress Photo for safe localStorage persistence
-  function optimizePhotoForStorage(dataUrl, maxDimension = 500, quality = 0.75) {
+  // Format countdown remaining string e.g. "3h 45m" or "45s"
+  function formatRemainingTime(ms) {
+    if (ms <= 0) return '0m';
+    const hours = Math.floor(ms / (3600 * 1000));
+    const mins = Math.floor((ms % (3600 * 1000)) / (60 * 1000));
+    const secs = Math.floor((ms % (60 * 1000)) / 1000);
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    if (mins > 0) {
+      return `${mins}m ${secs}s`;
+    }
+    return `${secs}s`;
+  }
+
+  // Optimize & Compress Photo for safe storage and transmission
+  function optimizePhotoForStorage(dataUrl, maxDimension = 600, quality = 0.8) {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -1666,88 +1660,20 @@
 
   function initServiceWorker() {
     if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-      navigator.serviceWorker.register('sw.js').then((reg) => {
-        // Service Worker registered successfully
-      }).catch((err) => {
+      navigator.serviceWorker.register('sw.js').catch((err) => {
         console.warn('Woobi Service Worker registration error:', err);
       });
     }
   }
 
-  function initStreakState() {
-    let saved = null;
-    try {
-      const raw = localStorage.getItem(STREAK_STORAGE_KEY);
-      if (raw) saved = JSON.parse(raw);
-    } catch (e) {
-      console.warn('Could not read streak from localStorage', e);
-    }
-
-    const now = Date.now();
-    const defaultDeadline = now + (24 * 3600 * 1000); // 24-hour window from outfit recommendation
-    const todayStr = getLocalDateString(new Date());
-
-    if (!saved) {
-      // Issue 2 Fix: New users start at 0 (not 5)
-      state.streak = {
-        currentStreak: 0, // Starts at 0 for new users
-        savedPreviousStreak: 0,
-        isStreakBroken: false,
-        deadline: defaultDeadline,
-        lastUploadTimestamp: 0,
-        lastUploadDateStr: '',
-        outfitHistory: [],
-        breakNotified: false,
-        lastRestoredCycleKey: null,
-        uploadedToday: false,
-        morningReminderSent: false,
-        middayReminderSent: false,
-        urgentReminderSent: false
-      };
-      saveStreakState();
-    } else {
-      state.streak = saved;
-      if (typeof state.streak.morningReminderSent === 'undefined') state.streak.morningReminderSent = false;
-      if (typeof state.streak.middayReminderSent === 'undefined') state.streak.middayReminderSent = false;
-      if (typeof state.streak.urgentReminderSent === 'undefined') state.streak.urgentReminderSent = false;
-
-      // Consistent calendar date check
-      state.streak.uploadedToday = (state.streak.lastUploadDateStr === todayStr);
-    }
-
-    // Check deadline on launch (triggers breakStreak if expired)
-    checkStreakDeadline();
-
-    // Start 1-second countdown ticker
-    if (window._streakTicker) clearInterval(window._streakTicker);
-    window._streakTicker = setInterval(tickStreakCountdown, 1000);
-
-    // Initial UI render
-    updateStreakUI();
-
-    // If streak was already marked broken in storage but was never notified to the user
-    if (state.streak.isStreakBroken && !state.streak.breakNotified) {
-      state.streak.breakNotified = true;
-      saveStreakState();
-      triggerFlameBlowoutAnimation();
-      if (window._missedStreakTimer) clearTimeout(window._missedStreakTimer);
-      window._missedStreakTimer = setTimeout(() => {
-        showMissedStreakModal();
-      }, 1200);
-    }
-
-    // QA & Dev Controls visibility check
-    updateDevControlsVisibility();
-  }
-
+  // Save streak state to localStorage as offline cache
   function saveStreakState() {
     try {
       localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(state.streak));
     } catch (e) {
-      // Issue 3 Fix: Handle localStorage quota exceeded error gracefully by pruning history
       if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
-        if (state.streak && Array.isArray(state.streak.outfitHistory) && state.streak.outfitHistory.length > 3) {
-          state.streak.outfitHistory = state.streak.outfitHistory.slice(0, 3);
+        if (state.streak && Array.isArray(state.streak.outfitHistory) && state.streak.outfitHistory.length > 5) {
+          state.streak.outfitHistory = state.streak.outfitHistory.slice(0, 5);
           try {
             localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(state.streak));
             return;
@@ -1758,80 +1684,119 @@
     }
   }
 
+  // Sync latest streak state from authoritative server
+  async function syncStreakFromServer() {
+    const userId = getStreakUserId();
+    try {
+      const res = await fetch(`/api/streak?userId=${encodeURIComponent(userId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.streak) {
+          if (typeof data.serverTime === 'number') {
+            state.serverTimeOffset = data.serverTime - Date.now();
+          }
+          state.streak = data.streak;
+          saveStreakState();
+          updateStreakUI();
+          renderOutfitHistoryGallery();
+          return data.streak;
+        }
+      }
+    } catch (err) {
+      console.warn('Network error syncing streak from server, using local cache:', err);
+    }
+    return state.streak;
+  }
+
+  // Initialize Streak State
+  function initStreakState() {
+    let saved = null;
+    try {
+      const raw = localStorage.getItem(STREAK_STORAGE_KEY);
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {
+      console.warn('Could not read streak from localStorage', e);
+    }
+
+    if (!saved) {
+      state.streak = {
+        userId: getStreakUserId(),
+        currentStreak: 0,
+        savedPreviousStreak: 0,
+        lastCreditedUploadTimestamp: null,
+        deadline: null,
+        isPeriodCredited: false,
+        streakStatus: 'active',
+        lastRestorationTimestamp: null,
+        nextRestorationEligibilityTimestamp: null,
+        breakNotified: false,
+        outfitHistory: []
+      };
+      saveStreakState();
+    } else {
+      state.streak = saved;
+    }
+
+    // Attempt background server sync immediately
+    syncStreakFromServer().then(() => {
+      checkStreakDeadline();
+      updateStreakUI();
+    });
+
+    // Check deadline on launch
+    checkStreakDeadline();
+
+    // Start 1-second countdown ticker
+    if (window._streakTicker) clearInterval(window._streakTicker);
+    window._streakTicker = setInterval(tickStreakCountdown, 1000);
+
+    // Initial UI render
+    updateStreakUI();
+
+    // If streak was already marked broken but never notified
+    if (state.streak.streakStatus === 'broken' && !state.streak.breakNotified) {
+      state.streak.breakNotified = true;
+      saveStreakState();
+      triggerFlameBlowoutAnimation();
+      showBrokenStreakAlert('Your streak has been broken!');
+    }
+
+    updateDevControlsVisibility();
+  }
+
+  // 1-second timer ticker
   function tickStreakCountdown() {
     if (!state.streak) return;
     checkStreakDeadline();
     updateStreakUI();
   }
 
+  // Check deadline expiration and 20-hour reminder threshold
   function checkStreakDeadline() {
     const streak = state.streak;
     if (!streak) return;
 
-    if (streak.isStreakBroken) return;
-    if (streak.uploadedToday) return;
+    if (streak.streakStatus === 'broken') return;
 
-    const now = Date.now();
-    const msRemaining = streak.deadline - now;
+    // If streak is active and has a deadline
+    if (streak.deadline && streak.currentStreak > 0) {
+      const now = getNowServer();
+      const msRemaining = streak.deadline - now;
 
-    // 1. Deadline passed: Streak breaks
-    if (msRemaining <= 0) {
-      breakStreak();
-      return;
-    }
-
-    const TWO_HOURS_MS = 2 * 3600 * 1000;
-    const SIX_HOURS_MS = 6 * 3600 * 1000;
-    const TWELVE_HOURS_MS = 12 * 3600 * 1000;
-
-    // Issue 1: Prevent multiple / simultaneous reminder notifications.
-    // If user opens with only 1 hour left, ONLY the urgent 2-hour reminder triggers.
-    if (msRemaining <= TWO_HOURS_MS) {
-      if (!streak.urgentReminderSent) {
-        streak.urgentReminderSent = true;
-        streak.middayReminderSent = true;
-        streak.morningReminderSent = true;
-        saveStreakState();
-        sendDailyNotification(
-          '⚠️ 2 Hours Left on Your Outfit Streak!',
-          `Only 2 hours left to upload today's outfit photo before your 🔥 ${streak.currentStreak}-day streak ends!`,
-          true,
-          'woobi-reminder-urgent'
-        );
-      }
-    } else if (msRemaining <= SIX_HOURS_MS) {
-      // Midday Reminder: triggers only if within (2h, 6h]
-      if (!streak.middayReminderSent) {
-        streak.middayReminderSent = true;
-        streak.morningReminderSent = true;
-        saveStreakState();
-        sendDailyNotification(
-          'Midday Outfit Check ☀️',
-          `Halfway through today's challenge! Snap your recommended outfit to maintain your 🔥 ${streak.currentStreak}-day streak.`,
-          false,
-          'woobi-reminder-midday'
-        );
-      }
-    } else if (msRemaining <= TWELVE_HOURS_MS) {
-      // Morning Reminder: triggers only if within (6h, 12h]
-      if (!streak.morningReminderSent) {
-        streak.morningReminderSent = true;
-        saveStreakState();
-        sendDailyNotification(
-          'Woobi Daily Outfit Reminder 🔥',
-          `Good morning! Don't forget to snap and upload your outfit to maintain your 🔥 ${streak.currentStreak}-day streak!`,
-          false,
-          'woobi-reminder-morning'
-        );
+      // 1. Deadline passed (24 hours expired without qualifying upload): Streak breaks!
+      if (msRemaining <= 0) {
+        breakStreak();
+        return;
       }
     }
   }
 
-  function breakStreak() {
+  // Mark streak as broken
+  async function breakStreak() {
     const streak = state.streak;
-    if (!streak || streak.isStreakBroken) return;
+    if (!streak || streak.streakStatus === 'broken') return;
 
-    streak.isStreakBroken = true;
+    streak.streakStatus = 'broken';
     streak.breakNotified = true;
     if (streak.currentStreak > 0) {
       streak.savedPreviousStreak = streak.currentStreak;
@@ -1839,30 +1804,39 @@
       streak.savedPreviousStreak = 1;
     }
     streak.currentStreak = 0;
-    streak.uploadedToday = false;
+    streak.isPeriodCredited = false;
     saveStreakState();
 
-    // Trigger visual flame blowout and smoke animation once
+    // Call server to persist break
+    try {
+      const userId = getStreakUserId();
+      fetch('/api/streak/break', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      }).catch(() => {});
+    } catch (e) {}
+
+    // Trigger visual burning-wood-to-smoke blowout animation
     triggerFlameBlowoutAnimation();
 
-    // Show missed upload modal once
-    if (window._missedStreakTimer) clearTimeout(window._missedStreakTimer);
-    window._missedStreakTimer = setTimeout(() => {
-      showMissedStreakModal();
-    }, 1200);
+    // Show red alert popup: "Your streak has been broken!"
+    showBrokenStreakAlert('Your streak has been broken!');
+
+    updateStreakUI();
   }
 
+  // Realistic burning-wood-to-smoke blowout animation
   function triggerFlameBlowoutAnimation() {
     const flameWrapper = document.getElementById('streakFlameWrapper');
     if (flameWrapper) {
-      if (flameWrapper.classList.contains('blown-out')) return; // Guard against duplicate animation
+      if (flameWrapper.classList.contains('blown-out')) return;
       flameWrapper.classList.remove('reignited', 'inactive');
       flameWrapper.classList.add('blown-out');
 
-      // Seamlessly transition to resting inactive state once smoke rises and disperses (~2.2s)
       if (window._flameBlowoutTimer) clearTimeout(window._flameBlowoutTimer);
       window._flameBlowoutTimer = setTimeout(() => {
-        if (state.streak && state.streak.isStreakBroken) {
+        if (state.streak && state.streak.streakStatus === 'broken') {
           flameWrapper.classList.add('inactive');
           flameWrapper.classList.remove('blown-out');
         }
@@ -1876,33 +1850,47 @@
     }
 
     const timer = document.getElementById('streakTimer');
-    if (timer) timer.textContent = '⏱️';
+    const sep = document.getElementById('streakSep');
+    if (timer) timer.style.display = 'none';
+    if (sep) sep.style.display = 'none';
   }
 
+  // Update Streak UI Elements & 20-Hour Reminder
   function updateStreakUI() {
     const streak = state.streak;
     if (!streak) return;
 
     const streakCountEl = document.getElementById('streakCount');
     const streakTimerEl = document.getElementById('streakTimer');
+    const streakSepEl = document.getElementById('streakSep');
     const streakPillEl = document.getElementById('streakHeaderPill');
     const streakDrawerCountEl = document.querySelector('.streak-drawer-count');
     const readyTimerMini = document.getElementById('streakReadyTimerMini');
     const flameWrapper = document.getElementById('streakFlameWrapper');
 
-    if (streakCountEl) streakCountEl.textContent = streak.currentStreak;
-    if (streakDrawerCountEl) streakDrawerCountEl.textContent = streak.currentStreak;
-
-    const now = Date.now();
-    const diff = Math.max(0, streak.deadline - now);
-    const hours = Math.floor(diff / (3600 * 1000));
-    const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
-
-    if (streak.isStreakBroken) {
-      if (streakTimerEl) {
-        streakTimerEl.textContent = '⏱️';
-        streakTimerEl.title = 'Streak Ended';
+    const countVal = streak.currentStreak || 0;
+    if (streakCountEl) streakCountEl.textContent = countVal;
+    const galleryCountEl = document.getElementById('galleryBadgeCount');
+    const outfitCount = (streak && Array.isArray(streak.outfitHistory)) ? streak.outfitHistory.length : 0;
+    if (galleryCountEl) {
+      if (outfitCount > 0) {
+        galleryCountEl.textContent = outfitCount;
+        galleryCountEl.style.display = 'flex';
+      } else {
+        galleryCountEl.style.display = 'none';
       }
+    }
+
+    if (streakDrawerCountEl) streakDrawerCountEl.textContent = countVal;
+
+    const now = getNowServer();
+    const hasDeadline = typeof streak.deadline === 'number' && streak.deadline > 0;
+    const diff = hasDeadline ? Math.max(0, streak.deadline - now) : 0;
+
+    // 1. Broken State
+    if (streak.streakStatus === 'broken') {
+      if (streakTimerEl) streakTimerEl.style.display = 'none';
+      if (streakSepEl) streakSepEl.style.display = 'none';
       if (readyTimerMini) readyTimerMini.textContent = '⏱️ Streak Ended';
       if (streakPillEl) {
         streakPillEl.classList.remove('urgent', 'completed');
@@ -1914,60 +1902,166 @@
       return;
     }
 
-    // Flame is active
+    // Flame is Active
     if (flameWrapper) {
       flameWrapper.classList.remove('blown-out', 'inactive');
     }
-
     if (streakPillEl) {
       streakPillEl.classList.remove('inactive');
     }
 
-    if (streak.uploadedToday) {
-      if (streakTimerEl) {
-        streakTimerEl.textContent = '✓';
-        streakTimerEl.title = "Today's outfit uploaded";
-      }
-      if (readyTimerMini) readyTimerMini.textContent = '✓ Uploaded Today';
-      if (streakPillEl) {
-        streakPillEl.classList.remove('urgent', 'inactive');
-        streakPillEl.classList.add('completed');
-      }
+    // Initial state (0 streak) before any upload
+    if (countVal === 0 && !streak.lastCreditedUploadTimestamp) {
+      if (streakTimerEl) streakTimerEl.style.display = 'none';
+      if (streakSepEl) streakSepEl.style.display = 'none';
+      if (readyTimerMini) readyTimerMini.textContent = '📸 Ready for 1st Look';
       return;
     }
 
-    // Active uncompleted countdown
-    if (streakTimerEl) {
-      streakTimerEl.textContent = '⏱️';
-      streakTimerEl.title = `${hours}h ${mins}m left`;
-    }
-    if (readyTimerMini) {
-      readyTimerMini.textContent = `⏳ ${hours}h ${mins}m left`;
-    }
+    // Check if 20 hours have passed since last credited upload (approx 4 hours remaining)
+    const isAtOrAfter20Hours = diff <= FOUR_HOURS_MS && diff > 0 && streak.currentStreak > 0;
 
-    // Last 2 Hours Warning Threshold: <= 2 hours (7200 seconds)
-    const isUrgent = diff <= (2 * 3600 * 1000);
-    if (streakPillEl) {
-      streakPillEl.classList.toggle('urgent', isUrgent);
-      streakPillEl.classList.remove('completed', 'inactive');
+    if (isAtOrAfter20Hours) {
+      // 20-Hour Reminder: Show ⏳ and remaining time clearly!
+      const timeStr = formatRemainingTime(diff);
+      if (streakTimerEl) {
+        streakTimerEl.textContent = `⏳ ${timeStr}`;
+        streakTimerEl.title = `⏳ Approximately ${timeStr} remaining to upload your outfit and continue your streak!`;
+        streakTimerEl.style.display = 'inline-flex';
+      }
+      if (streakSepEl) streakSepEl.style.display = 'inline';
+      if (readyTimerMini) readyTimerMini.textContent = `⏳ ${timeStr} left`;
+
+      if (streakPillEl) {
+        streakPillEl.classList.add('urgent');
+        streakPillEl.classList.remove('completed');
+      }
+    } else {
+      // 0 to 20 hours elapsed: user has already completed upload for this period -> HIDE reminder!
+      if (streakTimerEl) streakTimerEl.style.display = 'none';
+      if (streakSepEl) streakSepEl.style.display = 'none';
+      if (readyTimerMini) readyTimerMini.textContent = '✓ Credited Today';
+      if (streakPillEl) {
+        streakPillEl.classList.remove('urgent');
+      }
     }
   }
 
-  // Camera upload triggers
-  function triggerOutfitPhotoUpload() {
-    const input = document.getElementById('outfitPhotoInput');
-    if (input) {
-      input.value = '';
-      input.click();
+  // =========================================================================
+  // CAMERA & PHOTO CAPTURE INTERFACE SYSTEM
+  // =========================================================================
+
+  // Render Suggested Outfit chips in camera modal
+  function renderSuggestedOutfitChips() {
+    const container = document.getElementById('suggestedItemsRow');
+    const titleEl = document.getElementById('suggestedLookTitle');
+    if (!container) return;
+
+    const currentLook = (typeof LOOKS_DATA !== 'undefined' && LOOKS_DATA[state.currentLookIndex]) || {
+      title: 'Easy everyday',
+      top: { name: 'Navy shirt', photo: 'assets/navy_shirt.jpg' },
+      bottom: { name: 'Beige trousers', photo: 'assets/beige_chinos.jpg' },
+      footwear: { name: 'White sneakers', photo: 'assets/white_sneakers.jpg' }
+    };
+
+    if (titleEl) titleEl.textContent = currentLook.title || "Today's Recommended Look";
+
+    const items = [
+      { role: 'Top', item: currentLook.top },
+      { role: 'Bottom', item: currentLook.bottom },
+      { role: 'Shoes', item: currentLook.footwear }
+    ].filter(i => i.item && i.item.name);
+
+    container.innerHTML = items.map(({ role, item }) => `
+      <div class="suggested-item-chip" title="${role}: ${item.name}">
+        <img src="${item.photo || 'assets/welcome_hero.jpg'}" alt="${item.name}" class="suggested-item-thumb" />
+        <span><strong>${role}:</strong> ${item.name}</span>
+      </div>
+    `).join('');
+  }
+
+  // Open Camera Modal and start stream
+  async function openCameraModal() {
+    const modal = document.getElementById('cameraCaptureModal');
+    if (!modal) return;
+
+    // Simplified clean camera UI
+
+    // Reset view to camera stream
+    const streamContainer = document.getElementById('cameraStreamContainer');
+    const previewContainer = document.getElementById('cameraPreviewContainer');
+    if (streamContainer) streamContainer.style.display = 'block';
+    if (previewContainer) previewContainer.style.display = 'none';
+
+    state.pendingCameraPhoto = null;
+    modal.classList.remove('hidden');
+
+    // Start video camera feed
+    const video = document.getElementById('cameraVideo');
+    if (video && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+        state.activeCameraStream = stream;
+        video.srcObject = stream;
+        await video.play();
+      } catch (err) {
+        console.warn('Camera access denied or unavailable, using file upload fallback:', err.message);
+      }
     }
   }
 
-  // 3. Image Validation: MIME type, file size (max 10MB), and error handling
-  function handleOutfitPhotoSelected(event) {
+  // Stop camera media stream
+  function stopCameraStream() {
+    if (state.activeCameraStream) {
+      try {
+        state.activeCameraStream.getTracks().forEach((track) => track.stop());
+      } catch (e) {}
+      state.activeCameraStream = null;
+    }
+    const video = document.getElementById('cameraVideo');
+    if (video) video.srcObject = null;
+  }
+
+  // Close Camera Modal
+  function closeCameraModal() {
+    stopCameraStream();
+    const modal = document.getElementById('cameraCaptureModal');
+    if (modal) modal.classList.add('hidden');
+    state.pendingCameraPhoto = null;
+  }
+
+  // Capture snapshot from live video stream
+  function captureCameraSnapshot() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    if (!video || !canvas) return;
+
+    // Fallback if video isn't running: trigger file picker
+    if (!video.srcObject || video.videoWidth === 0) {
+      const fileInput = document.getElementById('cameraFileInput');
+      if (fileInput) fileInput.click();
+      return;
+    }
+
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    displayCapturedPhotoPreview(dataUrl);
+    stopCameraStream();
+  }
+
+  // Handle file selection from camera file input
+  function handleCameraFileSelected(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    // Validate MIME type
+    // MIME type check
     const validMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/jpg'];
     const isImage = file.type ? (file.type.startsWith('image/') || validMimes.includes(file.type.toLowerCase())) : /\.(jpe?g|png|webp|heic)$/i.test(file.name);
     if (!isImage) {
@@ -1976,193 +2070,152 @@
       return;
     }
 
-    // Validate file size: 10MB maximum limit
-    const MAX_SIZE_BYTES = 10 * 1024 * 1024;
-    if (file.size > MAX_SIZE_BYTES) {
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      showToast(`⚠️ Image too large (${sizeMb} MB). Maximum allowed size is 10 MB.`);
+    // 10MB limit
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('⚠️ Image too large. Maximum allowed size is 10 MB.');
       event.target.value = '';
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = async function (e) {
+    reader.onload = async (e) => {
       try {
-        const rawDataUrl = e.target.result;
-        // Optimize and compress for storage & preview
-        const optimized = await optimizePhotoForStorage(rawDataUrl, 600, 0.8);
-        state.pendingOutfitPhoto = optimized;
-        openPhotoConfirmModal(optimized);
+        const optimized = await optimizePhotoForStorage(e.target.result, 700, 0.82);
+        displayCapturedPhotoPreview(optimized);
+        stopCameraStream();
       } catch (err) {
-        console.error('Error optimizing photo:', err);
         showToast('⚠️ Could not process image preview. Please try another photo.');
       }
     };
-
-    reader.onerror = function (err) {
-      console.error('FileReader error:', err);
-      showToast('⚠️ Failed to load the selected photo. Please try again.');
-      event.target.value = '';
-    };
-
-    reader.onabort = function () {
-      showToast('⚠️ Photo reading was cancelled.');
-      event.target.value = '';
-    };
-
+    reader.onerror = () => showToast('⚠️ Failed to read selected photo.');
     reader.readAsDataURL(file);
+    event.target.value = '';
   }
 
-  function openPhotoConfirmModal(imgDataUrl) {
-    if (imgDataUrl) {
-      state.pendingOutfitPhoto = imgDataUrl;
+  // Display captured photo in preview view
+  function displayCapturedPhotoPreview(dataUrl) {
+    state.pendingCameraPhoto = dataUrl;
+
+    const streamContainer = document.getElementById('cameraStreamContainer');
+    const previewContainer = document.getElementById('cameraPreviewContainer');
+    const previewImg = document.getElementById('cameraPreviewImg');
+    const uploadBtn = document.getElementById('btnUploadCapturedPhoto');
+
+    if (streamContainer) streamContainer.style.display = 'none';
+    if (previewContainer) previewContainer.style.display = 'block';
+    if (previewImg) previewImg.src = dataUrl;
+    if (uploadBtn) {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = '✓ Upload';
     }
-    const modal = document.getElementById('outfitPhotoConfirmModal');
-    const previewImg = document.getElementById('outfitPhotoPreviewImg');
-    const currVal = document.getElementById('confirmCurrentStreakVal');
-    const newVal = document.getElementById('confirmNewStreakVal');
-    const confirmBtn = modal ? modal.querySelector('.btn-olive-primary') : null;
-    const hintEl = modal ? modal.querySelector('.streak-modal-hint') : null;
-
-    const streak = state.streak;
-    const currentCount = streak ? (streak.currentStreak || 0) : 0;
-    const todayStr = getLocalDateString(new Date());
-    // Strict calendar day check: based consistently on lastUploadDateStr
-    const alreadyUploadedToday = !!(streak && streak.lastUploadDateStr === todayStr);
-
-    if (previewImg) previewImg.src = imgDataUrl || 'assets/welcome_hero.jpg';
-    if (currVal) currVal.textContent = currentCount;
-    if (newVal) newVal.textContent = alreadyUploadedToday ? currentCount : currentCount + 1;
-
-    // Issue 4 Fix: Clear, non-misleading button label and explanation when already uploaded today
-    if (confirmBtn) {
-      confirmBtn.textContent = alreadyUploadedToday ? "Update Today's Look" : "Confirm Upload (+1 🔥)";
-    }
-    if (hintEl) {
-      hintEl.innerHTML = alreadyUploadedToday
-        ? "You have already completed today's streak challenge. Confirming will update today's photo in your history without increasing your streak count again."
-        : "Looks sharp! Confirming this photo completes today\'s challenge and adds <strong>+1 🔥</strong> to your streak.";
-    }
-
-    if (modal) modal.classList.remove('hidden');
   }
 
-  function closePhotoConfirmModal() {
-    const modal = document.getElementById('outfitPhotoConfirmModal');
-    if (modal) modal.classList.add('hidden');
-    state.pendingOutfitPhoto = null;
+  // Retake photo: return to live camera stream
+  function retakeCameraPhoto() {
+    state.pendingCameraPhoto = null;
+    openCameraModal();
   }
 
-  // 1. Photo Upload Implementation & Strict Calendar-Day Streak Increment Restriction
-  function confirmOutfitPhotoUpload() {
-    const photoToSave = state.pendingOutfitPhoto || 'assets/welcome_hero.jpg';
-    closePhotoConfirmModal();
+  // Upload captured outfit photo to backend
+  async function confirmCameraPhotoUpload() {
+    const photoData = state.pendingCameraPhoto;
+    if (!photoData) {
+      showToast('⚠️ Please capture or select a photo first.');
+      return;
+    }
 
-    const streak = state.streak;
-    if (!streak) return;
+    const uploadBtn = document.getElementById('btnUploadCapturedPhoto');
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading...';
+    }
 
-    const todayStr = getLocalDateString(new Date());
-    // Strict calendar day check: validate lastUploadDateStr consistently
-    const alreadyUploadedToday = (streak.lastUploadDateStr === todayStr);
+    try {
+      const currentLook = (typeof LOOKS_DATA !== 'undefined' && LOOKS_DATA[state.currentLookIndex]) || { id: 'look_current' };
+      const userId = getStreakUserId();
 
-    // Issue 4 Fix: If an upload has already been confirmed for today, update today's existing look
-    // in outfit history without adding duplicate gallery cards or misleading +1 toast messages
-    if (alreadyUploadedToday) {
-      streak.lastUploadedPhoto = photoToSave;
-      streak.lastUploadTimestamp = Date.now();
-      streak.uploadedToday = true;
+      const response = await fetch('/api/streak/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          photoData: photoData,
+          suggestedLookId: currentLook.id || 'look_1'
+        })
+      });
 
-      if (!Array.isArray(streak.outfitHistory)) {
-        streak.outfitHistory = [];
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        showToast(`⚠️ Upload failed: ${data.error || 'Server error'}. Streak was not updated.`);
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = '✓ Upload Outfit Photo';
+        }
+        return;
       }
 
-      // Update today's entry in history rather than creating duplicate entries
-      const existingTodayIndex = streak.outfitHistory.findIndex((item) => item.dateStr === todayStr);
-      if (existingTodayIndex !== -1) {
-        streak.outfitHistory[existingTodayIndex].photoUrl = photoToSave;
-        streak.outfitHistory[existingTodayIndex].timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        streak.outfitHistory[existingTodayIndex].timestamp = Date.now();
-      } else {
-        streak.outfitHistory.unshift({
-          id: 'outfit_' + Date.now(),
-          timestamp: Date.now(),
-          dateStr: todayStr,
-          timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          streakCount: streak.currentStreak,
-          photoUrl: photoToSave
-        });
+      // Authoritative update from server
+      state.streak = data.streak;
+      if (typeof data.serverTime === 'number') {
+        state.serverTimeOffset = data.serverTime - Date.now();
       }
-
-      if (streak.outfitHistory.length > 15) {
-        streak.outfitHistory = streak.outfitHistory.slice(0, 15);
-      }
-
       saveStreakState();
+
+      // Close all existing modal tabs
+      closeCameraModal();
+      closeStreakModal();
+      if (typeof closePhotoConfirmModal === 'function') closePhotoConfirmModal();
+      if (typeof closeMissedStreakModal === 'function') closeMissedStreakModal();
+
+      // Re-ignite flame animation
+      const flameWrapper = document.getElementById('streakFlameWrapper');
+      if (flameWrapper) {
+        flameWrapper.classList.remove('blown-out', 'inactive');
+        flameWrapper.classList.add('reignited');
+        setTimeout(() => flameWrapper.classList.remove('reignited'), 1200);
+      }
+
       updateStreakUI();
       renderOutfitHistoryGallery();
       dismissReminderBanner();
 
-      // Honest, non-misleading message (does NOT claim +1)
-      showToast("📸 Today's outfit photo updated in history! Daily streak is already active.");
-      return;
+      if (data.qualifies) {
+        showToast(`🔥 Outfit photo uploaded & streak increased to ${state.streak.currentStreak} Days!`);
+      } else {
+        showToast("📸 Outfit photo saved to your gallery! Click the 🖼️ gallery icon to view all your uploaded looks.");
+      }
+    } catch (err) {
+      console.error('Photo upload error:', err);
+      showToast('⚠️ Network error while uploading photo. Please check your connection.');
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = '✓ Upload Outfit Photo';
+      }
     }
-
-    // First upload of this calendar day: Advance streak by +1
-    streak.currentStreak = (streak.currentStreak || 0) + 1;
-    streak.savedPreviousStreak = streak.currentStreak;
-    streak.isStreakBroken = false;
-    streak.breakNotified = false;
-    streak.uploadedToday = true;
-    streak.lastUploadTimestamp = Date.now();
-    streak.lastUploadDateStr = todayStr;
-    streak.deadline = Date.now() + (24 * 3600 * 1000); // Reset next 24h deadline
-    streak.morningReminderSent = false;
-    streak.middayReminderSent = false;
-    streak.urgentReminderSent = false;
-
-    // Persist to outfit history gallery
-    if (!Array.isArray(streak.outfitHistory)) {
-      streak.outfitHistory = [];
-    }
-    streak.outfitHistory.unshift({
-      id: 'outfit_' + Date.now(),
-      timestamp: Date.now(),
-      dateStr: todayStr,
-      timeStr: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      streakCount: streak.currentStreak,
-      photoUrl: photoToSave
-    });
-    // Keep last 15 uploads to remain well within localStorage budget
-    if (streak.outfitHistory.length > 15) {
-      streak.outfitHistory = streak.outfitHistory.slice(0, 15);
-    }
-    streak.lastUploadedPhoto = photoToSave;
-
-    saveStreakState();
-
-    // Re-ignite flame animation
-    const flameWrapper = document.getElementById('streakFlameWrapper');
-    if (flameWrapper) {
-      flameWrapper.classList.remove('blown-out', 'inactive');
-      flameWrapper.classList.add('reignited');
-      setTimeout(() => flameWrapper.classList.remove('reignited'), 1000);
-    }
-
-    updateStreakUI();
-    renderOutfitHistoryGallery();
-    dismissReminderBanner();
-
-    showToast(`🔥 Outfit photo uploaded & streak increased to ${streak.currentStreak}!`);
   }
 
-  // Missed Upload Modal and Monthly Restoration Logic
+  // Legacy trigger mapping to upgraded camera modal
+  function triggerOutfitPhotoUpload() {
+    openCameraModal();
+  }
+
+  // Legacy confirm mapping to camera upload
+  function confirmOutfitPhotoUpload() {
+    confirmCameraPhotoUpload();
+  }
+
+  // =========================================================================
+  // BROKEN STREAK POPUP & ROLLING 30-DAY RESTORATION SYSTEM
+  // =========================================================================
+
+  // Show broken streak popup
   function showMissedStreakModal() {
     const modal = document.getElementById('missedStreakModal');
     if (!modal) return;
-    // Issue 3: Prevent duplicate modal openings when repeatedly clicked or already open
     if (!modal.classList.contains('hidden')) return;
 
-    const streak = state.streak;
+    const streak = state.streak || {};
     const lostCountEl = document.getElementById('missedStreakLostCount');
     const statusCard = document.getElementById('restoreStatusCard');
     const statusIcon = document.getElementById('restoreStatusIcon');
@@ -2170,32 +2223,35 @@
     const statusSubtitle = document.getElementById('restoreStatusSubtitle');
     const btnRestore = document.getElementById('btnRestoreStreak');
 
-    if (lostCountEl) {
-      lostCountEl.textContent = `${streak.savedPreviousStreak || 1} Days`;
-    }
+    const lostVal = streak.savedPreviousStreak > 0 ? streak.savedPreviousStreak : 1;
+    if (lostCountEl) lostCountEl.textContent = `${lostVal} Days`;
 
-    // Check Monthly Restore Eligibility (Refreshes on 3rd of month)
-    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
-    const isEligible = streak.lastRestoredCycleKey !== currentCycleKey;
-    const nextRefreshDate = getNextRestoreRefreshDateStr(new Date());
+    // Check rolling 30-day eligibility
+    const now = getNowServer();
+    const isEligible = !streak.lastRestorationTimestamp ||
+      (now - streak.lastRestorationTimestamp >= RESTORE_COOLDOWN_MS);
 
     if (isEligible) {
       if (statusCard) statusCard.classList.remove('ineligible');
       if (statusIcon) statusIcon.textContent = '✨';
-      if (statusTitle) statusTitle.textContent = 'Monthly Restoration Available!';
-      if (statusSubtitle) statusSubtitle.textContent = `You have 1 free restore for this monthly cycle. (Refreshes on the 3rd of every month)`;
+      if (statusTitle) statusTitle.textContent = 'Restoration Available!';
+      if (statusSubtitle) statusSubtitle.textContent = 'You can restore your streak (allowed once every 30 days).';
       if (btnRestore) {
         btnRestore.disabled = false;
-        btnRestore.textContent = `Restore Streak (${streak.savedPreviousStreak || 1} Days) 🔥`;
+        btnRestore.textContent = `Restore Streak (${lostVal} Days) 🔥`;
       }
     } else {
+      const nextDate = new Date(streak.lastRestorationTimestamp + RESTORE_COOLDOWN_MS);
+      const daysLeft = Math.ceil((streak.lastRestorationTimestamp + RESTORE_COOLDOWN_MS - now) / (24 * 3600 * 1000));
+      const formattedDate = nextDate.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+
       if (statusCard) statusCard.classList.add('ineligible');
       if (statusIcon) statusIcon.textContent = '🔒';
-      if (statusTitle) statusTitle.textContent = 'Monthly Restore Used for this Cycle';
-      if (statusSubtitle) statusSubtitle.textContent = `Your free restore refreshes on ${nextRefreshDate}.`;
+      if (statusTitle) statusTitle.textContent = 'Restore Used Within Last 30 Days';
+      if (statusSubtitle) statusSubtitle.textContent = `Eligible again on ${formattedDate} (${daysLeft} days remaining).`;
       if (btnRestore) {
         btnRestore.disabled = true;
-        btnRestore.textContent = `Restore Used (Refreshes ${nextRefreshDate})`;
+        btnRestore.textContent = `Restore Used (Eligible ${formattedDate})`;
       }
     }
 
@@ -2207,113 +2263,220 @@
     if (modal) modal.classList.add('hidden');
   }
 
-  function restoreMonthlyStreak() {
-    const streak = state.streak;
-    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
+  // Restore streak (enforced by server rolling 30-day rule)
+  async function restoreMonthlyStreak() {
+    const btnRestore = document.getElementById('btnRestoreStreak');
+    if (btnRestore) {
+      btnRestore.disabled = true;
+      btnRestore.textContent = 'Restoring...';
+    }
 
-    // Issue 4: Preserve monthly restore restriction: disallow restoring multiple times in same cycle
-    if (streak.lastRestoredCycleKey === currentCycleKey) {
-      showToast('⚠️ Monthly restore already used. Refreshes on the 3rd.');
+    try {
+      const userId = getStreakUserId();
+      const res = await fetch('/api/streak/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        showToast(`⚠️ ${data.error || 'Restore unavailable.'}`);
+        showMissedStreakModal();
+        return;
+      }
+
+      state.streak = data.streak;
+      if (typeof data.serverTime === 'number') {
+        state.serverTimeOffset = data.serverTime - Date.now();
+      }
+      saveStreakState();
+
+      closeMissedStreakModal();
+
+      // Re-ignite flame
+      const flameWrapper = document.getElementById('streakFlameWrapper');
+      if (flameWrapper) {
+        flameWrapper.classList.remove('blown-out', 'inactive');
+        flameWrapper.classList.add('reignited');
+        setTimeout(() => flameWrapper.classList.remove('reignited'), 1200);
+      }
+
+      updateStreakUI();
+      showToast(`✨ Streak restored to ${state.streak.currentStreak} Days! Upload within 24 hours to keep going. 🔥`);
+    } catch (err) {
+      showToast('⚠️ Network error while restoring streak.');
+      if (btnRestore) btnRestore.disabled = false;
+    }
+  }
+
+  // Start streak fresh from 0 (gallery photos preserved!)
+  async function startNewStreak() {
+    try {
+      const userId = getStreakUserId();
+      const res = await fetch('/api/streak/start-again', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+
+      const data = await res.json();
+      if (data && data.streak) {
+        state.streak = data.streak;
+      } else {
+        state.streak.currentStreak = 0;
+        state.streak.savedPreviousStreak = 0;
+        state.streak.streakStatus = 'active';
+        state.streak.isPeriodCredited = false;
+        state.streak.deadline = getNowServer() + TWENTY_FOUR_HOURS_MS;
+      }
+      saveStreakState();
+
+      closeMissedStreakModal();
+      updateStreakUI();
+      showToast('Starting a fresh streak! Upload your first outfit look to start at 1 🔥.');
+    } catch (err) {
+      showToast('⚠️ Could not connect to server.');
+      closeMissedStreakModal();
+    }
+  }
+
+  // =========================================================================
+  // OUTFIT PHOTO GALLERY & LIGHTBOX SYSTEM
+  // =========================================================================
+
+  // Open Full Outfit Gallery Modal
+  async function openGalleryModal() {
+    const modal = document.getElementById('outfitGalleryModal');
+    if (!modal) return;
+
+    modal.classList.remove('hidden');
+
+    // Fetch latest gallery from server
+    try {
+      const userId = getStreakUserId();
+      const res = await fetch(`/api/streak/gallery?userId=${encodeURIComponent(userId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.gallery)) {
+          if (!state.streak) state.streak = {};
+          state.streak.outfitHistory = data.gallery;
+          saveStreakState();
+        }
+      }
+    } catch (e) {}
+
+    renderFullOutfitGallery();
+  }
+
+  function closeGalleryModal() {
+    const modal = document.getElementById('outfitGalleryModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  // Render Full Outfit Photo Gallery Grid
+  function renderFullOutfitGallery() {
+    const grid = document.getElementById('outfitGalleryFullGrid');
+    if (!grid) return;
+
+    const history = (state.streak && state.streak.outfitHistory) || [];
+    if (history.length === 0) {
+      grid.innerHTML = `
+        <div class="gallery-empty-state" style="grid-column: 1 / -1; padding: 30px 10px;">
+          <p>No photos yet.</p>
+        </div>
+      `;
       return;
     }
 
-    streak.currentStreak = streak.savedPreviousStreak || 1;
-    streak.isStreakBroken = false;
-    streak.breakNotified = false;
-    streak.lastRestoredCycleKey = currentCycleKey;
-    streak.deadline = Date.now() + (24 * 3600 * 1000);
-
-    // Issue 2 & 4: Do not allow restoring to bypass the daily upload restriction.
-    // If an upload was already done today, uploadedToday remains true.
-    const todayStr = getLocalDateString(new Date());
-    streak.uploadedToday = (streak.lastUploadDateStr === todayStr);
-
-    // Issue 4: Reset only the appropriate reminder flags for the restored deadline cycle
-    streak.morningReminderSent = false;
-    streak.middayReminderSent = false;
-    streak.urgentReminderSent = false;
-
-    saveStreakState();
-
-    closeMissedStreakModal();
-
-    // Re-ignite flame
-    const flameWrapper = document.getElementById('streakFlameWrapper');
-    if (flameWrapper) {
-      flameWrapper.classList.remove('blown-out', 'inactive');
-      flameWrapper.classList.add('reignited');
-      setTimeout(() => flameWrapper.classList.remove('reignited'), 1200);
-    }
-
-    updateStreakUI();
-    showToast(`✨ Streak restored to ${streak.currentStreak}! Your flame is back! 🔥`);
+    grid.innerHTML = history.map((item, idx) => `
+      <div class="full-gallery-card clean" onclick="app.openPhotoLightboxByIndex(${idx})">
+        <img src="${item.photoUrl}" alt="Photo" loading="lazy" />
+      </div>
+    `).join('');
   }
 
-  function startNewStreak() {
-    const streak = state.streak;
-    streak.currentStreak = 0;
-    streak.savedPreviousStreak = 0;
-    streak.isStreakBroken = false;
-    streak.breakNotified = false;
-    streak.deadline = Date.now() + (24 * 3600 * 1000);
+  // Open Photo in Full Lightbox Modal
+  function openPhotoLightboxByIndex(idx) {
+    const history = (state.streak && state.streak.outfitHistory) || [];
+    const item = history[idx];
+    if (!item) return;
 
-    const todayStr = getLocalDateString(new Date());
-    streak.uploadedToday = (streak.lastUploadDateStr === todayStr);
+    const modal = document.getElementById('photoLightboxModal');
+    const img = document.getElementById('lightboxImg');
+    if (img) img.src = item.photoUrl;
 
-    streak.morningReminderSent = false;
-    streak.middayReminderSent = false;
-    streak.urgentReminderSent = false;
-    saveStreakState();
+    if (modal) modal.classList.remove('hidden');
+  }
 
-    closeMissedStreakModal();
-    updateStreakUI();
-    showToast('Starting a fresh streak! Upload today\'s outfit to light your 🔥 flame.');
+  function closePhotoLightbox() {
+    const modal = document.getElementById('photoLightboxModal');
+    if (modal) modal.classList.add('hidden');
   }
 
   // Streak Details Modal
   function openStreakModal() {
     const streak = state.streak;
-    // Issue 3: If streak is broken, allow direct manual access to missed streak modal for restore/restart
-    if (streak && streak.isStreakBroken) {
+    if (streak && streak.streakStatus === 'broken') {
       showMissedStreakModal();
       return;
     }
 
     const modal = document.getElementById('streakDetailsModal');
     if (!modal) return;
-    if (!modal.classList.contains('hidden')) return; // Guard against duplicate openings
 
     const heroCount = document.getElementById('modalHeroStreakCount');
-    const heroCountdown = document.getElementById('modalHeroCountdown');
-    const heroRestore = document.getElementById('modalHeroRestoreStatus');
-
-    if (heroCount) heroCount.textContent = streak.currentStreak;
-    if (heroCountdown) {
-      const now = Date.now();
-      const diff = Math.max(0, streak.deadline - now);
-      const hours = Math.floor(diff / (3600 * 1000));
-      const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
-      heroCountdown.textContent = streak.uploadedToday
-        ? '⏱️ Uploaded Today'
-        : (streak.isStreakBroken ? '⏱️ Inactive' : `⏱️ ${hours}h ${mins}m left`);
-    }
-
-    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
-    const isEligible = streak.lastRestoredCycleKey !== currentCycleKey;
-    if (heroRestore) {
-      heroRestore.textContent = isEligible ? 'Available (3rd)' : 'Used this month';
-    }
+    if (heroCount) heroCount.textContent = streak ? (streak.currentStreak || 0) : 0;
 
     const heroFlame = document.getElementById('modalHeroFlame');
     if (heroFlame) {
-      heroFlame.classList.toggle('inactive', !!streak.isStreakBroken);
+      heroFlame.classList.toggle('inactive', !!(streak && streak.streakStatus === 'broken'));
     }
 
-    renderOutfitHistoryGallery();
-    updateNotificationToggleUI();
-    updateDevControlsVisibility();
-
     modal.classList.remove('hidden');
+  }
+
+  function closeStreakModal() {
+    const modal = document.getElementById('streakDetailsModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  // Voluntary Break Streak Flow
+  function promptBreakStreak() {
+    const confirmModal = document.getElementById('confirmBreakStreakModal');
+    if (confirmModal) confirmModal.classList.remove('hidden');
+  }
+
+  function closeConfirmBreakModal() {
+    const confirmModal = document.getElementById('confirmBreakStreakModal');
+    if (confirmModal) confirmModal.classList.add('hidden');
+  }
+
+  async function confirmBreakStreak() {
+    closeConfirmBreakModal();
+    closeStreakModal();
+    await breakStreak();
+  }
+
+  let _brokenAlertTimer = null;
+  function showBrokenStreakAlert(msg) {
+    const alertEl = document.getElementById('brokenStreakAlertBanner');
+    if (!alertEl) return;
+    const txt = alertEl.querySelector('.broken-alert-text');
+    if (txt) txt.textContent = msg || 'Your streak has been broken!';
+    alertEl.classList.remove('hidden');
+
+    if (_brokenAlertTimer) clearTimeout(_brokenAlertTimer);
+    _brokenAlertTimer = setTimeout(() => {
+      closeBrokenStreakAlert();
+    }, 5500);
+  }
+
+  function closeBrokenStreakAlert() {
+    const alertEl = document.getElementById('brokenStreakAlertBanner');
+    if (alertEl) alertEl.classList.add('hidden');
+    if (_brokenAlertTimer) clearTimeout(_brokenAlertTimer);
   }
 
   // Render recent outfit uploads gallery in streak modal
@@ -2332,56 +2495,13 @@
       return;
     }
 
-    container.innerHTML = history.slice(0, 6).map((item) => `
-      <div class="streak-gallery-card" title="Uploaded on ${item.dateStr} at ${item.timeStr}">
+    container.innerHTML = history.slice(0, 6).map((item, idx) => `
+      <div class="streak-gallery-card" onclick="app.openPhotoLightboxByIndex(${idx})" title="Uploaded on ${item.dateStr} at ${item.timeStr}">
         <img src="${item.photoUrl}" alt="Streak Outfit on ${item.dateStr}" class="gallery-card-img" />
-        <div class="gallery-card-badge">🔥 ${item.streakCount}</div>
+        <div class="gallery-card-badge">🔥 ${item.streakCount || 1}</div>
         <div class="gallery-card-meta">${item.dateStr}</div>
       </div>
     `).join('');
-  }
-
-  // Issue 1 Fix: Notification Permission Request with Dual Callback/Promise Support (No un-async await syntax errors)
-  function requestNotificationPermission() {
-    if (!('Notification' in window)) {
-      showToast('⚠️ Web notifications are not supported by this browser or device.');
-      updateNotificationToggleUI();
-      return;
-    }
-    if (Notification.permission === 'granted') {
-      showToast('🔔 Daily reminders are already active while browser is running!');
-      updateNotificationToggleUI();
-      return;
-    }
-    if (Notification.permission === 'denied') {
-      showToast('⚠️ Notifications are blocked in browser settings. Please allow notifications for this site.');
-      updateNotificationToggleUI();
-      return;
-    }
-
-    function onPermissionResult(permission) {
-      if (permission === 'granted') {
-        showToast('🔔 Daily reminders enabled! You will be reminded before upload deadlines while the browser is running.');
-        updateNotificationToggleUI();
-      } else if (permission === 'denied') {
-        showToast('⚠️ Notifications blocked. You can enable them anytime in browser settings.');
-        updateNotificationToggleUI();
-      } else {
-        showToast('Notification permission dismissed. You can enable it anytime.');
-        updateNotificationToggleUI();
-      }
-    }
-
-    try {
-      const result = Notification.requestPermission(onPermissionResult);
-      if (result && typeof result.then === 'function') {
-        result.then(onPermissionResult).catch((err) => {
-          console.warn('Error requesting notification permission:', err);
-        });
-      }
-    } catch (err) {
-      console.warn('Error requesting notification permission:', err);
-    }
   }
 
   function updateNotificationToggleUI() {
@@ -2401,7 +2521,7 @@
       btn.innerHTML = '<span>🔔 Reminders Active</span>';
       btn.classList.add('active');
       btn.disabled = false;
-      if (note) note.textContent = 'Active: Reminders trigger while browser is open or backgrounded. Closed-browser alerts require a push server.';
+      if (note) note.textContent = 'Active: Reminders trigger while browser is open or backgrounded.';
     } else if (Notification.permission === 'denied') {
       btn.innerHTML = '<span>🚫 Notifications Blocked</span>';
       btn.classList.remove('active');
@@ -2411,18 +2531,35 @@
       btn.innerHTML = '<span>🔔 Enable Daily Reminders</span>';
       btn.classList.remove('active');
       btn.disabled = false;
-      if (note) note.textContent = 'Get notified in morning, midday, and 2 hours before the deadline to protect your streak.';
+      if (note) note.textContent = 'Get notified when the 20-hour reminder starts to protect your streak.';
     }
   }
 
-  // Issue 6 Fix: Secure Developer Mode Access Control Gating
+  function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+      showToast('⚠️ Web notifications are not supported by this browser.');
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      showToast('🔔 Daily reminders are already active!');
+      return;
+    }
+    try {
+      Notification.requestPermission().then((perm) => {
+        if (perm === 'granted') {
+          showToast('🔔 Daily reminders enabled!');
+        }
+        updateNotificationToggleUI();
+      });
+    } catch (e) {}
+  }
+
   function isDevEnvironment() {
-    const isLocal = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1' || 
+    const isLocal = window.location.hostname === 'localhost' ||
+                    window.location.hostname === '127.0.0.1' ||
                     window.location.hostname === '';
-    // Gated exclusively to local development hosts - completely blocked on production domains
     if (!isLocal) return false;
-    return window.location.search.includes('dev=true') || 
+    return window.location.search.includes('dev=true') ||
            sessionStorage.getItem('woobi_dev_mode') === 'true';
   }
 
@@ -2433,16 +2570,9 @@
   }
 
   function enableDevMode() {
-    const isLocal = window.location.hostname === 'localhost' || 
-                    window.location.hostname === '127.0.0.1' || 
-                    window.location.hostname === '';
-    if (!isLocal) {
-      console.warn('Developer tools are disabled in production.');
-      return;
-    }
     sessionStorage.setItem('woobi_dev_mode', 'true');
     updateDevControlsVisibility();
-    showToast('🛠️ QA Developer Mode enabled for local session.');
+    showToast('🛠️ QA Developer Mode enabled.');
   }
 
   function disableDevMode() {
@@ -2451,116 +2581,96 @@
     showToast('🔒 QA Developer Mode disabled.');
   }
 
-  function closeStreakModal() {
-    const modal = document.getElementById('streakDetailsModal');
-    if (modal) modal.classList.add('hidden');
+  // Developer Simulation Helpers (Synced with server simulation endpoint)
+  async function devSimulateUpload() {
+    if (!isDevEnvironment()) return;
+    openCameraModal();
   }
 
-  // 4. Daily Reminder Notifications System (Browser Notification & Service Worker Support)
-  function sendDailyNotification(title, body, isUrgent = false, tag = 'woobi-reminder') {
-    // 1. Browser & OS System Notification via Service Worker or Web Notification API
-    if ('Notification' in window && Notification.permission === 'granted') {
-      const notifOptions = {
-        body: body,
-        icon: 'assets/welcome_hero.jpg',
-        badge: 'assets/welcome_hero.jpg',
-        tag: tag, // Deduplicates notifications in system tray
-        renotify: false,
-        data: { url: './' }
-      };
-
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then((reg) => {
-          if (reg && typeof reg.showNotification === 'function') {
-            reg.showNotification(title, notifOptions);
-          } else {
-            new Notification(title, notifOptions);
-          }
-        }).catch(() => {
-          try { new Notification(title, notifOptions); } catch (e) {}
-        });
-      } else {
-        try {
-          new Notification(title, notifOptions);
-        } catch (e) {
-          console.warn('System notification error:', e);
-        }
+  async function devSimulateTwoHoursLeft() {
+    if (!isDevEnvironment() || !state.streak) return;
+    try {
+      const res = await fetch('/api/streak/dev-simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: getStreakUserId(), action: 'set-20h-elapsed' })
+      });
+      const data = await res.json();
+      if (data && data.streak) {
+        state.streak = data.streak;
+        saveStreakState();
       }
+    } catch (e) {
+      state.streak.deadline = getNowServer() + (1 * 3600 * 1000 + 59 * 60 * 1000);
+      state.streak.lastCreditedUploadTimestamp = getNowServer() - TWENTY_HOURS_MS;
+      state.streak.isPeriodCredited = true;
+      saveStreakState();
     }
+    checkStreakDeadline();
+    updateStreakUI();
+    showToast('⏱️ Simulated: 20 hours elapsed (approx 2h remaining). Reminder visible!');
+  }
 
-    // 2. In-App Floating Reminder Banner
-    const banner = document.getElementById('inAppReminderBanner');
-    const titleEl = document.getElementById('reminderBannerTitle');
-    const bodyEl = document.getElementById('reminderBannerBody');
-    const iconEl = document.getElementById('reminderBannerIcon');
-
-    if (titleEl) titleEl.textContent = title;
-    if (bodyEl) bodyEl.textContent = body;
-    if (iconEl) iconEl.innerHTML = isUrgent ? '<span>⚠️</span>' : '<span>🔥</span>';
-
-    if (banner) {
-      banner.classList.toggle('urgent', isUrgent);
-      banner.classList.remove('hidden');
+  async function devSimulateStreakBreak() {
+    if (!isDevEnvironment() || !state.streak) return;
+    try {
+      const res = await fetch('/api/streak/dev-simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: getStreakUserId(), action: 'set-deadline-expired' })
+      });
+      const data = await res.json();
+      if (data && data.streak) {
+        state.streak = data.streak;
+        saveStreakState();
+      }
+    } catch (e) {
+      state.streak.deadline = getNowServer() - 1000;
+      saveStreakState();
     }
+    breakStreak();
+    showToast('💥 Simulated deadline expiration: Streak broken!');
+  }
+
+  async function devToggleRestoreToken() {
+    if (!isDevEnvironment() || !state.streak) return;
+    const now = getNowServer();
+    const hasCooldown = state.streak.lastRestorationTimestamp && (now - state.streak.lastRestorationTimestamp < RESTORE_COOLDOWN_MS);
+    const actionDays = hasCooldown ? 31 : 1;
+    try {
+      const res = await fetch('/api/streak/dev-simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: getStreakUserId(), action: 'set-restore-cooldown', daysAgo: actionDays })
+      });
+      const data = await res.json();
+      if (data && data.streak) {
+        state.streak = data.streak;
+        saveStreakState();
+      }
+    } catch (e) {}
+    checkStreakDeadline();
+    updateStreakUI();
+    showToast(actionDays > 30 ? '🔄 Restore Token: Now ELIGIBLE for 30-day restore!' : '🔒 Restore Token: Marked as USED within 30 days.');
+  }
+
+  async function devResetStreak() {
+    if (!isDevEnvironment()) return;
+    try {
+      await fetch('/api/streak/dev-simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: getStreakUserId(), action: 'reset-all' })
+      });
+    } catch (e) {}
+    localStorage.removeItem(STREAK_STORAGE_KEY);
+    initStreakState();
+    showToast('🗑️ Reset streak to 0-day starter streak.');
   }
 
   function dismissReminderBanner() {
     const banner = document.getElementById('inAppReminderBanner');
     if (banner) banner.classList.add('hidden');
-  }
-
-  // QA & Developer Simulation Tools (Gated to local development)
-  function devSimulateUpload() {
-    if (!isDevEnvironment()) return;
-    openPhotoConfirmModal('assets/navy_shirt.jpg');
-  }
-
-  function devSimulateTwoHoursLeft() {
-    if (!isDevEnvironment() || !state.streak) return;
-    state.streak.deadline = Date.now() + (1 * 3600 * 1000 + 59 * 60 * 1000); // 1h 59m
-    state.streak.urgentReminderSent = false;
-    state.streak.middayReminderSent = true;
-    state.streak.morningReminderSent = true;
-    state.streak.uploadedToday = false;
-    state.streak.isStreakBroken = false;
-    saveStreakState();
-    checkStreakDeadline();
-    updateStreakUI();
-    showToast('⏱️ Simulated: Exactly 1h 59m remaining (2-hour warning triggered)');
-  }
-
-  function devSimulateStreakBreak() {
-    if (!isDevEnvironment() || !state.streak) return;
-    if (state.streak.currentStreak > 0) {
-      state.streak.savedPreviousStreak = state.streak.currentStreak;
-    }
-    state.streak.deadline = Date.now() - 1000;
-    state.streak.isStreakBroken = false; // Allow breakStreak to execute fresh
-    saveStreakState();
-    breakStreak();
-    showToast('💥 Simulated deadline expiration: Streak broken!');
-  }
-
-  function devToggleRestoreToken() {
-    if (!isDevEnvironment() || !state.streak) return;
-    const currentCycleKey = getMonthlyRestoreCycleKey(new Date());
-    if (state.streak.lastRestoredCycleKey === currentCycleKey) {
-      state.streak.lastRestoredCycleKey = null;
-      showToast('🔄 Restored Monthly Token: Now ELIGIBLE for 3rd date cycle!');
-    } else {
-      state.streak.lastRestoredCycleKey = currentCycleKey;
-      showToast('🔒 Marked Monthly Token as USED for current cycle.');
-    }
-    saveStreakState();
-    checkStreakDeadline();
-    updateStreakUI();
-  }
-
-  function devResetStreak() {
-    if (!isDevEnvironment()) return;
-    localStorage.removeItem(STREAK_STORAGE_KEY);
-    initStreakState();
-    showToast('🗑️ Reset streak to 0-day starter streak.');
   }
 
   function init() {
@@ -2676,17 +2786,32 @@
 
     // Daily Outfit-Upload Streak & Countdown Timer API
     initStreakState,
+    syncStreakFromServer,
     openStreakModal,
     closeStreakModal,
+    promptBreakStreak,
+    closeConfirmBreakModal,
+    confirmBreakStreak,
+    showBrokenStreakAlert,
+    closeBrokenStreakAlert,
+    breakStreak,
+    openCameraModal,
+    closeCameraModal,
+    captureCameraSnapshot,
+    retakeCameraPhoto,
+    handleCameraFileSelected,
+    confirmCameraPhotoUpload,
     triggerOutfitPhotoUpload,
-    handleOutfitPhotoSelected,
-    openPhotoConfirmModal,
-    closePhotoConfirmModal,
     confirmOutfitPhotoUpload,
     showMissedStreakModal,
     closeMissedStreakModal,
     restoreMonthlyStreak,
     startNewStreak,
+    openGalleryModal,
+    closeGalleryModal,
+    renderFullOutfitGallery,
+    openPhotoLightboxByIndex,
+    closePhotoLightbox,
     dismissReminderBanner,
     devSimulateUpload,
     devSimulateTwoHoursLeft,

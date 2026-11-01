@@ -8005,3 +8005,979 @@ html, body {
   margin: 0;
   line-height: 1.3;
 }
+
+/* ==========================================================================
+   DAILY OUTFIT STREAK SYSTEM V2: UPGRADED CAMERA, SMOKE & GALLERY STYLING
+   ========================================================================== */
+
+/* 1. Header Streak Camera Button */
+.streak-camera-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(195, 180, 160, 0.6);
+  background: rgba(245, 239, 230, 0.85);
+  color: #4A3E31;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.streak-camera-btn:hover {
+  background: #2F2821;
+  color: #FFFDF9;
+  border-color: #2F2821;
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(45, 38, 30, 0.2);
+}
+
+.streak-camera-btn:active {
+  transform: scale(0.96);
+}
+
+/* 2. Realistic Burning Wood Base & Flame Disappearance Animation */
+.burning-wood-base {
+  transform-origin: 16px 37px;
+  will-change: transform, opacity;
+}
+
+.wood-ember-crack {
+  animation: woodEmberPulse 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes woodEmberPulse {
+  0% { opacity: 0.7; stroke: #ff5722; }
+  50% { opacity: 1; stroke: #ff9800; filter: drop-shadow(0 0 1px #ff5722); }
+  100% { opacity: 0.65; stroke: #e64a19; }
+}
+
+.ember-glow-point {
+  animation: emberGlowFlicker 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes emberGlowFlicker {
+  0% { opacity: 0.5; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.15); filter: drop-shadow(0 0 2px #ffc107); }
+}
+
+/* Gradual Flame Extinguish to Burning Wood & Smoke */
+.streak-flame-wrapper.blown-out .living-flame-group {
+  animation: gradualFlameExtinguish 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  transform-origin: 16px 35px;
+}
+
+@keyframes gradualFlameExtinguish {
+  0% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(255, 120, 0, 0.8)) brightness(1);
+  }
+  30% {
+    transform: scale(0.85, 0.7) translateY(2px);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 3px rgba(255, 80, 0, 0.6)) brightness(0.9);
+  }
+  65% {
+    transform: scale(0.45, 0.35) translateY(4px);
+    opacity: 0.4;
+    filter: grayscale(0.6) brightness(0.7);
+  }
+  100% {
+    transform: scale(0) translateY(6px);
+    opacity: 0;
+    filter: grayscale(1);
+  }
+}
+
+/* Broken Streak Smoldering Wood Hero in Missed Modal */
+.burning-wood-smoke-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 90px;
+  height: 80px;
+  margin: 0 auto 16px auto;
+  background: radial-gradient(circle at 50% 80%, rgba(240, 230, 218, 0.9) 0%, rgba(240, 230, 218, 0) 70%);
+  border-radius: 50%;
+}
+
+.smoldering-wood-logs {
+  position: relative;
+  width: 58px;
+  height: 18px;
+}
+
+.charred-log {
+  position: absolute;
+  height: 8px;
+  border-radius: 4px;
+  background: #271a14;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.charred-log.l1 {
+  width: 48px;
+  left: 2px;
+  bottom: 0;
+  transform: rotate(-5deg);
+}
+
+.charred-log.l2 {
+  width: 44px;
+  right: 2px;
+  bottom: 3px;
+  background: #1c120e;
+  transform: rotate(8deg);
+}
+
+.smolder-ember {
+  position: absolute;
+  border-radius: 50%;
+  background: #ff5722;
+  box-shadow: 0 0 6px #ff7043, 0 0 10px rgba(255, 87, 34, 0.8);
+  animation: emberBreathe 2s ease-in-out infinite alternate;
+}
+
+.smolder-ember.e1 { width: 4px; height: 4px; top: 2px; left: 16px; }
+.smolder-ember.e2 { width: 3px; height: 3px; top: 4px; left: 28px; animation-delay: 0.6s; }
+.smolder-ember.e3 { width: 5px; height: 5px; top: 1px; left: 38px; animation-delay: 1.1s; }
+
+@keyframes emberBreathe {
+  0% { opacity: 0.4; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 8px #ffab00, 0 0 14px rgba(255, 112, 67, 0.9); }
+}
+
+/* Gentle Smoke Wafting from Wood */
+.smoke-waft-container {
+  position: absolute;
+  bottom: 18px;
+  width: 100%;
+  height: 60px;
+  pointer-events: none;
+}
+
+.smoke-waft {
+  position: absolute;
+  bottom: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(160, 160, 160, 0.65) 0%, rgba(180, 180, 180, 0.25) 50%, rgba(200, 200, 200, 0) 100%);
+  filter: blur(2.5px);
+  opacity: 0;
+}
+
+.smoke-waft.w1 {
+  width: 18px;
+  height: 18px;
+  left: 24px;
+  animation: smokeWaftRise 3s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+
+.smoke-waft.w2 {
+  width: 24px;
+  height: 24px;
+  left: 32px;
+  animation: smokeWaftRise 3.4s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  animation-delay: 0.8s;
+}
+
+.smoke-waft.w3 {
+  width: 20px;
+  height: 20px;
+  left: 20px;
+  animation: smokeWaftRise 3.2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  animation-delay: 1.6s;
+}
+
+.smoke-waft.w4 {
+  width: 26px;
+  height: 26px;
+  left: 36px;
+  animation: smokeWaftRise 3.6s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  animation-delay: 2.2s;
+}
+
+@keyframes smokeWaftRise {
+  0% {
+    opacity: 0.7;
+    transform: translate(0, 0) scale(0.4);
+  }
+  40% {
+    opacity: 0.5;
+    transform: translate(-6px, -24px) scale(1.1);
+  }
+  75% {
+    opacity: 0.25;
+    transform: translate(8px, -45px) scale(1.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-10px, -65px) scale(2.3);
+  }
+}
+
+/* 3. Camera Interface Modal Styling */
+.camera-capture-card {
+  max-width: 360px;
+  padding: 22px 20px;
+}
+
+.suggested-outfit-box {
+  background: #FAF7F2;
+  border: 1px solid rgba(220, 208, 192, 0.8);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.suggested-outfit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.suggested-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #7A6956;
+}
+
+.suggested-look-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.88rem;
+  color: #2F2821;
+}
+
+.suggested-items-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.suggested-item-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFDF9;
+  border: 1px solid rgba(200, 185, 168, 0.6);
+  border-radius: 999px;
+  padding: 3px 8px 3px 3px;
+  font-size: 0.72rem;
+  color: #4A3E31;
+  white-space: nowrap;
+}
+
+.suggested-item-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.camera-stream-container {
+  margin-bottom: 10px;
+}
+
+.camera-video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #1C1917;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.camera-video-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-guide-overlay {
+  position: absolute;
+  inset: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 12px;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+
+.guide-text {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  color: #FAF8F5;
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.camera-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.btn-snap-shutter {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: transparent;
+  border: 4px solid #5A6946;
+  padding: 4px;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-snap-shutter:hover {
+  transform: scale(1.06);
+}
+
+.btn-snap-shutter:active {
+  transform: scale(0.94);
+}
+
+.shutter-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #5A6946;
+  transition: background 0.15s ease;
+}
+
+.btn-snap-shutter:active .shutter-inner {
+  background: #434F34;
+}
+
+.btn-choose-file-alt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #F3EFE8;
+  border: 1px solid rgba(195, 180, 160, 0.8);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #4A3E31;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-choose-file-alt:hover {
+  background: #E8E2D7;
+}
+
+/* 4. Small Gallery Icon Buttons */
+.streak-card-gallery-row {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.btn-gallery-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFDF9;
+  border: 1px solid rgba(200, 185, 168, 0.7);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #4A3E31;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-gallery-pill:hover {
+  background: #F3ECE2;
+  border-color: #8C7A65;
+  transform: translateY(-1px);
+}
+
+.btn-gallery-pill.wide {
+  width: 100%;
+  justify-content: center;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+}
+
+.gallery-icon-sym {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* 5. Full Outfit Gallery Modal */
+.outfit-gallery-modal-card {
+  max-width: 440px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.gallery-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gallery-title-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.gallery-modal-subhead {
+  font-size: 0.78rem;
+  color: #7A6956;
+  margin: 0 0 14px 0;
+  line-height: 1.4;
+}
+
+.outfit-gallery-full-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 55vh;
+  padding-right: 2px;
+}
+
+.full-gallery-card {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #F5EFE6;
+  border: 1px solid rgba(200, 185, 168, 0.6);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.full-gallery-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  z-index: 2;
+}
+
+.full-gallery-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.full-gallery-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(20, 15, 10, 0.8);
+  backdrop-filter: blur(4px);
+  color: #FFF;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.full-gallery-meta {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%);
+  color: #FFF;
+  padding: 12px 6px 5px 6px;
+  text-align: center;
+}
+
+.full-gallery-date {
+  font-size: 0.64rem;
+  font-weight: 600;
+  display: block;
+}
+
+.full-gallery-time {
+  font-size: 0.58rem;
+  opacity: 0.85;
+  display: block;
+}
+
+/* 6. Photo Lightbox Modal */
+.photo-lightbox-card {
+  position: relative;
+  background: #181512;
+  border-radius: 20px;
+  overflow: hidden;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65);
+  animation: scaleInModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFF;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.lightbox-close-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.lightbox-image-wrap {
+  width: 100%;
+  max-height: 480px;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image-wrap img {
+  width: 100%;
+  height: 100%;
+  max-height: 480px;
+  object-fit: contain;
+}
+
+.lightbox-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #231F1C;
+  color: #FAF8F5;
+}
+
+.lightbox-streak-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #FFB74D;
+}
+
+.lightbox-datetime {
+  font-size: 0.74rem;
+  color: #B0A598;
+}
+
+/* Separate Gallery Icon Button Styling */
+.streak-gallery-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(195, 180, 160, 0.6);
+  background: rgba(245, 239, 230, 0.85);
+  color: #4A3E31;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 3px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.streak-gallery-btn:hover {
+  background: #2F2821;
+  color: #FFFDF9;
+  border-color: #2F2821;
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(45, 38, 30, 0.2);
+}
+
+.streak-gallery-btn:active {
+  transform: scale(0.96);
+}
+
+.seren-gallery-icon-btn {
+  position: relative;
+}
+
+.gallery-badge-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #C85A17;
+  color: #FFF;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 1.5px solid #FFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Clean Minimal Big Streak Modal */
+.clean-streak-card {
+  max-width: 270px;
+  padding: 16px 18px 24px;
+  text-align: center;
+}
+
+.clean-hero {
+  background: transparent !important;
+  padding: 6px 0 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.clean-hero .streak-hero-count {
+  font-family: 'Playfair Display', serif;
+  font-size: 5.2rem;
+  font-weight: 800;
+  color: #2F2821;
+  line-height: 1;
+  margin-top: 8px;
+  letter-spacing: -1px;
+}
+
+.clean-hero .streak-hero-flame-box .realistic-fire-system {
+  width: 52px;
+  height: 60px;
+  margin: 0 auto;
+}
+
+/* --- Voluntary Break Streak & Alert Red Popup System --- */
+
+/* 1. Subtle Break Streak Button at bottom of clean streak modal */
+.streak-break-footer {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-subtle-break-streak {
+  background: transparent;
+  border: 1px solid rgba(211, 47, 47, 0.28);
+  color: #c62828;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.85;
+}
+
+.btn-subtle-break-streak:hover {
+  background: rgba(239, 83, 80, 0.08);
+  border-color: rgba(211, 47, 47, 0.55);
+  color: #b71c1c;
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* 2. Confirm Break Streak Modal Card */
+.confirm-break-modal-card {
+  max-width: 310px;
+  padding: 16px 20px 22px;
+  text-align: center;
+  border-radius: 20px;
+  background: #FFFFFF;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.confirm-break-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.confirm-break-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #FEECEB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.confirm-break-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.confirm-break-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #2F2821;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.confirm-break-subtext {
+  font-size: 0.82rem;
+  color: #7A6C5D;
+  margin: 0 0 18px 0;
+  line-height: 1.4;
+}
+
+.confirm-break-btn-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-confirm-break {
+  flex: 1;
+  padding: 9px 16px;
+  border-radius: 24px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-confirm-break.btn-yes {
+  background: #D32F2F;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.35);
+}
+
+.btn-confirm-break.btn-yes:hover {
+  background: #B71C1C;
+  transform: translateY(-1px);
+}
+
+.btn-confirm-break.btn-no {
+  background: #F0EAE1;
+  color: #4A3E31;
+}
+
+.btn-confirm-break.btn-no:hover {
+  background: #E5DDD2;
+  transform: translateY(-1px);
+}
+
+/* 3. Broken Streak Alert Pop-up Banner (Red Background) */
+.broken-streak-alert-banner {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  z-index: 3500;
+  background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
+  color: #FFFFFF;
+  padding: 12px 20px;
+  border-radius: 30px;
+  box-shadow: 0 8px 28px rgba(183, 28, 28, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  animation: slideDownAlert 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.broken-streak-alert-banner.hidden {
+  display: none !important;
+}
+
+.broken-alert-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.broken-alert-symbol {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.broken-alert-text {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #FFFFFF;
+}
+
+.broken-alert-dismiss {
+  background: rgba(255, 255, 255, 0.22);
+  border: none;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 6px;
+  transition: background 0.2s ease;
+}
+
+.broken-alert-dismiss:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes slideDownAlert {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -24px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* 4. Broken Streak Fire Icon: Flame is extinguished, WOOD & SMOKE are prominently displayed */
+.streak-flame-wrapper.inactive .living-flame-group,
+.streak-flame-wrapper.broken .living-flame-group {
+  opacity: 0 !important;
+  display: none !important;
+}
+
+.streak-flame-wrapper.inactive .realistic-fire-system,
+.streak-flame-wrapper.broken .realistic-fire-system {
+  animation: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.streak-flame-wrapper.inactive .burning-wood-base,
+.streak-flame-wrapper.broken .burning-wood-base {
+  opacity: 1 !important;
+  transform: translateY(-16px) scale(1.22);
+  transform-origin: 16px 37px;
+  filter: drop-shadow(0 0 2px rgba(255, 87, 34, 0.4));
+}
+
+.streak-flame-wrapper.inactive .wood-ember-crack,
+.streak-flame-wrapper.broken .wood-ember-crack {
+  animation: woodEmberPulse 2s ease-in-out infinite alternate !important;
+  opacity: 0.9 !important;
+}
+
+.streak-flame-wrapper.inactive .ember-glow-point,
+.streak-flame-wrapper.broken .ember-glow-point {
+  animation: emberGlowFlicker 1.6s ease-in-out infinite alternate !important;
+  opacity: 1 !important;
+}
+
+/* Continuous rising gentle smoke puffs from the charred wood when inactive / broken */
+.streak-flame-wrapper.inactive .smoke-particle.p1,
+.streak-flame-wrapper.broken .smoke-particle.p1 {
+  animation: brokenWoodSmoke1 2.8s ease-out infinite !important;
+  animation-delay: 0s !important;
+}
+
+.streak-flame-wrapper.inactive .smoke-particle.p2,
+.streak-flame-wrapper.broken .smoke-particle.p2 {
+  animation: brokenWoodSmoke2 3.2s ease-out infinite !important;
+  animation-delay: 0.5s !important;
+}
+
+.streak-flame-wrapper.inactive .smoke-particle.p3,
+.streak-flame-wrapper.broken .smoke-particle.p3 {
+  animation: brokenWoodSmoke1 3.0s ease-out infinite !important;
+  animation-delay: 1.1s !important;
+}
+
+.streak-flame-wrapper.inactive .smoke-particle.p4,
+.streak-flame-wrapper.broken .smoke-particle.p4 {
+  animation: brokenWoodSmoke2 3.4s ease-out infinite !important;
+  animation-delay: 1.7s !important;
+}
+
+@keyframes brokenWoodSmoke1 {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.35);
+    filter: blur(1px);
+  }
+  25% {
+    opacity: 0.75;
+    transform: translate(-60%, -12px) scale(0.85);
+    filter: blur(1.5px);
+  }
+  65% {
+    opacity: 0.4;
+    transform: translate(-75%, -22px) scale(1.4);
+    filter: blur(2.5px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-90%, -32px) scale(1.9);
+    filter: blur(4px);
+  }
+}
+
+@keyframes brokenWoodSmoke2 {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.35);
+    filter: blur(1px);
+  }
+  25% {
+    opacity: 0.7;
+    transform: translate(-40%, -14px) scale(0.9);
+    filter: blur(1.5px);
+  }
+  65% {
+    opacity: 0.35;
+    transform: translate(-25%, -24px) scale(1.45);
+    filter: blur(2.5px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-10%, -34px) scale(2.0);
+    filter: blur(4px);
+  }
+}

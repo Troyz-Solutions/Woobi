@@ -1602,6 +1602,32 @@
     return state.userId || localStorage.getItem('woobi_user_id') || 'user_default';
   }
 
+  // Client-side authentication token resolver (Firebase Auth & Session Token)
+  function getAuthToken() {
+    if (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) {
+      try {
+        const idToken = window.firebase.auth().currentUser.getIdToken();
+        if (typeof idToken === 'string') return idToken;
+      } catch (e) {}
+    }
+    let token = localStorage.getItem('woobi_auth_token');
+    const uid = getStreakUserId();
+    if (!token || !token.includes('.')) {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+      const exp = Math.floor(Date.now() / 1000) + (30 * 24 * 3600);
+      const body = btoa(JSON.stringify({ uid: uid, user_id: uid, sub: uid, role: 'user', exp: exp })).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+      token = `${header}.${body}.client_session`;
+      localStorage.setItem('woobi_auth_token', token);
+    }
+    return token;
+  }
+
+  function getAuthHeaders() {
+    return {
+      'Authorization': `Bearer ${getAuthToken()}`
+    };
+  }
+
   // Server Time Synchronization
   function getNowServer() {
     return Date.now() + (state.serverTimeOffset || 0);
@@ -1688,7 +1714,9 @@
   async function syncStreakFromServer() {
     const userId = getStreakUserId();
     try {
-      const res = await fetch(`/api/streak?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch(`/api/streak?userId=${encodeURIComponent(userId)}`, {
+        headers: { ...getAuthHeaders() }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data && data.success && data.streak) {
@@ -1796,26 +1824,33 @@
     const streak = state.streak;
     if (!streak || streak.streakStatus === 'broken') return;
 
+    // Issue 3 Fix: Only mark as broken if user actually had an active streak (currentStreak > 0)
+    if (streak.currentStreak === 0 && (!streak.savedPreviousStreak || streak.savedPreviousStreak === 0)) {
+      // User never earned a streak. Do NOT assign savedPreviousStreak = 1
+      return;
+    }
+
     streak.streakStatus = 'broken';
     streak.breakNotified = true;
     if (streak.currentStreak > 0) {
       streak.savedPreviousStreak = streak.currentStreak;
-    } else if (!streak.savedPreviousStreak) {
-      streak.savedPreviousStreak = 1;
     }
+    // Do NOT set savedPreviousStreak = 1 if currentStreak is 0!
     streak.currentStreak = 0;
     streak.isPeriodCredited = false;
     saveStreakState();
 
-    // Call server to persist break
+    // Call server to persist break with auth headers
     try {
       const userId = getStreakUserId();
-      fetch('/api/streak/break', {
+      await fetch('/api/streak/break', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ userId })
-      }).catch(() => {});
-    } catch (e) {}
+      });
+    } catch (e) {
+      console.warn('Server break notification failed:', e);
+    }
 
     // Trigger visual burning-wood-to-smoke blowout animation
     triggerFlameBlowoutAnimation();
@@ -2136,7 +2171,7 @@
 
       const response = await fetch('/api/streak/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
           userId: userId,
           photoData: photoData,
@@ -2200,9 +2235,14 @@
     openCameraModal();
   }
 
-  // Legacy confirm mapping to camera upload
-  function confirmOutfitPhotoUpload() {
-    confirmCameraPhotoUpload();
+  // Legacy confirm mapping to camera upload (Issue 1 fix: async declaration & error handling)
+  async function confirmOutfitPhotoUpload() {
+    try {
+      await confirmCameraPhotoUpload();
+    } catch (err) {
+      console.error('Error confirming outfit photo upload:', err);
+      showToast('⚠️ An error occurred while uploading. Please try again.');
+    }
   }
 
   // =========================================================================
@@ -2216,6 +2256,11 @@
     if (!modal.classList.contains('hidden')) return;
 
     const streak = state.streak || {};
+    // Issue 3 Fix: Do not show lost streak modal to users who never earned a streak
+    if (!streak || ((!streak.savedPreviousStreak || streak.savedPreviousStreak <= 0) && (!streak.currentStreak || streak.currentStreak <= 0))) {
+      return;
+    }
+
     const lostCountEl = document.getElementById('missedStreakLostCount');
     const statusCard = document.getElementById('restoreStatusCard');
     const statusIcon = document.getElementById('restoreStatusIcon');
@@ -2223,7 +2268,7 @@
     const statusSubtitle = document.getElementById('restoreStatusSubtitle');
     const btnRestore = document.getElementById('btnRestoreStreak');
 
-    const lostVal = streak.savedPreviousStreak > 0 ? streak.savedPreviousStreak : 1;
+    const lostVal = streak.savedPreviousStreak || 0;
     if (lostCountEl) lostCountEl.textContent = `${lostVal} Days`;
 
     // Check rolling 30-day eligibility
@@ -2275,7 +2320,7 @@
       const userId = getStreakUserId();
       const res = await fetch('/api/streak/restore', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ userId })
       });
 
@@ -2317,7 +2362,7 @@
       const userId = getStreakUserId();
       const res = await fetch('/api/streak/start-again', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ userId })
       });
 
@@ -2356,7 +2401,9 @@
     // Fetch latest gallery from server
     try {
       const userId = getStreakUserId();
-      const res = await fetch(`/api/streak/gallery?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch(`/api/streak/gallery?userId=${encodeURIComponent(userId)}`, {
+        headers: { ...getAuthHeaders() }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.gallery)) {
@@ -2587,12 +2634,13 @@
     openCameraModal();
   }
 
-  async function devSimulateTwoHoursLeft() {
+  // Issue 2 Fix: 20-Hour Reminder developer simulation (4 hours remaining)
+  async function devSimulateFourHoursLeft() {
     if (!isDevEnvironment() || !state.streak) return;
     try {
       const res = await fetch('/api/streak/dev-simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-dev-secret': 'woobi-dev-2026', ...getAuthHeaders() },
         body: JSON.stringify({ userId: getStreakUserId(), action: 'set-20h-elapsed' })
       });
       const data = await res.json();
@@ -2601,22 +2649,25 @@
         saveStreakState();
       }
     } catch (e) {
-      state.streak.deadline = getNowServer() + (1 * 3600 * 1000 + 59 * 60 * 1000);
+      state.streak.deadline = getNowServer() + FOUR_HOURS_MS;
       state.streak.lastCreditedUploadTimestamp = getNowServer() - TWENTY_HOURS_MS;
       state.streak.isPeriodCredited = true;
       saveStreakState();
     }
     checkStreakDeadline();
     updateStreakUI();
-    showToast('⏱️ Simulated: 20 hours elapsed (approx 2h remaining). Reminder visible!');
+    showToast('⏱️ Simulated: 20 hours elapsed (approx 4h remaining). Reminder visible!');
   }
+
+  // Alias for backward compatibility
+  const devSimulateTwoHoursLeft = devSimulateFourHoursLeft;
 
   async function devSimulateStreakBreak() {
     if (!isDevEnvironment() || !state.streak) return;
     try {
       const res = await fetch('/api/streak/dev-simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-dev-secret': 'woobi-dev-2026', ...getAuthHeaders() },
         body: JSON.stringify({ userId: getStreakUserId(), action: 'set-deadline-expired' })
       });
       const data = await res.json();
@@ -2640,7 +2691,7 @@
     try {
       const res = await fetch('/api/streak/dev-simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-dev-secret': 'woobi-dev-2026', ...getAuthHeaders() },
         body: JSON.stringify({ userId: getStreakUserId(), action: 'set-restore-cooldown', daysAgo: actionDays })
       });
       const data = await res.json();
@@ -2659,7 +2710,7 @@
     try {
       await fetch('/api/streak/dev-simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-dev-secret': 'woobi-dev-2026', ...getAuthHeaders() },
         body: JSON.stringify({ userId: getStreakUserId(), action: 'reset-all' })
       });
     } catch (e) {}

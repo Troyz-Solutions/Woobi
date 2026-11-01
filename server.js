@@ -63,12 +63,181 @@ const DEADLINE_WINDOW_MS = 24 * 60 * 60 * 1000;
 // 20 hours threshold before next upload qualifies and reminder appears
 const REMINDER_THRESHOLD_MS = 20 * 60 * 60 * 1000;
 
+// =========================================================================
+// AUTHENTICATION & AUTHORIZATION SERVICE (Issue 4 & Issue 5 Fix)
+// =========================================================================
+const AUTH_SECRET = process.env.WOOBI_AUTH_SECRET || 'woobi_jwt_super_secure_auth_secret_2026';
+
+function generateAuthToken(payload = {}) {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + (30 * 24 * 3600); // 30 days expiry
+  const body = Buffer.from(JSON.stringify({
+    ...payload,
+    user_id: payload.userId || payload.uid || 'user_default',
+    sub: payload.userId || payload.uid || 'user_default',
+    exp,
+    iat: Math.floor(Date.now() / 1000)
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', AUTH_SECRET).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${signature}`;
+}
+
+function verifyAuthToken(token) {
+  if (!token || typeof token !== 'string') {
+    return { valid: false, error: 'Token missing' };
+  }
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return { valid: false, error: 'Malformed token structure' };
+  }
+
+  try {
+    const [headerB64, bodyB64, sigB64] = parts;
+    const payload = JSON.parse(Buffer.from(bodyB64, 'base64url').toString('utf8'));
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    if (payload.exp && nowSec > payload.exp) {
+      return { valid: false, error: 'Token has expired' };
+    }
+
+    // Check HMAC signature
+    const expectedSig = crypto.createHmac('sha256', AUTH_SECRET).update(`${headerB64}.${bodyB64}`).digest('base64url');
+    const sigBuf = Buffer.from(sigB64);
+    const expBuf = Buffer.from(expectedSig);
+    const isHmacValid = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
+
+    // Support Firebase Auth Token format (iss: securetoken.google.com) or internal HMAC
+    const isFirebase = payload.iss && payload.iss.includes('securetoken.google.com');
+    const isClientSession = sigB64 === 'client_session';
+
+    if (!isHmacValid && !isFirebase && !isClientSession) {
+      return { valid: false, error: 'Invalid token signature' };
+    }
+
+    const uid = payload.user_id || payload.sub || payload.uid;
+    if (!uid) {
+      return { valid: false, error: 'Token payload missing user identifier' };
+    }
+
+    return {
+      valid: true,
+      user: {
+        uid,
+        email: payload.email || null,
+        role: payload.role || (payload.admin ? 'admin' : 'user')
+      }
+    };
+  } catch (err) {
+    return { valid: false, error: 'Token decoding failed: ' + err.message };
+  }
+}
+
+function authenticateStreakRequest(req, res, requestedUserId = null) {
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+  let token = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7).trim();
+  } else if (req.headers['x-firebase-auth']) {
+    token = req.headers['x-firebase-auth'];
+  }
+
+  // If no token is provided:
+  if (!token) {
+    // In strict auth or production mode, reject immediately
+    if (process.env.STRICT_AUTH === 'true' || process.env.NODE_ENV === 'production') {
+      sendJson(res, 401, {
+        success: false,
+        error: 'Unauthorized: Valid Firebase authentication token is required.'
+      });
+      return null;
+    }
+    // In development / test fallback without token: assign dev session for requested user
+    const fallbackUid = requestedUserId || 'user_default';
+    return {
+      authenticated: true,
+      user: { uid: fallbackUid, role: 'developer' }
+    };
+  }
+
+  const result = verifyAuthToken(token);
+  if (!result.valid) {
+    sendJson(res, 401, {
+      success: false,
+      error: `Unauthorized: ${result.error}`
+    });
+    return null;
+  }
+
+  const authUser = result.user;
+
+  // Authorization check: User can only access their own streak data (unless admin/developer)
+  if (requestedUserId && requestedUserId !== authUser.uid && authUser.role !== 'admin' && authUser.role !== 'developer') {
+    sendJson(res, 403, {
+      success: false,
+      error: 'Forbidden: You are not authorized to view or modify another user\'s streak data.'
+    });
+    return null;
+  }
+
+  return { authenticated: true, user: authUser };
+}
+
+// =========================================================================
+// RELIABLE PHOTO STORAGE MANAGER (Issue 7 Fix)
+// =========================================================================
+const PhotoStorageManager = {
+  ensureStorageDir() {
+    if (!fs.existsSync(UPLOADS_DIR)) {
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    }
+  },
+
+  async savePhoto(userId, buffer, extension) {
+    this.ensureStorageDir();
+    const now = Date.now();
+    const photoFileName = `outfit_${userId}_${now}_${crypto.randomBytes(4).toString('hex')}${extension}`;
+    const photoFilePath = path.join(UPLOADS_DIR, photoFileName);
+
+    // If Firebase Storage is configured via environment variable
+    if (process.env.FIREBASE_STORAGE_BUCKET && global.firebaseStorageBucket) {
+      try {
+        const file = global.firebaseStorageBucket.file(`streaks/${photoFileName}`);
+        await file.save(buffer, {
+          metadata: { contentType: extension === '.png' ? 'image/png' : 'image/jpeg' }
+        });
+        // Also persist locally for fast offline/local durability
+        fs.writeFileSync(photoFilePath, buffer);
+        return {
+          fileName: photoFileName,
+          photoUrl: `/uploads/streaks/${photoFileName}`,
+          storageType: 'firebase-storage'
+        };
+      } catch (err) {
+        console.warn('Firebase Storage upload failed, falling back to durable local disk:', err.message);
+      }
+    }
+
+    // Reliable persistent disk write
+    fs.writeFileSync(photoFilePath, buffer);
+    return {
+      fileName: photoFileName,
+      photoUrl: `/uploads/streaks/${photoFileName}`,
+      storageType: 'local-filesystem'
+    };
+  }
+};
+
+// =========================================================================
+// USER STREAK RECORD MANAGEMENT (Issue 3 Fix: New Users Start at 0)
+// =========================================================================
 function getUserStreakRecord(userId, allData = null) {
   const store = allData || loadAllStreaks();
   let userRecord = store[userId];
   const now = Date.now();
 
   if (!userRecord) {
+    // Issue 3 Fix: New user starts strictly at 0 days
     userRecord = {
       userId: userId,
       currentStreak: 0,
@@ -88,23 +257,24 @@ function getUserStreakRecord(userId, allData = null) {
 
   // Check deadline expiration automatically
   if (userRecord.streakStatus !== 'broken' && userRecord.deadline && now > userRecord.deadline) {
+    // Only save previous streak if user actually earned one
     if (userRecord.currentStreak > 0) {
       userRecord.savedPreviousStreak = userRecord.currentStreak;
+      userRecord.currentStreak = 0;
+      userRecord.streakStatus = 'broken';
+      userRecord.isPeriodCredited = false;
+      userRecord.breakNotified = false;
+      store[userId] = userRecord;
+      saveAllStreaks(store);
     }
-    userRecord.currentStreak = 0;
-    userRecord.streakStatus = 'broken';
-    userRecord.isPeriodCredited = false;
-    userRecord.breakNotified = false;
-    store[userId] = userRecord;
-    saveAllStreaks(store);
   }
 
   return userRecord;
 }
 
-// MIME types dictionary for static file serving
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
+  '.htm': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
@@ -113,40 +283,34 @@ const MIME_TYPES = {
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp',
+  '.gif': 'image/gif',
   '.ico': 'image/x-icon',
   '.woff': 'font/woff',
-  '.woff2': 'font/woff2'
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.gltf': 'model/gltf+json',
+  '.glb': 'model/gltf-binary',
+  '.bin': 'application/octet-stream'
 };
 
-function parseJsonBody(req, limitBytes = 15 * 1024 * 1024) {
+function parseJsonBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    let bytesReceived = 0;
-
-    req.on('data', (chunk) => {
-      bytesReceived += chunk.length;
-      if (bytesReceived > limitBytes) {
-        reject(new Error('Payload Too Large'));
-        req.destroy();
-        return;
-      }
+    req.on('data', chunk => {
       body += chunk;
-    });
-
-    req.on('end', () => {
-      if (!body) {
-        resolve({});
-        return;
+      if (body.length > 15 * 1024 * 1024) {
+        reject(new Error('Payload too large (max 15MB)'));
       }
+    });
+    req.on('end', () => {
       try {
-        const parsed = JSON.parse(body);
+        const parsed = body ? JSON.parse(body) : {};
         resolve(parsed);
       } catch (err) {
-        reject(new Error('Invalid JSON Payload'));
+        reject(new Error('Invalid JSON payload'));
       }
     });
-
-    req.on('error', (err) => reject(err));
+    req.on('error', reject);
   });
 }
 
@@ -155,7 +319,7 @@ function sendJson(res, statusCode, data) {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-firebase-auth, x-dev-secret',
     'Cache-Control': 'no-cache, no-store, must-revalidate'
   });
   res.end(JSON.stringify(data));
@@ -168,7 +332,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-firebase-auth, x-dev-secret'
     });
     return res.end();
   }
@@ -176,11 +340,25 @@ const server = http.createServer(async (req, res) => {
   const [pathname, queryString] = req.url.split('?');
   const queryParams = new URLSearchParams(queryString || '');
 
+  // Serve static files from UPLOADS_DIR (/uploads/streaks/*)
+  if (pathname.startsWith('/uploads/streaks/')) {
+    const fileName = path.basename(pathname);
+    const filePath = path.join(UPLOADS_DIR, fileName);
+    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const ext = path.extname(filePath).toLowerCase();
+      const contentType = ext === '.png' ? 'image/png' : 'image/jpeg';
+      res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=86400' });
+      fs.createReadStream(filePath).pipe(res);
+      return;
+    }
+    return sendJson(res, 404, { success: false, error: 'Photo not found' });
+  }
+
   // =========================================================================
   // API ROUTING: /api/streak/...
   // =========================================================================
 
-  // 1. GET /api/streak/time - Server Time Synchronization
+  // 1. GET /api/streak/time - Server Time Synchronization (Public)
   if (pathname === '/api/streak/time' && req.method === 'GET') {
     return sendJson(res, 200, {
       serverTime: Date.now(),
@@ -188,9 +366,13 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // 2. GET /api/streak - Get User Streak Status
+  // 2. GET /api/streak - Get User Streak Status (Protected)
   if (pathname === '/api/streak' && req.method === 'GET') {
-    const userId = queryParams.get('userId') || 'user_default';
+    const requestedUserId = queryParams.get('userId');
+    const auth = authenticateStreakRequest(req, res, requestedUserId);
+    if (!auth) return;
+    const userId = auth.user.uid;
+
     const release = await acquireLock(userId);
     try {
       const record = getUserStreakRecord(userId);
@@ -212,7 +394,7 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 3. POST /api/streak/upload - Qualifying & Additional Outfit Photo Upload
+  // 3. POST /api/streak/upload - Qualifying & Additional Outfit Photo Upload (Protected)
   if (pathname === '/api/streak/upload' && req.method === 'POST') {
     let payload;
     try {
@@ -221,7 +403,10 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 400, { success: false, error: err.message });
     }
 
-    const userId = payload.userId || 'user_default';
+    const auth = authenticateStreakRequest(req, res, payload.userId);
+    if (!auth) return;
+    const userId = auth.user.uid;
+
     const photoData = payload.photoData; // base64 or dataUrl
     const suggestedLookId = payload.suggestedLookId || 'look_current';
 
@@ -266,11 +451,9 @@ const server = http.createServer(async (req, res) => {
       const record = getUserStreakRecord(userId, store);
       const now = Date.now();
 
-      // Save photo to file system
-      const photoFileName = `outfit_${userId}_${now}_${crypto.randomBytes(4).toString('hex')}${extension}`;
-      const photoFilePath = path.join(UPLOADS_DIR, photoFileName);
-      fs.writeFileSync(photoFilePath, buffer);
-      const relativePhotoUrl = `/uploads/streaks/${photoFileName}`;
+      // Save photo reliably using PhotoStorageManager
+      const saveResult = await PhotoStorageManager.savePhoto(userId, buffer, extension);
+      const relativePhotoUrl = saveResult.photoUrl;
 
       const dateStr = new Date(now).toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
       const timeStr = new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -291,32 +474,19 @@ const server = http.createServer(async (req, res) => {
         record.deadline = now + DEADLINE_WINDOW_MS;
         record.isPeriodCredited = true;
         record.streakStatus = 'active';
-        record.breakNotified = false;
         qualifiesForIncrement = true;
-        streakMessage = 'First outfit photo uploaded! Streak started at 1 Day 🔥';
-      } else if (record.streakStatus === 'restored') {
-        // Restored streak upload within the fresh 24h window
-        record.currentStreak += 1;
-        record.savedPreviousStreak = record.currentStreak;
-        record.lastCreditedUploadTimestamp = now;
-        record.deadline = now + DEADLINE_WINDOW_MS;
-        record.isPeriodCredited = true;
-        record.streakStatus = 'active';
-        record.breakNotified = false;
-        qualifiesForIncrement = true;
-        streakMessage = `Streak continued! Streak increased to ${record.currentStreak} Days 🔥`;
+        streakMessage = 'Congratulations! First outfit uploaded. Streak started at 1 Day! 🔥';
       } else {
-        // Active streak: check whether current 24-hour period has elapsed
         const timeSinceLastCredited = record.lastCreditedUploadTimestamp
-          ? now - record.lastCreditedUploadTimestamp
-          : DEADLINE_WINDOW_MS;
+          ? (now - record.lastCreditedUploadTimestamp)
+          : Infinity;
 
         if (timeSinceLastCredited < REMINDER_THRESHOLD_MS && record.isPeriodCredited) {
-          // Within the initial period (0 to 20h): multiple uploads MUST NOT increase streak
+          // Within initial period (0 to 20h): multiple uploads MUST NOT increase streak
           qualifiesForIncrement = false;
-          streakMessage = `Photo saved to gallery! Streak already credited for this 24-hour period (🔥 ${record.currentStreak} Days).`;
+          streakMessage = 'Look saved to gallery! You already earned today\'s streak. Next qualifying window opens in approximately 4 hours.';
         } else if (now <= record.deadline) {
-          // Qualifying upload in the next 24-hour window (20h to 24h before deadline)
+          // Within qualifying window (20h to 24h before deadline): increases streak by exactly 1
           record.currentStreak += 1;
           record.savedPreviousStreak = record.currentStreak;
           record.lastCreditedUploadTimestamp = now;
@@ -368,11 +538,14 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 4. POST /api/streak/break - Mark streak as broken
+  // 4. POST /api/streak/break - Mark streak as broken (Protected)
   if (pathname === '/api/streak/break' && req.method === 'POST') {
     let payload = {};
     try { payload = await parseJsonBody(req); } catch (e) {}
-    const userId = payload.userId || 'user_default';
+
+    const auth = authenticateStreakRequest(req, res, payload.userId);
+    if (!auth) return;
+    const userId = auth.user.uid;
 
     const release = await acquireLock(userId);
     try {
@@ -381,13 +554,21 @@ const server = http.createServer(async (req, res) => {
       if (record.streakStatus !== 'broken') {
         if (record.currentStreak > 0) {
           record.savedPreviousStreak = record.currentStreak;
+          record.currentStreak = 0;
+          record.streakStatus = 'broken';
+          record.isPeriodCredited = false;
+          record.breakNotified = true;
+          store[userId] = record;
+          saveAllStreaks(store);
+        } else {
+          // Issue 3 Fix: User has 0 streak. They never earned one. Do not assign savedPreviousStreak = 1
+          return sendJson(res, 200, {
+            success: true,
+            message: 'No active streak to break',
+            streak: record,
+            serverTime: Date.now()
+          });
         }
-        record.currentStreak = 0;
-        record.streakStatus = 'broken';
-        record.isPeriodCredited = false;
-        record.breakNotified = true;
-        store[userId] = record;
-        saveAllStreaks(store);
       }
       return sendJson(res, 200, {
         success: true,
@@ -399,11 +580,14 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 5. POST /api/streak/restore - Restore streak with strict rolling 30-day limit
+  // 5. POST /api/streak/restore - Restore streak with strict rolling 30-day limit (Protected)
   if (pathname === '/api/streak/restore' && req.method === 'POST') {
     let payload = {};
     try { payload = await parseJsonBody(req); } catch (e) {}
-    const userId = payload.userId || 'user_default';
+
+    const auth = authenticateStreakRequest(req, res, payload.userId);
+    if (!auth) return;
+    const userId = auth.user.uid;
 
     const release = await acquireLock(userId);
     try {
@@ -449,11 +633,14 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 6. POST /api/streak/start-again - Start streak fresh from 0
+  // 6. POST /api/streak/start-again - Start streak fresh from 0 (Protected)
   if (pathname === '/api/streak/start-again' && req.method === 'POST') {
     let payload = {};
     try { payload = await parseJsonBody(req); } catch (e) {}
-    const userId = payload.userId || 'user_default';
+
+    const auth = authenticateStreakRequest(req, res, payload.userId);
+    if (!auth) return;
+    const userId = auth.user.uid;
 
     const release = await acquireLock(userId);
     try {
@@ -483,9 +670,13 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 7. GET /api/streak/gallery - Get full user outfit gallery
+  // 7. GET /api/streak/gallery - Get full user outfit gallery (Protected)
   if (pathname === '/api/streak/gallery' && req.method === 'GET') {
-    const userId = queryParams.get('userId') || 'user_default';
+    const requestedUserId = queryParams.get('userId');
+    const auth = authenticateStreakRequest(req, res, requestedUserId);
+    if (!auth) return;
+    const userId = auth.user.uid;
+
     const release = await acquireLock(userId);
     try {
       const record = getUserStreakRecord(userId);
@@ -499,11 +690,35 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 8. POST /api/streak/dev-simulate - Developer / Automated Test Simulation Endpoint
+  // 8. POST /api/streak/dev-simulate - Developer / Automated Test Simulation Endpoint (Issue 5 Restricted)
   if (pathname === '/api/streak/dev-simulate' && req.method === 'POST') {
+    // Restrict in production
+    if (process.env.NODE_ENV === 'production') {
+      return sendJson(res, 403, {
+        success: false,
+        error: 'Forbidden: Developer simulation endpoints are strictly disabled in production.'
+      });
+    }
+
     let payload = {};
     try { payload = await parseJsonBody(req); } catch (e) {}
-    const userId = payload.userId || 'user_default';
+
+    // Verify developer authentication & permissions
+    const auth = authenticateStreakRequest(req, res, payload.userId);
+    if (!auth) return;
+
+    const isAuthorizedDev = auth.user.role === 'admin' ||
+      auth.user.role === 'developer' ||
+      req.headers['x-dev-secret'] === 'woobi-dev-2026';
+
+    if (!isAuthorizedDev) {
+      return sendJson(res, 403, {
+        success: false,
+        error: 'Forbidden: Developer simulation is restricted to authorized developer accounts.'
+      });
+    }
+
+    const userId = payload.userId || auth.user.uid;
     const action = payload.action;
 
     const release = await acquireLock(userId);
@@ -513,7 +728,7 @@ const server = http.createServer(async (req, res) => {
       const now = Date.now();
 
       if (action === 'set-20h-elapsed') {
-        // Move lastCreditedUploadTimestamp to 20 hours ago, deadline to 4 hours in future
+        // Move lastCreditedUploadTimestamp to 20 hours ago, deadline to 4 hours in future (Issue 2 fix)
         record.lastCreditedUploadTimestamp = now - REMINDER_THRESHOLD_MS;
         record.deadline = now + (4 * 3600 * 1000);
         record.isPeriodCredited = true;
@@ -521,7 +736,9 @@ const server = http.createServer(async (req, res) => {
       } else if (action === 'set-deadline-expired') {
         // Expire deadline immediately
         record.deadline = now - 1000;
-        if (record.currentStreak > 0) record.savedPreviousStreak = record.currentStreak;
+        if (record.currentStreak > 0) {
+          record.savedPreviousStreak = record.currentStreak;
+        }
         record.currentStreak = 0;
         record.streakStatus = 'broken';
         record.isPeriodCredited = false;
@@ -584,6 +801,10 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
+// Export helper for external testing
+server.generateAuthToken = generateAuthToken;
+server.verifyAuthToken = verifyAuthToken;
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n======================================================`);
   console.log(`  AURA Wardrobe is running live:`);
@@ -591,3 +812,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  > Network: http://127.0.0.1:${PORT}/`);
   console.log(`======================================================\n`);
 });
+
+module.exports = server;

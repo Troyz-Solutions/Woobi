@@ -6660,7 +6660,7 @@ html, body {
   user-select: none;
 }
 
-/* 2. Last 2 Hours Warning Urgent State */
+/* 2. 20-Hour Reminder Urgent State (4 Hours Remaining) */
 .streak-header-pill.urgent {
   background: #FFF3EF !important;
   border-color: #FF5722 !important;

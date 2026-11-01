@@ -583,5 +583,154 @@
         "suggestedLookId": "look_current"
       }
     ]
+  },
+  "test_user_1793528908524": {
+    "userId": "test_user_1793528908524",
+    "currentStreak": 1,
+    "savedPreviousStreak": 1,
+    "lastCreditedUploadTimestamp": 1793456908642,
+    "deadline": 1793543308642,
+    "isPeriodCredited": true,
+    "streakStatus": "active",
+    "lastRestorationTimestamp": 1793528908626,
+    "nextRestorationEligibilityTimestamp": 1796120908626,
+    "breakNotified": false,
+    "outfitHistory": [
+      {
+        "id": "photo_1793528908619_3eee09",
+        "timestamp": 1793528908619,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:58 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528908524_1793528908619_01e7dea6.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528908612_07eac1",
+        "timestamp": 1793528908612,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:58 pm",
+        "streakCount": 3,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528908524_1793528908612_19d1c49d.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528908597_c78ff1",
+        "timestamp": 1793528908597,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:58 pm",
+        "streakCount": 2,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528908524_1793528908597_304215cc.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528908591_71a89e",
+        "timestamp": 1793528908591,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:58 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528908524_1793528908591_fe4be592.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528908588_673848",
+        "timestamp": 1793528908588,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:58 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528908524_1793528908589_1d4b1c38.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528908566_6e4d91",
+        "timestamp": 1793528908566,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:58 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528908524_1793528908567_0fdb37e4.png",
+        "suggestedLookId": "look_current"
+      }
+    ]
+  },
+  "test_user_1793528944795": {
+    "userId": "test_user_1793528944795",
+    "currentStreak": 1,
+    "savedPreviousStreak": 1,
+    "lastCreditedUploadTimestamp": 1793528944910,
+    "deadline": 1793615344921,
+    "isPeriodCredited": false,
+    "streakStatus": "restored",
+    "lastRestorationTimestamp": 1793528944921,
+    "nextRestorationEligibilityTimestamp": 1796120944921,
+    "breakNotified": false,
+    "outfitHistory": [
+      {
+        "id": "photo_1793528944910_8f4b62",
+        "timestamp": 1793528944910,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:59 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528944795_1793528944911_b8352a25.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528944898_52b90f",
+        "timestamp": 1793528944898,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:59 pm",
+        "streakCount": 3,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528944795_1793528944899_d4b8c313.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528944883_8c9746",
+        "timestamp": 1793528944883,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:59 pm",
+        "streakCount": 2,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528944795_1793528944883_d27a3ed4.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528944877_8fcde5",
+        "timestamp": 1793528944877,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:59 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528944795_1793528944877_61e1431d.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528944872_70d368",
+        "timestamp": 1793528944872,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:59 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528944795_1793528944872_f7e48ccd.png",
+        "suggestedLookId": "look_current"
+      },
+      {
+        "id": "photo_1793528944838_a3e9bc",
+        "timestamp": 1793528944838,
+        "dateStr": "1 Nov 2026",
+        "timeStr": "03:59 pm",
+        "streakCount": 1,
+        "photoUrl": "/uploads/streaks/outfit_test_user_1793528944795_1793528944839_0e8a24d6.png",
+        "suggestedLookId": "look_current"
+      }
+    ]
+  },
+  "newbie_user_1793528944943": {
+    "userId": "newbie_user_1793528944943",
+    "currentStreak": 0,
+    "savedPreviousStreak": 0,
+    "lastCreditedUploadTimestamp": null,
+    "deadline": null,
+    "isPeriodCredited": false,
+    "streakStatus": "active",
+    "lastRestorationTimestamp": null,
+    "nextRestorationEligibilityTimestamp": null,
+    "breakNotified": false,
+    "outfitHistory": []
   }
 }

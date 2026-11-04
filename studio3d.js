@@ -2206,6 +2206,93 @@
     }
 
     /**
+     * Avatar Grooming & Vanity 3D APIs
+     */
+    setBeardStyle(styleId) {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      this.avatarConfig.grooming.beardStyle = styleId;
+      if (this.avatarController && typeof this.avatarController.setBeardStyle === 'function') {
+        this.avatarController.setBeardStyle(styleId);
+        return;
+      }
+      this.savePreferences();
+    }
+
+    setMoustacheStyle(styleId) {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      this.avatarConfig.grooming.moustacheStyle = styleId;
+      if (this.avatarController && typeof this.avatarController.setMoustacheStyle === 'function') {
+        this.avatarController.setMoustacheStyle(styleId);
+        return;
+      }
+      this.savePreferences();
+    }
+
+    setLipstick(color, finish = 'satin') {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      this.avatarConfig.grooming.lipColor = color;
+      this.avatarConfig.grooming.lipFinish = finish;
+      if (this.avatarController && typeof this.avatarController.setLipstick === 'function') {
+        this.avatarController.setLipstick(color, finish);
+        return;
+      }
+      this.savePreferences();
+    }
+
+    setEyebrowShape(shapeId) {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      this.avatarConfig.grooming.eyebrowShape = shapeId;
+      if (this.avatarController && typeof this.avatarController.setEyebrowShape === 'function') {
+        this.avatarController.setEyebrowShape(shapeId);
+        return;
+      }
+      this.savePreferences();
+    }
+
+    setBlush(color, opacity = 0.35) {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      this.avatarConfig.grooming.blushColor = color;
+      this.avatarConfig.grooming.blushIntensity = opacity;
+      if (this.avatarController && typeof this.avatarController.setBlush === 'function') {
+        this.avatarController.setBlush(color, opacity);
+        return;
+      }
+      this.savePreferences();
+    }
+
+    setNailCustomization(opts = {}) {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      if (opts.shape) this.avatarConfig.grooming.nailShape = opts.shape;
+      if (opts.length) this.avatarConfig.grooming.nailLength = opts.length;
+      if (opts.finish) this.avatarConfig.grooming.nailFinish = opts.finish;
+      if (opts.color) this.avatarConfig.grooming.nailColor = opts.color;
+      if (this.avatarController && typeof this.avatarController.setNailCustomization === 'function') {
+        this.avatarController.setNailCustomization(opts);
+        return;
+      }
+      this.savePreferences();
+    }
+
+    setCameraFocus(view) {
+      if (!this.camera || typeof THREE === 'undefined') return;
+      if (view === 'face') {
+        this.setCameraState('AVATAR_DETAIL');
+      } else if (view === 'mirror' || view === 'vanity') {
+        this.setCameraState('VANITY_VIEW');
+      } else if (view === 'hands') {
+        if (this.targetCameraPos) {
+          this.targetCameraPos.set(0.12, 1.02, 0.72);
+        }
+        if (this.targetCameraLookAt) {
+          this.targetCameraLookAt.set(0.08, 0.94, 0);
+        }
+        this.currentCameraState = 'AVATAR_HANDS';
+      } else {
+        this.setCameraState('STUDIO_OVERVIEW');
+      }
+    }
+
+    /**
      * Applies complete avatar configuration
      */
     applyAvatarConfig(cfg) {

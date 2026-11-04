@@ -72,6 +72,23 @@ export class AvatarMaterials {
     });
     this.disposables.push(this.blushMat);
 
+    // Facial Hair Material (Beard & Moustache) - registered with hairMaterials for sync
+    this.beardMat = new THREE.MeshStandardMaterial({
+      color: AVATAR_PALETTE.hairRichEspresso,
+      roughness: 0.45,
+      metalness: 0.02
+    });
+    this.hairMaterials.push(this.beardMat);
+    this.disposables.push(this.beardMat);
+
+    // Fingernail Material with dynamic finish & color
+    this.nailMat = new THREE.MeshStandardMaterial({
+      color: 0xE8C5B8,
+      roughness: 0.15,
+      metalness: 0.05
+    });
+    this.disposables.push(this.nailMat);
+
     // Eye Anatomy Materials
     this.scleraMat = new THREE.MeshBasicMaterial({ color: AVATAR_PALETTE.scleraWhite });
     this.irisMat = new THREE.MeshStandardMaterial({ color: AVATAR_PALETTE.irisEspresso, roughness: 0.22 });
@@ -151,6 +168,69 @@ export class AvatarMaterials {
         mat.needsUpdate = true;
       }
     });
+  }
+
+  updateLipstick(hex, finish = 'satin') {
+    if (!this.lipMat || !this.THREE || !hex) return;
+    this.lipMat.color.set(hex);
+    switch (finish) {
+      case 'matte':
+        this.lipMat.roughness = 0.65;
+        this.lipMat.metalness = 0.0;
+        break;
+      case 'gloss':
+        this.lipMat.roughness = 0.12;
+        this.lipMat.metalness = 0.05;
+        break;
+      case 'metallic':
+        this.lipMat.roughness = 0.28;
+        this.lipMat.metalness = 0.45;
+        break;
+      case 'satin':
+      default:
+        this.lipMat.roughness = 0.24;
+        this.lipMat.metalness = 0.02;
+        break;
+    }
+    this.lipMat.needsUpdate = true;
+  }
+
+  updateBlush(hex, opacity = 0.35) {
+    if (!this.blushMat || !this.THREE) return;
+    if (hex) this.blushMat.color.set(hex);
+    if (typeof opacity === 'number') {
+      this.blushMat.opacity = Math.max(0, Math.min(1, opacity));
+    }
+    this.blushMat.needsUpdate = true;
+  }
+
+  updateNailFinish(hex, finish = 'gloss') {
+    if (!this.nailMat || !this.THREE) return;
+    if (hex) this.nailMat.color.set(hex);
+    switch (finish) {
+      case 'matte':
+        this.nailMat.roughness = 0.75;
+        this.nailMat.metalness = 0.0;
+        break;
+      case 'chrome':
+        this.nailMat.roughness = 0.08;
+        this.nailMat.metalness = 0.90;
+        break;
+      case 'metallic':
+        this.nailMat.roughness = 0.22;
+        this.nailMat.metalness = 0.65;
+        break;
+      case 'glitter':
+        this.nailMat.roughness = 0.32;
+        this.nailMat.metalness = 0.40;
+        break;
+      case 'gloss':
+      default:
+        this.nailMat.roughness = 0.15;
+        this.nailMat.metalness = 0.05;
+        break;
+    }
+    this.nailMat.needsUpdate = true;
   }
 
   registerSkinMaterial(mat) {

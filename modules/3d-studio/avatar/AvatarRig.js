@@ -21,6 +21,12 @@ export class AvatarRig {
       earrings: [],
       button: null
     };
+    this.beardMeshes = {};
+    this.activeBeardStyle = 'clean';
+    this.moustacheMeshes = {};
+    this.activeMoustacheStyle = 'none';
+    this.eyebrowMeshes = [];
+    this.nailMeshes = [];
     this.disposables = [];
   }
 
@@ -124,7 +130,9 @@ export class AvatarRig {
       const brow = new THREE.Mesh(browGeo, mats.browMat);
       brow.rotation.z = side * 0.16;
       brow.position.set(eyeX, 0.036, 0.082);
+      brow.userData = { side, baseZRot: side * 0.16, baseY: 0.036 };
       this.headGroup.add(brow);
+      this.eyebrowMeshes.push(brow);
       this.disposables.push(browGeo);
 
       // Ears with subtle gold hoops
@@ -176,6 +184,10 @@ export class AvatarRig {
 
     // 2. HAIRSTYLES (Signature High Bun Updo)
     this.buildHairstyles();
+
+    // 2B. PROCEDURAL GROOMING MESHES (Beard & Moustache - additive, hidden by default)
+    this.buildBeardMeshes();
+    this.buildMoustacheMeshes();
 
     this.sculptedAvatarGroup.add(this.headGroup);
 
@@ -257,13 +269,34 @@ export class AvatarRig {
       const thumb = new THREE.Mesh(thumbGeo, mats.skinMat);
       thumb.rotation.z = side * -0.42;
       thumb.position.set(side * -0.013, 0.004, 0.004);
+
+      if (mats.nailMat) {
+        const thumbNailGeo = new THREE.BoxGeometry(0.0042, 0.006, 0.0018);
+        const thumbNail = new THREE.Mesh(thumbNailGeo, mats.nailMat);
+        thumbNail.position.set(0, -0.010, 0.0032);
+        thumb.add(thumbNail);
+        this.nailMeshes.push(thumbNail);
+        this.disposables.push(thumbNailGeo);
+      }
+
       hand.add(thumb);
       this.disposables.push(thumbGeo);
 
       for (let f = 0; f < 4; f++) {
-        const fingerGeo = new THREE.CylinderGeometry(0.0034, 0.0026, 0.036 - f * 0.003, 8);
+        const fingerLen = 0.036 - f * 0.003;
+        const fingerGeo = new THREE.CylinderGeometry(0.0034, 0.0026, fingerLen, 8);
         const finger = new THREE.Mesh(fingerGeo, mats.skinMat);
         finger.position.set(side * (0.008 - f * 0.005), -0.035, 0);
+
+        if (mats.nailMat) {
+          const fingerNailGeo = new THREE.BoxGeometry(0.0038, 0.0052, 0.0018);
+          const fingerNail = new THREE.Mesh(fingerNailGeo, mats.nailMat);
+          fingerNail.position.set(0, -fingerLen / 2 + 0.003, 0.0025);
+          finger.add(fingerNail);
+          this.nailMeshes.push(fingerNail);
+          this.disposables.push(fingerNailGeo);
+        }
+
         hand.add(finger);
         this.disposables.push(fingerGeo);
       }
@@ -402,6 +435,244 @@ export class AvatarRig {
     this.headGroup.add(bunGroup);
   }
 
+  buildBeardMeshes() {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!mats.beardMat || !this.headGroup) return;
+
+    // 1. Stubble Beard Group
+    const stubbleGroup = new THREE.Group();
+    stubbleGroup.name = 'AvatarBeard_Stubble';
+    const stubbleChinGeo = new THREE.SphereGeometry(0.034, 16, 16);
+    const stubbleChin = new THREE.Mesh(stubbleChinGeo, mats.beardMat);
+    stubbleChin.scale.set(0.96, 0.84, 0.96);
+    stubbleChin.position.set(0, -0.072, 0.040);
+    stubbleGroup.add(stubbleChin);
+    this.disposables.push(stubbleChinGeo);
+
+    [-1, 1].forEach((side) => {
+      const stubbleJawGeo = new THREE.CylinderGeometry(0.012, 0.015, 0.065, 12);
+      const stubbleJaw = new THREE.Mesh(stubbleJawGeo, mats.beardMat);
+      stubbleJaw.rotation.z = side * 0.55;
+      stubbleJaw.position.set(side * 0.045, -0.058, 0.032);
+      stubbleGroup.add(stubbleJaw);
+      this.disposables.push(stubbleJawGeo);
+    });
+    stubbleGroup.visible = false;
+    this.headGroup.add(stubbleGroup);
+    this.beardMeshes.stubble = stubbleGroup;
+
+    // 2. Short Boxed Beard Group
+    const shortGroup = new THREE.Group();
+    shortGroup.name = 'AvatarBeard_Short';
+    const shortChinGeo = new THREE.BoxGeometry(0.065, 0.048, 0.038);
+    const shortChin = new THREE.Mesh(shortChinGeo, mats.beardMat);
+    shortChin.position.set(0, -0.075, 0.046);
+    shortGroup.add(shortChin);
+    this.disposables.push(shortChinGeo);
+
+    [-1, 1].forEach((side) => {
+      const shortJawGeo = new THREE.CylinderGeometry(0.018, 0.022, 0.080, 12);
+      const shortJaw = new THREE.Mesh(shortJawGeo, mats.beardMat);
+      shortJaw.rotation.z = side * 0.65;
+      shortJaw.position.set(side * 0.052, -0.052, 0.034);
+      shortGroup.add(shortJaw);
+      this.disposables.push(shortJawGeo);
+    });
+    shortGroup.visible = false;
+    this.headGroup.add(shortGroup);
+    this.beardMeshes.short = shortGroup;
+
+    // 3. Full Majestic Beard Group
+    const fullGroup = new THREE.Group();
+    fullGroup.name = 'AvatarBeard_Full';
+    const fullChinGeo = new THREE.SphereGeometry(0.046, 20, 20);
+    const fullChin = new THREE.Mesh(fullChinGeo, mats.beardMat);
+    fullChin.scale.set(1.15, 1.25, 1.15);
+    fullChin.position.set(0, -0.088, 0.048);
+    fullGroup.add(fullChin);
+    this.disposables.push(fullChinGeo);
+
+    [-1, 1].forEach((side) => {
+      const fullJawGeo = new THREE.CylinderGeometry(0.024, 0.028, 0.095, 12);
+      const fullJaw = new THREE.Mesh(fullJawGeo, mats.beardMat);
+      fullJaw.rotation.z = side * 0.65;
+      fullJaw.position.set(side * 0.056, -0.048, 0.035);
+      fullGroup.add(fullJaw);
+      this.disposables.push(fullJawGeo);
+    });
+    fullGroup.visible = false;
+    this.headGroup.add(fullGroup);
+    this.beardMeshes.full = fullGroup;
+
+    // 4. Goatee Beard Group
+    const goateeGroup = new THREE.Group();
+    goateeGroup.name = 'AvatarBeard_Goatee';
+    const goateeChinGeo = new THREE.SphereGeometry(0.030, 16, 16);
+    const goateeChin = new THREE.Mesh(goateeChinGeo, mats.beardMat);
+    goateeChin.scale.set(1.0, 1.25, 0.9);
+    goateeChin.position.set(0, -0.078, 0.048);
+    goateeGroup.add(goateeChin);
+    this.disposables.push(goateeChinGeo);
+    goateeGroup.visible = false;
+    this.headGroup.add(goateeGroup);
+    this.beardMeshes.goatee = goateeGroup;
+  }
+
+  buildMoustacheMeshes() {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!mats.beardMat || !this.headGroup) return;
+
+    // 1. Natural Moustache
+    const naturalGroup = new THREE.Group();
+    naturalGroup.name = 'AvatarMoustache_Natural';
+    [-1, 1].forEach((side) => {
+      const natGeo = new THREE.CylinderGeometry(0.003, 0.002, 0.022, 8);
+      const nat = new THREE.Mesh(natGeo, mats.beardMat);
+      nat.rotation.z = side * 1.35;
+      nat.position.set(side * 0.010, -0.040, 0.092);
+      naturalGroup.add(nat);
+      this.disposables.push(natGeo);
+    });
+    naturalGroup.visible = false;
+    this.headGroup.add(naturalGroup);
+    this.moustacheMeshes.natural = naturalGroup;
+
+    // 2. Chevron Moustache
+    const chevronGroup = new THREE.Group();
+    chevronGroup.name = 'AvatarMoustache_Chevron';
+    const chevGeo = new THREE.BoxGeometry(0.038, 0.010, 0.008);
+    const chev = new THREE.Mesh(chevGeo, mats.beardMat);
+    chev.position.set(0, -0.040, 0.092);
+    chevronGroup.add(chev);
+    this.disposables.push(chevGeo);
+    chevronGroup.visible = false;
+    this.headGroup.add(chevronGroup);
+    this.moustacheMeshes.chevron = chevronGroup;
+
+    // 3. Pencil Moustache
+    const pencilGroup = new THREE.Group();
+    pencilGroup.name = 'AvatarMoustache_Pencil';
+    const pencilGeo = new THREE.CylinderGeometry(0.0014, 0.0014, 0.032, 8);
+    const pencil = new THREE.Mesh(pencilGeo, mats.beardMat);
+    pencil.rotation.z = Math.PI / 2;
+    pencil.position.set(0, -0.038, 0.093);
+    pencilGroup.add(pencil);
+    this.disposables.push(pencilGeo);
+    pencilGroup.visible = false;
+    this.headGroup.add(pencilGroup);
+    this.moustacheMeshes.pencil = pencilGroup;
+
+    // 4. Handlebar Moustache
+    const handlebarGroup = new THREE.Group();
+    handlebarGroup.name = 'AvatarMoustache_Handlebar';
+    [-1, 1].forEach((side) => {
+      const hBarGeo = new THREE.TorusGeometry(0.012, 0.0025, 6, 12, Math.PI / 1.5);
+      const hBar = new THREE.Mesh(hBarGeo, mats.beardMat);
+      hBar.rotation.z = side < 0 ? Math.PI / 3 : -Math.PI / 3;
+      hBar.position.set(side * 0.018, -0.039, 0.092);
+      handlebarGroup.add(hBar);
+      this.disposables.push(hBarGeo);
+    });
+    handlebarGroup.visible = false;
+    this.headGroup.add(handlebarGroup);
+    this.moustacheMeshes.handlebar = handlebarGroup;
+  }
+
+  setBeardStyle(styleId = 'clean') {
+    this.activeBeardStyle = styleId;
+    Object.entries(this.beardMeshes).forEach(([id, group]) => {
+      if (group) group.visible = (id === styleId);
+    });
+  }
+
+  setMoustacheStyle(styleId = 'none') {
+    this.activeMoustacheStyle = styleId;
+    Object.entries(this.moustacheMeshes).forEach(([id, group]) => {
+      if (group) group.visible = (id === styleId);
+    });
+  }
+
+  setEyebrowShape(shapeId = 'natural') {
+    this.eyebrowMeshes.forEach((brow) => {
+      if (!brow) return;
+      const { side, baseZRot, baseY } = brow.userData || { side: 1, baseZRot: 0.16, baseY: 0.036 };
+      switch (shapeId) {
+        case 'arched':
+          brow.scale.set(1.05, 1.25, 1.0);
+          brow.rotation.z = baseZRot * 1.8;
+          brow.position.y = baseY + 0.003;
+          break;
+        case 'straight':
+          brow.scale.set(1.1, 0.9, 1.0);
+          brow.rotation.z = baseZRot * 0.25;
+          brow.position.y = baseY - 0.001;
+          break;
+        case 'bold':
+          brow.scale.set(1.35, 1.5, 1.2);
+          brow.rotation.z = baseZRot * 1.1;
+          brow.position.y = baseY;
+          break;
+        case 'feathered':
+          brow.scale.set(0.95, 0.85, 0.95);
+          brow.rotation.z = baseZRot * 1.35;
+          brow.position.y = baseY + 0.001;
+          break;
+        case 'natural':
+        default:
+          brow.scale.set(1.0, 1.0, 1.0);
+          brow.rotation.z = baseZRot;
+          brow.position.y = baseY;
+          break;
+      }
+    });
+  }
+
+  setNailShape(shapeId = 'natural', lengthId = 'short') {
+    let lengthScale = 1.0;
+    switch (lengthId) {
+      case 'medium': lengthScale = 1.25; break;
+      case 'long': lengthScale = 1.6; break;
+      case 'extra-long': lengthScale = 2.0; break;
+      case 'short':
+      default: lengthScale = 0.95; break;
+    }
+
+    let widthScale = 1.0;
+    let tipTaper = 1.0;
+    switch (shapeId) {
+      case 'almond':
+        widthScale = 0.9;
+        tipTaper = 0.7;
+        break;
+      case 'stiletto':
+        widthScale = 0.85;
+        tipTaper = 0.5;
+        break;
+      case 'coffin':
+        widthScale = 0.95;
+        tipTaper = 0.8;
+        break;
+      case 'square':
+        widthScale = 1.05;
+        tipTaper = 1.0;
+        break;
+      case 'round':
+      case 'natural':
+      default:
+        widthScale = 1.0;
+        tipTaper = 0.9;
+        break;
+    }
+
+    this.nailMeshes.forEach((nail) => {
+      if (nail) {
+        nail.scale.set(widthScale, lengthScale, tipTaper);
+      }
+    });
+  }
+
   dispose() {
     this.disposables.forEach((geo) => {
       if (geo && typeof geo.dispose === 'function') {
@@ -411,5 +682,9 @@ export class AvatarRig {
     this.disposables = [];
     this.eyelids = [];
     this.hairStyles = {};
+    this.beardMeshes = {};
+    this.moustacheMeshes = {};
+    this.eyebrowMeshes = [];
+    this.nailMeshes = [];
   }
 }

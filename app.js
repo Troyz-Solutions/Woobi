@@ -1912,6 +1912,66 @@
   // =========================================================================
   // VANITY & PERSONALIZED AVATAR CUSTOMIZATION SYSTEM
   // =========================================================================
+  const VANITY_CATEGORIES = {
+    female: [
+      { id: 'skin', label: 'Skin & Tone' },
+      { id: 'lips', label: 'Lips & Finish' },
+      { id: 'cheeks', label: 'Cheek Blush' },
+      { id: 'brows', label: 'Eyebrows' },
+      { id: 'hair', label: 'Hairstyle' },
+      { id: 'nails', label: '3D Nail Studio' },
+      { id: 'body', label: 'Body & Jewelry' },
+      { id: 'lookbook', label: 'Lookbook' }
+    ],
+    male: [
+      { id: 'beard', label: 'Beard & Stubble' },
+      { id: 'moustache', label: 'Moustache' },
+      { id: 'skin', label: 'Skin & Tone' },
+      { id: 'brows', label: 'Eyebrows' },
+      { id: 'hair', label: 'Hairstyle & Color' },
+      { id: 'body', label: 'Body & Jewelry' },
+      { id: 'lookbook', label: 'Lookbook' }
+    ],
+    neutral: [
+      { id: 'skin', label: 'Skin & Complexion' },
+      { id: 'beard', label: 'Beard' },
+      { id: 'moustache', label: 'Moustache' },
+      { id: 'lips', label: 'Lips & Makeup' },
+      { id: 'cheeks', label: 'Cheek Blush' },
+      { id: 'brows', label: 'Eyebrows' },
+      { id: 'hair', label: 'Hairstyle' },
+      { id: 'nails', label: '3D Nail Studio' },
+      { id: 'body', label: 'Body & Jewelry' },
+      { id: 'lookbook', label: 'Lookbook' }
+    ]
+  };
+
+  let currentVanityGender = 'female';
+  let currentActiveVanityCategory = 'skin';
+  let currentNailState = { shape: 'natural', length: 'short', finish: 'gloss', color: '#E8C5B8' };
+  let currentLipState = { color: '#CE6F66', finish: 'satin' };
+  let currentBlushState = { color: '#DE8B80', intensity: 0.35 };
+  let vanityUndoHistory = [];
+  let vanityRedoHistory = [];
+
+  function escapeVanityText(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function serenPushVanityHistory() {
+    if (window.Studio3D && window.Studio3D.avatarConfig) {
+      vanityUndoHistory.push(JSON.stringify(window.Studio3D.avatarConfig));
+      if (vanityUndoHistory.length > 25) vanityUndoHistory.shift();
+      vanityRedoHistory = [];
+    }
+  }
+
   function serenOpenVanity(forceOpen) {
     const sheet = document.getElementById('serenVanitySheet');
     if (!sheet) return;
@@ -1921,6 +1981,8 @@
     } else if (forceOpen) {
       sheet.classList.remove('hidden');
       if (window.Studio3D) window.Studio3D.setCameraState('VANITY_VIEW');
+      serenRenderVanityCategories();
+      serenRenderLookbookList();
     } else {
       sheet.classList.add('hidden');
       if (window.Studio3D) window.Studio3D.setCameraState('STUDIO_OVERVIEW');
@@ -1948,15 +2010,80 @@
   }
 
   function serenSetGender(gender, btn) {
+    serenPushVanityHistory();
+    currentVanityGender = (gender === 'male' || gender === 'masculine') ? 'male' : (gender === 'neutral' ? 'neutral' : 'female');
+
     if (btn) {
-      btn.parentElement.querySelectorAll('.vanity-chip').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('#vanityGenderChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    } else {
+      const targetBtn = document.querySelector(`#vanityGenderChips .vanity-chip[data-gender="${gender}"]`);
+      if (targetBtn) {
+        document.querySelectorAll('#vanityGenderChips .vanity-chip').forEach(c => c.classList.remove('active'));
+        targetBtn.classList.add('active');
+      }
+    }
+
+    if (window.Studio3D) window.Studio3D.setGenderPresentation(gender);
+    serenRenderVanityCategories();
+    showToast(`Grooming adjusted for ${currentVanityGender === 'female' ? 'Feminine' : (currentVanityGender === 'male' ? 'Masculine' : 'Neutral')} presentation.`);
+  }
+
+  function serenRenderVanityCategories(selectedCat = null) {
+    const scroll = document.getElementById('vanityCatScroll');
+    if (!scroll) return;
+    const cats = VANITY_CATEGORIES[currentVanityGender] || VANITY_CATEGORIES.female;
+    scroll.innerHTML = '';
+
+    const catExists = cats.some(c => c.id === currentActiveVanityCategory);
+    if (!catExists || selectedCat) {
+      currentActiveVanityCategory = selectedCat || cats[0].id;
+    }
+
+    cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = `vanity-cat-btn ${c.id === currentActiveVanityCategory ? 'active' : ''}`;
+      btn.textContent = c.label;
+      btn.onclick = () => serenSelectVanityCategory(c.id, btn);
+      scroll.appendChild(btn);
+    });
+
+    serenShowCategoryPanel(currentActiveVanityCategory);
+  }
+
+  function serenSelectVanityCategory(catId, btn) {
+    currentActiveVanityCategory = catId;
+    if (btn) {
+      document.querySelectorAll('#vanityCatScroll .vanity-cat-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     }
-    if (window.Studio3D) window.Studio3D.setGenderPresentation(gender);
-    showToast(`Gender presentation set to ${gender}.`);
+    serenShowCategoryPanel(catId);
+    if (catId === 'nails') {
+      serenCameraFocus('hands');
+    } else if (catId === 'beard' || catId === 'moustache' || catId === 'lips' || catId === 'brows' || catId === 'cheeks') {
+      serenCameraFocus('face');
+    }
+  }
+
+  function serenShowCategoryPanel(catId) {
+    document.querySelectorAll('.vanity-cat-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById(`vanityPanel_${catId}`);
+    if (panel) panel.classList.add('active');
+    if (catId === 'lookbook') serenRenderLookbookList();
+  }
+
+  function serenCameraFocus(focusName, btn) {
+    if (btn) {
+      document.querySelectorAll('.vanity-camera-pills .vanity-tool-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    if (window.Studio3D && typeof window.Studio3D.setCameraFocus === 'function') {
+      window.Studio3D.setCameraFocus(focusName);
+    }
   }
 
   function serenSetSkinTone(hex, btn) {
+    serenPushVanityHistory();
     if (btn) {
       document.querySelectorAll('#skinToneSwatches .skin-swatch').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
@@ -1965,6 +2092,7 @@
   }
 
   function serenSetHairStyle(styleName, btn) {
+    serenPushVanityHistory();
     if (btn) {
       document.querySelectorAll('#hairStyleChips .vanity-chip').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
@@ -1973,6 +2101,7 @@
   }
 
   function serenSetHairColor(hex, btn) {
+    serenPushVanityHistory();
     if (btn) {
       document.querySelectorAll('#hairColorSwatches .skin-swatch').forEach(s => s.classList.remove('active'));
       btn.classList.add('active');
@@ -1981,6 +2110,7 @@
   }
 
   function serenSetProportions(preset, btn) {
+    serenPushVanityHistory();
     if (btn) {
       document.querySelectorAll('#proportionChips .vanity-chip').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
@@ -1990,12 +2120,268 @@
   }
 
   function serenToggleAccessory(name, btn) {
+    serenPushVanityHistory();
     if (btn) {
       btn.classList.toggle('active');
       const isActive = btn.classList.contains('active');
       if (window.Studio3D) window.Studio3D.toggleAccessory(name, isActive);
       showToast(`${name.charAt(0).toUpperCase() + name.slice(1)} ${isActive ? 'equipped' : 'removed'}.`);
     }
+  }
+
+  function serenSetBeard(styleId, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#beardStyleChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    if (window.Studio3D && typeof window.Studio3D.setBeardStyle === 'function') {
+      window.Studio3D.setBeardStyle(styleId);
+    }
+  }
+
+  function serenSetMoustache(styleId, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#moustacheStyleChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    if (window.Studio3D && typeof window.Studio3D.setMoustacheStyle === 'function') {
+      window.Studio3D.setMoustacheStyle(styleId);
+    }
+  }
+
+  function serenSetLipFinish(finish, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#lipFinishChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentLipState.finish = finish;
+    if (window.Studio3D && typeof window.Studio3D.setLipstick === 'function') {
+      window.Studio3D.setLipstick(currentLipState.color, finish);
+    }
+  }
+
+  function serenSetLipstick(color, finish, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#lipColorSwatches .skin-swatch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentLipState.color = color;
+    if (finish) currentLipState.finish = finish;
+    if (window.Studio3D && typeof window.Studio3D.setLipstick === 'function') {
+      window.Studio3D.setLipstick(color, currentLipState.finish);
+    }
+  }
+
+  function serenSetBlush(color, opacity, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#blushColorSwatches .skin-swatch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentBlushState.color = color;
+    if (typeof opacity === 'number') currentBlushState.intensity = opacity;
+    if (window.Studio3D && typeof window.Studio3D.setBlush === 'function') {
+      window.Studio3D.setBlush(color, currentBlushState.intensity);
+    }
+  }
+
+  function serenOnBlushIntensity(val) {
+    const label = document.getElementById('blushValLabel');
+    if (label) label.textContent = `${val}%`;
+    const num = parseFloat(val) / 100;
+    currentBlushState.intensity = num;
+    if (window.Studio3D && typeof window.Studio3D.setBlush === 'function') {
+      window.Studio3D.setBlush(currentBlushState.color, num);
+    }
+  }
+
+  function serenSetBrow(shapeId, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#eyebrowChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    if (window.Studio3D && typeof window.Studio3D.setEyebrowShape === 'function') {
+      window.Studio3D.setEyebrowShape(shapeId);
+    }
+  }
+
+  function serenSetNailOpt(field, value, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      btn.parentElement.querySelectorAll('.vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentNailState[field] = value;
+    if (window.Studio3D && typeof window.Studio3D.setNailCustomization === 'function') {
+      window.Studio3D.setNailCustomization(currentNailState);
+    }
+  }
+
+  function serenSetNailColor(color, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#nailColorSwatches .skin-swatch').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentNailState.color = color;
+    if (window.Studio3D && typeof window.Studio3D.setNailCustomization === 'function') {
+      window.Studio3D.setNailCustomization(currentNailState);
+    }
+  }
+
+  function serenSaveLookbook() {
+    const input = document.getElementById('vanityLookbookInput');
+    const name = input ? input.value.trim() : '';
+    const lookName = name || `Curated Look ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    let currentConfig = {};
+    if (window.Studio3D && window.Studio3D.avatarConfig) {
+      currentConfig = JSON.parse(JSON.stringify(window.Studio3D.avatarConfig));
+    }
+
+    const newLook = {
+      id: `look_${Date.now()}`,
+      name: lookName,
+      date: new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      config: currentConfig
+    };
+
+    let looks = [];
+    try {
+      const raw = localStorage.getItem('woobi_lookbook_saves');
+      if (raw) looks = JSON.parse(raw);
+    } catch(e) {}
+    looks.unshift(newLook);
+    if (looks.length > 20) looks.pop();
+    try {
+      localStorage.setItem('woobi_lookbook_saves', JSON.stringify(looks));
+    } catch(e) {}
+
+    if (input) input.value = '';
+    serenRenderLookbookList();
+    showToast(`"${lookName}" saved to your Lookbook! ✨`);
+  }
+
+  function serenRenderLookbookList() {
+    const list = document.getElementById('vanityLookbookList');
+    if (!list) return;
+    let looks = [];
+    try {
+      const raw = localStorage.getItem('woobi_lookbook_saves');
+      if (raw) looks = JSON.parse(raw);
+    } catch(e) {}
+
+    if (!looks || looks.length === 0) {
+      list.innerHTML = '<div class="vanity-lookbook-empty">No saved looks yet. Tap "+ Save" above to record your current appearance!</div>';
+      return;
+    }
+
+    list.innerHTML = looks.map(l => `
+      <div class="vanity-lookbook-card" data-id="${l.id}">
+        <div class="vanity-lookbook-info">
+          <span class="vanity-lookbook-title">${escapeVanityText(l.name)}</span>
+          <span class="vanity-lookbook-date">${escapeVanityText(l.date || 'Saved')}</span>
+        </div>
+        <div class="vanity-lookbook-actions">
+          <button class="vanity-tool-btn" onclick="app.serenLoadLookbook('${l.id}')">Load</button>
+          <button class="vanity-tool-btn" style="color: #9C413D;" onclick="app.serenDeleteLookbook('${l.id}')">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function serenLoadLookbook(lookId) {
+    let looks = [];
+    try {
+      const raw = localStorage.getItem('woobi_lookbook_saves');
+      if (raw) looks = JSON.parse(raw);
+    } catch(e) {}
+    const look = looks.find(l => l.id === lookId);
+    if (!look || !look.config) return;
+    serenPushVanityHistory();
+    if (window.Studio3D && typeof window.Studio3D.applyAvatarConfig === 'function') {
+      window.Studio3D.applyAvatarConfig(look.config);
+    }
+    showToast(`Loaded "${look.name}" ✨`);
+  }
+
+  function serenDeleteLookbook(lookId) {
+    let looks = [];
+    try {
+      const raw = localStorage.getItem('woobi_lookbook_saves');
+      if (raw) looks = JSON.parse(raw);
+    } catch(e) {}
+    looks = looks.filter(l => l.id !== lookId);
+    try {
+      localStorage.setItem('woobi_lookbook_saves', JSON.stringify(looks));
+    } catch(e) {}
+    serenRenderLookbookList();
+    showToast('Look removed from Lookbook.');
+  }
+
+  function serenUndo() {
+    if (vanityUndoHistory.length === 0) {
+      showToast('Nothing to undo.');
+      return;
+    }
+    if (window.Studio3D && window.Studio3D.avatarConfig) {
+      vanityRedoHistory.push(JSON.stringify(window.Studio3D.avatarConfig));
+    }
+    const previous = JSON.parse(vanityUndoHistory.pop());
+    if (window.Studio3D && typeof window.Studio3D.applyAvatarConfig === 'function') {
+      window.Studio3D.applyAvatarConfig(previous);
+    }
+    showToast('Change undone.');
+  }
+
+  function serenRedo() {
+    if (vanityRedoHistory.length === 0) {
+      showToast('Nothing to redo.');
+      return;
+    }
+    if (window.Studio3D && window.Studio3D.avatarConfig) {
+      vanityUndoHistory.push(JSON.stringify(window.Studio3D.avatarConfig));
+    }
+    const next = JSON.parse(vanityRedoHistory.pop());
+    if (window.Studio3D && typeof window.Studio3D.applyAvatarConfig === 'function') {
+      window.Studio3D.applyAvatarConfig(next);
+    }
+    showToast('Change restored.');
+  }
+
+  function serenReset() {
+    serenPushVanityHistory();
+    const defaultConfig = {
+      gender: 'female',
+      skinTone: '#F3D5C6',
+      hairStyle: 'bun',
+      hairColor: '#1E120A',
+      proportions: 'regular',
+      accessories: { watch: true, earrings: true },
+      grooming: {
+        beardStyle: 'clean',
+        moustacheStyle: 'none',
+        lipColor: '#CE6F66',
+        lipFinish: 'satin',
+        blushColor: '#DE8B80',
+        blushIntensity: 0.35,
+        eyebrowShape: 'natural',
+        nailShape: 'natural',
+        nailLength: 'short',
+        nailFinish: 'gloss',
+        nailColor: '#E8C5B8'
+      }
+    };
+    if (window.Studio3D && typeof window.Studio3D.applyAvatarConfig === 'function') {
+      window.Studio3D.applyAvatarConfig(defaultConfig);
+    }
+    serenSetGender('female');
+    showToast('Avatar reset to default elegance.');
   }
 
   function serenSaveAvatarCustomization() {
@@ -3585,6 +3971,25 @@
     serenSetProportions,
     serenToggleAccessory,
     serenSaveAvatarCustomization,
+    serenRenderVanityCategories,
+    serenSelectVanityCategory,
+    serenCameraFocus,
+    serenSetBeard,
+    serenSetMoustache,
+    serenSetLipFinish,
+    serenSetLipstick,
+    serenSetBlush,
+    serenOnBlushIntensity,
+    serenSetBrow,
+    serenSetNailOpt,
+    serenSetNailColor,
+    serenSaveLookbook,
+    serenRenderLookbookList,
+    serenLoadLookbook,
+    serenDeleteLookbook,
+    serenUndo,
+    serenRedo,
+    serenReset,
     serenHandlePhotoUpload,
     serenApplyPhotoMatch,
     updateSerenGreeting,

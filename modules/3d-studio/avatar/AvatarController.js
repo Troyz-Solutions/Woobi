@@ -89,6 +89,98 @@ export class AvatarController {
         this.toggleAccessory(acc, val);
       });
     }
+    if (cfg.grooming) {
+      this.applyGroomingConfig(cfg.grooming);
+    }
+  }
+
+  setBeardStyle(styleId) {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    this.avatarConfig.grooming.beardStyle = styleId;
+    if (this.model && this.model.rig && typeof this.model.rig.setBeardStyle === 'function') {
+      this.model.rig.setBeardStyle(styleId);
+    }
+    this.savePreferences();
+  }
+
+  setMoustacheStyle(styleId) {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    this.avatarConfig.grooming.moustacheStyle = styleId;
+    if (this.model && this.model.rig && typeof this.model.rig.setMoustacheStyle === 'function') {
+      this.model.rig.setMoustacheStyle(styleId);
+    }
+    this.savePreferences();
+  }
+
+  setLipstick(color, finish = 'satin') {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    this.avatarConfig.grooming.lipColor = color;
+    this.avatarConfig.grooming.lipFinish = finish;
+    if (this.model && this.model.materials && typeof this.model.materials.updateLipstick === 'function') {
+      this.model.materials.updateLipstick(color, finish);
+    }
+    this.savePreferences();
+  }
+
+  setEyebrowShape(shapeId) {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    this.avatarConfig.grooming.eyebrowShape = shapeId;
+    if (this.model && this.model.rig && typeof this.model.rig.setEyebrowShape === 'function') {
+      this.model.rig.setEyebrowShape(shapeId);
+    }
+    this.savePreferences();
+  }
+
+  setBlush(color, opacity = 0.35) {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    this.avatarConfig.grooming.blushColor = color;
+    this.avatarConfig.grooming.blushIntensity = opacity;
+    if (this.model && this.model.materials && typeof this.model.materials.updateBlush === 'function') {
+      this.model.materials.updateBlush(color, opacity);
+    }
+    this.savePreferences();
+  }
+
+  setNailCustomization(opts = {}) {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    if (opts.shape) this.avatarConfig.grooming.nailShape = opts.shape;
+    if (opts.length) this.avatarConfig.grooming.nailLength = opts.length;
+    if (opts.finish) this.avatarConfig.grooming.nailFinish = opts.finish;
+    if (opts.color) this.avatarConfig.grooming.nailColor = opts.color;
+
+    if (this.model && this.model.rig && typeof this.model.rig.setNailShape === 'function') {
+      this.model.rig.setNailShape(
+        this.avatarConfig.grooming.nailShape || 'natural',
+        this.avatarConfig.grooming.nailLength || 'short'
+      );
+    }
+    if (this.model && this.model.materials && typeof this.model.materials.updateNailFinish === 'function') {
+      this.model.materials.updateNailFinish(
+        this.avatarConfig.grooming.nailColor || '#E8C5B8',
+        this.avatarConfig.grooming.nailFinish || 'gloss'
+      );
+    }
+    this.savePreferences();
+  }
+
+  applyGroomingConfig(grooming = {}) {
+    if (!grooming) return;
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    Object.assign(this.avatarConfig.grooming, grooming);
+
+    if (grooming.beardStyle !== undefined) this.setBeardStyle(grooming.beardStyle);
+    if (grooming.moustacheStyle !== undefined) this.setMoustacheStyle(grooming.moustacheStyle);
+    if (grooming.lipColor) this.setLipstick(grooming.lipColor, grooming.lipFinish || 'satin');
+    if (grooming.eyebrowShape) this.setEyebrowShape(grooming.eyebrowShape);
+    if (grooming.blushColor) this.setBlush(grooming.blushColor, grooming.blushIntensity !== undefined ? grooming.blushIntensity : 0.35);
+    if (grooming.nailShape || grooming.nailLength || grooming.nailFinish || grooming.nailColor) {
+      this.setNailCustomization({
+        shape: grooming.nailShape,
+        length: grooming.nailLength,
+        finish: grooming.nailFinish,
+        color: grooming.nailColor
+      });
+    }
   }
 
   setTargetRotation(targetY) {

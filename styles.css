@@ -6895,6 +6895,248 @@ html, body {
   margin-top: 20px;
 }
 
+/* Vanity Studio Quick Toolbar & Camera Pills */
+.vanity-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(220, 208, 192, 0.45);
+}
+
+.vanity-camera-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.vanity-tool-btn {
+  background: #F4EFE6;
+  border: 1px solid rgba(200, 186, 170, 0.6);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #514436;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vanity-tool-btn:hover {
+  background: #EAE2D5;
+  border-color: #B99A78;
+}
+
+.vanity-tool-btn.active {
+  background: #52634B;
+  color: #FFFFFF;
+  border-color: #52634B;
+  box-shadow: 0 2px 6px rgba(82, 99, 75, 0.25);
+}
+
+.vanity-history-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.vanity-icon-btn {
+  background: #F4EFE6;
+  border: 1px solid rgba(200, 186, 170, 0.6);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  font-weight: bold;
+  color: #514436;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vanity-icon-btn:hover {
+  background: #52634B;
+  color: #FFFFFF;
+  border-color: #52634B;
+}
+
+/* Gender-Adaptive Category Navigation Bar */
+.vanity-category-nav-bar {
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(220, 208, 192, 0.45);
+  padding-bottom: 8px;
+}
+
+.vanity-cat-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 0;
+}
+.vanity-cat-scroll::-webkit-scrollbar { display: none; }
+
+.vanity-cat-btn {
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #7D6E5D;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vanity-cat-btn:hover {
+  background: #F4EFE6;
+  color: #3C3023;
+}
+
+.vanity-cat-btn.active {
+  background: #52634B;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(82, 99, 75, 0.22);
+}
+
+/* Category Panels */
+.vanity-cat-panel {
+  display: none;
+}
+
+.vanity-cat-panel.active {
+  display: block;
+  animation: vanityFadeIn 0.2s ease-out;
+}
+
+@keyframes vanityFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Range Slider for Blush & Grooming */
+.vanity-range-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.vanity-range-val {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #52634B;
+  background: #EAE6DD;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.vanity-range-slider {
+  width: 100%;
+  accent-color: #52634B;
+  height: 6px;
+  border-radius: 999px;
+  background: #E6DFD4;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Focus Prompts */
+.vanity-focus-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F7F3EB;
+  border: 1px dashed #C8BAA7;
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 0.74rem;
+  color: #5A4E40;
+}
+
+/* Lookbook Container & Cards */
+.vanity-lookbook-save-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.vanity-lookbook-input {
+  flex: 1;
+  background: #FAF7F2;
+  border: 1px solid #D4C6B4;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.76rem;
+  color: #3C3023;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.vanity-lookbook-input:focus {
+  border-color: #52634B;
+  box-shadow: 0 0 0 2px rgba(82, 99, 75, 0.18);
+}
+
+.vanity-lookbook-save-btn {
+  padding: 6px 14px !important;
+  font-size: 0.76rem !important;
+  white-space: nowrap;
+}
+
+.vanity-lookbook-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.vanity-lookbook-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAF7F2;
+  border: 1px solid rgba(220, 208, 192, 0.7);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.vanity-lookbook-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.vanity-lookbook-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #3C3023;
+}
+
+.vanity-lookbook-date {
+  font-size: 0.68rem;
+  color: #8C7B68;
+}
+
+.vanity-lookbook-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.vanity-lookbook-empty {
+  font-size: 0.72rem;
+  color: #8C7B68;
+  font-style: italic;
+  padding: 12px 0;
+  text-align: center;
+}
+
 /* Photo Match Consent & Dropzone */
 .photo-consent-banner {
   display: flex;

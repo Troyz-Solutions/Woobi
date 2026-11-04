@@ -28,7 +28,12 @@ export class AvatarCustomizer {
       hairStyle: DEFAULT_AVATAR_CONFIG.hairStyle,
       hairColor: DEFAULT_AVATAR_CONFIG.hairColor,
       proportions: DEFAULT_AVATAR_CONFIG.proportions,
-      accessories: { ...DEFAULT_AVATAR_CONFIG.accessories }
+      accessories: { ...DEFAULT_AVATAR_CONFIG.accessories },
+      grooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.grooming || {})),
+      masculineGrooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.masculineGrooming || {})),
+      feminineGrooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.feminineGrooming || {})),
+      neutralGrooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.neutralGrooming || {})),
+      savedLooks: []
     };
 
     this.undoStack = [];
@@ -210,6 +215,105 @@ export class AvatarCustomizer {
     return true;
   }
 
+  // =========================================================================
+  // GENDER-ADAPTIVE GROOMING STUDIO CONTROLS
+  // =========================================================================
+
+  setGrooming(partial = {}) {
+    if (!partial || typeof partial !== 'object') return false;
+    this.pushHistory();
+    this.currentConfig.grooming = Object.assign(this.currentConfig.grooming || {}, partial);
+
+    // Synchronize to active gender-specific preference slot
+    const gender = this.currentConfig.gender || 'neutral';
+    if (gender === 'male') {
+      this.currentConfig.masculineGrooming = Object.assign(this.currentConfig.masculineGrooming || {}, partial);
+    } else if (gender === 'female') {
+      this.currentConfig.feminineGrooming = Object.assign(this.currentConfig.feminineGrooming || {}, partial);
+    } else {
+      this.currentConfig.neutralGrooming = Object.assign(this.currentConfig.neutralGrooming || {}, partial);
+    }
+
+    this.applyToAvatar({ grooming: this.currentConfig.grooming });
+    if (this.options.autoSave) this.savePreferences();
+    this.emit(CUSTOMIZER_EVENTS.CHANGE, { field: 'grooming', value: this.currentConfig.grooming, config: this.getConfig() });
+    return true;
+  }
+
+  setBeardStyle(styleId) {
+    return this.setGrooming({ beardStyle: styleId });
+  }
+
+  setMoustacheStyle(styleId) {
+    return this.setGrooming({ moustacheStyle: styleId });
+  }
+
+  setLipstick(color, finish = 'satin') {
+    return this.setGrooming({ lipColor: color, lipFinish: finish });
+  }
+
+  setEyebrowShape(shapeId) {
+    return this.setGrooming({ eyebrowShape: shapeId });
+  }
+
+  setBlush(color, opacity = 0.35) {
+    return this.setGrooming({ blushColor: color, blushIntensity: opacity });
+  }
+
+  setNailCustomization(opts = {}) {
+    return this.setGrooming({
+      nailShape: opts.shape || this.currentConfig.grooming?.nailShape || 'natural',
+      nailLength: opts.length || this.currentConfig.grooming?.nailLength || 'short',
+      nailFinish: opts.finish || this.currentConfig.grooming?.nailFinish || 'gloss',
+      nailColor: opts.color || this.currentConfig.grooming?.nailColor || '#E8C5B8'
+    });
+  }
+
+  // Lookbook Snapshot Management
+  saveLookbook(name, category = 'daily') {
+    const look = {
+      id: `look_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      name: (name || 'My Curated Look').trim(),
+      category,
+      timestamp: Date.now(),
+      config: JSON.parse(JSON.stringify(this.currentConfig))
+    };
+    if (!Array.isArray(this.currentConfig.savedLooks)) {
+      this.currentConfig.savedLooks = [];
+    }
+    this.currentConfig.savedLooks.unshift(look);
+    if (this.currentConfig.savedLooks.length > 20) {
+      this.currentConfig.savedLooks.pop();
+    }
+    this.savePreferences();
+    this.emit('lookbook:saved', { look, looks: this.currentConfig.savedLooks });
+    return look;
+  }
+
+  loadLookbook(lookId) {
+    const looks = this.currentConfig.savedLooks || [];
+    const target = looks.find(l => l.id === lookId);
+    if (!target || !target.config) return false;
+    this.pushHistory();
+    this.currentConfig = Object.assign(this.currentConfig, JSON.parse(JSON.stringify(target.config)));
+    this.applyToAvatar(this.currentConfig);
+    this.savePreferences();
+    this.emit(CUSTOMIZER_EVENTS.CHANGE, { config: this.getConfig(), loadedLook: target });
+    return true;
+  }
+
+  deleteLookbook(lookId) {
+    if (!Array.isArray(this.currentConfig.savedLooks)) return false;
+    this.currentConfig.savedLooks = this.currentConfig.savedLooks.filter(l => l.id !== lookId);
+    this.savePreferences();
+    this.emit('lookbook:deleted', { lookId, looks: this.currentConfig.savedLooks });
+    return true;
+  }
+
+  getLookbooks() {
+    return this.currentConfig.savedLooks || [];
+  }
+
   applyConfig(cfg) {
     if (!cfg) return false;
     this.pushHistory();
@@ -233,13 +337,40 @@ export class AvatarCustomizer {
   applyToAvatar(cfg) {
     if (!this.avatarModel) return;
 
-    // 1. Materials: Skin & Hair
+    // 1. Materials: Skin, Hair, Lips, Blush & Nails
     if (this.avatarModel.materials) {
       if (cfg.skinTone && typeof this.avatarModel.materials.updateSkinTone === 'function') {
         this.avatarModel.materials.updateSkinTone(cfg.skinTone);
       }
       if (cfg.hairColor && typeof this.avatarModel.materials.updateHairColor === 'function') {
         this.avatarModel.materials.updateHairColor(cfg.hairColor);
+      }
+      const gr = cfg.grooming || {};
+      if (gr.lipColor && typeof this.avatarModel.materials.updateLipstick === 'function') {
+        this.avatarModel.materials.updateLipstick(gr.lipColor, gr.lipFinish || 'satin');
+      }
+      if (gr.blushColor && typeof this.avatarModel.materials.updateBlush === 'function') {
+        this.avatarModel.materials.updateBlush(gr.blushColor, gr.blushIntensity);
+      }
+      if (gr.nailColor && typeof this.avatarModel.materials.updateNailFinish === 'function') {
+        this.avatarModel.materials.updateNailFinish(gr.nailColor, gr.nailFinish || 'gloss');
+      }
+    }
+
+    // 2. Rig: Beard, Moustache, Eyebrows & Nails
+    if (this.avatarModel.rig) {
+      const gr = cfg.grooming || {};
+      if (typeof this.avatarModel.rig.setBeardStyle === 'function') {
+        this.avatarModel.rig.setBeardStyle(gr.beardStyle || 'clean');
+      }
+      if (typeof this.avatarModel.rig.setMoustacheStyle === 'function') {
+        this.avatarModel.rig.setMoustacheStyle(gr.moustacheStyle || 'none');
+      }
+      if (typeof this.avatarModel.rig.setEyebrowShape === 'function') {
+        this.avatarModel.rig.setEyebrowShape(gr.eyebrowShape || 'natural');
+      }
+      if (typeof this.avatarModel.rig.setNailShape === 'function') {
+        this.avatarModel.rig.setNailShape(gr.nailShape || 'natural', gr.nailLength || 'short');
       }
     }
 
@@ -269,7 +400,12 @@ export class AvatarCustomizer {
       hairStyle: DEFAULT_AVATAR_CONFIG.hairStyle,
       hairColor: DEFAULT_AVATAR_CONFIG.hairColor,
       proportions: DEFAULT_AVATAR_CONFIG.proportions,
-      accessories: { ...DEFAULT_AVATAR_CONFIG.accessories }
+      accessories: { ...DEFAULT_AVATAR_CONFIG.accessories },
+      grooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.grooming || {})),
+      masculineGrooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.masculineGrooming || {})),
+      feminineGrooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.feminineGrooming || {})),
+      neutralGrooming: JSON.parse(JSON.stringify(DEFAULT_AVATAR_CONFIG.neutralGrooming || {})),
+      savedLooks: []
     };
 
     this.applyToAvatar(this.currentConfig);

@@ -589,70 +589,244 @@
 
               <!-- Tab 1: Avatar Appearance Controls -->
               <div class="vanity-tab-content active" id="vanityAppearanceView">
+                <!-- Top Quick Toolbar: Camera Framing & History -->
+                <div class="vanity-toolbar">
+                  <div class="vanity-camera-pills">
+                    <button class="vanity-tool-btn active" data-cam="mirror" onclick="app.serenCameraFocus('mirror', this)" title="Mirror View">🪞 Mirror</button>
+                    <button class="vanity-tool-btn" data-cam="face" onclick="app.serenCameraFocus('face', this)" title="Face Close-up">👤 Face</button>
+                    <button class="vanity-tool-btn" data-cam="hands" onclick="app.serenCameraFocus('hands', this)" title="Hands & Nails View">💅 Hands</button>
+                  </div>
+                  <div class="vanity-history-btns">
+                    <button class="vanity-icon-btn" onclick="app.serenUndo()" title="Undo Change">↺</button>
+                    <button class="vanity-icon-btn" onclick="app.serenRedo()" title="Redo Change">↻</button>
+                    <button class="vanity-icon-btn" onclick="app.serenReset()" title="Reset to Defaults">⟲</button>
+                  </div>
+                </div>
+
                 <!-- Gender Presentation -->
                 <div class="vanity-section">
                   <label class="vanity-sec-label">Gender Presentation</label>
-                  <div class="vanity-pill-group">
+                  <div class="vanity-pill-group" id="vanityGenderChips">
                     <button class="vanity-chip active" data-gender="female" onclick="app.serenSetGender('female', this)">Feminine</button>
                     <button class="vanity-chip" data-gender="male" onclick="app.serenSetGender('male', this)">Masculine</button>
                     <button class="vanity-chip" data-gender="neutral" onclick="app.serenSetGender('neutral', this)">Neutral</button>
                   </div>
                 </div>
 
-                <!-- Skin Tone Swatches -->
-                <div class="vanity-section">
-                  <label class="vanity-sec-label">Skin Tone</label>
-                  <div class="vanity-swatches-row" id="skinToneSwatches">
-                    <button class="skin-swatch active" style="background: #F3D5C6;" title="Warm Ivory" onclick="app.serenSetSkinTone('#F3D5C6', this)"></button>
-                    <button class="skin-swatch" style="background: #F8E2D6;" title="Porcelain Fair" onclick="app.serenSetSkinTone('#F8E2D6', this)"></button>
-                    <button class="skin-swatch" style="background: #E8BF9E;" title="Golden Honey" onclick="app.serenSetSkinTone('#E8BF9E', this)"></button>
-                    <button class="skin-swatch" style="background: #CF9E76;" title="Sunlit Tan" onclick="app.serenSetSkinTone('#CF9E76', this)"></button>
-                    <button class="skin-swatch" style="background: #A06B49;" title="Warm Bronze" onclick="app.serenSetSkinTone('#A06B49', this)"></button>
-                    <button class="skin-swatch" style="background: #5A3A26;" title="Rich Espresso" onclick="app.serenSetSkinTone('#5A3A26', this)"></button>
+                <!-- Gender-Adaptive Category Navigation Pills -->
+                <div class="vanity-category-nav-bar" id="vanityCategoryNavBar">
+                  <!-- Dynamically populated or switched based on gender -->
+                  <div class="vanity-cat-scroll" id="vanityCatScroll"></div>
+                </div>
+
+                <!-- Category Panel: Skin & Complexion -->
+                <div class="vanity-cat-panel active" id="vanityPanel_skin">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Skin Tone & Undertone</label>
+                    <div class="vanity-swatches-row" id="skinToneSwatches">
+                      <button class="skin-swatch active" style="background: #F3D5C6;" title="Warm Ivory" onclick="app.serenSetSkinTone('#F3D5C6', this)"></button>
+                      <button class="skin-swatch" style="background: #F8E2D6;" title="Porcelain Fair" onclick="app.serenSetSkinTone('#F8E2D6', this)"></button>
+                      <button class="skin-swatch" style="background: #E8BF9E;" title="Golden Honey" onclick="app.serenSetSkinTone('#E8BF9E', this)"></button>
+                      <button class="skin-swatch" style="background: #CF9E76;" title="Sunlit Tan" onclick="app.serenSetSkinTone('#CF9E76', this)"></button>
+                      <button class="skin-swatch" style="background: #A06B49;" title="Warm Bronze" onclick="app.serenSetSkinTone('#A06B49', this)"></button>
+                      <button class="skin-swatch" style="background: #5A3A26;" title="Rich Espresso" onclick="app.serenSetSkinTone('#5A3A26', this)"></button>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Hairstyle Selection -->
-                <div class="vanity-section">
-                  <label class="vanity-sec-label">Hairstyle</label>
-                  <div class="vanity-pill-group" id="hairStyleChips">
-                    <button class="vanity-chip active" data-style="bun" onclick="app.serenSetHairStyle('bun', this)">High Bun Updo</button>
-                    <button class="vanity-chip" data-style="bob" onclick="app.serenSetHairStyle('bob', this)">Chic Bob</button>
-                    <button class="vanity-chip" data-style="waves" onclick="app.serenSetHairStyle('waves', this)">Soft Waves</button>
-                    <button class="vanity-chip" data-style="crop" onclick="app.serenSetHairStyle('crop', this)">Modern Crop</button>
+                <!-- Category Panel: Hairstyle & Hair Color -->
+                <div class="vanity-cat-panel" id="vanityPanel_hair">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Hairstyle</label>
+                    <div class="vanity-pill-group" id="hairStyleChips">
+                      <button class="vanity-chip active" data-style="bun" onclick="app.serenSetHairStyle('bun', this)">High Bun Updo</button>
+                      <button class="vanity-chip" data-style="bob" onclick="app.serenSetHairStyle('bob', this)">Chic Bob</button>
+                      <button class="vanity-chip" data-style="waves" onclick="app.serenSetHairStyle('waves', this)">Soft Waves</button>
+                      <button class="vanity-chip" data-style="crop" onclick="app.serenSetHairStyle('crop', this)">Modern Crop</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Hair Color</label>
+                    <div class="vanity-swatches-row" id="hairColorSwatches">
+                      <button class="skin-swatch active" style="background: #1E120A;" title="Deep Espresso" onclick="app.serenSetHairColor('#1E120A', this)"></button>
+                      <button class="skin-swatch" style="background: #0A0807;" title="Jet Black" onclick="app.serenSetHairColor('#0A0807', this)"></button>
+                      <button class="skin-swatch" style="background: #54331C;" title="Chestnut Brown" onclick="app.serenSetHairColor('#54331C', this)"></button>
+                      <button class="skin-swatch" style="background: #A67D4A;" title="Honey Caramel" onclick="app.serenSetHairColor('#A67D4A', this)"></button>
+                      <button class="skin-swatch" style="background: #733120;" title="Warm Auburn" onclick="app.serenSetHairColor('#733120', this)"></button>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Hair Color Swatches -->
-                <div class="vanity-section">
-                  <label class="vanity-sec-label">Hair Color</label>
-                  <div class="vanity-swatches-row" id="hairColorSwatches">
-                    <button class="skin-swatch active" style="background: #1E120A;" title="Deep Espresso" onclick="app.serenSetHairColor('#1E120A', this)"></button>
-                    <button class="skin-swatch" style="background: #0A0807;" title="Jet Black" onclick="app.serenSetHairColor('#0A0807', this)"></button>
-                    <button class="skin-swatch" style="background: #54331C;" title="Chestnut Brown" onclick="app.serenSetHairColor('#54331C', this)"></button>
-                    <button class="skin-swatch" style="background: #A67D4A;" title="Honey Caramel" onclick="app.serenSetHairColor('#A67D4A', this)"></button>
-                    <button class="skin-swatch" style="background: #733120;" title="Warm Auburn" onclick="app.serenSetHairColor('#733120', this)"></button>
+                <!-- Category Panel: Beard & Facial Hair (Masculine & Neutral) -->
+                <div class="vanity-cat-panel" id="vanityPanel_beard">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Beard & Facial Hair</label>
+                    <div class="vanity-pill-group" id="beardStyleChips">
+                      <button class="vanity-chip active" data-beard="clean" onclick="app.serenSetBeard('clean', this)">Clean Shaven</button>
+                      <button class="vanity-chip" data-beard="stubble" onclick="app.serenSetBeard('stubble', this)">Subtle Stubble</button>
+                      <button class="vanity-chip" data-beard="short" onclick="app.serenSetBeard('short', this)">Short Boxed</button>
+                      <button class="vanity-chip" data-beard="full" onclick="app.serenSetBeard('full', this)">Full Beard</button>
+                      <button class="vanity-chip" data-beard="goatee" onclick="app.serenSetBeard('goatee', this)">Sculpted Goatee</button>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Body Proportions & Silhouette -->
-                <div class="vanity-section">
-                  <label class="vanity-sec-label">Body Silhouette & Height</label>
-                  <div class="vanity-pill-group" id="proportionChips">
-                    <button class="vanity-chip" data-prop="petite" onclick="app.serenSetProportions('petite', this)">Petite</button>
-                    <button class="vanity-chip active" data-prop="regular" onclick="app.serenSetProportions('regular', this)">Balanced (Regular)</button>
-                    <button class="vanity-chip" data-prop="tall" onclick="app.serenSetProportions('tall', this)">Tall & Slender</button>
-                    <button class="vanity-chip" data-prop="athletic" onclick="app.serenSetProportions('athletic', this)">Athletic</button>
-                    <button class="vanity-chip" data-prop="curvy" onclick="app.serenSetProportions('curvy', this)">Curvy</button>
+                <!-- Category Panel: Moustache (Masculine & Neutral) -->
+                <div class="vanity-cat-panel" id="vanityPanel_moustache">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Moustache Style</label>
+                    <div class="vanity-pill-group" id="moustacheStyleChips">
+                      <button class="vanity-chip active" data-stache="none" onclick="app.serenSetMoustache('none', this)">None</button>
+                      <button class="vanity-chip" data-stache="natural" onclick="app.serenSetMoustache('natural', this)">Natural Trim</button>
+                      <button class="vanity-chip" data-stache="chevron" onclick="app.serenSetMoustache('chevron', this)">Classic Chevron</button>
+                      <button class="vanity-chip" data-stache="pencil" onclick="app.serenSetMoustache('pencil', this)">Pencil Line</button>
+                      <button class="vanity-chip" data-stache="handlebar" onclick="app.serenSetMoustache('handlebar', this)">Vintage Handlebar</button>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Accessories -->
-                <div class="vanity-section">
-                  <label class="vanity-sec-label">Accessories & Jewelry</label>
-                  <div class="vanity-pill-group">
-                    <button class="vanity-chip active" id="accWatchBtn" onclick="app.serenToggleAccessory('watch', this)">⌚ Gold Watch</button>
-                    <button class="vanity-chip active" id="accEarringsBtn" onclick="app.serenToggleAccessory('earrings', this)">✨ Pearl Earrings</button>
+                <!-- Category Panel: Lips & Makeup (Feminine & Neutral) -->
+                <div class="vanity-cat-panel" id="vanityPanel_lips">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Lip Finish</label>
+                    <div class="vanity-pill-group" id="lipFinishChips">
+                      <button class="vanity-chip active" data-finish="satin" onclick="app.serenSetLipFinish('satin', this)">Satin</button>
+                      <button class="vanity-chip" data-finish="matte" onclick="app.serenSetLipFinish('matte', this)">Velvet Matte</button>
+                      <button class="vanity-chip" data-finish="gloss" onclick="app.serenSetLipFinish('gloss', this)">Dewy Gloss</button>
+                      <button class="vanity-chip" data-finish="metallic" onclick="app.serenSetLipFinish('metallic', this)">Soft Metallic</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Lip Shade</label>
+                    <div class="vanity-swatches-row" id="lipColorSwatches">
+                      <button class="skin-swatch active" style="background: #CE6F66;" title="Rosy Nude" onclick="app.serenSetLipstick('#CE6F66', null, this)"></button>
+                      <button class="skin-swatch" style="background: #B83A4B;" title="Classic Crimson" onclick="app.serenSetLipstick('#B83A4B', null, this)"></button>
+                      <button class="skin-swatch" style="background: #7A2035;" title="Berry Velvet" onclick="app.serenSetLipstick('#7A2035', null, this)"></button>
+                      <button class="skin-swatch" style="background: #E07A5F;" title="Soft Coral" onclick="app.serenSetLipstick('#E07A5F', null, this)"></button>
+                      <button class="skin-swatch" style="background: #A65236;" title="Spiced Terra" onclick="app.serenSetLipstick('#A65236', null, this)"></button>
+                      <button class="skin-swatch" style="background: #E8C5B8;" title="Clear Glow" onclick="app.serenSetLipstick('#E8C5B8', null, this)"></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category Panel: Cheeks & Complexion (Feminine & Neutral) -->
+                <div class="vanity-cat-panel" id="vanityPanel_cheeks">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Cheek Blush Tone</label>
+                    <div class="vanity-swatches-row" id="blushColorSwatches">
+                      <button class="skin-swatch active" style="background: #DE8B80;" title="Soft Coral" onclick="app.serenSetBlush('#DE8B80', null, this)"></button>
+                      <button class="skin-swatch" style="background: #EAA6B1;" title="Petal Pink" onclick="app.serenSetBlush('#EAA6B1', null, this)"></button>
+                      <button class="skin-swatch" style="background: #C86D51;" title="Warm Terracotta" onclick="app.serenSetBlush('#C86D51', null, this)"></button>
+                      <button class="skin-swatch" style="background: #E59866;" title="Golden Apricot" onclick="app.serenSetBlush('#E59866', null, this)"></button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <div class="vanity-range-header">
+                      <label class="vanity-sec-label" style="margin-bottom: 0;">Blush Intensity</label>
+                      <span class="vanity-range-val" id="blushValLabel">35%</span>
+                    </div>
+                    <input type="range" class="vanity-range-slider" id="blushIntensitySlider" min="0" max="100" value="35" oninput="app.serenOnBlushIntensity(this.value)">
+                  </div>
+                </div>
+
+                <!-- Category Panel: Eyebrows (Universal) -->
+                <div class="vanity-cat-panel" id="vanityPanel_brows">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Eyebrow Shape & Definition</label>
+                    <div class="vanity-pill-group" id="eyebrowChips">
+                      <button class="vanity-chip active" data-brow="natural" onclick="app.serenSetBrow('natural', this)">Natural Soft</button>
+                      <button class="vanity-chip" data-brow="arched" onclick="app.serenSetBrow('arched', this)">Defined Arch</button>
+                      <button class="vanity-chip" data-brow="straight" onclick="app.serenSetBrow('straight', this)">Straight Clean</button>
+                      <button class="vanity-chip" data-brow="bold" onclick="app.serenSetBrow('bold', this)">Bold Structured</button>
+                      <button class="vanity-chip" data-brow="feathered" onclick="app.serenSetBrow('feathered', this)">Feathered Brow</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category Panel: 3D Nail Studio (Feminine & Neutral) -->
+                <div class="vanity-cat-panel" id="vanityPanel_nails">
+                  <div class="vanity-focus-prompt">
+                    <span>Inspect manicure closely</span>
+                    <button class="vanity-tool-btn" onclick="app.serenCameraFocus('hands')">💅 Focus on Hands</button>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Nail Shape</label>
+                    <div class="vanity-pill-group" id="nailShapeChips">
+                      <button class="vanity-chip active" data-shape="natural" onclick="app.serenSetNailOpt('shape', 'natural', this)">Natural</button>
+                      <button class="vanity-chip" data-shape="round" onclick="app.serenSetNailOpt('shape', 'round', this)">Round</button>
+                      <button class="vanity-chip" data-shape="square" onclick="app.serenSetNailOpt('shape', 'square', this)">Square</button>
+                      <button class="vanity-chip" data-shape="almond" onclick="app.serenSetNailOpt('shape', 'almond', this)">Almond</button>
+                      <button class="vanity-chip" data-shape="coffin" onclick="app.serenSetNailOpt('shape', 'coffin', this)">Coffin</button>
+                      <button class="vanity-chip" data-shape="stiletto" onclick="app.serenSetNailOpt('shape', 'stiletto', this)">Stiletto</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Nail Length</label>
+                    <div class="vanity-pill-group" id="nailLengthChips">
+                      <button class="vanity-chip active" data-length="short" onclick="app.serenSetNailOpt('length', 'short', this)">Short</button>
+                      <button class="vanity-chip" data-length="medium" onclick="app.serenSetNailOpt('length', 'medium', this)">Medium</button>
+                      <button class="vanity-chip" data-length="long" onclick="app.serenSetNailOpt('length', 'long', this)">Long</button>
+                      <button class="vanity-chip" data-length="extra-long" onclick="app.serenSetNailOpt('length', 'extra-long', this)">Extra Long</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Plate Finish</label>
+                    <div class="vanity-pill-group" id="nailFinishChips">
+                      <button class="vanity-chip active" data-finish="gloss" onclick="app.serenSetNailOpt('finish', 'gloss', this)">High Gloss</button>
+                      <button class="vanity-chip" data-finish="matte" onclick="app.serenSetNailOpt('finish', 'matte', this)">Velvet Matte</button>
+                      <button class="vanity-chip" data-finish="chrome" onclick="app.serenSetNailOpt('finish', 'chrome', this)">Chrome Glaze</button>
+                      <button class="vanity-chip" data-finish="metallic" onclick="app.serenSetNailOpt('finish', 'metallic', this)">Metallic Sheen</button>
+                      <button class="vanity-chip" data-finish="glitter" onclick="app.serenSetNailOpt('finish', 'glitter', this)">Glitter Sparkle</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Polish Palette</label>
+                    <div class="vanity-swatches-row" id="nailColorSwatches">
+                      <button class="skin-swatch active" style="background: #E8C5B8;" title="Rose Quartz Nude" onclick="app.serenSetNailColor('#E8C5B8', this)"></button>
+                      <button class="skin-swatch" style="background: #F5EBE6;" title="Glazed Donut Pearl" onclick="app.serenSetNailColor('#F5EBE6', this)"></button>
+                      <button class="skin-swatch" style="background: #5B1E31;" title="Deep Bordeaux" onclick="app.serenSetNailColor('#5B1E31', this)"></button>
+                      <button class="skin-swatch" style="background: #829179;" title="Sage Linen" onclick="app.serenSetNailColor('#829179', this)"></button>
+                      <button class="skin-swatch" style="background: #1B263B;" title="Midnight Navy" onclick="app.serenSetNailColor('#1B263B', this)"></button>
+                      <button class="skin-swatch" style="background: #2C1D11;" title="Espresso Glaze" onclick="app.serenSetNailColor('#2C1D11', this)"></button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category Panel: Body Silhouette & Accessories (Universal) -->
+                <div class="vanity-cat-panel" id="vanityPanel_body">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Body Silhouette & Height</label>
+                    <div class="vanity-pill-group" id="proportionChips">
+                      <button class="vanity-chip" data-prop="petite" onclick="app.serenSetProportions('petite', this)">Petite</button>
+                      <button class="vanity-chip active" data-prop="regular" onclick="app.serenSetProportions('regular', this)">Balanced (Regular)</button>
+                      <button class="vanity-chip" data-prop="tall" onclick="app.serenSetProportions('tall', this)">Tall & Slender</button>
+                      <button class="vanity-chip" data-prop="athletic" onclick="app.serenSetProportions('athletic', this)">Athletic</button>
+                      <button class="vanity-chip" data-prop="curvy" onclick="app.serenSetProportions('curvy', this)">Curvy</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Accessories & Jewelry</label>
+                    <div class="vanity-pill-group">
+                      <button class="vanity-chip active" id="accWatchBtn" onclick="app.serenToggleAccessory('watch', this)">⌚ Gold Watch</button>
+                      <button class="vanity-chip active" id="accEarringsBtn" onclick="app.serenToggleAccessory('earrings', this)">✨ Pearl Earrings</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Category Panel: Lookbook & Snapshots (Universal) -->
+                <div class="vanity-cat-panel" id="vanityPanel_lookbook">
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Save Current Appearance to Lookbook</label>
+                    <div class="vanity-lookbook-save-bar">
+                      <input type="text" class="vanity-lookbook-input" id="vanityLookbookInput" placeholder="Name your look (e.g. Evening Silk, Casual Linen)..." maxlength="32">
+                      <button class="btn-olive-primary vanity-lookbook-save-btn" onclick="app.serenSaveLookbook()">+ Save</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Saved Lookbook Curations</label>
+                    <div class="vanity-lookbook-container" id="vanityLookbookList">
+                      <div class="vanity-lookbook-empty">No saved looks yet. Tap "+ Save" above to record your current appearance!</div>
+                    </div>
                   </div>
                 </div>
 

@@ -10,8 +10,14 @@ export const AVATAR_ASSET_PATHS = [
 ];
 
 export class AvatarAssets {
-  constructor(materials, THREE = window.THREE) {
-    this.THREE = THREE;
+  constructor(materials, rigOrThree = null, maybeThree = window.THREE) {
+    if (rigOrThree && rigOrThree.REVISION) {
+      this.THREE = rigOrThree;
+      this.rig = null;
+    } else {
+      this.rig = rigOrThree;
+      this.THREE = maybeThree || (typeof window !== 'undefined' ? window.THREE : null);
+    }
     this.materials = materials;
     this.isLoading = false;
     this.isLoaded = false;
@@ -149,6 +155,9 @@ export class AvatarAssets {
                   child.material.color = new THREE.Color(0xCE6F66);
                   child.material.roughness = 0.24;
                   child.material.metalness = 0.02;
+                  if (this.materials) {
+                    this.materials.registerLipMaterial(child.material);
+                  }
                 }
               } else if (child.name.includes('Blush')) {
                 if (child.material) {
@@ -156,12 +165,20 @@ export class AvatarAssets {
                   child.material.roughness = 0.55;
                   child.material.transparent = true;
                   child.material.opacity = 0.35;
+                  if (this.materials) {
+                    this.materials.registerBlushMaterial(child.material);
+                  }
                 }
               } else if (child.name.includes('Earring') || child.name.includes('Hoop')) {
                 if (child.material) {
                   child.material.color = new THREE.Color(0xD4AF37);
                   child.material.metalness = 0.90;
                   child.material.roughness = 0.20;
+                }
+                if (this.rig && this.rig.accessories && this.rig.accessories.earrings) {
+                  if (!this.rig.accessories.earrings.includes(child)) {
+                    this.rig.accessories.earrings.push(child);
+                  }
                 }
               } else if (child.name.includes('Head') || child.name.includes('Body') || child.name.includes('Chin') || child.name.includes('Neck') || child.name.includes('Midriff') || child.name.includes('Hand') || child.name.includes('Shoulder') || child.name.includes('Arm') || child.name.includes('Forearm')) {
                 if (child.material) {
@@ -175,6 +192,11 @@ export class AvatarAssets {
               }
             }
           });
+
+          // Mount additive Vanity grooming nodes (Beards, Moustaches, Hairstyles, Nails, Watch) onto the visible GLB avatar
+          if (this.rig && typeof this.rig.mountToGLB === 'function') {
+            this.rig.mountToGLB(model);
+          }
 
           this.activeModel = model;
           this.activeModelUrl = url;

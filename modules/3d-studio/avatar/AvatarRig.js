@@ -19,8 +19,12 @@ export class AvatarRig {
     this.activeHairStyle = 'bun';
     this.accessories = {
       earrings: [],
+      watch: null,
       button: null
     };
+    this.facialGroomingGroup = null;
+    this.glbHairMeshes = null;
+    this.isMountedToGLB = false;
     this.beardMeshes = {};
     this.activeBeardStyle = 'clean';
     this.moustacheMeshes = {};
@@ -185,11 +189,16 @@ export class AvatarRig {
     // 2. HAIRSTYLES (Signature High Bun Updo)
     this.buildHairstyles();
 
-    // 2B. PROCEDURAL GROOMING MESHES (Beard & Moustache - additive, hidden by default)
+    // 2B. PROCEDURAL GROOMING MESHES (Beard, Moustache & Alternate Hairstyles)
+    this.facialGroomingGroup = new THREE.Group();
+    this.facialGroomingGroup.name = 'AvatarFacialGroomingGroup';
+    this.facialGroomingGroup.position.set(0, 0, 0);
+
     this.buildBeardMeshes();
     this.buildMoustacheMeshes();
+    this.buildAlternateHairstyles();
 
-    this.sculptedAvatarGroup.add(this.headGroup);
+    this.headGroup.add(this.facialGroomingGroup);
 
     // 3. SLENDER NECK & ANATOMICAL CLAVICLES
     const neckGeo = new THREE.CylinderGeometry(0.038, 0.046, 0.14, 24);
@@ -460,7 +469,8 @@ export class AvatarRig {
   buildBeardMeshes() {
     const THREE = this.THREE;
     const mats = this.materials;
-    if (!mats.beardMat || !this.headGroup) return;
+    const mount = this.facialGroomingGroup || this.headGroup;
+    if (!mats.beardMat || !mount) return;
 
     // 1. Stubble Beard Group
     const stubbleGroup = new THREE.Group();
@@ -481,7 +491,7 @@ export class AvatarRig {
       this.disposables.push(stubbleJawGeo);
     });
     stubbleGroup.visible = false;
-    this.headGroup.add(stubbleGroup);
+    mount.add(stubbleGroup);
     this.beardMeshes.stubble = stubbleGroup;
 
     // 2. Short Boxed Beard Group
@@ -502,7 +512,7 @@ export class AvatarRig {
       this.disposables.push(shortJawGeo);
     });
     shortGroup.visible = false;
-    this.headGroup.add(shortGroup);
+    mount.add(shortGroup);
     this.beardMeshes.short = shortGroup;
 
     // 3. Full Majestic Beard Group
@@ -524,7 +534,7 @@ export class AvatarRig {
       this.disposables.push(fullJawGeo);
     });
     fullGroup.visible = false;
-    this.headGroup.add(fullGroup);
+    mount.add(fullGroup);
     this.beardMeshes.full = fullGroup;
 
     // 4. Goatee Beard Group
@@ -537,14 +547,15 @@ export class AvatarRig {
     goateeGroup.add(goateeChin);
     this.disposables.push(goateeChinGeo);
     goateeGroup.visible = false;
-    this.headGroup.add(goateeGroup);
+    mount.add(goateeGroup);
     this.beardMeshes.goatee = goateeGroup;
   }
 
   buildMoustacheMeshes() {
     const THREE = this.THREE;
     const mats = this.materials;
-    if (!mats.beardMat || !this.headGroup) return;
+    const mount = this.facialGroomingGroup || this.headGroup;
+    if (!mats.beardMat || !mount) return;
 
     // 1. Natural Moustache
     const naturalGroup = new THREE.Group();
@@ -558,7 +569,7 @@ export class AvatarRig {
       this.disposables.push(natGeo);
     });
     naturalGroup.visible = false;
-    this.headGroup.add(naturalGroup);
+    mount.add(naturalGroup);
     this.moustacheMeshes.natural = naturalGroup;
 
     // 2. Chevron Moustache
@@ -570,7 +581,7 @@ export class AvatarRig {
     chevronGroup.add(chev);
     this.disposables.push(chevGeo);
     chevronGroup.visible = false;
-    this.headGroup.add(chevronGroup);
+    mount.add(chevronGroup);
     this.moustacheMeshes.chevron = chevronGroup;
 
     // 3. Pencil Moustache
@@ -583,7 +594,7 @@ export class AvatarRig {
     pencilGroup.add(pencil);
     this.disposables.push(pencilGeo);
     pencilGroup.visible = false;
-    this.headGroup.add(pencilGroup);
+    mount.add(pencilGroup);
     this.moustacheMeshes.pencil = pencilGroup;
 
     // 4. Handlebar Moustache
@@ -598,8 +609,233 @@ export class AvatarRig {
       this.disposables.push(hBarGeo);
     });
     handlebarGroup.visible = false;
-    this.headGroup.add(handlebarGroup);
+    mount.add(handlebarGroup);
     this.moustacheMeshes.handlebar = handlebarGroup;
+  }
+
+  buildAlternateHairstyles() {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    const mount = this.facialGroomingGroup || this.headGroup;
+    if (!mats.hairMat || !mount) return;
+
+    // 1. Chic Sleek Bob
+    const bobGroup = new THREE.Group();
+    bobGroup.name = 'AvatarHair_Bob';
+    [-1, 1].forEach((side) => {
+      const bobCurtainGeo = new THREE.CylinderGeometry(0.016, 0.012, 0.12, 12);
+      bobCurtainGeo.scale(1.2, 1.0, 0.85);
+      const bobCurtain = new THREE.Mesh(bobCurtainGeo, mats.hairMat);
+      bobCurtain.position.set(side * 0.082, -0.025, 0.012);
+      bobCurtain.rotation.z = side * -0.10;
+      bobGroup.add(bobCurtain);
+      this.disposables.push(bobCurtainGeo);
+    });
+    const bobBackGeo = new THREE.SphereGeometry(0.068, 16, 16);
+    bobBackGeo.scale(1.25, 1.1, 0.85);
+    const bobBack = new THREE.Mesh(bobBackGeo, mats.hairMat);
+    bobBack.position.set(0, 0.02, -0.042);
+    bobGroup.add(bobBack);
+    this.disposables.push(bobBackGeo);
+    bobGroup.visible = false;
+    mount.add(bobGroup);
+    this.hairStyles.bob = bobGroup;
+
+    // 2. Soft Cascading Waves
+    const wavesGroup = new THREE.Group();
+    wavesGroup.name = 'AvatarHair_Waves';
+    [-1, 1].forEach((side) => {
+      const waveFrontGeo = new THREE.CylinderGeometry(0.015, 0.010, 0.20, 12);
+      waveFrontGeo.scale(1.1, 1.0, 0.7);
+      const waveFront = new THREE.Mesh(waveFrontGeo, mats.hairMat);
+      waveFront.position.set(side * 0.085, -0.065, 0.025);
+      waveFront.rotation.z = side * -0.12;
+      waveFront.rotation.x = 0.08;
+      wavesGroup.add(waveFront);
+      this.disposables.push(waveFrontGeo);
+
+      const waveBackGeo = new THREE.CylinderGeometry(0.014, 0.008, 0.16, 10);
+      const waveBack = new THREE.Mesh(waveBackGeo, mats.hairMat);
+      waveBack.position.set(side * 0.095, -0.095, -0.015);
+      waveBack.rotation.z = side * -0.18;
+      wavesGroup.add(waveBack);
+      this.disposables.push(waveBackGeo);
+    });
+    const wavesCrownBackGeo = new THREE.SphereGeometry(0.075, 16, 16);
+    wavesCrownBackGeo.scale(1.25, 1.4, 0.9);
+    const wavesCrownBack = new THREE.Mesh(wavesCrownBackGeo, mats.hairMat);
+    wavesCrownBack.position.set(0, -0.02, -0.045);
+    wavesGroup.add(wavesCrownBack);
+    this.disposables.push(wavesCrownBackGeo);
+    wavesGroup.visible = false;
+    mount.add(wavesGroup);
+    this.hairStyles.waves = wavesGroup;
+
+    // 3. Modern Pixie Crop
+    const cropGroup = new THREE.Group();
+    cropGroup.name = 'AvatarHair_Crop';
+    const cropCapGeo = new THREE.SphereGeometry(0.098, 20, 20);
+    cropCapGeo.scale(0.94, 1.08, 0.96);
+    const cropCap = new THREE.Mesh(cropCapGeo, mats.hairMat);
+    cropCap.position.set(0, 0.035, -0.010);
+    cropGroup.add(cropCap);
+    this.disposables.push(cropCapGeo);
+    [-1, 1].forEach((side) => {
+      const cropSideGeo = new THREE.BoxGeometry(0.012, 0.045, 0.025);
+      const cropSide = new THREE.Mesh(cropSideGeo, mats.hairMat);
+      cropSide.position.set(side * 0.086, 0.010, 0.010);
+      cropGroup.add(cropSide);
+      this.disposables.push(cropSideGeo);
+    });
+    cropGroup.visible = false;
+    mount.add(cropGroup);
+    this.hairStyles.crop = cropGroup;
+  }
+
+  mountToGLB(model) {
+    if (!model || this.isMountedToGLB) return;
+    this.isMountedToGLB = true;
+
+    // 1. Reparent Facial Grooming Group (Beards, Moustaches, Alternate Hairstyles) onto GLB model
+    if (this.facialGroomingGroup) {
+      if (this.facialGroomingGroup.parent) {
+        this.facialGroomingGroup.parent.remove(this.facialGroomingGroup);
+      }
+      this.facialGroomingGroup.position.set(0, 1.54, 0);
+      model.add(this.facialGroomingGroup);
+    }
+
+    // 2. Discover GLB Nodes for Nails, Earrings, Brows, and Hair
+    const glbHair = { base: null, bun: null, twist: null, tendrils: [] };
+
+    model.traverse((child) => {
+      if (child.name === 'Avatar_Hair_Base') glbHair.base = child;
+      else if (child.name === 'Avatar_Hair_Bun') glbHair.bun = child;
+      else if (child.name === 'Avatar_Hair_Twist') glbHair.twist = child;
+      else if (child.name.includes('Avatar_Tendril')) glbHair.tendrils.push(child);
+      else if (child.name.includes('Earring') || child.name.includes('Hoop')) {
+        if (!this.accessories.earrings.includes(child)) {
+          this.accessories.earrings.push(child);
+        }
+      } else if (child.name.includes('Brow') || child.name.includes('Eye_Brow')) {
+        child.userData = {
+          side: child.name.includes('_L') ? -1 : 1,
+          baseZRot: child.rotation.z,
+          baseY: child.position.y
+        };
+        this.eyebrowMeshes.push(child);
+      } else if (child.name === 'Avatar_Hand_L' || child.name === 'Avatar_Hand_R') {
+        this.buildGLBHandNails(child, child.name === 'Avatar_Hand_L');
+      }
+    });
+
+    // 3. Attach Luxury Gold Watch to Left Hand/Wrist
+    const leftHand = model.getObjectByName('Avatar_Hand_L');
+    if (leftHand && !this.accessories.watch) {
+      this.buildGLBWatch(leftHand);
+    }
+
+    this.glbHairMeshes = glbHair;
+
+    // Apply active styles to the newly mounted GLB model
+    this.setHairstyle(this.activeHairStyle || 'bun');
+    this.setBeardStyle(this.activeBeardStyle || 'clean');
+    this.setMoustacheStyle(this.activeMoustacheStyle || 'none');
+  }
+
+  buildGLBHandNails(handNode, isLeftHand) {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!mats.nailMat || !handNode) return;
+
+    const side = isLeftHand ? 1 : -1;
+    const nailsGroup = new THREE.Group();
+    nailsGroup.name = `AvatarGLBNails_${isLeftHand ? 'Left' : 'Right'}`;
+
+    // Thumb Nail (angled outward, near Y = -0.018, X = side * -0.012, Z = 0.010)
+    const thumbNailGeo = new THREE.BoxGeometry(0.0042, 0.006, 0.0018);
+    const thumbNail = new THREE.Mesh(thumbNailGeo, mats.nailMat);
+    thumbNail.position.set(side * -0.012, -0.018, 0.010);
+    thumbNail.rotation.z = side * -0.42;
+    thumbNail.rotation.x = 0.25;
+    nailsGroup.add(thumbNail);
+    this.nailMeshes.push(thumbNail);
+    this.disposables.push(thumbNailGeo);
+
+    // 4 Finger Nails (along Y = -0.038)
+    const fingerPositions = [
+      { x: side * -0.0075, y: -0.037, z: 0.004 },
+      { x: side * -0.0025, y: -0.039, z: 0.004 },
+      { x: side * 0.0025,  y: -0.038, z: 0.004 },
+      { x: side * 0.0075,  y: -0.035, z: 0.004 }
+    ];
+
+    fingerPositions.forEach((pos) => {
+      const nailGeo = new THREE.BoxGeometry(0.0038, 0.0055, 0.0018);
+      const nail = new THREE.Mesh(nailGeo, mats.nailMat);
+      nail.position.set(pos.x, pos.y, pos.z);
+      nail.rotation.x = 0.15;
+      nailsGroup.add(nail);
+      this.nailMeshes.push(nail);
+      this.disposables.push(nailGeo);
+    });
+
+    handNode.add(nailsGroup);
+  }
+
+  buildGLBWatch(handNode) {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!mats.hoopMat || !handNode) return;
+
+    const watchGroup = new THREE.Group();
+    watchGroup.name = 'AvatarGoldWatch';
+
+    // Luxury Warm Brass Gold Band at wrist
+    const bandGeo = new THREE.CylinderGeometry(0.019, 0.019, 0.012, 16, 1, true);
+    const band = new THREE.Mesh(bandGeo, mats.hoopMat);
+    band.position.set(0, 0.026, 0);
+    watchGroup.add(band);
+    this.disposables.push(bandGeo);
+
+    // Watch Bezel & Face
+    const faceGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.003, 16);
+    const faceMat = new THREE.MeshStandardMaterial({
+      color: 0x1A140E,
+      roughness: 0.25,
+      metalness: 0.85
+    });
+    const face = new THREE.Mesh(faceGeo, faceMat);
+    face.rotation.x = Math.PI / 2;
+    face.position.set(0, 0.026, 0.020);
+    watchGroup.add(face);
+    this.disposables.push(faceGeo, faceMat);
+
+    handNode.add(watchGroup);
+    this.accessories.watch = watchGroup;
+  }
+
+  setHairstyle(styleName = 'bun') {
+    this.activeHairStyle = styleName;
+
+    // Toggle GLB pre-baked hair meshes if available
+    const glb = this.glbHairMeshes;
+    if (glb) {
+      const showBun = (styleName === 'bun');
+      if (glb.bun) glb.bun.visible = showBun;
+      if (glb.twist) glb.twist.visible = showBun;
+      if (glb.tendrils && Array.isArray(glb.tendrils)) {
+        glb.tendrils.forEach(t => {
+          if (t) t.visible = (styleName !== 'crop');
+        });
+      }
+    }
+
+    // Toggle procedural hairstyle groups
+    if (this.hairStyles.bun) this.hairStyles.bun.visible = (styleName === 'bun');
+    if (this.hairStyles.bob) this.hairStyles.bob.visible = (styleName === 'bob');
+    if (this.hairStyles.waves) this.hairStyles.waves.visible = (styleName === 'waves');
+    if (this.hairStyles.crop) this.hairStyles.crop.visible = (styleName === 'crop');
   }
 
   setBeardStyle(styleId = 'clean') {
@@ -623,29 +859,29 @@ export class AvatarRig {
       switch (shapeId) {
         case 'arched':
           brow.scale.set(1.05, 1.25, 1.0);
-          brow.rotation.z = baseZRot * 1.8;
-          brow.position.y = baseY + 0.003;
+          brow.rotation.z = (baseZRot || 0) * 1.8;
+          brow.position.y = (baseY || 0) + 0.003;
           break;
         case 'straight':
           brow.scale.set(1.1, 0.9, 1.0);
-          brow.rotation.z = baseZRot * 0.25;
-          brow.position.y = baseY - 0.001;
+          brow.rotation.z = (baseZRot || 0) * 0.25;
+          brow.position.y = (baseY || 0) - 0.001;
           break;
         case 'bold':
           brow.scale.set(1.35, 1.5, 1.2);
-          brow.rotation.z = baseZRot * 1.1;
-          brow.position.y = baseY;
+          brow.rotation.z = (baseZRot || 0) * 1.1;
+          brow.position.y = baseY || 0;
           break;
         case 'feathered':
           brow.scale.set(0.95, 0.85, 0.95);
-          brow.rotation.z = baseZRot * 1.35;
-          brow.position.y = baseY + 0.001;
+          brow.rotation.z = (baseZRot || 0) * 1.35;
+          brow.position.y = (baseY || 0) + 0.001;
           break;
         case 'natural':
         default:
           brow.scale.set(1.0, 1.0, 1.0);
-          brow.rotation.z = baseZRot;
-          brow.position.y = baseY;
+          brow.rotation.z = baseZRot || 0;
+          brow.position.y = baseY || 0;
           break;
       }
     });

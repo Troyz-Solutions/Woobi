@@ -44,6 +44,9 @@ export class AvatarController {
   setHairstyle(styleName) {
     if (!styleName) return;
     this.avatarConfig.hairStyle = styleName;
+    if (this.model && this.model.rig && typeof this.model.rig.setHairstyle === 'function') {
+      this.model.rig.setHairstyle(styleName);
+    }
     this.savePreferences();
   }
 

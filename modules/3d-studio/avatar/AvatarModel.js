@@ -63,7 +63,7 @@ export class AvatarModel {
     this.animations = new AvatarAnimations(this.avatarRoot, this.rig, _THREE);
 
     // 5. Initialize Assets Manager
-    this.assets = new AvatarAssets(this.materials, _THREE);
+    this.assets = new AvatarAssets(this.materials, this.rig, _THREE);
 
     // 6. Mount onto Scene
     if (scene && this.avatarRoot) {

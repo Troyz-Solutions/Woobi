@@ -47,8 +47,11 @@ export class AvatarMorphs {
 
     if (name === 'earrings' && this.rig.accessories.earrings) {
       this.rig.accessories.earrings.forEach((earring) => {
-        earring.visible = isActive;
+        if (earring) earring.visible = isActive;
       });
+    }
+    if (name === 'watch' && this.rig.accessories.watch) {
+      this.rig.accessories.watch.visible = isActive;
     }
   }
 

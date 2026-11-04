@@ -28,6 +28,9 @@ export class AvatarMaterials {
     this.textures = textures || {};
     this.skinMaterials = [];
     this.hairMaterials = [];
+    this.lipMaterials = [];
+    this.blushMaterials = [];
+    this.nailMaterials = [];
     this.disposables = [];
 
     this.initMaterials();
@@ -61,6 +64,7 @@ export class AvatarMaterials {
       roughness: 0.24,
       metalness: 0.02
     });
+    this.lipMaterials.push(this.lipMat);
     this.disposables.push(this.lipMat);
 
     // Soft Blushing Cheek Material
@@ -70,6 +74,7 @@ export class AvatarMaterials {
       transparent: true,
       opacity: 0.35
     });
+    this.blushMaterials.push(this.blushMat);
     this.disposables.push(this.blushMat);
 
     // Facial Hair Material (Beard & Moustache) - registered with hairMaterials for sync
@@ -87,6 +92,7 @@ export class AvatarMaterials {
       roughness: 0.15,
       metalness: 0.05
     });
+    this.nailMaterials.push(this.nailMat);
     this.disposables.push(this.nailMat);
 
     // Eye Anatomy Materials
@@ -172,66 +178,78 @@ export class AvatarMaterials {
   }
 
   updateLipstick(hex, finish = 'satin') {
-    if (!this.lipMat || !this.THREE || !hex) return;
-    this.lipMat.color.set(hex);
-    switch (finish) {
-      case 'matte':
-        this.lipMat.roughness = 0.65;
-        this.lipMat.metalness = 0.0;
-        break;
-      case 'gloss':
-        this.lipMat.roughness = 0.12;
-        this.lipMat.metalness = 0.05;
-        break;
-      case 'metallic':
-        this.lipMat.roughness = 0.28;
-        this.lipMat.metalness = 0.45;
-        break;
-      case 'satin':
-      default:
-        this.lipMat.roughness = 0.24;
-        this.lipMat.metalness = 0.02;
-        break;
-    }
-    this.lipMat.needsUpdate = true;
+    if (!this.THREE || !hex) return;
+    const col = new this.THREE.Color(hex);
+    this.lipMaterials.forEach((mat) => {
+      if (!mat) return;
+      if (mat.color) mat.color.copy(col);
+      switch (finish) {
+        case 'matte':
+          mat.roughness = 0.65;
+          mat.metalness = 0.0;
+          break;
+        case 'gloss':
+          mat.roughness = 0.12;
+          mat.metalness = 0.05;
+          break;
+        case 'metallic':
+          mat.roughness = 0.28;
+          mat.metalness = 0.45;
+          break;
+        case 'satin':
+        default:
+          mat.roughness = 0.24;
+          mat.metalness = 0.02;
+          break;
+      }
+      mat.needsUpdate = true;
+    });
   }
 
   updateBlush(hex, opacity = 0.35) {
-    if (!this.blushMat || !this.THREE) return;
-    if (hex) this.blushMat.color.set(hex);
-    if (typeof opacity === 'number') {
-      this.blushMat.opacity = Math.max(0, Math.min(1, opacity));
-    }
-    this.blushMat.needsUpdate = true;
+    if (!this.THREE) return;
+    const col = hex ? new this.THREE.Color(hex) : null;
+    const op = (typeof opacity === 'number') ? Math.max(0, Math.min(1, opacity)) : 0.35;
+    this.blushMaterials.forEach((mat) => {
+      if (!mat) return;
+      if (col && mat.color) mat.color.copy(col);
+      mat.transparent = true;
+      mat.opacity = op;
+      mat.needsUpdate = true;
+    });
   }
 
   updateNailFinish(hex, finish = 'gloss') {
-    if (!this.nailMat || !this.THREE) return;
-    if (hex) this.nailMat.color.set(hex);
-    switch (finish) {
-      case 'matte':
-        this.nailMat.roughness = 0.75;
-        this.nailMat.metalness = 0.0;
-        break;
-      case 'chrome':
-        this.nailMat.roughness = 0.08;
-        this.nailMat.metalness = 0.90;
-        break;
-      case 'metallic':
-        this.nailMat.roughness = 0.22;
-        this.nailMat.metalness = 0.65;
-        break;
-      case 'glitter':
-        this.nailMat.roughness = 0.32;
-        this.nailMat.metalness = 0.40;
-        break;
-      case 'gloss':
-      default:
-        this.nailMat.roughness = 0.15;
-        this.nailMat.metalness = 0.05;
-        break;
-    }
-    this.nailMat.needsUpdate = true;
+    if (!this.THREE) return;
+    const col = hex ? new this.THREE.Color(hex) : null;
+    this.nailMaterials.forEach((mat) => {
+      if (!mat) return;
+      if (col && mat.color) mat.color.copy(col);
+      switch (finish) {
+        case 'matte':
+          mat.roughness = 0.75;
+          mat.metalness = 0.0;
+          break;
+        case 'chrome':
+          mat.roughness = 0.08;
+          mat.metalness = 0.90;
+          break;
+        case 'metallic':
+          mat.roughness = 0.22;
+          mat.metalness = 0.65;
+          break;
+        case 'glitter':
+          mat.roughness = 0.32;
+          mat.metalness = 0.40;
+          break;
+        case 'gloss':
+        default:
+          mat.roughness = 0.15;
+          mat.metalness = 0.05;
+          break;
+      }
+      mat.needsUpdate = true;
+    });
   }
 
   registerSkinMaterial(mat) {
@@ -246,6 +264,24 @@ export class AvatarMaterials {
     }
   }
 
+  registerLipMaterial(mat) {
+    if (mat && !this.lipMaterials.includes(mat)) {
+      this.lipMaterials.push(mat);
+    }
+  }
+
+  registerBlushMaterial(mat) {
+    if (mat && !this.blushMaterials.includes(mat)) {
+      this.blushMaterials.push(mat);
+    }
+  }
+
+  registerNailMaterial(mat) {
+    if (mat && !this.nailMaterials.includes(mat)) {
+      this.nailMaterials.push(mat);
+    }
+  }
+
   dispose() {
     this.disposables.forEach((mat) => {
       if (mat && typeof mat.dispose === 'function') {
@@ -255,5 +291,8 @@ export class AvatarMaterials {
     this.disposables = [];
     this.skinMaterials = [];
     this.hairMaterials = [];
+    this.lipMaterials = [];
+    this.blushMaterials = [];
+    this.nailMaterials = [];
   }
 }

@@ -357,8 +357,11 @@ export class AvatarCustomizer {
       }
     }
 
-    // 2. Rig: Beard, Moustache, Eyebrows & Nails
+    // 2. Rig: Beard, Moustache, Eyebrows, Nails & Hairstyles
     if (this.avatarModel.rig) {
+      if (cfg.hairStyle && typeof this.avatarModel.rig.setHairstyle === 'function') {
+        this.avatarModel.rig.setHairstyle(cfg.hairStyle);
+      }
       const gr = cfg.grooming || {};
       if (typeof this.avatarModel.rig.setBeardStyle === 'function') {
         this.avatarModel.rig.setBeardStyle(gr.beardStyle || 'clean');

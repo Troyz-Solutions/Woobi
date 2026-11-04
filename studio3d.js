@@ -2403,8 +2403,22 @@
       }
       if (cfg.skinTone) this.setSkinTone(cfg.skinTone);
       if (cfg.hairColor) this.setHairColor(cfg.hairColor);
+      if (cfg.hairStyle) this.setHairstyle(cfg.hairStyle);
       if (cfg.proportions) this.setBodyProportions(cfg.proportions);
       if (cfg.gender) this.setGenderPresentation(cfg.gender);
+      if (cfg.accessories) {
+        Object.entries(cfg.accessories).forEach(([acc, val]) => this.toggleAccessory(acc, val));
+      }
+      if (cfg.grooming) {
+        if (cfg.grooming.beardStyle !== undefined) this.setBeardStyle(cfg.grooming.beardStyle);
+        if (cfg.grooming.moustacheStyle !== undefined) this.setMoustacheStyle(cfg.grooming.moustacheStyle);
+        if (cfg.grooming.lipColor) this.setLipstick(cfg.grooming.lipColor, cfg.grooming.lipFinish || 'satin');
+        if (cfg.grooming.blushColor) this.setBlush(cfg.grooming.blushColor, cfg.grooming.blushIntensity);
+        if (cfg.grooming.eyebrowShape) this.setEyebrowShape(cfg.grooming.eyebrowShape);
+        if (cfg.grooming.nailShape || cfg.grooming.nailLength || cfg.grooming.nailFinish || cfg.grooming.nailColor) {
+          this.setNailCustomization(cfg.grooming);
+        }
+      }
     }
 
     /**

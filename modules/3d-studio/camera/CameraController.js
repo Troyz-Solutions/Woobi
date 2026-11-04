@@ -59,8 +59,8 @@ export class CameraController {
     return success;
   }
 
-  focusOnObject(target, cameraPos = null) {
-    this.transitions.focusOn(target, cameraPos);
+  focusOnObject(target, cameraPos = null, targetFov = null) {
+    this.transitions.focusOn(target, cameraPos, targetFov);
   }
 
   resetCamera() {

@@ -1972,15 +1972,40 @@
     if (!sheet) return;
 
     if (forceOpen === undefined) {
-      sheet.classList.toggle('hidden');
+      const isCurrentlyHidden = sheet.classList.contains('hidden');
+      if (isCurrentlyHidden) {
+        sheet.classList.remove('hidden');
+        serenRenderVanityCategories();
+        serenRenderLookbookList();
+        if (window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
+          window.Studio3D.focusVanityFeature(currentActiveVanityCategory || 'skin');
+        } else if (window.Studio3D) {
+          window.Studio3D.setCameraState('VANITY_VIEW');
+        }
+      } else {
+        sheet.classList.add('hidden');
+        if (window.Studio3D && typeof window.Studio3D.clearVanityFocus === 'function') {
+          window.Studio3D.clearVanityFocus();
+        } else if (window.Studio3D) {
+          window.Studio3D.setCameraState('STUDIO_OVERVIEW');
+        }
+      }
     } else if (forceOpen) {
       sheet.classList.remove('hidden');
-      if (window.Studio3D) window.Studio3D.setCameraState('VANITY_VIEW');
       serenRenderVanityCategories();
       serenRenderLookbookList();
+      if (window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
+        window.Studio3D.focusVanityFeature(currentActiveVanityCategory || 'skin');
+      } else if (window.Studio3D) {
+        window.Studio3D.setCameraState('VANITY_VIEW');
+      }
     } else {
       sheet.classList.add('hidden');
-      if (window.Studio3D) window.Studio3D.setCameraState('STUDIO_OVERVIEW');
+      if (window.Studio3D && typeof window.Studio3D.clearVanityFocus === 'function') {
+        window.Studio3D.clearVanityFocus();
+      } else if (window.Studio3D) {
+        window.Studio3D.setCameraState('STUDIO_OVERVIEW');
+      }
     }
   }
 
@@ -2053,10 +2078,14 @@
       btn.classList.add('active');
     }
     serenShowCategoryPanel(catId);
-    if (catId === 'nails') {
-      serenCameraFocus('hands');
-    } else if (catId === 'beard' || catId === 'moustache' || catId === 'lips' || catId === 'brows' || catId === 'cheeks') {
-      serenCameraFocus('face');
+    if (window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
+      window.Studio3D.focusVanityFeature(catId);
+    } else {
+      if (catId === 'nails') {
+        serenCameraFocus('hands');
+      } else if (catId === 'beard' || catId === 'moustache' || catId === 'lips' || catId === 'brows' || catId === 'cheeks') {
+        serenCameraFocus('face');
+      }
     }
   }
 
@@ -2110,7 +2139,12 @@
       document.querySelectorAll('#proportionChips .vanity-chip').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
     }
-    if (window.Studio3D) window.Studio3D.setBodyProportions(preset);
+    if (window.Studio3D) {
+      window.Studio3D.setBodyProportions(preset);
+      if (typeof window.Studio3D.focusVanityFeature === 'function') {
+        window.Studio3D.focusVanityFeature('body');
+      }
+    }
     showToast(`Body proportions adjusted to ${preset}.`);
   }
 
@@ -2120,6 +2154,10 @@
       btn.classList.toggle('active');
       const isActive = btn.classList.contains('active');
       if (window.Studio3D) window.Studio3D.toggleAccessory(name, isActive);
+      if (isActive && window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
+        if (name === 'watch') window.Studio3D.focusVanityFeature('watch');
+        else if (name === 'earrings') window.Studio3D.focusVanityFeature('earrings');
+      }
       showToast(`${name.charAt(0).toUpperCase() + name.slice(1)} ${isActive ? 'equipped' : 'removed'}.`);
     }
   }

@@ -1908,6 +1908,9 @@
             console.log('Studio3D: Rigged 3D avatar loaded successfully from', url);
             this.gltfAvatarGroup = this.avatarModel.gltfAvatarGroup;
             this.activeAvatarType = this.avatarModel.activeAvatarType;
+            if (this.currentVanityFeature) {
+              this.focusVanityFeature(this.currentVanityFeature);
+            }
           },
           (err) => {
             console.log('Studio3D: Using high-definition sculpted avatar.');
@@ -2372,22 +2375,253 @@
       this.savePreferences();
     }
 
-    setCameraFocus(view) {
+    /**
+     * Discovers active world-space anatomical anchors on the avatar (GLB or sculpted)
+     */
+    getAvatarFeatureAnchors() {
+      const anchors = {
+        chin: null,
+        lip: null,
+        head: null,
+        hair: null,
+        leftHand: null,
+        rightHand: null,
+        leftBrow: null,
+        rightBrow: null,
+        leftEarring: null,
+        rightEarring: null,
+        watch: null
+      };
+
+      const model = this.avatarModel?.gltfAvatarGroup || this.avatarModel?.avatarRoot || this.gltfAvatarGroup || this.avatarRoot;
+      if (model && typeof model.traverse === 'function') {
+        model.traverse((child) => {
+          if (child.name === 'Avatar_Chin') anchors.chin = child;
+          else if (child.name === 'Avatar_Upper_Lip') anchors.lip = child;
+          else if (child.name === 'Avatar_Head') anchors.head = child;
+          else if (child.name === 'Avatar_Hair_Bun' || child.name === 'Avatar_Hair_Base') anchors.hair = child;
+          else if (child.name === 'Avatar_Hand_L') anchors.leftHand = child;
+          else if (child.name === 'Avatar_Hand_R') anchors.rightHand = child;
+          else if (child.name === 'Avatar_Earring_L') anchors.leftEarring = child;
+          else if (child.name === 'Avatar_Earring_R') anchors.rightEarring = child;
+          else if (child.name === 'Eye_Brow_L') anchors.leftBrow = child;
+          else if (child.name === 'Eye_Brow_R') anchors.rightBrow = child;
+        });
+      }
+
+      if (this.avatarModel?.rig?.accessories?.watch) {
+        anchors.watch = this.avatarModel.rig.accessories.watch;
+      }
+      return anchors;
+    }
+
+    /**
+     * Resolves the world position of an anchor object with a safe fallback
+     */
+    getFeatureWorldPosition(anchorObj, fallbackWorldVec) {
+      if (anchorObj && typeof anchorObj.getWorldPosition === 'function' && typeof THREE !== 'undefined') {
+        anchorObj.updateMatrixWorld(true);
+        const v = new THREE.Vector3();
+        anchorObj.getWorldPosition(v);
+        if (!isNaN(v.x) && !isNaN(v.y) && !isNaN(v.z)) {
+          return v;
+        }
+      }
+      return fallbackWorldVec.clone();
+    }
+
+    /**
+     * Vanity Camera Focus & Framing Engine
+     * Precision camera targeting for all grooming, makeup, facial hair, nails, and jewelry categories
+     */
+    focusVanityFeature(featureId, options = {}) {
       if (!this.camera || typeof THREE === 'undefined') return;
-      if (view === 'face') {
-        this.setCameraState('AVATAR_DETAIL');
-      } else if (view === 'mirror' || view === 'vanity') {
+
+      const normId = (featureId || '').toLowerCase().trim();
+      this.currentVanityFeature = normId;
+
+      if (normId === 'mirror' || normId === 'vanity') {
         this.setCameraState('VANITY_VIEW');
-      } else if (view === 'hands') {
-        if (this.targetCameraPos) {
-          this.targetCameraPos.set(0.12, 1.02, 0.72);
+        return;
+      }
+
+      if (normId === 'body' || normId === 'proportions') {
+        this.setCameraState('AVATAR_FULL_BODY');
+        return;
+      }
+
+      if (normId === 'lookbook') {
+        const lookbookTarget = new THREE.Vector3(0.0, 1.05, 0.0);
+        const lookbookCam = new THREE.Vector3(-0.05, 1.15, 2.25);
+        this.currentCameraState = 'VANITY_LOOKBOOK';
+        if (this.cameraController && typeof this.cameraController.focusOnObject === 'function') {
+          this.cameraController.focusOnObject(lookbookTarget, lookbookCam, 36);
         }
-        if (this.targetCameraLookAt) {
-          this.targetCameraLookAt.set(0.08, 0.94, 0);
+        if (this.targetCameraPos) this.targetCameraPos.copy(lookbookCam);
+        if (this.targetCameraLookAt) this.targetCameraLookAt.copy(lookbookTarget);
+        return;
+      }
+
+      const anchors = this.getAvatarFeatureAnchors();
+      const baseElevation = (this.avatarModel && typeof this.avatarModel.getElevation === 'function')
+        ? this.avatarModel.getElevation()
+        : (this.avatarRoot ? this.avatarRoot.position.y : 0.080);
+      const isGLB = this.avatarModel?.activeAvatarType === 'glb';
+      const glbScale = isGLB ? 0.96 : 1.0;
+
+      const headBaseY = baseElevation + 1.54 * glbScale;
+      const chinBase = new THREE.Vector3(0, headBaseY - (isGLB ? 0.075 * 0.96 : 0.072), 0.045);
+      const lipBase = new THREE.Vector3(0, headBaseY - (isGLB ? 0.048 * 0.96 : 0.048), 0.085);
+      const browBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.030 * 0.96 : 0.032), 0.080);
+      const eyeBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.015 * 0.96 : 0.015), 0.080);
+      const cheekBase = new THREE.Vector3(0, headBaseY - 0.015, 0.075);
+      const headBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.030 : 0.020), 0.0);
+      const hairBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.065 : 0.060), -0.010);
+      const leftHandBase = new THREE.Vector3(isGLB ? -0.200 : -0.210, baseElevation + 0.835 * glbScale, 0.022);
+      const rightHandBase = new THREE.Vector3(isGLB ? 0.200 : 0.210, baseElevation + 0.835 * glbScale, 0.022);
+      const earBase = new THREE.Vector3(isGLB ? 0.084 : 0.090, headBaseY - 0.010, -0.010);
+
+      const aspect = (this.camera && this.camera.aspect) ? this.camera.aspect : 1.0;
+
+      const calcFramingDist = (w, h, fovDeg, margin = 1.30, minDist = 0.38) => {
+        const fovRad = (fovDeg * Math.PI) / 180;
+        const tanHalfV = Math.tan(fovRad / 2);
+        const tanHalfH = tanHalfV * Math.max(0.40, aspect);
+        const distV = (h * margin * 0.5) / tanHalfV;
+        const distH = (w * margin * 0.5) / tanHalfH;
+        return Math.max(minDist, Math.max(distV, distH));
+      };
+
+      let targetPos;
+      let cameraPos;
+      let targetFov = 28;
+
+      if (normId === 'beard') {
+        const chinPos = this.getFeatureWorldPosition(anchors.chin, chinBase);
+        targetPos = new THREE.Vector3(chinPos.x, chinPos.y + 0.030, chinPos.z);
+        const dist = calcFramingDist(0.18, 0.16, 28, 1.35, 0.48);
+        cameraPos = new THREE.Vector3(chinPos.x, chinPos.y + 0.038, chinPos.z + dist);
+        targetFov = 28;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'moustache') {
+        const lipPos = this.getFeatureWorldPosition(anchors.lip, lipBase);
+        targetPos = new THREE.Vector3(lipPos.x, lipPos.y + 0.008, lipPos.z);
+        const dist = calcFramingDist(0.11, 0.08, 26, 1.40, 0.38);
+        cameraPos = new THREE.Vector3(lipPos.x, lipPos.y + 0.012, lipPos.z + dist);
+        targetFov = 26;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'lips') {
+        const lipPos = this.getFeatureWorldPosition(anchors.lip, lipBase);
+        targetPos = new THREE.Vector3(lipPos.x, lipPos.y - 0.005, lipPos.z);
+        const dist = calcFramingDist(0.12, 0.09, 26, 1.35, 0.38);
+        cameraPos = new THREE.Vector3(lipPos.x, lipPos.y - 0.002, lipPos.z + dist);
+        targetFov = 26;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'brows' || normId === 'eyebrows') {
+        const browL = this.getFeatureWorldPosition(anchors.leftBrow, browBase);
+        const browR = this.getFeatureWorldPosition(anchors.rightBrow, browBase);
+        const browPos = new THREE.Vector3((browL.x + browR.x) / 2, (browL.y + browR.y) / 2, (browL.z + browR.z) / 2);
+        targetPos = new THREE.Vector3(browPos.x, browPos.y - 0.005, browPos.z);
+        const dist = calcFramingDist(0.16, 0.12, 27, 1.30, 0.42);
+        cameraPos = new THREE.Vector3(browPos.x, browPos.y + 0.005, browPos.z + dist);
+        targetFov = 27;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'eyes') {
+        const eyePos = eyeBase.clone();
+        targetPos = new THREE.Vector3(0, eyePos.y, eyePos.z);
+        const dist = calcFramingDist(0.14, 0.09, 26, 1.30, 0.40);
+        cameraPos = new THREE.Vector3(0, eyePos.y + 0.002, eyePos.z + dist);
+        targetFov = 26;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'cheeks' || normId === 'blush') {
+        const cheekPos = cheekBase.clone();
+        targetPos = new THREE.Vector3(0, cheekPos.y, cheekPos.z);
+        const dist = calcFramingDist(0.20, 0.16, 28, 1.30, 0.50);
+        cameraPos = new THREE.Vector3(0, cheekPos.y + 0.008, cheekPos.z + dist);
+        targetFov = 28;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'hair' || normId === 'hairstyle') {
+        const hairPos = this.getFeatureWorldPosition(anchors.hair, hairBase);
+        targetPos = new THREE.Vector3(0, hairPos.y + 0.010, hairPos.z);
+        const dist = calcFramingDist(0.32, 0.42, 32, 1.35, 0.95);
+        cameraPos = new THREE.Vector3(0, hairPos.y + 0.020, hairPos.z + dist);
+        targetFov = 32;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'nails' || normId === 'hands') {
+        const handL = this.getFeatureWorldPosition(anchors.leftHand, leftHandBase);
+        const handR = this.getFeatureWorldPosition(anchors.rightHand, rightHandBase);
+        if (options.hand === 'left') {
+          targetPos = new THREE.Vector3(handL.x, handL.y - 0.025, handL.z);
+          const dist = calcFramingDist(0.18, 0.18, 26, 1.30, 0.34);
+          cameraPos = new THREE.Vector3(handL.x, handL.y + 0.010, handL.z + dist);
+          targetFov = 26;
+        } else if (options.hand === 'right') {
+          targetPos = new THREE.Vector3(handR.x, handR.y - 0.025, handR.z);
+          const dist = calcFramingDist(0.18, 0.18, 26, 1.30, 0.34);
+          cameraPos = new THREE.Vector3(handR.x, handR.y + 0.010, handR.z + dist);
+          targetFov = 26;
+        } else {
+          const centerHands = new THREE.Vector3(
+            (handL.x + handR.x) / 2,
+            (handL.y + handR.y) / 2 - 0.025,
+            (handL.z + handR.z) / 2
+          );
+          targetPos = centerHands;
+          const dist = calcFramingDist(0.48, 0.22, 30, 1.30, 0.65);
+          cameraPos = new THREE.Vector3(centerHands.x, centerHands.y + 0.025, centerHands.z + dist);
+          targetFov = 30;
         }
-        this.currentCameraState = 'AVATAR_HANDS';
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      } else if (normId === 'watch') {
+        const handL = this.getFeatureWorldPosition(anchors.leftHand, leftHandBase);
+        targetPos = new THREE.Vector3(handL.x + 0.010, handL.y + 0.015, handL.z);
+        cameraPos = new THREE.Vector3(handL.x - 0.08, handL.y + 0.05, handL.z + 0.38);
+        targetFov = 26;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0.15;
+      } else if (normId === 'earrings') {
+        const earPos = this.getFeatureWorldPosition(anchors.rightEarring, earBase);
+        targetPos = new THREE.Vector3(earPos.x * 0.70, earPos.y, earPos.z);
+        cameraPos = new THREE.Vector3(earPos.x + 0.22, earPos.y + 0.01, earPos.z + 0.48);
+        targetFov = 26;
+        if (this.targetRotationY !== undefined) this.targetRotationY = -0.20;
       } else {
-        this.setCameraState('STUDIO_OVERVIEW');
+        // 'skin', 'face', or default facial framing
+        const headPos = this.getFeatureWorldPosition(anchors.head, headBase);
+        targetPos = new THREE.Vector3(headPos.x, headPos.y - 0.010, headPos.z);
+        const dist = calcFramingDist(0.24, 0.28, 29, 1.30, 0.68);
+        cameraPos = new THREE.Vector3(headPos.x, headPos.y + 0.005, headPos.z + dist);
+        targetFov = 29;
+        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+      }
+
+      this.currentCameraState = `VANITY_${normId.toUpperCase()}`;
+
+      if (this.cameraController && typeof this.cameraController.focusOnObject === 'function') {
+        this.cameraController.focusOnObject(targetPos, cameraPos, targetFov);
+      }
+      if (this.targetCameraPos) {
+        this.targetCameraPos.copy(cameraPos);
+      }
+      if (this.targetCameraLookAt) {
+        this.targetCameraLookAt.copy(targetPos);
+      }
+    }
+
+    /**
+     * Clears active Vanity focus and returns to Studio Overview
+     */
+    clearVanityFocus() {
+      this.currentVanityFeature = null;
+      this.setCameraState('STUDIO_OVERVIEW');
+    }
+
+    setCameraFocus(view, options = {}) {
+      if (!this.camera || typeof THREE === 'undefined') return;
+      if (view === 'mirror' || view === 'vanity') {
+        this.currentVanityFeature = null;
+        this.setCameraState('VANITY_VIEW');
+      } else {
+        this.focusVanityFeature(view, options);
       }
     }
 

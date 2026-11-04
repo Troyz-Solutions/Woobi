@@ -26,6 +26,7 @@ export class CameraTransitions {
     this.targetCameraPos = new THREE.Vector3(initial.position.x, initial.position.y, initial.position.z);
     this.targetCameraLookAt = new THREE.Vector3(initial.target.x, initial.target.y, initial.target.z);
     this.currentCameraLookAt = new THREE.Vector3(initial.target.x, initial.target.y, initial.target.z);
+    this.customTargetFov = null;
   }
 
   setPreset(presetName) {
@@ -33,17 +34,21 @@ export class CameraTransitions {
     if (!preset) return false;
 
     this.currentPreset = presetName;
+    this.customTargetFov = null;
     this.targetCameraPos.set(preset.position.x, preset.position.y, preset.position.z);
     this.targetCameraLookAt.set(preset.target.x, preset.target.y, preset.target.z);
     return true;
   }
 
-  focusOn(targetPos, cameraPos = null) {
+  focusOn(targetPos, cameraPos = null, targetFov = null) {
     if (targetPos) {
       this.targetCameraLookAt.set(targetPos.x, targetPos.y, targetPos.z);
     }
     if (cameraPos) {
       this.targetCameraPos.set(cameraPos.x, cameraPos.y, cameraPos.z);
+    }
+    if (targetFov !== null && targetFov !== undefined) {
+      this.customTargetFov = targetFov;
     }
   }
 
@@ -82,7 +87,9 @@ export class CameraTransitions {
 
     // 2. Update FOV with zoom damping
     const preset = CAMERA_PRESETS[this.currentPreset] || CAMERA_PRESETS[DEFAULT_CAMERA_PRESET];
-    const baseFov = getFovForAspect(preset, aspect || camera.aspect);
+    const baseFov = (this.customTargetFov !== null && this.customTargetFov !== undefined)
+      ? this.customTargetFov
+      : getFovForAspect(preset, aspect || camera.aspect);
     const targetFov = Math.max(this.minFov, Math.min(this.maxFov, baseFov * this.zoomFactor));
 
     camera.fov += (targetFov - camera.fov) * this.fovLerpSpeed;

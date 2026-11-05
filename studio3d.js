@@ -2432,7 +2432,8 @@
 
     /**
      * Vanity Camera Focus & Framing Engine
-     * Precision camera targeting for all grooming, makeup, facial hair, nails, and jewelry categories
+     * Precision camera targeting for all grooming, makeup, facial hair, nails, and jewelry categories.
+     * Accurately accounts for visible viewport aperture remaining above the sliding bottom sheet.
      */
     focusVanityFeature(featureId, options = {}) {
       if (!this.camera || typeof THREE === 'undefined') return;
@@ -2451,11 +2452,11 @@
       }
 
       if (normId === 'lookbook') {
-        const lookbookTarget = new THREE.Vector3(0.0, 1.05, 0.0);
-        const lookbookCam = new THREE.Vector3(-0.05, 1.15, 2.25);
+        const lookbookTarget = new THREE.Vector3(0.0, 1.00, 0.0);
+        const lookbookCam = new THREE.Vector3(-0.05, 1.10, 2.25);
         this.currentCameraState = 'VANITY_LOOKBOOK';
         if (this.cameraController && typeof this.cameraController.focusOnObject === 'function') {
-          this.cameraController.focusOnObject(lookbookTarget, lookbookCam, 36);
+          this.cameraController.focusOnObject(lookbookTarget, lookbookCam, 38);
         }
         if (this.targetCameraPos) this.targetCameraPos.copy(lookbookCam);
         if (this.targetCameraLookAt) this.targetCameraLookAt.copy(lookbookTarget);
@@ -2475,123 +2476,159 @@
       const browBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.030 * 0.96 : 0.032), 0.080);
       const eyeBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.015 * 0.96 : 0.015), 0.080);
       const cheekBase = new THREE.Vector3(0, headBaseY - 0.015, 0.075);
-      const headBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.030 : 0.020), 0.0);
+      const headBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.020 : 0.015), 0.0);
       const hairBase = new THREE.Vector3(0, headBaseY + (isGLB ? 0.065 : 0.060), -0.010);
       const leftHandBase = new THREE.Vector3(isGLB ? -0.200 : -0.210, baseElevation + 0.835 * glbScale, 0.022);
       const rightHandBase = new THREE.Vector3(isGLB ? 0.200 : 0.210, baseElevation + 0.835 * glbScale, 0.022);
       const earBase = new THREE.Vector3(isGLB ? 0.084 : 0.090, headBaseY - 0.010, -0.010);
 
-      const aspect = (this.camera && this.camera.aspect) ? this.camera.aspect : 1.0;
+      // Measure bottom sheet coverage to center features in the visible aperture above the sheet
+      const sheet = (typeof document !== 'undefined') ? document.getElementById('serenVanitySheet') : null;
+      const sheetCard = (typeof document !== 'undefined') ? document.querySelector('.vanity-sheet-card') : null;
+      const container = (typeof document !== 'undefined') ? document.getElementById('seren3dContainer') : null;
 
-      const calcFramingDist = (w, h, fovDeg, margin = 1.30, minDist = 0.38) => {
-        const fovRad = (fovDeg * Math.PI) / 180;
-        const tanHalfV = Math.tan(fovRad / 2);
-        const tanHalfH = tanHalfV * Math.max(0.40, aspect);
-        const distV = (h * margin * 0.5) / tanHalfV;
-        const distH = (w * margin * 0.5) / tanHalfH;
-        return Math.max(minDist, Math.max(distV, distH));
-      };
+      let sheetFraction = 0.46; // Baseline ~46% bottom sheet coverage
+      if (sheet && !sheet.classList.contains('hidden') && sheetCard && container) {
+        const containerH = container.clientHeight || 0;
+        const cardH = sheetCard.clientHeight || 0;
+        if (containerH > 100 && cardH > 50) {
+          sheetFraction = Math.min(0.60, Math.max(0.35, cardH / containerH));
+        }
+      }
+
+      const aspect = (this.camera && this.camera.aspect) ? this.camera.aspect : 1.0;
+      // Aspect ratio compensation for narrow mobile viewports
+      const aspectComp = Math.max(1.0, 0.72 / Math.max(0.35, aspect));
 
       let targetPos;
       let cameraPos;
-      let targetFov = 28;
+      let targetFov = 34;
+
+      // Helper to compute target and camera position elevated into the clear visible aperture above the sheet
+      const computeFraming = (centerVec, baseDist, fovDeg, rotY = 0, xCamOffset = 0, yCamOffset = 0) => {
+        const dist = baseDist * aspectComp;
+        const fovRad = (fovDeg * Math.PI) / 180;
+        const halfTan = Math.tan(fovRad / 2);
+        // Vertical shift so feature center projects into the middle of the unobstructed top aperture
+        const sheetOffset = sheetFraction * dist * halfTan;
+        const lookAtY = centerVec.y - sheetOffset;
+        const camY = lookAtY + yCamOffset;
+
+        if (this.targetRotationY !== undefined) {
+          this.targetRotationY = rotY;
+        }
+
+        return {
+          target: new THREE.Vector3(centerVec.x, lookAtY, centerVec.z),
+          camera: new THREE.Vector3(centerVec.x + xCamOffset, camY, centerVec.z + dist),
+          fov: fovDeg
+        };
+      };
 
       if (normId === 'beard') {
+        // Beard & Stubble: entire face from forehead to chin, including jaw
         const chinPos = this.getFeatureWorldPosition(anchors.chin, chinBase);
-        targetPos = new THREE.Vector3(chinPos.x, chinPos.y + 0.030, chinPos.z);
-        const dist = calcFramingDist(0.18, 0.16, 28, 1.35, 0.48);
-        cameraPos = new THREE.Vector3(chinPos.x, chinPos.y + 0.038, chinPos.z + dist);
-        targetFov = 28;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        const faceCenter = new THREE.Vector3(chinPos.x, chinPos.y + 0.050, chinPos.z);
+        const f = computeFraming(faceCenter, 1.20, 34, 0, 0, 0.015);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'moustache') {
+        // Moustache: nose, upper lip, mouth, cheeks, and chin with sufficient context
         const lipPos = this.getFeatureWorldPosition(anchors.lip, lipBase);
-        targetPos = new THREE.Vector3(lipPos.x, lipPos.y + 0.008, lipPos.z);
-        const dist = calcFramingDist(0.11, 0.08, 26, 1.40, 0.38);
-        cameraPos = new THREE.Vector3(lipPos.x, lipPos.y + 0.012, lipPos.z + dist);
-        targetFov = 26;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        const moustCenter = new THREE.Vector3(lipPos.x, lipPos.y + 0.010, lipPos.z);
+        const f = computeFraming(moustCenter, 1.02, 32, 0, 0, 0.010);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'lips') {
+        // Lips & Finish: nose base, philtrum, lips, lip corners, and chin
         const lipPos = this.getFeatureWorldPosition(anchors.lip, lipBase);
-        targetPos = new THREE.Vector3(lipPos.x, lipPos.y - 0.005, lipPos.z);
-        const dist = calcFramingDist(0.12, 0.09, 26, 1.35, 0.38);
-        cameraPos = new THREE.Vector3(lipPos.x, lipPos.y - 0.002, lipPos.z + dist);
-        targetFov = 26;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        const lipCenter = new THREE.Vector3(lipPos.x, lipPos.y - 0.005, lipPos.z);
+        const f = computeFraming(lipCenter, 0.98, 32, 0, 0, 0.010);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'brows' || normId === 'eyebrows') {
+        // Eyebrows: forehead, hairline, both eyebrows, both almond eyes, and bridge of nose
         const browL = this.getFeatureWorldPosition(anchors.leftBrow, browBase);
         const browR = this.getFeatureWorldPosition(anchors.rightBrow, browBase);
-        const browPos = new THREE.Vector3((browL.x + browR.x) / 2, (browL.y + browR.y) / 2, (browL.z + browR.z) / 2);
-        targetPos = new THREE.Vector3(browPos.x, browPos.y - 0.005, browPos.z);
-        const dist = calcFramingDist(0.16, 0.12, 27, 1.30, 0.42);
-        cameraPos = new THREE.Vector3(browPos.x, browPos.y + 0.005, browPos.z + dist);
-        targetFov = 27;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        const browCenter = new THREE.Vector3((browL.x + browR.x) / 2, (browL.y + browR.y) / 2 - 0.005, (browL.z + browR.z) / 2);
+        const f = computeFraming(browCenter, 1.05, 32, 0, 0, 0.012);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'eyes') {
-        const eyePos = eyeBase.clone();
-        targetPos = new THREE.Vector3(0, eyePos.y, eyePos.z);
-        const dist = calcFramingDist(0.14, 0.09, 26, 1.30, 0.40);
-        cameraPos = new THREE.Vector3(0, eyePos.y + 0.002, eyePos.z + dist);
-        targetFov = 26;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        // Eyes: both eyes, pupils, catchlights, and upper facial contour
+        const eyeCenter = eyeBase.clone();
+        const f = computeFraming(eyeCenter, 1.00, 32, 0, 0, 0.010);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'cheeks' || normId === 'blush') {
-        const cheekPos = cheekBase.clone();
-        targetPos = new THREE.Vector3(0, cheekPos.y, cheekPos.z);
-        const dist = calcFramingDist(0.20, 0.16, 28, 1.30, 0.50);
-        cameraPos = new THREE.Vector3(0, cheekPos.y + 0.008, cheekPos.z + dist);
-        targetFov = 28;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        // Cheek Blush: both cheeks and surrounding facial area
+        const cheekCenter = cheekBase.clone();
+        const f = computeFraming(cheekCenter, 1.18, 34, 0, 0, 0.015);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'hair' || normId === 'hairstyle') {
+        // Hairstyle: entire head including the top (high bun apex) and sides of hair
         const hairPos = this.getFeatureWorldPosition(anchors.hair, hairBase);
-        targetPos = new THREE.Vector3(0, hairPos.y + 0.010, hairPos.z);
-        const dist = calcFramingDist(0.32, 0.42, 32, 1.35, 0.95);
-        cameraPos = new THREE.Vector3(0, hairPos.y + 0.020, hairPos.z + dist);
-        targetFov = 32;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        const hairCenter = new THREE.Vector3(0, hairPos.y + 0.020, hairPos.z);
+        const f = computeFraming(hairCenter, 1.48, 36, 0, 0, 0.020);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'nails' || normId === 'hands') {
+        // 3D Nail Studio: both hands comfortably visible with all 10 nails detailed
         const handL = this.getFeatureWorldPosition(anchors.leftHand, leftHandBase);
         const handR = this.getFeatureWorldPosition(anchors.rightHand, rightHandBase);
         if (options.hand === 'left') {
-          targetPos = new THREE.Vector3(handL.x, handL.y - 0.025, handL.z);
-          const dist = calcFramingDist(0.18, 0.18, 26, 1.30, 0.34);
-          cameraPos = new THREE.Vector3(handL.x, handL.y + 0.010, handL.z + dist);
-          targetFov = 26;
+          const f = computeFraming(new THREE.Vector3(handL.x, handL.y - 0.015, handL.z), 0.72, 30, 0, 0, 0.015);
+          targetPos = f.target;
+          cameraPos = f.camera;
+          targetFov = f.fov;
         } else if (options.hand === 'right') {
-          targetPos = new THREE.Vector3(handR.x, handR.y - 0.025, handR.z);
-          const dist = calcFramingDist(0.18, 0.18, 26, 1.30, 0.34);
-          cameraPos = new THREE.Vector3(handR.x, handR.y + 0.010, handR.z + dist);
-          targetFov = 26;
+          const f = computeFraming(new THREE.Vector3(handR.x, handR.y - 0.015, handR.z), 0.72, 30, 0, 0, 0.015);
+          targetPos = f.target;
+          cameraPos = f.camera;
+          targetFov = f.fov;
         } else {
           const centerHands = new THREE.Vector3(
             (handL.x + handR.x) / 2,
-            (handL.y + handR.y) / 2 - 0.025,
+            (handL.y + handR.y) / 2 - 0.015,
             (handL.z + handR.z) / 2
           );
-          targetPos = centerHands;
-          const dist = calcFramingDist(0.48, 0.22, 30, 1.30, 0.65);
-          cameraPos = new THREE.Vector3(centerHands.x, centerHands.y + 0.025, centerHands.z + dist);
-          targetFov = 30;
+          const f = computeFraming(centerHands, 1.08, 34, 0, 0, 0.020);
+          targetPos = f.target;
+          cameraPos = f.camera;
+          targetFov = f.fov;
         }
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
       } else if (normId === 'watch') {
+        // Watch: wrist and hand clearly visible with surrounding arm context
         const handL = this.getFeatureWorldPosition(anchors.leftHand, leftHandBase);
-        targetPos = new THREE.Vector3(handL.x + 0.010, handL.y + 0.015, handL.z);
-        cameraPos = new THREE.Vector3(handL.x - 0.08, handL.y + 0.05, handL.z + 0.38);
-        targetFov = 26;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0.15;
+        const watchCenter = new THREE.Vector3(handL.x + 0.010, handL.y + 0.010, handL.z);
+        const f = computeFraming(watchCenter, 0.80, 30, 0.12, -0.06, 0.025);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else if (normId === 'earrings') {
+        // Earrings: both ears/side of face with earring clearly visible
         const earPos = this.getFeatureWorldPosition(anchors.rightEarring, earBase);
-        targetPos = new THREE.Vector3(earPos.x * 0.70, earPos.y, earPos.z);
-        cameraPos = new THREE.Vector3(earPos.x + 0.22, earPos.y + 0.01, earPos.z + 0.48);
-        targetFov = 26;
-        if (this.targetRotationY !== undefined) this.targetRotationY = -0.20;
+        const earCenter = new THREE.Vector3(earPos.x * 0.75, earPos.y, earPos.z);
+        const f = computeFraming(earCenter, 0.90, 30, -0.18, 0.18, 0.015);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       } else {
-        // 'skin', 'face', or default facial framing
+        // Skin & Tone / Face: entire face, forehead to chin, comfortably visible
         const headPos = this.getFeatureWorldPosition(anchors.head, headBase);
-        targetPos = new THREE.Vector3(headPos.x, headPos.y - 0.010, headPos.z);
-        const dist = calcFramingDist(0.24, 0.28, 29, 1.30, 0.68);
-        cameraPos = new THREE.Vector3(headPos.x, headPos.y + 0.005, headPos.z + dist);
-        targetFov = 29;
-        if (this.targetRotationY !== undefined) this.targetRotationY = 0;
+        const headCenter = new THREE.Vector3(headPos.x, headPos.y - 0.005, headPos.z);
+        const f = computeFraming(headCenter, 1.28, 34, 0, 0, 0.015);
+        targetPos = f.target;
+        cameraPos = f.camera;
+        targetFov = f.fov;
       }
 
       this.currentCameraState = `VANITY_${normId.toUpperCase()}`;

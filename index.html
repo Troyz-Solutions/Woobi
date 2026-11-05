@@ -718,6 +718,15 @@
                       <button class="vanity-chip" data-beard="goatee" onclick="app.serenSetBeard('goatee', this)">Sculpted Goatee</button>
                     </div>
                   </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Sideburns & Temple Contours</label>
+                    <div class="vanity-pill-group" id="sideburnStyleChips">
+                      <button class="vanity-chip active" data-sideburn="natural" onclick="app.serenSetSideburns('natural', this)">Natural Taper</button>
+                      <button class="vanity-chip" data-sideburn="faded" onclick="app.serenSetSideburns('faded', this)">Low / Faded</button>
+                      <button class="vanity-chip" data-sideburn="long" onclick="app.serenSetSideburns('long', this)">Classic Long</button>
+                      <button class="vanity-chip" data-sideburn="clean" onclick="app.serenSetSideburns('clean', this)">Clean Shaved</button>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Category Panel: Moustache (Masculine & Neutral) -->
@@ -770,6 +779,15 @@
                     </div>
                   </div>
                   <div class="vanity-section">
+                    <label class="vanity-sec-label">Highlighter & Sculpt Contour</label>
+                    <div class="vanity-swatches-row" id="contourSwatches">
+                      <button class="skin-swatch active" style="background: #F0DFC8;" title="Champagne Pearl Glow" onclick="app.serenSetBlush('#F0DFC8', null, this)"></button>
+                      <button class="skin-swatch" style="background: #F5D6CE;" title="Soft Rose Quartz" onclick="app.serenSetBlush('#F5D6CE', null, this)"></button>
+                      <button class="skin-swatch" style="background: #E2C39B;" title="Golden Honey Sheen" onclick="app.serenSetBlush('#E2C39B', null, this)"></button>
+                      <button class="skin-swatch" style="background: #8B5A3C;" title="Warm Sculpt Contour" onclick="app.serenSetBlush('#8B5A3C', null, this)"></button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
                     <div class="vanity-range-header">
                       <label class="vanity-sec-label" style="margin-bottom: 0;">Blush Intensity</label>
                       <span class="vanity-range-val" id="blushValLabel">35%</span>
@@ -793,10 +811,19 @@
                   <div class="vanity-section">
                     <label class="vanity-sec-label">Eyeliner Definition</label>
                     <div class="vanity-pill-group" id="eyelinerChips">
-                      <button class="vanity-chip active" data-liner="natural" onclick="app.serenSetEyeMakeup('natural', null, null, this)">Natural Soft</button>
-                      <button class="vanity-chip" data-liner="winged" onclick="app.serenSetEyeMakeup('winged', null, null, this)">Winged Flick</button>
-                      <button class="vanity-chip" data-liner="kohl" onclick="app.serenSetEyeMakeup('kohl', null, null, this)">Soft Kohl</button>
-                      <button class="vanity-chip" data-liner="tightline" onclick="app.serenSetEyeMakeup('tightline', null, null, this)">Tightline</button>
+                      <button class="vanity-chip active" data-liner="natural" onclick="app.serenSetEyeMakeup('natural', null, null, null, this)">Natural Soft</button>
+                      <button class="vanity-chip" data-liner="winged" onclick="app.serenSetEyeMakeup('winged', null, null, null, this)">Winged Flick</button>
+                      <button class="vanity-chip" data-liner="kohl" onclick="app.serenSetEyeMakeup('kohl', null, null, null, this)">Soft Kohl</button>
+                      <button class="vanity-chip" data-liner="tightline" onclick="app.serenSetEyeMakeup('tightline', null, null, null, this)">Tightline</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Mascara Volume & Kajal</label>
+                    <div class="vanity-pill-group" id="mascaraChips">
+                      <button class="vanity-chip active" data-mascara="natural" onclick="app.serenSetEyeMakeup(null, null, null, 'natural', this)">Natural Clean</button>
+                      <button class="vanity-chip" data-mascara="volume" onclick="app.serenSetEyeMakeup(null, null, null, 'volume', this)">Lash Volume</button>
+                      <button class="vanity-chip" data-mascara="kajal" onclick="app.serenSetEyeMakeup(null, null, null, 'kajal', this)">Deep Kohl Kajal</button>
+                      <button class="vanity-chip" data-mascara="dramatic" onclick="app.serenSetEyeMakeup(null, null, null, 'dramatic', this)">Dramatic Smokey</button>
                     </div>
                   </div>
                   <div class="vanity-section">
@@ -830,6 +857,14 @@
                     </div>
                   </div>
                   <div class="vanity-section">
+                    <label class="vanity-sec-label">Apply Customization To</label>
+                    <div class="vanity-pill-group" id="nailHandTargetChips">
+                      <button class="vanity-chip active" data-hand="both" onclick="app.serenSetNailHandTarget('both', this)">💅 Both Hands</button>
+                      <button class="vanity-chip" data-hand="left" onclick="app.serenSetNailHandTarget('left', this)">Left Hand Only</button>
+                      <button class="vanity-chip" data-hand="right" onclick="app.serenSetNailHandTarget('right', this)">Right Hand Only</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
                     <label class="vanity-sec-label">Nail Shape</label>
                     <div class="vanity-pill-group" id="nailShapeChips">
                       <button class="vanity-chip active" data-shape="natural" onclick="app.serenSetNailOpt('shape', 'natural', this)">Natural</button>
@@ -850,7 +885,7 @@
                     </div>
                   </div>
                   <div class="vanity-section">
-                    <label class="vanity-sec-label">Plate Finish</label>
+                    <label class="vanity-sec-label">Plate Finish & Nail Art</label>
                     <div class="vanity-pill-group" id="nailFinishChips">
                       <button class="vanity-chip active" data-finish="gloss" onclick="app.serenSetNailOpt('finish', 'gloss', this)">High Gloss</button>
                       <button class="vanity-chip" data-finish="matte" onclick="app.serenSetNailOpt('finish', 'matte', this)">Velvet Matte</button>
@@ -889,6 +924,9 @@
                     <div class="vanity-pill-group">
                       <button class="vanity-chip active" id="accWatchBtn" onclick="app.serenToggleAccessory('watch', this)">⌚ Gold Watch</button>
                       <button class="vanity-chip active" id="accEarringsBtn" onclick="app.serenToggleAccessory('earrings', this)">✨ Pearl Earrings</button>
+                      <button class="vanity-chip" id="accGlassesBtn" onclick="app.serenToggleAccessory('glasses', this)">👓 Designer Glasses</button>
+                      <button class="vanity-chip" id="accChainBtn" onclick="app.serenToggleAccessory('chain', this)">⛓️ Gold Chain</button>
+                      <button class="vanity-chip" id="accRingBtn" onclick="app.serenToggleAccessory('ring', this)">💍 Signet Ring</button>
                     </div>
                   </div>
                 </div>

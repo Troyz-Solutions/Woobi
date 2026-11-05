@@ -2362,13 +2362,24 @@
       this.savePreferences();
     }
 
-    setEyeMakeup(style = 'natural', color = '#C4A482', intensity = 0.5) {
+    setSideburnStyle(styleId) {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      this.avatarConfig.grooming.sideburnStyle = styleId;
+      if (this.avatarController && typeof this.avatarController.setSideburnStyle === 'function') {
+        this.avatarController.setSideburnStyle(styleId);
+        return;
+      }
+      this.savePreferences();
+    }
+
+    setEyeMakeup(style = 'natural', color = '#C4A482', intensity = 0.5, mascara = 'natural') {
       if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
       this.avatarConfig.grooming.eyeMakeupStyle = style;
       this.avatarConfig.grooming.eyeMakeupColor = color;
       this.avatarConfig.grooming.eyeMakeupIntensity = intensity;
+      this.avatarConfig.grooming.mascaraStyle = mascara;
       if (this.avatarController && typeof this.avatarController.setEyeMakeup === 'function') {
-        this.avatarController.setEyeMakeup(style, color, intensity);
+        this.avatarController.setEyeMakeup(style, color, intensity, mascara);
         return;
       }
       this.savePreferences();
@@ -2376,19 +2387,21 @@
 
     setNailCustomization(opts = {}) {
       if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      const targetHand = opts.targetHand || opts.hand || 'both';
       if (opts.shape) this.avatarConfig.grooming.nailShape = opts.shape;
       if (opts.length) this.avatarConfig.grooming.nailLength = opts.length;
       if (opts.finish) this.avatarConfig.grooming.nailFinish = opts.finish;
       if (opts.color) this.avatarConfig.grooming.nailColor = opts.color;
+      if (opts.design) this.avatarConfig.grooming.nailDesign = opts.design;
       if (this.avatarController && typeof this.avatarController.setNailCustomization === 'function') {
         this.avatarController.setNailCustomization(opts);
         return;
       }
       if (this.avatarModel?.rig && typeof this.avatarModel.rig.setNailShape === 'function') {
-        this.avatarModel.rig.setNailShape(this.avatarConfig.grooming.nailShape, this.avatarConfig.grooming.nailLength);
+        this.avatarModel.rig.setNailShape(this.avatarConfig.grooming.nailShape, this.avatarConfig.grooming.nailLength, targetHand);
       }
       if (this.avatarModel?.materials && typeof this.avatarModel.materials.updateNailFinish === 'function') {
-        this.avatarModel.materials.updateNailFinish(this.avatarConfig.grooming.nailColor, this.avatarConfig.grooming.nailFinish);
+        this.avatarModel.materials.updateNailFinish(this.avatarConfig.grooming.nailColor, this.avatarConfig.grooming.nailFinish, targetHand);
       }
       this.savePreferences();
     }
@@ -2701,14 +2714,16 @@
       if (cfg.grooming) {
         if (cfg.grooming.beardStyle !== undefined) this.setBeardStyle(cfg.grooming.beardStyle);
         if (cfg.grooming.moustacheStyle !== undefined) this.setMoustacheStyle(cfg.grooming.moustacheStyle);
+        if (cfg.grooming.sideburnStyle !== undefined) this.setSideburnStyle(cfg.grooming.sideburnStyle);
         if (cfg.grooming.lipColor) this.setLipstick(cfg.grooming.lipColor, cfg.grooming.lipFinish || 'satin');
         if (cfg.grooming.blushColor) this.setBlush(cfg.grooming.blushColor, cfg.grooming.blushIntensity);
         if (cfg.grooming.eyebrowShape) this.setEyebrowShape(cfg.grooming.eyebrowShape);
-        if (cfg.grooming.eyeMakeupStyle || cfg.grooming.eyeMakeupColor) {
+        if (cfg.grooming.eyeMakeupStyle || cfg.grooming.eyeMakeupColor || cfg.grooming.mascaraStyle) {
           this.setEyeMakeup(
             cfg.grooming.eyeMakeupStyle || 'natural',
             cfg.grooming.eyeMakeupColor || '#C4A482',
-            cfg.grooming.eyeMakeupIntensity !== undefined ? cfg.grooming.eyeMakeupIntensity : 0.5
+            cfg.grooming.eyeMakeupIntensity !== undefined ? cfg.grooming.eyeMakeupIntensity : 0.5,
+            cfg.grooming.mascaraStyle || 'natural'
           );
         }
         if (cfg.grooming.nailShape || cfg.grooming.nailLength || cfg.grooming.nailFinish || cfg.grooming.nailColor) {

@@ -169,6 +169,18 @@ export class AvatarAssets {
                     this.materials.registerBlushMaterial(child.material);
                   }
                 }
+              } else if (child.name.includes('Lash')) {
+                if (child.material) {
+                  child.material.color = new THREE.Color(0x1F1A17);
+                  if (this.materials) {
+                    this.materials.registerEyeMakeupMaterial(child.material);
+                  }
+                }
+                if (this.rig && this.rig.eyelashMeshes) {
+                  if (!this.rig.eyelashMeshes.includes(child)) {
+                    this.rig.eyelashMeshes.push(child);
+                  }
+                }
               } else if (child.name.includes('Earring') || child.name.includes('Hoop')) {
                 if (child.material) {
                   child.material.color = new THREE.Color(0xD4AF37);

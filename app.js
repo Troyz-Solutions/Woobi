@@ -1998,10 +1998,10 @@
 
   let currentVanityGender = 'female';
   let currentActiveVanityCategory = 'skin';
-  let currentNailState = { shape: 'natural', length: 'short', finish: 'gloss', color: '#E8C5B8' };
+  let currentNailState = { shape: 'natural', length: 'short', finish: 'gloss', color: '#E8C5B8', targetHand: 'both', design: 'solid' };
   let currentLipState = { color: '#CE6F66', finish: 'satin' };
   let currentBlushState = { color: '#DE8B80', intensity: 0.35 };
-  let currentEyeMakeupState = { style: 'natural', color: '#C4A482', intensity: 0.5 };
+  let currentEyeMakeupState = { style: 'natural', color: '#C4A482', intensity: 0.5, mascara: 'natural' };
   let currentFaceShape = 'oval';
   let vanityInitialSnapshot = null;
   let vanityCurrentSnapshot = null;
@@ -2240,8 +2240,22 @@
       if (isActive && window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
         if (name === 'watch') window.Studio3D.focusVanityFeature('watch');
         else if (name === 'earrings') window.Studio3D.focusVanityFeature('earrings');
+        else if (name === 'glasses') window.Studio3D.focusVanityFeature('face');
+        else if (name === 'chain') window.Studio3D.focusVanityFeature('face');
+        else if (name === 'ring') window.Studio3D.focusVanityFeature('nails');
       }
       showToast(`${name.charAt(0).toUpperCase() + name.slice(1)} ${isActive ? 'equipped' : 'removed'}.`);
+    }
+  }
+
+  function serenSetSideburns(styleId, btn) {
+    serenPushVanityHistory();
+    if (btn) {
+      document.querySelectorAll('#sideburnStyleChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    if (window.Studio3D && typeof window.Studio3D.setSideburnStyle === 'function') {
+      window.Studio3D.setSideburnStyle(styleId);
     }
   }
 
@@ -2326,7 +2340,7 @@
     }
   }
 
-  function serenSetEyeMakeup(style, color, intensity, btn) {
+  function serenSetEyeMakeup(style, color, intensity, mascara, btn) {
     serenPushVanityHistory();
     if (style) {
       currentEyeMakeupState.style = style;
@@ -2345,11 +2359,19 @@
     if (typeof intensity === 'number') {
       currentEyeMakeupState.intensity = intensity;
     }
+    if (mascara) {
+      currentEyeMakeupState.mascara = mascara;
+      if (btn) {
+        document.querySelectorAll('#mascaraChips .vanity-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    }
     if (window.Studio3D && typeof window.Studio3D.setEyeMakeup === 'function') {
       window.Studio3D.setEyeMakeup(
         currentEyeMakeupState.style,
         currentEyeMakeupState.color,
-        currentEyeMakeupState.intensity
+        currentEyeMakeupState.intensity,
+        currentEyeMakeupState.mascara
       );
     }
   }
@@ -2363,7 +2385,8 @@
       window.Studio3D.setEyeMakeup(
         currentEyeMakeupState.style,
         currentEyeMakeupState.color,
-        num
+        num,
+        currentEyeMakeupState.mascara
       );
     }
   }
@@ -2441,6 +2464,16 @@
     if (window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
       window.Studio3D.focusVanityFeature('nails', { hand });
     }
+  }
+
+  function serenSetNailHandTarget(hand, btn) {
+    if (btn) {
+      document.querySelectorAll('#nailHandTargetChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    currentNailState.targetHand = hand || 'both';
+    serenInspectHand(hand);
+    showToast(`Nail customization targeting: ${hand === 'left' ? 'Left Hand' : (hand === 'right' ? 'Right Hand' : 'Both Hands')}.`);
   }
 
   function serenSetNailOpt(field, value, btn) {
@@ -5236,6 +5269,7 @@
     serenCameraFocus,
     serenSetBeard,
     serenSetMoustache,
+    serenSetSideburns,
     serenSetLipFinish,
     serenSetLipstick,
     serenSetBlush,
@@ -5247,6 +5281,7 @@
     serenApplyFaceShapeRecommendation,
     serenToggleBeforeAfter,
     serenInspectHand,
+    serenSetNailHandTarget,
     serenSetNailOpt,
     serenSetNailColor,
     serenSaveLookbook,

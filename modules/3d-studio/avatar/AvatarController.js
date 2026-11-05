@@ -144,37 +144,51 @@ export class AvatarController {
     this.savePreferences();
   }
 
-  setEyeMakeup(style = 'natural', color = '#C4A482', intensity = 0.5) {
+  setSideburnStyle(styleId = 'natural') {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    this.avatarConfig.grooming.sideburnStyle = styleId;
+    if (this.model && this.model.rig && typeof this.model.rig.setSideburnStyle === 'function') {
+      this.model.rig.setSideburnStyle(styleId);
+    }
+    this.savePreferences();
+  }
+
+  setEyeMakeup(style = 'natural', color = '#C4A482', intensity = 0.5, mascara = 'natural') {
     if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
     this.avatarConfig.grooming.eyeMakeupStyle = style;
     this.avatarConfig.grooming.eyeMakeupColor = color;
     this.avatarConfig.grooming.eyeMakeupIntensity = intensity;
+    this.avatarConfig.grooming.mascaraStyle = mascara;
     if (this.model && this.model.materials && typeof this.model.materials.updateEyeMakeup === 'function') {
       this.model.materials.updateEyeMakeup(style, color, intensity);
     }
     if (this.model && this.model.rig && typeof this.model.rig.setEyeMakeup === 'function') {
-      this.model.rig.setEyeMakeup(style, color, intensity);
+      this.model.rig.setEyeMakeup(style, color, intensity, mascara);
     }
     this.savePreferences();
   }
 
   setNailCustomization(opts = {}) {
     if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    const targetHand = opts.targetHand || opts.hand || 'both';
     if (opts.shape) this.avatarConfig.grooming.nailShape = opts.shape;
     if (opts.length) this.avatarConfig.grooming.nailLength = opts.length;
     if (opts.finish) this.avatarConfig.grooming.nailFinish = opts.finish;
     if (opts.color) this.avatarConfig.grooming.nailColor = opts.color;
+    if (opts.design) this.avatarConfig.grooming.nailDesign = opts.design;
 
     if (this.model && this.model.rig && typeof this.model.rig.setNailShape === 'function') {
       this.model.rig.setNailShape(
-        this.avatarConfig.grooming.nailShape || 'natural',
-        this.avatarConfig.grooming.nailLength || 'short'
+        opts.shape || this.avatarConfig.grooming.nailShape || 'natural',
+        opts.length || this.avatarConfig.grooming.nailLength || 'short',
+        targetHand
       );
     }
     if (this.model && this.model.materials && typeof this.model.materials.updateNailFinish === 'function') {
       this.model.materials.updateNailFinish(
-        this.avatarConfig.grooming.nailColor || '#E8C5B8',
-        this.avatarConfig.grooming.nailFinish || 'gloss'
+        opts.color || this.avatarConfig.grooming.nailColor || '#E8C5B8',
+        opts.finish || this.avatarConfig.grooming.nailFinish || 'gloss',
+        targetHand
       );
     }
     this.savePreferences();
@@ -187,14 +201,16 @@ export class AvatarController {
 
     if (grooming.beardStyle !== undefined) this.setBeardStyle(grooming.beardStyle);
     if (grooming.moustacheStyle !== undefined) this.setMoustacheStyle(grooming.moustacheStyle);
+    if (grooming.sideburnStyle !== undefined) this.setSideburnStyle(grooming.sideburnStyle);
     if (grooming.lipColor) this.setLipstick(grooming.lipColor, grooming.lipFinish || 'satin');
     if (grooming.eyebrowShape) this.setEyebrowShape(grooming.eyebrowShape);
     if (grooming.blushColor) this.setBlush(grooming.blushColor, grooming.blushIntensity !== undefined ? grooming.blushIntensity : 0.35);
-    if (grooming.eyeMakeupStyle || grooming.eyeMakeupColor) {
+    if (grooming.eyeMakeupStyle || grooming.eyeMakeupColor || grooming.mascaraStyle) {
       this.setEyeMakeup(
         grooming.eyeMakeupStyle || 'natural',
         grooming.eyeMakeupColor || '#C4A482',
-        grooming.eyeMakeupIntensity !== undefined ? grooming.eyeMakeupIntensity : 0.5
+        grooming.eyeMakeupIntensity !== undefined ? grooming.eyeMakeupIntensity : 0.5,
+        grooming.mascaraStyle || 'natural'
       );
     }
     if (grooming.nailShape || grooming.nailLength || grooming.nailFinish || grooming.nailColor) {
@@ -202,7 +218,9 @@ export class AvatarController {
         shape: grooming.nailShape,
         length: grooming.nailLength,
         finish: grooming.nailFinish,
-        color: grooming.nailColor
+        color: grooming.nailColor,
+        design: grooming.nailDesign,
+        targetHand: grooming.nailHand || 'both'
       });
     }
   }

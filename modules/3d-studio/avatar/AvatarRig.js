@@ -20,6 +20,9 @@ export class AvatarRig {
     this.accessories = {
       earrings: [],
       watch: null,
+      glasses: null,
+      chain: null,
+      ring: null,
       button: null
     };
     this.facialGroomingGroup = null;
@@ -29,8 +32,16 @@ export class AvatarRig {
     this.activeBeardStyle = 'clean';
     this.moustacheMeshes = {};
     this.activeMoustacheStyle = 'none';
+    this.sideburnMeshes = {};
+    this.activeSideburnStyle = 'natural';
     this.eyebrowMeshes = [];
+    this.eyelashMeshes = [];
+    this.eyeshadowMeshes = [];
     this.nailMeshes = [];
+    this.activeNailShapeLeft = 'natural';
+    this.activeNailShapeRight = 'natural';
+    this.activeNailLengthLeft = 'short';
+    this.activeNailLengthRight = 'short';
     this.disposables = [];
   }
 
@@ -197,6 +208,10 @@ export class AvatarRig {
     this.buildBeardMeshes();
     this.buildMoustacheMeshes();
     this.buildAlternateHairstyles();
+    this.buildSideburnMeshes();
+    this.buildEyeshadowMeshes();
+    this.buildGLBGlasses(this.facialGroomingGroup);
+    this.buildGLBChainNecklace(this.facialGroomingGroup);
 
     this.headGroup.add(this.facialGroomingGroup);
 
@@ -724,6 +739,10 @@ export class AvatarRig {
           baseY: child.position.y
         };
         this.eyebrowMeshes.push(child);
+      } else if (child.name.includes('Lash')) {
+        if (!this.eyelashMeshes.includes(child)) {
+          this.eyelashMeshes.push(child);
+        }
       } else if (child.name === 'Avatar_Hand_L' || child.name === 'Avatar_Hand_R') {
         this.buildGLBHandNails(child, child.name === 'Avatar_Hand_L');
       }
@@ -735,12 +754,25 @@ export class AvatarRig {
       this.buildGLBWatch(leftHand);
     }
 
+    // 4. Attach Signet Ring to Right Hand
+    const rightHand = model.getObjectByName('Avatar_Hand_R');
+    if (rightHand && !this.accessories.ring) {
+      this.buildGLBRing(rightHand);
+    }
+
+    // 5. Ensure Designer Glasses and Chain are mounted to Facial Grooming Group
+    if (this.facialGroomingGroup) {
+      if (!this.accessories.glasses) this.buildGLBGlasses(this.facialGroomingGroup);
+      if (!this.accessories.chain) this.buildGLBChainNecklace(this.facialGroomingGroup);
+    }
+
     this.glbHairMeshes = glbHair;
 
     // Apply active styles to the newly mounted GLB model
     this.setHairstyle(this.activeHairStyle || 'bun');
     this.setBeardStyle(this.activeBeardStyle || 'clean');
     this.setMoustacheStyle(this.activeMoustacheStyle || 'none');
+    this.setSideburnStyle(this.activeSideburnStyle || 'natural');
   }
 
   createNailGeometry(shape = 'oval', lengthId = 'medium', isThumb = false) {
@@ -894,7 +926,8 @@ export class AvatarRig {
 
     fingers.forEach((f) => {
       const geo = this.createNailGeometry(currentShape, currentLength, f.isThumb);
-      const mesh = new THREE.Mesh(geo, mats.nailMat);
+      const handMat = isLeftHand ? (mats.nailMatLeft || mats.nailMat) : (mats.nailMatRight || mats.nailMat);
+      const mesh = new THREE.Mesh(geo, handMat);
       mesh.name = `Nail_${isLeftHand ? 'L' : 'R'}_${f.isThumb ? 'Thumb' : 'Finger'}`;
       mesh.position.set(f.pos.x, f.pos.y, f.pos.z);
       mesh.rotation.set(f.rot.x, f.rot.y, f.rot.z);
@@ -938,6 +971,157 @@ export class AvatarRig {
 
     handNode.add(watchGroup);
     this.accessories.watch = watchGroup;
+  }
+
+  buildGLBGlasses(mount) {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!mount) return;
+
+    const glassesGroup = new THREE.Group();
+    glassesGroup.name = 'AvatarDesignerGlasses';
+
+    const frameMat = mats.hoopMat || new THREE.MeshStandardMaterial({ color: 0x1E120A, roughness: 0.3 });
+    const lensMat = new THREE.MeshStandardMaterial({
+      color: 0xEEF5FF,
+      roughness: 0.1,
+      metalness: 0.1,
+      transparent: true,
+      opacity: 0.28
+    });
+    this.disposables.push(lensMat);
+
+    [-1, 1].forEach((side) => {
+      const eyeX = side * 0.032;
+      const rimGeo = new THREE.TorusGeometry(0.0135, 0.0016, 8, 20);
+      const rim = new THREE.Mesh(rimGeo, frameMat);
+      rim.position.set(eyeX, 0.024, 0.092);
+      glassesGroup.add(rim);
+
+      const lensGeo = new THREE.CylinderGeometry(0.0125, 0.0125, 0.001, 16);
+      const lens = new THREE.Mesh(lensGeo, lensMat);
+      lens.rotation.x = Math.PI / 2;
+      lens.position.set(eyeX, 0.024, 0.092);
+      glassesGroup.add(lens);
+      this.disposables.push(rimGeo, lensGeo);
+    });
+
+    const bridgeGeo = new THREE.CylinderGeometry(0.0014, 0.0014, 0.014, 8);
+    const bridge = new THREE.Mesh(bridgeGeo, frameMat);
+    bridge.rotation.z = Math.PI / 2;
+    bridge.position.set(0, 0.027, 0.093);
+    glassesGroup.add(bridge);
+    this.disposables.push(bridgeGeo);
+
+    [-1, 1].forEach((side) => {
+      const templeGeo = new THREE.CylinderGeometry(0.0012, 0.0012, 0.075, 8);
+      const temple = new THREE.Mesh(templeGeo, frameMat);
+      temple.rotation.x = Math.PI / 2;
+      temple.position.set(side * 0.046, 0.024, 0.055);
+      glassesGroup.add(temple);
+      this.disposables.push(templeGeo);
+    });
+
+    glassesGroup.visible = false;
+    mount.add(glassesGroup);
+    this.accessories.glasses = glassesGroup;
+  }
+
+  buildGLBChainNecklace(mount) {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!mount || !mats.hoopMat) return;
+
+    const chainGroup = new THREE.Group();
+    chainGroup.name = 'AvatarChainNecklace';
+
+    const chainGeo = new THREE.TorusGeometry(0.052, 0.0024, 12, 28);
+    const chainMesh = new THREE.Mesh(chainGeo, mats.hoopMat);
+    chainMesh.rotation.x = Math.PI * 0.42;
+    chainMesh.position.set(0, -0.095, 0.015);
+    chainGroup.add(chainMesh);
+    this.disposables.push(chainGeo);
+
+    chainGroup.visible = false;
+    mount.add(chainGroup);
+    this.accessories.chain = chainGroup;
+  }
+
+  buildGLBRing(handNode) {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!handNode || !mats.hoopMat) return;
+
+    const ringGroup = new THREE.Group();
+    ringGroup.name = 'AvatarSignetRing';
+
+    const ringGeo = new THREE.TorusGeometry(0.0036, 0.0010, 8, 16);
+    const ringMesh = new THREE.Mesh(ringGeo, mats.hoopMat);
+    ringMesh.position.set(0.0105, -0.024, 0.005);
+    ringMesh.rotation.set(0.10, 0.22, -0.02);
+    ringGroup.add(ringMesh);
+    this.disposables.push(ringGeo);
+
+    ringGroup.visible = false;
+    handNode.add(ringGroup);
+    this.accessories.ring = ringGroup;
+  }
+
+  buildEyeshadowMeshes() {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    const mount = this.facialGroomingGroup || this.headGroup;
+    if (!mount || !mats.eyeshadowMat) return;
+
+    const shadowGroup = new THREE.Group();
+    shadowGroup.name = 'AvatarEyeshadowGroup';
+
+    [-1, 1].forEach((side) => {
+      const eyeX = side * 0.032;
+      const arcGeo = new THREE.CylinderGeometry(0.0024, 0.0020, 0.024, 8);
+      const arcMesh = new THREE.Mesh(arcGeo, mats.eyeshadowMat);
+      arcMesh.name = `AvatarEyeshadow_${side < 0 ? 'L' : 'R'}`;
+      arcMesh.rotation.z = Math.PI / 2 + side * 0.12;
+      arcMesh.position.set(eyeX, 0.026, 0.088);
+      shadowGroup.add(arcMesh);
+      this.eyeshadowMeshes.push(arcMesh);
+      this.disposables.push(arcGeo);
+    });
+
+    mount.add(shadowGroup);
+  }
+
+  buildSideburnMeshes() {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    const mount = this.facialGroomingGroup || this.headGroup;
+    if (!mount || !mats.beardMat) return;
+
+    const styles = ['natural', 'faded', 'long', 'clean'];
+    styles.forEach((st) => {
+      const grp = new THREE.Group();
+      grp.name = `AvatarSideburns_${st}`;
+      if (st !== 'clean') {
+        const height = (st === 'long') ? 0.055 : (st === 'faded' ? 0.025 : 0.038);
+        [-1, 1].forEach((side) => {
+          const sideGeo = new THREE.BoxGeometry(0.006, height, 0.016);
+          const sideMesh = new THREE.Mesh(sideGeo, mats.beardMat);
+          sideMesh.position.set(side * 0.084, 0.008 - height * 0.3, 0.012);
+          grp.add(sideMesh);
+          this.disposables.push(sideGeo);
+        });
+      }
+      grp.visible = (st === this.activeSideburnStyle);
+      mount.add(grp);
+      this.sideburnMeshes[st] = grp;
+    });
+  }
+
+  setSideburnStyle(styleId = 'natural') {
+    this.activeSideburnStyle = styleId;
+    Object.entries(this.sideburnMeshes).forEach(([id, grp]) => {
+      if (grp) grp.visible = (id === styleId);
+    });
   }
 
   setHairstyle(styleName = 'bun') {
@@ -1012,7 +1196,7 @@ export class AvatarRig {
     });
   }
 
-  setEyeMakeup(style = 'natural', hex = null, intensity = 0.5) {
+  setEyeMakeup(style = 'natural', hex = null, intensity = 0.5, mascara = 'natural') {
     if (this.eyelids && this.eyelids.length > 0) {
       this.eyelids.forEach((lid) => {
         if (!lid) return;
@@ -1033,22 +1217,63 @@ export class AvatarRig {
         }
       });
     }
+
+    if (this.eyelashMeshes && this.eyelashMeshes.length > 0) {
+      this.eyelashMeshes.forEach((lash) => {
+        if (!lash) return;
+        switch (mascara) {
+          case 'volume':
+            lash.scale.set(1.4, 1.4, 1.4);
+            break;
+          case 'kajal':
+            lash.scale.set(1.6, 1.5, 1.3);
+            break;
+          case 'dramatic':
+            lash.scale.set(1.8, 1.7, 1.5);
+            break;
+          case 'natural':
+          default:
+            lash.scale.set(1.0, 1.0, 1.0);
+            break;
+        }
+      });
+    }
+
+    if (this.eyeshadowMeshes && this.eyeshadowMeshes.length > 0) {
+      const showShadow = (typeof intensity === 'number') ? (intensity > 0.05) : true;
+      this.eyeshadowMeshes.forEach((s) => {
+        if (s) s.visible = showShadow;
+      });
+    }
   }
 
-  setNailShape(shapeId = 'oval', lengthId = 'medium') {
+  setNailShape(shapeId = 'oval', lengthId = 'medium', targetHand = 'both') {
+    if (targetHand === 'left' || targetHand === 'both') {
+      this.activeNailShapeLeft = shapeId;
+      this.activeNailLengthLeft = lengthId;
+    }
+    if (targetHand === 'right' || targetHand === 'both') {
+      this.activeNailShapeRight = shapeId;
+      this.activeNailLengthRight = lengthId;
+    }
     this.activeNailShape = shapeId;
     this.activeNailLength = lengthId;
 
     this.nailMeshes.forEach((nail) => {
-      if (nail) {
-        const isThumb = !!nail.userData?.isThumb;
-        const newGeo = this.createNailGeometry(shapeId, lengthId, isThumb);
-        if (nail.geometry && typeof nail.geometry.dispose === 'function') {
-          nail.geometry.dispose();
-        }
-        nail.geometry = newGeo;
-        this.disposables.push(newGeo);
+      if (!nail) return;
+      const isLeft = !!nail.userData?.isLeft;
+      if (targetHand === 'left' && !isLeft) return;
+      if (targetHand === 'right' && isLeft) return;
+
+      const currentShape = isLeft ? (this.activeNailShapeLeft || shapeId) : (this.activeNailShapeRight || shapeId);
+      const currentLength = isLeft ? (this.activeNailLengthLeft || lengthId) : (this.activeNailLengthRight || lengthId);
+      const isThumb = !!nail.userData?.isThumb;
+      const newGeo = this.createNailGeometry(currentShape, currentLength, isThumb);
+      if (nail.geometry && typeof nail.geometry.dispose === 'function') {
+        nail.geometry.dispose();
       }
+      nail.geometry = newGeo;
+      this.disposables.push(newGeo);
     });
   }
 
@@ -1063,7 +1288,10 @@ export class AvatarRig {
     this.hairStyles = {};
     this.beardMeshes = {};
     this.moustacheMeshes = {};
+    this.sideburnMeshes = {};
     this.eyebrowMeshes = [];
+    this.eyelashMeshes = [];
+    this.eyeshadowMeshes = [];
     this.nailMeshes = [];
   }
 }

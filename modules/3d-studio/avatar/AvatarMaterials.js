@@ -87,14 +87,24 @@ export class AvatarMaterials {
     this.hairMaterials.push(this.beardMat);
     this.disposables.push(this.beardMat);
 
-    // Fingernail Material with dynamic finish & color
+    // Fingernail Material with dynamic finish & color (Global, Left Hand & Right Hand)
     this.nailMat = new THREE.MeshStandardMaterial({
       color: 0xE8C5B8,
       roughness: 0.15,
       metalness: 0.05
     });
-    this.nailMaterials.push(this.nailMat);
-    this.disposables.push(this.nailMat);
+    this.nailMatLeft = new THREE.MeshStandardMaterial({
+      color: 0xE8C5B8,
+      roughness: 0.15,
+      metalness: 0.05
+    });
+    this.nailMatRight = new THREE.MeshStandardMaterial({
+      color: 0xE8C5B8,
+      roughness: 0.15,
+      metalness: 0.05
+    });
+    this.nailMaterials.push(this.nailMat, this.nailMatLeft, this.nailMatRight);
+    this.disposables.push(this.nailMat, this.nailMatLeft, this.nailMatRight);
 
     // Eye Anatomy Materials
     this.scleraMat = new THREE.MeshBasicMaterial({ color: AVATAR_PALETTE.scleraWhite });
@@ -229,10 +239,10 @@ export class AvatarMaterials {
     });
   }
 
-  updateNailFinish(hex, finish = 'gloss') {
+  updateNailFinish(hex, finish = 'gloss', targetHand = 'both') {
     if (!this.THREE) return;
     const col = hex ? new this.THREE.Color(hex) : null;
-    this.nailMaterials.forEach((mat) => {
+    const applyToMat = (mat) => {
       if (!mat) return;
       if (col && mat.color) mat.color.copy(col);
       switch (finish) {
@@ -259,7 +269,15 @@ export class AvatarMaterials {
           break;
       }
       mat.needsUpdate = true;
-    });
+    };
+
+    if (targetHand === 'left') {
+      applyToMat(this.nailMatLeft);
+    } else if (targetHand === 'right') {
+      applyToMat(this.nailMatRight);
+    } else {
+      this.nailMaterials.forEach(applyToMat);
+    }
   }
 
   updateEyeMakeup(style = 'natural', hex = null, intensity = 0.5) {

@@ -144,6 +144,20 @@ export class AvatarController {
     this.savePreferences();
   }
 
+  setEyeMakeup(style = 'natural', color = '#C4A482', intensity = 0.5) {
+    if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+    this.avatarConfig.grooming.eyeMakeupStyle = style;
+    this.avatarConfig.grooming.eyeMakeupColor = color;
+    this.avatarConfig.grooming.eyeMakeupIntensity = intensity;
+    if (this.model && this.model.materials && typeof this.model.materials.updateEyeMakeup === 'function') {
+      this.model.materials.updateEyeMakeup(style, color, intensity);
+    }
+    if (this.model && this.model.rig && typeof this.model.rig.setEyeMakeup === 'function') {
+      this.model.rig.setEyeMakeup(style, color, intensity);
+    }
+    this.savePreferences();
+  }
+
   setNailCustomization(opts = {}) {
     if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
     if (opts.shape) this.avatarConfig.grooming.nailShape = opts.shape;
@@ -176,6 +190,13 @@ export class AvatarController {
     if (grooming.lipColor) this.setLipstick(grooming.lipColor, grooming.lipFinish || 'satin');
     if (grooming.eyebrowShape) this.setEyebrowShape(grooming.eyebrowShape);
     if (grooming.blushColor) this.setBlush(grooming.blushColor, grooming.blushIntensity !== undefined ? grooming.blushIntensity : 0.35);
+    if (grooming.eyeMakeupStyle || grooming.eyeMakeupColor) {
+      this.setEyeMakeup(
+        grooming.eyeMakeupStyle || 'natural',
+        grooming.eyeMakeupColor || '#C4A482',
+        grooming.eyeMakeupIntensity !== undefined ? grooming.eyeMakeupIntensity : 0.5
+      );
+    }
     if (grooming.nailShape || grooming.nailLength || grooming.nailFinish || grooming.nailColor) {
       this.setNailCustomization({
         shape: grooming.nailShape,

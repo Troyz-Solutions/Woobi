@@ -2362,6 +2362,18 @@
       this.savePreferences();
     }
 
+    setEyeMakeup(style = 'natural', color = '#C4A482', intensity = 0.5) {
+      if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
+      this.avatarConfig.grooming.eyeMakeupStyle = style;
+      this.avatarConfig.grooming.eyeMakeupColor = color;
+      this.avatarConfig.grooming.eyeMakeupIntensity = intensity;
+      if (this.avatarController && typeof this.avatarController.setEyeMakeup === 'function') {
+        this.avatarController.setEyeMakeup(style, color, intensity);
+        return;
+      }
+      this.savePreferences();
+    }
+
     setNailCustomization(opts = {}) {
       if (!this.avatarConfig.grooming) this.avatarConfig.grooming = {};
       if (opts.shape) this.avatarConfig.grooming.nailShape = opts.shape;
@@ -2692,6 +2704,13 @@
         if (cfg.grooming.lipColor) this.setLipstick(cfg.grooming.lipColor, cfg.grooming.lipFinish || 'satin');
         if (cfg.grooming.blushColor) this.setBlush(cfg.grooming.blushColor, cfg.grooming.blushIntensity);
         if (cfg.grooming.eyebrowShape) this.setEyebrowShape(cfg.grooming.eyebrowShape);
+        if (cfg.grooming.eyeMakeupStyle || cfg.grooming.eyeMakeupColor) {
+          this.setEyeMakeup(
+            cfg.grooming.eyeMakeupStyle || 'natural',
+            cfg.grooming.eyeMakeupColor || '#C4A482',
+            cfg.grooming.eyeMakeupIntensity !== undefined ? cfg.grooming.eyeMakeupIntensity : 0.5
+          );
+        }
         if (cfg.grooming.nailShape || cfg.grooming.nailLength || cfg.grooming.nailFinish || cfg.grooming.nailColor) {
           this.setNailCustomization(cfg.grooming);
         }

@@ -580,6 +580,7 @@
           <!-- Sliding Vanity & Avatar Customization Sheet -->
           <div class="seren-vanity-sheet hidden" id="serenVanitySheet">
             <div class="seren-sheet-backdrop" onclick="app.serenCloseVanity()"></div>
+            <div id="vanityBeforeBadge" class="vanity-before-badge hidden">⚖️ Showing Baseline (Before)</div>
             <div class="seren-sheet-card vanity-sheet-card">
               <div class="seren-sheet-header">
                 <button class="seren-sheet-back" onclick="app.serenCloseVanity()">
@@ -609,6 +610,7 @@
                     <button class="vanity-tool-btn" data-cam="hands" onclick="app.serenCameraFocus('hands', this)" title="Hands & Nails View">💅 Hands</button>
                   </div>
                   <div class="vanity-history-btns">
+                    <button class="vanity-tool-btn vanity-compare-pill" id="vanityBeforeAfterBtn" onclick="app.serenToggleBeforeAfter()" title="Toggle Before/After snapshot">⚖️ Before</button>
                     <button class="vanity-icon-btn" onclick="app.serenUndo()" title="Undo Change">↺</button>
                     <button class="vanity-icon-btn" onclick="app.serenRedo()" title="Redo Change">↻</button>
                     <button class="vanity-icon-btn" onclick="app.serenReset()" title="Reset to Defaults">⟲</button>
@@ -633,6 +635,41 @@
 
                 <!-- Category Panel: Skin & Complexion -->
                 <div class="vanity-cat-panel active" id="vanityPanel_skin">
+                  <!-- Face Architecture & Harmony Styling Guide -->
+                  <div class="vanity-section vanity-harmony-section">
+                    <div class="vanity-harmony-card">
+                      <div class="vanity-harmony-header">
+                        <div class="vanity-harmony-title-box">
+                          <span class="vanity-harmony-badge">Aesthetic Harmony Guide</span>
+                          <h4 class="vanity-harmony-heading">Face Architecture & Proportions</h4>
+                        </div>
+                        <button class="vanity-harmony-apply-btn" id="btnApplyHarmony" onclick="app.serenApplyFaceShapeRecommendation()">Apply Style ✨</button>
+                      </div>
+                      <p class="vanity-harmony-desc">Select your face structure for transparent, rule-based styling harmony:</p>
+                      <div class="vanity-pill-group" id="faceShapeChips">
+                        <button class="vanity-chip active" data-shape="oval" onclick="app.serenSelectFaceShape('oval', this)">Oval</button>
+                        <button class="vanity-chip" data-shape="square" onclick="app.serenSelectFaceShape('square', this)">Square</button>
+                        <button class="vanity-chip" data-shape="round" onclick="app.serenSelectFaceShape('round', this)">Round</button>
+                        <button class="vanity-chip" data-shape="heart" onclick="app.serenSelectFaceShape('heart', this)">Heart</button>
+                        <button class="vanity-chip" data-shape="diamond" onclick="app.serenSelectFaceShape('diamond', this)">Diamond</button>
+                      </div>
+                      <div class="vanity-harmony-recommendation" id="faceShapeRecBox">
+                        <div class="harmony-rec-item">
+                          <span class="harmony-rec-label">Hairstyle:</span>
+                          <span class="harmony-rec-val" id="recHairText">Soft Waves or High Bun (Universal)</span>
+                        </div>
+                        <div class="harmony-rec-item">
+                          <span class="harmony-rec-label">Brow Line:</span>
+                          <span class="harmony-rec-val" id="recBrowText">Natural Soft Arch</span>
+                        </div>
+                        <div class="harmony-rec-item">
+                          <span class="harmony-rec-label">Facial Accent:</span>
+                          <span class="harmony-rec-val" id="recFacialText">Rosy Satin Lips / Clean Shaven</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="vanity-section">
                     <label class="vanity-sec-label">Skin Tone & Undertone</label>
                     <div class="vanity-swatches-row" id="skinToneSwatches">
@@ -741,7 +778,7 @@
                   </div>
                 </div>
 
-                <!-- Category Panel: Eyebrows (Universal) -->
+                <!-- Category Panel: Eyes & Eyebrows -->
                 <div class="vanity-cat-panel" id="vanityPanel_brows">
                   <div class="vanity-section">
                     <label class="vanity-sec-label">Eyebrow Shape & Definition</label>
@@ -752,6 +789,33 @@
                       <button class="vanity-chip" data-brow="bold" onclick="app.serenSetBrow('bold', this)">Bold Structured</button>
                       <button class="vanity-chip" data-brow="feathered" onclick="app.serenSetBrow('feathered', this)">Feathered Brow</button>
                     </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Eyeliner Definition</label>
+                    <div class="vanity-pill-group" id="eyelinerChips">
+                      <button class="vanity-chip active" data-liner="natural" onclick="app.serenSetEyeMakeup('natural', null, null, this)">Natural Soft</button>
+                      <button class="vanity-chip" data-liner="winged" onclick="app.serenSetEyeMakeup('winged', null, null, this)">Winged Flick</button>
+                      <button class="vanity-chip" data-liner="kohl" onclick="app.serenSetEyeMakeup('kohl', null, null, this)">Soft Kohl</button>
+                      <button class="vanity-chip" data-liner="tightline" onclick="app.serenSetEyeMakeup('tightline', null, null, this)">Tightline</button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <label class="vanity-sec-label">Eyeshadow Tint & Shimmer</label>
+                    <div class="vanity-swatches-row" id="eyeshadowSwatches">
+                      <button class="skin-swatch active" style="background: #C4A482;" title="Nude Silk" onclick="app.serenSetEyeMakeup(null, '#C4A482', null, this)"></button>
+                      <button class="skin-swatch" style="background: #D4A5A5;" title="Rose Quartz" onclick="app.serenSetEyeMakeup(null, '#D4A5A5', null, this)"></button>
+                      <button class="skin-swatch" style="background: #7B5544;" title="Bronze Smoke" onclick="app.serenSetEyeMakeup(null, '#7B5544', null, this)"></button>
+                      <button class="skin-swatch" style="background: #E8D3B9;" title="Champagne Glaze" onclick="app.serenSetEyeMakeup(null, '#E8D3B9', null, this)"></button>
+                      <button class="skin-swatch" style="background: #3D2B24;" title="Velvet Espresso" onclick="app.serenSetEyeMakeup(null, '#3D2B24', null, this)"></button>
+                      <button class="skin-swatch" style="background: #F3D5C6;" title="Bare Glow" onclick="app.serenSetEyeMakeup(null, '#F3D5C6', null, this)"></button>
+                    </div>
+                  </div>
+                  <div class="vanity-section">
+                    <div class="vanity-range-header">
+                      <label class="vanity-sec-label" style="margin-bottom: 0;">Eyeshadow Intensity</label>
+                      <span class="vanity-range-val" id="eyeIntensityLabel">50%</span>
+                    </div>
+                    <input type="range" class="vanity-range-slider" id="eyeIntensitySlider" min="0" max="100" value="50" oninput="app.serenOnEyeMakeupIntensity(this.value)">
                   </div>
                 </div>
 
@@ -844,6 +908,8 @@
                       <div class="vanity-lookbook-empty">No saved looks yet. Tap "+ Save" above to record your current appearance!</div>
                     </div>
                   </div>
+                  <!-- Side-by-side Look Comparison Card Container -->
+                  <div class="vanity-compare-modal hidden" id="vanityLookCompareModal"></div>
                 </div>
 
                 <div class="vanity-action-row">

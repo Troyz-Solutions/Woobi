@@ -1914,7 +1914,7 @@
       { id: 'skin', label: 'Skin & Tone' },
       { id: 'lips', label: 'Lips & Finish' },
       { id: 'cheeks', label: 'Cheek Blush' },
-      { id: 'brows', label: 'Eyebrows' },
+      { id: 'brows', label: 'Eyes & Brows' },
       { id: 'hair', label: 'Hairstyle' },
       { id: 'nails', label: '3D Nail Studio' },
       { id: 'body', label: 'Body & Jewelry' },
@@ -1935,7 +1935,7 @@
       { id: 'moustache', label: 'Moustache' },
       { id: 'lips', label: 'Lips & Makeup' },
       { id: 'cheeks', label: 'Cheek Blush' },
-      { id: 'brows', label: 'Eyebrows' },
+      { id: 'brows', label: 'Eyes & Brows' },
       { id: 'hair', label: 'Hairstyle' },
       { id: 'nails', label: '3D Nail Studio' },
       { id: 'body', label: 'Body & Jewelry' },
@@ -1943,11 +1943,69 @@
     ]
   };
 
+  const FACE_SHAPE_RECOMMENDATIONS = {
+    oval: {
+      hairStyle: 'waves',
+      hairLabel: 'Soft Waves or High Bun (Universal Harmony)',
+      eyebrowShape: 'natural',
+      browLabel: 'Natural Soft Arch',
+      beardStyle: 'clean',
+      lipFinish: 'satin',
+      lipColor: '#CE6F66',
+      facialLabel: 'Rosy Satin Lips / Clean Shaven'
+    },
+    square: {
+      hairStyle: 'waves',
+      hairLabel: 'Soft Waves (Softens Angled Jawline)',
+      eyebrowShape: 'arched',
+      browLabel: 'Defined High Arch (Lifts Forehead)',
+      beardStyle: 'stubble',
+      lipFinish: 'matte',
+      lipColor: '#E07A5F',
+      facialLabel: 'Subtle Stubble / Soft Coral Matte'
+    },
+    round: {
+      hairStyle: 'bun',
+      hairLabel: 'High Bun Updo (Elongates Facial Frame)',
+      eyebrowShape: 'bold',
+      browLabel: 'Bold Structured Arch (Adds Definition)',
+      beardStyle: 'goatee',
+      lipFinish: 'gloss',
+      lipColor: '#7A2035',
+      facialLabel: 'Sculpted Goatee / Berry Velvet Gloss'
+    },
+    heart: {
+      hairStyle: 'bob',
+      hairLabel: 'Chic Bob (Balances Forehead & Chin)',
+      eyebrowShape: 'feathered',
+      browLabel: 'Feathered Soft Brow (Gentle Contours)',
+      beardStyle: 'short',
+      lipFinish: 'satin',
+      lipColor: '#A65236',
+      facialLabel: 'Short Boxed Beard / Spiced Terra'
+    },
+    diamond: {
+      hairStyle: 'crop',
+      hairLabel: 'Modern Crop (Accentuates High Cheekbones)',
+      eyebrowShape: 'arched',
+      browLabel: 'Curved Defined Arch (Softens Temples)',
+      beardStyle: 'short',
+      lipFinish: 'metallic',
+      lipColor: '#B83A4B',
+      facialLabel: 'Classic Crimson / Refined Short Beard'
+    }
+  };
+
   let currentVanityGender = 'female';
   let currentActiveVanityCategory = 'skin';
   let currentNailState = { shape: 'natural', length: 'short', finish: 'gloss', color: '#E8C5B8' };
   let currentLipState = { color: '#CE6F66', finish: 'satin' };
   let currentBlushState = { color: '#DE8B80', intensity: 0.35 };
+  let currentEyeMakeupState = { style: 'natural', color: '#C4A482', intensity: 0.5 };
+  let currentFaceShape = 'oval';
+  let vanityInitialSnapshot = null;
+  let vanityCurrentSnapshot = null;
+  let isShowingBefore = false;
   let vanityUndoHistory = [];
   let vanityRedoHistory = [];
 
@@ -1962,6 +2020,16 @@
   }
 
   function serenPushVanityHistory() {
+    if (isShowingBefore && vanityCurrentSnapshot) {
+      isShowingBefore = false;
+      const btn = document.getElementById('vanityBeforeAfterBtn');
+      const badge = document.getElementById('vanityBeforeBadge');
+      if (btn) {
+        btn.textContent = '⚖️ Before';
+        btn.classList.remove('active');
+      }
+      if (badge) badge.classList.add('hidden');
+    }
     if (window.Studio3D && window.Studio3D.avatarConfig) {
       vanityUndoHistory.push(JSON.stringify(window.Studio3D.avatarConfig));
       if (vanityUndoHistory.length > 25) vanityUndoHistory.shift();
@@ -1973,41 +2041,54 @@
     const sheet = document.getElementById('serenVanitySheet');
     if (!sheet) return;
 
-    if (forceOpen === undefined) {
-      const isCurrentlyHidden = sheet.classList.contains('hidden');
-      if (isCurrentlyHidden) {
-        sheet.classList.remove('hidden');
-        serenRenderVanityCategories();
-        serenRenderLookbookList();
-        if (window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
-          window.Studio3D.focusVanityFeature(currentActiveVanityCategory || 'skin');
-        } else if (window.Studio3D) {
-          window.Studio3D.setCameraState('VANITY_VIEW');
-        }
-      } else {
-        sheet.classList.add('hidden');
-        if (window.Studio3D && typeof window.Studio3D.clearVanityFocus === 'function') {
-          window.Studio3D.clearVanityFocus();
-        } else if (window.Studio3D) {
-          window.Studio3D.setCameraState('STUDIO_OVERVIEW');
-        }
-      }
-    } else if (forceOpen) {
+    const setupVanityOpen = () => {
       sheet.classList.remove('hidden');
+      isShowingBefore = false;
+      const btn = document.getElementById('vanityBeforeAfterBtn');
+      const badge = document.getElementById('vanityBeforeBadge');
+      if (btn) {
+        btn.textContent = '⚖️ Before';
+        btn.classList.remove('active');
+      }
+      if (badge) badge.classList.add('hidden');
+
+      if (window.Studio3D && window.Studio3D.avatarConfig) {
+        vanityInitialSnapshot = JSON.stringify(window.Studio3D.avatarConfig);
+        vanityCurrentSnapshot = vanityInitialSnapshot;
+      }
       serenRenderVanityCategories();
       serenRenderLookbookList();
+      serenSelectFaceShape(currentFaceShape || 'oval');
       if (window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
         window.Studio3D.focusVanityFeature(currentActiveVanityCategory || 'skin');
       } else if (window.Studio3D) {
         window.Studio3D.setCameraState('VANITY_VIEW');
       }
-    } else {
+    };
+
+    const setupVanityClose = () => {
       sheet.classList.add('hidden');
+      if (isShowingBefore && vanityCurrentSnapshot && window.Studio3D) {
+        if (typeof window.Studio3D.applyAvatarConfig === 'function') {
+          window.Studio3D.applyAvatarConfig(JSON.parse(vanityCurrentSnapshot));
+        }
+        isShowingBefore = false;
+      }
       if (window.Studio3D && typeof window.Studio3D.clearVanityFocus === 'function') {
         window.Studio3D.clearVanityFocus();
       } else if (window.Studio3D) {
         window.Studio3D.setCameraState('STUDIO_OVERVIEW');
       }
+    };
+
+    if (forceOpen === undefined) {
+      const isCurrentlyHidden = sheet.classList.contains('hidden');
+      if (isCurrentlyHidden) setupVanityOpen();
+      else setupVanityClose();
+    } else if (forceOpen) {
+      setupVanityOpen();
+    } else {
+      setupVanityClose();
     }
   }
 
@@ -2245,6 +2326,113 @@
     }
   }
 
+  function serenSetEyeMakeup(style, color, intensity, btn) {
+    serenPushVanityHistory();
+    if (style) {
+      currentEyeMakeupState.style = style;
+      if (btn) {
+        document.querySelectorAll('#eyelinerChips .vanity-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    }
+    if (color) {
+      currentEyeMakeupState.color = color;
+      if (btn) {
+        document.querySelectorAll('#eyeshadowSwatches .skin-swatch').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    }
+    if (typeof intensity === 'number') {
+      currentEyeMakeupState.intensity = intensity;
+    }
+    if (window.Studio3D && typeof window.Studio3D.setEyeMakeup === 'function') {
+      window.Studio3D.setEyeMakeup(
+        currentEyeMakeupState.style,
+        currentEyeMakeupState.color,
+        currentEyeMakeupState.intensity
+      );
+    }
+  }
+
+  function serenOnEyeMakeupIntensity(val) {
+    const label = document.getElementById('eyeIntensityLabel');
+    if (label) label.textContent = `${val}%`;
+    const num = parseFloat(val) / 100;
+    currentEyeMakeupState.intensity = num;
+    if (window.Studio3D && typeof window.Studio3D.setEyeMakeup === 'function') {
+      window.Studio3D.setEyeMakeup(
+        currentEyeMakeupState.style,
+        currentEyeMakeupState.color,
+        num
+      );
+    }
+  }
+
+  function serenSelectFaceShape(shape, btn) {
+    currentFaceShape = shape || 'oval';
+    if (btn) {
+      document.querySelectorAll('#faceShapeChips .vanity-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    const rec = FACE_SHAPE_RECOMMENDATIONS[currentFaceShape] || FACE_SHAPE_RECOMMENDATIONS.oval;
+    const hairEl = document.getElementById('recHairText');
+    const browEl = document.getElementById('recBrowText');
+    const facEl = document.getElementById('recFacialText');
+    if (hairEl) hairEl.textContent = rec.hairLabel;
+    if (browEl) browEl.textContent = rec.browLabel;
+    if (facEl) facEl.textContent = rec.facialLabel;
+  }
+
+  function serenApplyFaceShapeRecommendation() {
+    serenPushVanityHistory();
+    const rec = FACE_SHAPE_RECOMMENDATIONS[currentFaceShape] || FACE_SHAPE_RECOMMENDATIONS.oval;
+
+    serenSetHairStyle(rec.hairStyle);
+    serenSetBrow(rec.eyebrowShape);
+
+    if (currentVanityGender === 'male') {
+      serenSetBeard(rec.beardStyle);
+    } else {
+      serenSetLipstick(rec.lipColor, rec.lipFinish);
+    }
+
+    showToast(`Applied harmonious styling for ${currentFaceShape.toUpperCase()} architecture! ✨`);
+  }
+
+  function serenToggleBeforeAfter() {
+    const btn = document.getElementById('vanityBeforeAfterBtn');
+    const badge = document.getElementById('vanityBeforeBadge');
+
+    if (!isShowingBefore) {
+      // Switch to BEFORE snapshot
+      if (window.Studio3D && window.Studio3D.avatarConfig) {
+        vanityCurrentSnapshot = JSON.stringify(window.Studio3D.avatarConfig);
+      }
+      if (vanityInitialSnapshot && window.Studio3D && typeof window.Studio3D.applyAvatarConfig === 'function') {
+        window.Studio3D.applyAvatarConfig(JSON.parse(vanityInitialSnapshot));
+      }
+      isShowingBefore = true;
+      if (btn) {
+        btn.textContent = '⚖️ After';
+        btn.classList.add('active');
+      }
+      if (badge) badge.classList.remove('hidden');
+      showToast('Displaying baseline appearance (Before). Tap again to restore.');
+    } else {
+      // Restore AFTER snapshot
+      if (vanityCurrentSnapshot && window.Studio3D && typeof window.Studio3D.applyAvatarConfig === 'function') {
+        window.Studio3D.applyAvatarConfig(JSON.parse(vanityCurrentSnapshot));
+      }
+      isShowingBefore = false;
+      if (btn) {
+        btn.textContent = '⚖️ Before';
+        btn.classList.remove('active');
+      }
+      if (badge) badge.classList.add('hidden');
+      showToast('Restored customized appearance (After).');
+    }
+  }
+
   function serenInspectHand(hand, btn) {
     if (btn && btn.parentElement) {
       btn.parentElement.querySelectorAll('.vanity-tool-btn').forEach(b => b.classList.remove('active'));
@@ -2326,18 +2514,137 @@
       return;
     }
 
+    // Sort favorites to top
+    looks.sort((a, b) => (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0));
+
     list.innerHTML = looks.map(l => `
       <div class="vanity-lookbook-card" data-id="${l.id}">
-        <div class="vanity-lookbook-info">
+        <button class="vanity-fav-btn ${l.isFavorite ? 'is-fav' : ''}" onclick="app.serenToggleLookFavorite('${l.id}')" title="${l.isFavorite ? 'Starred Favorite' : 'Mark as Favorite'}">${l.isFavorite ? '★' : '☆'}</button>
+        <div class="vanity-lookbook-info" style="flex: 1; margin: 0 8px;">
           <span class="vanity-lookbook-title">${escapeVanityText(l.name)}</span>
           <span class="vanity-lookbook-date">${escapeVanityText(l.date || 'Saved')}</span>
         </div>
         <div class="vanity-lookbook-actions">
+          <button class="vanity-look-btn" onclick="app.serenPromptRenameLook('${l.id}')" title="Rename look">✎</button>
+          <button class="vanity-look-btn" onclick="app.serenCompareLook('${l.id}')" title="Compare with current avatar">⚖️</button>
           <button class="vanity-tool-btn" onclick="app.serenLoadLookbook('${l.id}')">Load</button>
-          <button class="vanity-tool-btn" style="color: #9C413D;" onclick="app.serenDeleteLookbook('${l.id}')">✕</button>
+          <button class="vanity-tool-btn" style="color: #9C413D;" onclick="app.serenDeleteLookbook('${l.id}')" title="Remove look">✕</button>
         </div>
       </div>
     `).join('');
+  }
+
+  function serenToggleLookFavorite(lookId) {
+    let looks = [];
+    try {
+      const raw = localStorage.getItem('woobi_lookbook_saves');
+      if (raw) looks = JSON.parse(raw);
+    } catch(e) {}
+    const target = looks.find(l => l.id === lookId);
+    if (target) {
+      target.isFavorite = !target.isFavorite;
+      try {
+        localStorage.setItem('woobi_lookbook_saves', JSON.stringify(looks));
+      } catch(e) {}
+      serenRenderLookbookList();
+      showToast(target.isFavorite ? `"${target.name}" marked as favorite! ⭐` : `Removed "${target.name}" from favorites.`);
+    }
+  }
+
+  function serenPromptRenameLook(lookId) {
+    let looks = [];
+    try {
+      const raw = localStorage.getItem('woobi_lookbook_saves');
+      if (raw) looks = JSON.parse(raw);
+    } catch(e) {}
+    const target = looks.find(l => l.id === lookId);
+    if (!target) return;
+    const newName = prompt('Enter a new title for this saved look:', target.name);
+    if (newName && newName.trim()) {
+      target.name = newName.trim().slice(0, 32);
+      try {
+        localStorage.setItem('woobi_lookbook_saves', JSON.stringify(looks));
+      } catch(e) {}
+      serenRenderLookbookList();
+      showToast(`Look renamed to "${target.name}".`);
+    }
+  }
+
+  function serenCompareLook(lookId) {
+    let looks = [];
+    try {
+      const raw = localStorage.getItem('woobi_lookbook_saves');
+      if (raw) looks = JSON.parse(raw);
+    } catch(e) {}
+    const look = looks.find(l => l.id === lookId);
+    if (!look || !look.config) return;
+
+    const currentConfig = (window.Studio3D && window.Studio3D.avatarConfig) ? window.Studio3D.avatarConfig : {};
+    const modal = document.getElementById('vanityLookCompareModal');
+    if (!modal) return;
+
+    const savedHair = look.config.hairStyle || 'Default';
+    const curHair = currentConfig.hairStyle || 'Default';
+    const savedSkin = look.config.skinTone || '#F3D5C6';
+    const curSkin = currentConfig.skinTone || '#F3D5C6';
+    const savedHairColor = look.config.hairColor || '#1E120A';
+    const curHairColor = currentConfig.hairColor || '#1E120A';
+    const savedGroom = (look.config.grooming && (look.config.grooming.beardStyle || look.config.grooming.lipColor)) ? (look.config.grooming.beardStyle || 'Satin Rosy') : 'Natural';
+    const curGroom = (currentConfig.grooming && (currentConfig.grooming.beardStyle || currentConfig.grooming.lipColor)) ? (currentConfig.grooming.beardStyle || 'Satin Rosy') : 'Natural';
+    const savedNail = look.config.grooming?.nailShape || 'natural';
+    const curNail = currentConfig.grooming?.nailShape || 'natural';
+
+    modal.innerHTML = `
+      <div class="vanity-compare-header">
+        <span class="vanity-compare-title">⚖️ Compare: "${escapeVanityText(look.name)}" vs Active</span>
+        <button class="vanity-look-btn" onclick="app.serenCloseLookComparison()">✕ Close</button>
+      </div>
+      <table class="vanity-compare-table">
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Saved Look</th>
+            <th>Active Avatar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Hairstyle</strong></td>
+            <td>${escapeVanityText(savedHair)}</td>
+            <td>${escapeVanityText(curHair)}</td>
+          </tr>
+          <tr>
+            <td><strong>Skin Tone</strong></td>
+            <td><span class="vanity-compare-swatch" style="background:${savedSkin}"></span> ${savedSkin}</td>
+            <td><span class="vanity-compare-swatch" style="background:${curSkin}"></span> ${curSkin}</td>
+          </tr>
+          <tr>
+            <td><strong>Hair Color</strong></td>
+            <td><span class="vanity-compare-swatch" style="background:${savedHairColor}"></span> ${savedHairColor}</td>
+            <td><span class="vanity-compare-swatch" style="background:${curHairColor}"></span> ${curHairColor}</td>
+          </tr>
+          <tr>
+            <td><strong>Facial Accent</strong></td>
+            <td>${escapeVanityText(savedGroom)}</td>
+            <td>${escapeVanityText(curGroom)}</td>
+          </tr>
+          <tr>
+            <td><strong>Nail Silhouette</strong></td>
+            <td>${escapeVanityText(savedNail)}</td>
+            <td>${escapeVanityText(curNail)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn-olive-primary vanity-look-btn" onclick="app.serenLoadLookbook('${look.id}'); app.serenCloseLookComparison();">Apply This Saved Look ✨</button>
+      </div>
+    `;
+    modal.classList.remove('hidden');
+  }
+
+  function serenCloseLookComparison() {
+    const modal = document.getElementById('vanityLookCompareModal');
+    if (modal) modal.classList.add('hidden');
   }
 
   function serenLoadLookbook(lookId) {
@@ -2416,6 +2723,9 @@
         blushColor: '#DE8B80',
         blushIntensity: 0.35,
         eyebrowShape: 'natural',
+        eyeMakeupStyle: 'natural',
+        eyeMakeupColor: '#C4A482',
+        eyeMakeupIntensity: 0.5,
         nailShape: 'natural',
         nailLength: 'short',
         nailFinish: 'gloss',
@@ -4931,6 +5241,11 @@
     serenSetBlush,
     serenOnBlushIntensity,
     serenSetBrow,
+    serenSetEyeMakeup,
+    serenOnEyeMakeupIntensity,
+    serenSelectFaceShape,
+    serenApplyFaceShapeRecommendation,
+    serenToggleBeforeAfter,
     serenInspectHand,
     serenSetNailOpt,
     serenSetNailColor,
@@ -4938,6 +5253,10 @@
     serenRenderLookbookList,
     serenLoadLookbook,
     serenDeleteLookbook,
+    serenToggleLookFavorite,
+    serenPromptRenameLook,
+    serenCompareLook,
+    serenCloseLookComparison,
     serenUndo,
     serenRedo,
     serenReset,

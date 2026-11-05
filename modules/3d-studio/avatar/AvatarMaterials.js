@@ -31,6 +31,7 @@ export class AvatarMaterials {
     this.lipMaterials = [];
     this.blushMaterials = [];
     this.nailMaterials = [];
+    this.eyeMakeupMaterials = [];
     this.disposables = [];
 
     this.initMaterials();
@@ -102,8 +103,17 @@ export class AvatarMaterials {
     this.glintMat = new THREE.MeshBasicMaterial({ color: AVATAR_PALETTE.catchlightWhite });
     this.lashMat = new THREE.MeshBasicMaterial({ color: AVATAR_PALETTE.lashBlack });
     this.browMat = new THREE.MeshBasicMaterial({ color: AVATAR_PALETTE.browDarkBrown });
+    this.eyelinerMat = new THREE.MeshBasicMaterial({ color: AVATAR_PALETTE.lashBlack });
+    this.eyeshadowMat = new THREE.MeshStandardMaterial({
+      color: 0xC4A482,
+      roughness: 0.65,
+      metalness: 0.15,
+      transparent: true,
+      opacity: 0.50
+    });
+    this.eyeMakeupMaterials.push(this.eyelinerMat, this.eyeshadowMat);
     this.hairMaterials.push(this.browMat);
-    this.disposables.push(this.scleraMat, this.irisMat, this.pupilMat, this.glintMat, this.lashMat, this.browMat);
+    this.disposables.push(this.scleraMat, this.irisMat, this.pupilMat, this.glintMat, this.lashMat, this.browMat, this.eyelinerMat, this.eyeshadowMat);
 
     // Gold Hoop Earring Material
     this.hoopMat = new THREE.MeshStandardMaterial({
@@ -252,6 +262,38 @@ export class AvatarMaterials {
     });
   }
 
+  updateEyeMakeup(style = 'natural', hex = null, intensity = 0.5) {
+    if (!this.THREE) return;
+    const col = hex ? new this.THREE.Color(hex) : null;
+    const op = (typeof intensity === 'number') ? Math.max(0, Math.min(1, intensity)) : 0.5;
+
+    if (this.eyeshadowMat) {
+      if (col && this.eyeshadowMat.color) this.eyeshadowMat.color.copy(col);
+      this.eyeshadowMat.transparent = true;
+      this.eyeshadowMat.opacity = op;
+      this.eyeshadowMat.needsUpdate = true;
+    }
+
+    if (this.lashMat) {
+      if (style === 'winged' || style === 'bold' || style === 'kohl') {
+        if (this.lashMat.color) this.lashMat.color.set(0x050505);
+      } else if (style === 'tightline' || style === 'soft' || style === 'natural') {
+        if (this.lashMat.color) this.lashMat.color.set(0x1F1A17);
+      }
+      this.lashMat.needsUpdate = true;
+    }
+
+    this.eyeMakeupMaterials.forEach((mat) => {
+      if (mat) mat.needsUpdate = true;
+    });
+  }
+
+  registerEyeMakeupMaterial(mat) {
+    if (mat && !this.eyeMakeupMaterials.includes(mat)) {
+      this.eyeMakeupMaterials.push(mat);
+    }
+  }
+
   registerSkinMaterial(mat) {
     if (mat && !this.skinMaterials.includes(mat)) {
       this.skinMaterials.push(mat);
@@ -294,5 +336,6 @@ export class AvatarMaterials {
     this.lipMaterials = [];
     this.blushMaterials = [];
     this.nailMaterials = [];
+    this.eyeMakeupMaterials = [];
   }
 }

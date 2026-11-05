@@ -1012,6 +1012,29 @@ export class AvatarRig {
     });
   }
 
+  setEyeMakeup(style = 'natural', hex = null, intensity = 0.5) {
+    if (this.eyelids && this.eyelids.length > 0) {
+      this.eyelids.forEach((lid) => {
+        if (!lid) return;
+        switch (style) {
+          case 'winged':
+            lid.scale.set(1.42, 0.032, 0.58);
+            break;
+          case 'kohl':
+            lid.scale.set(1.36, 0.030, 0.55);
+            break;
+          case 'tightline':
+            lid.scale.set(1.22, 0.020, 0.50);
+            break;
+          case 'natural':
+          default:
+            lid.scale.set(1.30, 0.025, 0.52);
+            break;
+        }
+      });
+    }
+  }
+
   setNailShape(shapeId = 'oval', lengthId = 'medium') {
     this.activeNailShape = shapeId;
     this.activeNailLength = lengthId;

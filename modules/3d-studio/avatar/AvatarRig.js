@@ -20,6 +20,7 @@ export class AvatarRig {
     this.accessories = {
       earrings: [],
       watch: null,
+      bracelet: null,
       glasses: null,
       chain: null,
       ring: null,
@@ -754,10 +755,11 @@ export class AvatarRig {
       this.buildGLBWatch(leftHand);
     }
 
-    // 4. Attach Signet Ring to Right Hand
+    // 4. Attach Signet Ring and Gold Bracelet to Right Hand
     const rightHand = model.getObjectByName('Avatar_Hand_R');
-    if (rightHand && !this.accessories.ring) {
-      this.buildGLBRing(rightHand);
+    if (rightHand) {
+      if (!this.accessories.ring) this.buildGLBRing(rightHand);
+      if (!this.accessories.bracelet) this.buildGLBBracelet(rightHand);
     }
 
     // 5. Ensure Designer Glasses and Chain are mounted to Facial Grooming Group
@@ -971,6 +973,26 @@ export class AvatarRig {
 
     handNode.add(watchGroup);
     this.accessories.watch = watchGroup;
+  }
+
+  buildGLBBracelet(handNode) {
+    const THREE = this.THREE;
+    const mats = this.materials;
+    if (!mats.hoopMat || !handNode) return;
+
+    const braceletGroup = new THREE.Group();
+    braceletGroup.name = 'AvatarGoldBracelet';
+
+    const bangleGeo = new THREE.TorusGeometry(0.0195, 0.0016, 12, 24);
+    const bangle = new THREE.Mesh(bangleGeo, mats.hoopMat);
+    bangle.rotation.x = Math.PI / 2;
+    bangle.position.set(0, 0.024, 0);
+    braceletGroup.add(bangle);
+    this.disposables.push(bangleGeo);
+
+    braceletGroup.visible = false;
+    handNode.add(braceletGroup);
+    this.accessories.bracelet = braceletGroup;
   }
 
   buildGLBGlasses(mount) {

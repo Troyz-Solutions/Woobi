@@ -62,6 +62,9 @@ export class AvatarMorphs {
     if (name === 'ring' && this.rig.accessories.ring) {
       this.rig.accessories.ring.visible = isActive;
     }
+    if (name === 'bracelet' && this.rig.accessories.bracelet) {
+      this.rig.accessories.bracelet.visible = isActive;
+    }
   }
 
   getProportions() {

@@ -2242,7 +2242,7 @@
         else if (name === 'earrings') window.Studio3D.focusVanityFeature('earrings');
         else if (name === 'glasses') window.Studio3D.focusVanityFeature('face');
         else if (name === 'chain') window.Studio3D.focusVanityFeature('face');
-        else if (name === 'ring') window.Studio3D.focusVanityFeature('nails');
+        else if (name === 'ring' || name === 'bracelet') window.Studio3D.focusVanityFeature('nails');
       }
       showToast(`${name.charAt(0).toUpperCase() + name.slice(1)} ${isActive ? 'equipped' : 'removed'}.`);
     }

@@ -2372,6 +2372,12 @@
         this.avatarController.setNailCustomization(opts);
         return;
       }
+      if (this.avatarModel?.rig && typeof this.avatarModel.rig.setNailShape === 'function') {
+        this.avatarModel.rig.setNailShape(this.avatarConfig.grooming.nailShape, this.avatarConfig.grooming.nailLength);
+      }
+      if (this.avatarModel?.materials && typeof this.avatarModel.materials.updateNailFinish === 'function') {
+        this.avatarModel.materials.updateNailFinish(this.avatarConfig.grooming.nailColor, this.avatarConfig.grooming.nailFinish);
+      }
       this.savePreferences();
     }
 

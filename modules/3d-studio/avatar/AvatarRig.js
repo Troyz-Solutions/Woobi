@@ -743,41 +743,166 @@ export class AvatarRig {
     this.setMoustacheStyle(this.activeMoustacheStyle || 'none');
   }
 
+  createNailGeometry(shape = 'oval', lengthId = 'medium', isThumb = false) {
+    const THREE = this.THREE;
+    const width = isThumb ? 0.0048 : 0.0036;
+
+    let length = isThumb ? 0.0068 : 0.0056;
+    switch (lengthId) {
+      case 'natural':
+      case 'short':
+        length *= 0.88;
+        break;
+      case 'long':
+        length *= 1.65;
+        break;
+      case 'extralong':
+      case 'extra-long':
+        length *= 2.15;
+        break;
+      case 'medium':
+      default:
+        length *= 1.25;
+        break;
+    }
+
+    if (THREE && typeof THREE.Shape === 'function' && typeof THREE.ExtrudeGeometry === 'function') {
+      const halfW = width / 2;
+      const baseH = length * 0.40;
+
+      const nailShape = new THREE.Shape();
+      // Cuticle curve (top/base, Y = 0)
+      nailShape.moveTo(-halfW * 0.85, 0);
+      nailShape.quadraticCurveTo(0, 0.0008, halfW * 0.85, 0);
+
+      const normShape = (shape || 'oval').toLowerCase();
+      switch (normShape) {
+        case 'square':
+          // Modern Square: clean parallel sides, sharp flat tip
+          nailShape.lineTo(halfW, -length);
+          nailShape.lineTo(-halfW, -length);
+          break;
+        case 'coffin':
+          // Ballerina Coffin: tapered sides with squared-off flat tip
+          nailShape.lineTo(halfW * 0.95, -baseH);
+          nailShape.lineTo(halfW * 0.52, -length);
+          nailShape.lineTo(-halfW * 0.52, -length);
+          nailShape.lineTo(-halfW * 0.95, -baseH);
+          break;
+        case 'stiletto':
+          // Stiletto Edge: dramatic taper to sharp triangular point
+          nailShape.lineTo(halfW * 0.90, -baseH);
+          nailShape.lineTo(0, -length * 1.15);
+          nailShape.lineTo(-halfW * 0.90, -baseH);
+          break;
+        case 'almond':
+          // Almond Sculpt: tapered sides to soft rounded apex
+          nailShape.lineTo(halfW * 0.90, -baseH);
+          nailShape.quadraticCurveTo(halfW * 0.55, -length, 0, -length);
+          nailShape.quadraticCurveTo(-halfW * 0.55, -length, -halfW * 0.90, -baseH);
+          break;
+        case 'round':
+        case 'natural':
+        case 'oval':
+        default:
+          // Classic Oval: smooth curved tip
+          nailShape.lineTo(halfW, -baseH);
+          nailShape.quadraticCurveTo(halfW, -length, 0, -length);
+          nailShape.quadraticCurveTo(-halfW, -length, -halfW, -baseH);
+          break;
+      }
+      nailShape.closePath();
+
+      const extrudeSettings = {
+        depth: 0.0006,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.0002,
+        bevelThickness: 0.0002
+      };
+
+      const geo = new THREE.ExtrudeGeometry(nailShape, extrudeSettings);
+      geo.translate(0, 0, -0.0003);
+      return geo;
+    }
+
+    // Resilient fallback for mock test environments
+    const fallbackGeo = new THREE.BoxGeometry(width, length, 0.001);
+    if (typeof fallbackGeo.translate === 'function') {
+      fallbackGeo.translate(0, -length / 2, 0);
+    }
+    return fallbackGeo;
+  }
+
   buildGLBHandNails(handNode, isLeftHand) {
     const THREE = this.THREE;
     const mats = this.materials;
     if (!mats.nailMat || !handNode) return;
 
-    const side = isLeftHand ? 1 : -1;
+    const groupName = `AvatarGLBNails_${isLeftHand ? 'Left' : 'Right'}`;
+    const existing = handNode.getObjectByName(groupName);
+    if (existing) {
+      handNode.remove(existing);
+      this.nailMeshes = this.nailMeshes.filter(m => m.parent !== existing);
+    }
+
     const nailsGroup = new THREE.Group();
-    nailsGroup.name = `AvatarGLBNails_${isLeftHand ? 'Left' : 'Right'}`;
+    nailsGroup.name = groupName;
 
-    // Thumb Nail (angled outward, near Y = -0.018, X = side * -0.012, Z = 0.010)
-    const thumbNailGeo = new THREE.BoxGeometry(0.0042, 0.006, 0.0018);
-    const thumbNail = new THREE.Mesh(thumbNailGeo, mats.nailMat);
-    thumbNail.position.set(side * -0.012, -0.018, 0.010);
-    thumbNail.rotation.z = side * -0.42;
-    thumbNail.rotation.x = 0.25;
-    nailsGroup.add(thumbNail);
-    this.nailMeshes.push(thumbNail);
-    this.disposables.push(thumbNailGeo);
+    const currentShape = this.activeNailShape || 'oval';
+    const currentLength = this.activeNailLength || 'medium';
 
-    // 4 Finger Nails (along Y = -0.038)
-    const fingerPositions = [
-      { x: side * -0.0075, y: -0.037, z: 0.004 },
-      { x: side * -0.0025, y: -0.039, z: 0.004 },
-      { x: side * 0.0025,  y: -0.038, z: 0.004 },
-      { x: side * 0.0075,  y: -0.035, z: 0.004 }
+    // Hand local orientations:
+    // For Left Hand: dorsal (nail) surface faces along -X, forward is -Z.
+    // For Right Hand: dorsal (nail) surface faces along +X, forward is -Z.
+    const side = isLeftHand ? -1 : 1;
+    const rotSide = isLeftHand ? -1 : 1;
+
+    const fingers = [
+      // Thumb
+      {
+        isThumb: true,
+        pos: { x: side * 0.0090, y: -0.024, z: -0.013 },
+        rot: { x: 0.20, y: rotSide * 0.65, z: rotSide * 0.32 }
+      },
+      // Index Finger
+      {
+        isThumb: false,
+        pos: { x: side * 0.0108, y: -0.035, z: -0.007 },
+        rot: { x: 0.15, y: rotSide * 0.38, z: rotSide * 0.05 }
+      },
+      // Middle Finger
+      {
+        isThumb: false,
+        pos: { x: side * 0.0115, y: -0.037, z: -0.001 },
+        rot: { x: 0.12, y: rotSide * 0.28, z: rotSide * 0.02 }
+      },
+      // Ring Finger
+      {
+        isThumb: false,
+        pos: { x: side * 0.0110, y: -0.035, z: 0.005 },
+        rot: { x: 0.10, y: rotSide * 0.22, z: rotSide * -0.02 }
+      },
+      // Pinky Finger
+      {
+        isThumb: false,
+        pos: { x: side * 0.0095, y: -0.031, z: 0.010 },
+        rot: { x: 0.08, y: rotSide * 0.16, z: rotSide * -0.04 }
+      }
     ];
 
-    fingerPositions.forEach((pos) => {
-      const nailGeo = new THREE.BoxGeometry(0.0038, 0.0055, 0.0018);
-      const nail = new THREE.Mesh(nailGeo, mats.nailMat);
-      nail.position.set(pos.x, pos.y, pos.z);
-      nail.rotation.x = 0.15;
-      nailsGroup.add(nail);
-      this.nailMeshes.push(nail);
-      this.disposables.push(nailGeo);
+    fingers.forEach((f) => {
+      const geo = this.createNailGeometry(currentShape, currentLength, f.isThumb);
+      const mesh = new THREE.Mesh(geo, mats.nailMat);
+      mesh.name = `Nail_${isLeftHand ? 'L' : 'R'}_${f.isThumb ? 'Thumb' : 'Finger'}`;
+      mesh.position.set(f.pos.x, f.pos.y, f.pos.z);
+      mesh.rotation.set(f.rot.x, f.rot.y, f.rot.z);
+      mesh.userData = { isThumb: f.isThumb, isLeft: isLeftHand };
+      mesh.castShadow = true;
+      nailsGroup.add(mesh);
+      this.nailMeshes.push(mesh);
+      this.disposables.push(geo);
     });
 
     handNode.add(nailsGroup);
@@ -887,46 +1012,19 @@ export class AvatarRig {
     });
   }
 
-  setNailShape(shapeId = 'natural', lengthId = 'short') {
-    let lengthScale = 1.0;
-    switch (lengthId) {
-      case 'medium': lengthScale = 1.25; break;
-      case 'long': lengthScale = 1.6; break;
-      case 'extra-long': lengthScale = 2.0; break;
-      case 'short':
-      default: lengthScale = 0.95; break;
-    }
-
-    let widthScale = 1.0;
-    let tipTaper = 1.0;
-    switch (shapeId) {
-      case 'almond':
-        widthScale = 0.9;
-        tipTaper = 0.7;
-        break;
-      case 'stiletto':
-        widthScale = 0.85;
-        tipTaper = 0.5;
-        break;
-      case 'coffin':
-        widthScale = 0.95;
-        tipTaper = 0.8;
-        break;
-      case 'square':
-        widthScale = 1.05;
-        tipTaper = 1.0;
-        break;
-      case 'round':
-      case 'natural':
-      default:
-        widthScale = 1.0;
-        tipTaper = 0.9;
-        break;
-    }
+  setNailShape(shapeId = 'oval', lengthId = 'medium') {
+    this.activeNailShape = shapeId;
+    this.activeNailLength = lengthId;
 
     this.nailMeshes.forEach((nail) => {
       if (nail) {
-        nail.scale.set(widthScale, lengthScale, tipTaper);
+        const isThumb = !!nail.userData?.isThumb;
+        const newGeo = this.createNailGeometry(shapeId, lengthId, isThumb);
+        if (nail.geometry && typeof nail.geometry.dispose === 'function') {
+          nail.geometry.dispose();
+        }
+        nail.geometry = newGeo;
+        this.disposables.push(newGeo);
       }
     });
   }

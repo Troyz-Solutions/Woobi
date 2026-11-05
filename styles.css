@@ -6777,6 +6777,14 @@ html, body {
   display: none !important;
 }
 
+/* Premium Virtual Mirror: Crystal-clear avatar against softly subdued peripheral studio */
+.seren-vanity-sheet .seren-sheet-backdrop {
+  background: radial-gradient(circle at 50% 28%, rgba(248, 245, 240, 0) 32%, rgba(28, 24, 19, 0.38) 88%);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: auto;
+}
+
 .vanity-sheet-card {
   position: relative;
   z-index: 2;

@@ -746,8 +746,12 @@
                 <!-- Category Panel: 3D Nail Studio (Feminine & Neutral) -->
                 <div class="vanity-cat-panel" id="vanityPanel_nails">
                   <div class="vanity-focus-prompt">
-                    <span>Inspect manicure closely</span>
-                    <button class="vanity-tool-btn" onclick="app.serenCameraFocus('hands')">💅 Focus on Hands</button>
+                    <span>Inspect manicure closely:</span>
+                    <div class="vanity-camera-pills" style="margin: 0;">
+                      <button class="vanity-tool-btn active" onclick="app.serenInspectHand('both', this)">💅 Both Hands</button>
+                      <button class="vanity-tool-btn" onclick="app.serenInspectHand('left', this)">Left Hand</button>
+                      <button class="vanity-tool-btn" onclick="app.serenInspectHand('right', this)">Right Hand</button>
+                    </div>
                   </div>
                   <div class="vanity-section">
                     <label class="vanity-sec-label">Nail Shape</label>

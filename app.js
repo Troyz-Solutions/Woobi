@@ -2243,6 +2243,16 @@
     }
   }
 
+  function serenInspectHand(hand, btn) {
+    if (btn && btn.parentElement) {
+      btn.parentElement.querySelectorAll('.vanity-tool-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    if (window.Studio3D && typeof window.Studio3D.focusVanityFeature === 'function') {
+      window.Studio3D.focusVanityFeature('nails', { hand });
+    }
+  }
+
   function serenSetNailOpt(field, value, btn) {
     serenPushVanityHistory();
     if (btn) {
@@ -4691,6 +4701,7 @@
     serenSetBlush,
     serenOnBlushIntensity,
     serenSetBrow,
+    serenInspectHand,
     serenSetNailOpt,
     serenSetNailColor,
     serenSaveLookbook,

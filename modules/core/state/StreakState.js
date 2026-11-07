@@ -367,12 +367,18 @@ export class StreakState {
   // Status & Calculations
   // ---------------------------------------------------------------------------
   _checkDailyStatus() {
+    if (this.isTestUser()) {
+      this.state.uploadedToday = true;
+      this.state.isStreakBroken = false;
+      return;
+    }
+
     const todayStr = this.formatDateKey();
     const hasTodayMemory = this.hasUploadedOnDate(todayStr);
 
     this.state.uploadedToday = hasTodayMemory || (this.state.lastUploadDateStr === todayStr);
 
-    if (this.state.uploadedToday) {
+    if (this.state.uploadedToday || this.isTestUser()) {
       this.state.isStreakBroken = false;
       return;
     }

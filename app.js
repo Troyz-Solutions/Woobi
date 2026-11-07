@@ -144,7 +144,10 @@
       photo: 'assets/tan_loafers.jpg'
     },
     savedBookmarks: new Set(['look_1', 'look_2', 'look_3']),
-    currentPlan: 'monthly',
+    currentPlan: 'free',
+    selectedPlanPreference: null,
+    pendingUpgradePlan: 'pro',
+    billingCycle: 'yearly',
     isPremium: false,
     wearHistoryCount: 6
   };
@@ -158,6 +161,189 @@
       return true;
     }
   });
+
+  const PERSISTENCE_KEYS = {
+    WARDROBE: 'woobi_wardrobe_v1',
+    BOOKMARKS: 'woobi_saved_bookmarks_v1',
+    WEAR_HISTORY: 'woobi_wear_history_v1'
+  };
+
+  function persistWardrobe() {
+    window.WoobiStorageService.save(
+      PERSISTENCE_KEYS.WARDROBE,
+      WARDROBE_ITEMS
+    );
+  }
+
+  function persistBookmarks() {
+    window.WoobiStorageService.save(
+      PERSISTENCE_KEYS.BOOKMARKS,
+      Array.from(state.savedBookmarks)
+    );
+  }
+
+  function persistWearHistory() {
+    window.WoobiStorageService.save(
+      PERSISTENCE_KEYS.WEAR_HISTORY,
+      state.wearHistoryCount
+    );
+  }
+
+  let savedLooksManager = null;
+
+  function initSavedLooksManager() {
+    const savedLooksAPI = window.WoobiStudioFeatures?.savedLooks;
+
+    if (!savedLooksAPI?.createSavedLooksManager) {
+      console.error('Saved Looks manager is unavailable');
+      return false;
+    }
+
+    savedLooksManager = savedLooksAPI.createSavedLooksManager({
+      primaryKey: 'woobi_saved_looks_v1',
+      legacyKey: 'seren_saved_looks',
+      maxLooks: 50,
+      autoPersist: true
+    });
+
+  state.savedLooks = savedLooksManager.getAllLooks();
+  return true;
+  }
+
+  function renderSavedLooks() {
+  const grid = document.getElementById('savedLooksGrid');
+
+  if (!grid) return;
+
+  grid.replaceChildren();
+
+  const looks = savedLooksManager
+    ? savedLooksManager.getAllLooks()
+    : [];
+
+  if (!looks.length) {
+    const emptyMessage = document.createElement('p');
+    emptyMessage.textContent =
+      'No saved looks yet. Save a look from the Studio to see it here.';
+    emptyMessage.className = 'saved-empty-state';
+    grid.appendChild(emptyMessage);
+    return;
+  }
+
+  looks.forEach(look => {
+    const tile = document.createElement('div');
+    tile.className = 'saved-look-tile';
+
+    const preview = document.createElement('div');
+    preview.className = 'saved-preview-box single-img';
+
+    const img = document.createElement('img');
+    const photo = look.outfit?.items?.[0]?.photo;
+
+    img.src =
+      typeof photo === 'string' &&
+      photo.startsWith('assets/') &&
+      !photo.includes('..')
+        ? photo
+        : 'assets/welcome_hero.jpg';
+
+    img.alt = look.name || 'Saved look';
+    img.loading = 'lazy';
+
+    const ribbon = document.createElement('div');
+    ribbon.className = 'saved-ribbon-flag';
+    ribbon.textContent = '🔖';
+
+    preview.append(img, ribbon);
+
+    const footer = document.createElement('div');
+    footer.className = 'saved-tile-footer';
+
+    const name = document.createElement('span');
+    name.textContent = look.name || 'Untitled look';
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'saved-look-remove-btn';
+    removeButton.textContent = 'Remove';
+    removeButton.setAttribute(
+      'aria-label',
+      `Remove ${look.name || 'saved look'}`
+    );
+
+    removeButton.addEventListener('click', () => {
+      if (!savedLooksManager) return;
+
+      const result = savedLooksManager.deleteLook(look.id);
+
+      if (!result.success) {
+        showToast(result.error || 'Could not remove saved look.');
+        return;
+      }
+
+      state.savedLooks = savedLooksManager.getAllLooks();
+      renderSavedLooks();
+      showToast('Saved look removed.');
+    });
+
+    footer.append(name, removeButton);
+    tile.append(preview, footer);
+    grid.appendChild(tile);
+  });
+}
+
+
+  function hydratePersistentState() {
+    const storage = window.WoobiStorageService;
+
+    // Restore wardrobe without replacing the original array reference.
+    const savedWardrobe = storage.retrieve(
+      PERSISTENCE_KEYS.WARDROBE,
+      null
+    );
+
+    if (
+      Array.isArray(savedWardrobe) &&
+      savedWardrobe.every(item =>
+        item &&
+        typeof item.id === 'string' &&
+        typeof item.name === 'string' &&
+        typeof item.category === 'string'
+      )
+    ) {
+      WARDROBE_ITEMS.splice(
+        0,
+        WARDROBE_ITEMS.length,
+        ...savedWardrobe
+      );
+    }
+
+    // Restore bookmarks as a Set.
+    const savedBookmarks = storage.retrieve(
+      PERSISTENCE_KEYS.BOOKMARKS,
+      null
+    );
+
+    if (
+      Array.isArray(savedBookmarks) &&
+      savedBookmarks.every(id => typeof id === 'string')
+    ) {
+      rawState.savedBookmarks = new Set(savedBookmarks);
+    }
+
+    // Restore wear history.
+    const savedWearHistory = storage.retrieve(
+      PERSISTENCE_KEYS.WEAR_HISTORY,
+      null
+    );
+
+    if (
+      Number.isSafeInteger(savedWearHistory) &&
+      savedWearHistory >= 0
+    ) {
+      rawState.wearHistoryCount = savedWearHistory;
+    }
+  }
 
   // =========================================================================
   // 2. SCREEN ROUTER & NAVIGATION
@@ -197,14 +383,40 @@
       initVirtualStudio();
     } else if (screenId === 'weekly-planning') {
       renderWeeklyCalendar();
+    } else if (screenId === 'premium') {
+      updateSubscriptionUI();
+      switchPlanView('pro');
+      initPlanSwipeGestures();
+      const screenPremium = document.getElementById('screen-premium');
+      if (screenPremium) {
+        screenPremium.scrollTop = 0;
+        if (!screenPremium.dataset.scrollLockInit) {
+          screenPremium.dataset.scrollLockInit = 'true';
+          screenPremium.addEventListener('wheel', (e) => { e.preventDefault(); }, { passive: false });
+          screenPremium.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
+        }
+      }
     }
 
     // Update Bottom Nav active tab indicator if applicable
     updateBottomNav(screenId);
 
-    // Scroll phone screen container to top
+    // Scroll phone screen container to top and manage screen overflow
     const container = document.getElementById('phoneScreenContainer');
-    if (container) container.scrollTop = 0;
+    if (container) {
+      container.scrollTop = 0;
+      if (screenId === 'premium') {
+        container.classList.add('premium-mode');
+        document.body.classList.add('premium-mode');
+        container.style.overflow = 'hidden';
+        container.style.overflowY = 'hidden';
+      } else {
+        container.classList.remove('premium-mode');
+        document.body.classList.remove('premium-mode');
+        container.style.overflow = '';
+        container.style.overflowY = '';
+      }
+    }
   }
 
   function updateBottomNav(screenId) {
@@ -233,10 +445,14 @@
       'saved': 'saved',
       'offline-mode': 'saved',
 
+      'style-hint': 'hint',
+
+      'premium': 'pro',
+      'subscription': 'pro',
+      'manage-subscription': 'pro',
+
       'profile': 'profile',
       'wear-history': 'profile',
-      'premium': 'profile',
-      'manage-subscription': 'profile',
       'reminders': 'profile',
       'account-privacy': 'profile',
       'help-support': 'profile',
@@ -246,9 +462,23 @@
 
     const targetTab = navMapping[screenId] || 'today';
     document.querySelectorAll('.phone-bottom-nav .nav-tab').forEach(btn => {
-      const isMatch = btn.textContent.toLowerCase().includes(targetTab);
+      const text = btn.textContent.toLowerCase();
+      let isMatch = false;
+      if (targetTab === 'pro') {
+        isMatch = text.includes('pro') || text.includes('premium');
+      } else if (targetTab === 'hint') {
+        isMatch = text.includes('hint') || text.includes('style');
+      } else {
+        isMatch = text.includes(targetTab);
+      }
       btn.classList.toggle('active', isMatch);
     });
+
+    // Also update Seren floating pill bar tabs if on today screen
+    const serenHint = document.getElementById('serenTabHint');
+    const serenPro = document.getElementById('serenTabPro') || document.getElementById('serenTabPremium');
+    if (serenHint) serenHint.classList.toggle('active', targetTab === 'hint');
+    if (serenPro) serenPro.classList.toggle('active', targetTab === 'pro');
   }
 
   // =========================================================================
@@ -604,7 +834,7 @@
 
     if (titleEl) titleEl.textContent = opt.title;
     if (capEl) capEl.textContent = opt.caption;
-    
+
     if (aiBadge) {
       if (opt.isAIGenerated) {
         aiBadge.style.display = 'inline-block';
@@ -704,8 +934,8 @@
       const fitBadge = item.fit === 'tight'
         ? '<span class="badge-fit tight">Small</span>'
         : item.fit === 'loose'
-        ? '<span class="badge-fit loose">Loose</span>'
-        : '<span class="badge-fit">Fit</span>';
+          ? '<span class="badge-fit loose">Loose</span>'
+          : '<span class="badge-fit">Fit</span>';
 
       card.innerHTML = `
         <div class="builder-item-thumb">
@@ -876,8 +1106,8 @@
       const fitBadge = item.fit === 'tight'
         ? `<span class="badge-fit tight">Tight</span>`
         : item.fit === 'loose'
-        ? `<span class="badge-fit loose">Loose</span>`
-        : `<span class="badge-fit">Perfect fit</span>`;
+          ? `<span class="badge-fit loose">Loose</span>`
+          : `<span class="badge-fit">Perfect fit</span>`;
 
       box.innerHTML = `
         <div class="w-img-wrap" onclick="app.openConditionModal('${item.id}')">
@@ -941,9 +1171,11 @@
       showToast(`✨ Marked "${item.name}" as clean & ready to style!`);
     }
 
+    persistWardrobe();
+
     renderWardrobeGrid();
     updateStylistWardrobeStats();
-  }
+}
 
   function openConditionModal(itemId) {
     const item = WARDROBE_ITEMS.find(i => i.id === itemId);
@@ -1005,6 +1237,8 @@
     if (item) {
       item.condition = state.modalCondition;
       item.fit = state.modalFit;
+
+      persistWardrobe();
       showToast(`Updated "${item.name}": ${item.condition === 'clean' ? '✨ Clean' : '🧺 In Laundry'}, ${item.fit} fit`);
     }
     closeConditionModal();
@@ -1063,6 +1297,7 @@
   // =========================================================================
   function markAsWorn() {
     state.wearHistoryCount++;
+    persistWearHistory();
     showToast('✓ Great choice! Added to your wear history.');
     setTimeout(() => goToScreen('outfit-ready'), 600);
   }
@@ -1082,6 +1317,8 @@
       state.savedBookmarks.add(look.id);
       showToast('🔖 Saved outfit to your collection');
     }
+
+    persistBookmarks();
   }
 
   function toggleStyleChoice(cardEl) {
@@ -1139,6 +1376,258 @@
       sm.account.updateSubscription(state.currentPlan, true);
     }
     setTimeout(() => goToScreen('today'), 800);
+  }
+
+  // =========================================================================
+  // WOOBI PREMIUM SUBSCRIPTION & STYLE HINT ORCHESTRATION
+  // =========================================================================
+  function openStyleHint() {
+    if (state.currentScreen !== 'today') {
+      goToScreen('today');
+    }
+    serenOpenStylingReview();
+  }
+
+  function selectSubscriptionPlan(planId) {
+    if (planId === 'free') {
+      showToast('You are currently on the Free Forever plan.');
+      return;
+    }
+    openUpgradeConfirmation(planId);
+  }
+
+  const PLAN_PRICING = {
+    free: {
+      yearly: { sym: '₹', amount: '0', cadence: '', period: '', offer: 'Forever free', num: 0 },
+      monthly: { sym: '₹', amount: '0', cadence: '', period: '', offer: 'Forever free', num: 0 },
+      lifetime: { sym: '₹', amount: '0', cadence: '', period: '', offer: 'Forever free', num: 0 }
+    },
+    basic: {
+      yearly: { sym: '₹', amount: '1,740', cadence: '/ year', period: '/ yr', offer: '2 months free • Save ₹348', num: 1740 },
+      monthly: { sym: '₹', amount: '174', cadence: '/ month', period: '/ mo', offer: 'Standard monthly', num: 174 },
+      lifetime: { sym: '₹', amount: '8,763', cadence: 'once', period: 'once', offer: 'Lifetime access • Pay once', num: 8763 }
+    },
+    pro: {
+      yearly: { sym: '₹', amount: '3,870', cadence: '/ year', period: '/ yr', offer: '2 months free • Save ₹774', num: 3870 },
+      monthly: { sym: '₹', amount: '387', cadence: '/ month', period: '/ mo', offer: 'VIP monthly', num: 387 },
+      lifetime: { sym: '₹', amount: '15,397', cadence: 'once', period: 'once', offer: 'Lifetime VIP • Pay once', num: 15397 }
+    }
+  };
+
+  function openUpgradeConfirmation(planId) {
+    state.pendingUpgradePlan = planId;
+    const modal = document.getElementById('subUpgradeModal');
+    if (!modal) return;
+
+    const cycle = state.billingCycle || 'yearly';
+    const pricing = (PLAN_PRICING[planId] && PLAN_PRICING[planId][cycle]) || PLAN_PRICING.pro.yearly;
+
+    const titleEl = document.getElementById('subModalTitle');
+    const badgeEl = document.getElementById('subModalBadge');
+    const nameEl = document.getElementById('subModalPlanName');
+    const priceEl = document.getElementById('subModalPrice');
+    const cadenceEl = modal.querySelector('.modal-cad');
+    const bulletsEl = document.getElementById('subModalBullets');
+
+    if (planId === 'basic') {
+      if (titleEl) titleEl.textContent = 'Upgrade to Woobi Standard';
+      if (badgeEl) badgeEl.textContent = 'MOST POPULAR';
+      if (nameEl) nameEl.textContent = 'Woobi Standard';
+      if (priceEl) priceEl.textContent = pricing.amount;
+      if (cadenceEl) cadenceEl.textContent = pricing.cadence || 'billed yearly';
+      if (bulletsEl) {
+        bulletsEl.innerHTML = `
+          <li><span class="check-bullet">✓</span> Personalized outfit recommendations</li>
+          <li><span class="check-bullet">✓</span> Curated brand discounts</li>
+          <li><span class="check-bullet">✓</span> Virtual try-on tools</li>
+          <li><span class="check-bullet">✓</span> Digital wardrobe organizer & daily style feeds</li>
+          <li><span class="check-bullet">✓</span> Ad-free experience</li>
+        `;
+      }
+    } else {
+      if (titleEl) titleEl.textContent = 'Upgrade to Woobi Pro 👑';
+      if (badgeEl) badgeEl.textContent = 'VIP COUTURE ACCESS';
+      if (nameEl) nameEl.textContent = 'Woobi Pro';
+      if (priceEl) priceEl.textContent = pricing.amount;
+      if (cadenceEl) cadenceEl.textContent = pricing.cadence || 'billed yearly';
+      if (bulletsEl) {
+        bulletsEl.innerHTML = `
+          <li><span class="check-bullet gold">✓</span> 1-on-1 dedicated stylist</li>
+          <li><span class="check-bullet gold">✓</span> Early access to exclusive collections</li>
+          <li><span class="check-bullet gold">✓</span> Priority shipping & returns</li>
+          <li><span class="check-bullet gold">✓</span> Limitless 3D Virtual Studio try-on</li>
+          <li><span class="check-bullet gold">✓</span> Advanced occasion & color palette generator</li>
+          <li><span class="check-bullet gold">✓</span> Unlimited saved looks & VIP support</li>
+        `;
+      }
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeUpgradeConfirmation() {
+    const modal = document.getElementById('subUpgradeModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+  }
+
+  function confirmPlanPreference() {
+    const plan = state.pendingUpgradePlan || 'pro';
+    const cycle = state.billingCycle || 'yearly';
+    state.selectedPlanPreference = plan;
+    closeUpgradeConfirmation();
+
+    const planData = (PLAN_PRICING[plan] && PLAN_PRICING[plan][cycle]) || { amount: '3,870', cadence: '/ year' };
+    const planLabel = plan === 'pro' ? 'Pro' : 'Standard';
+    showToast(`✓ Preference recorded for Woobi ${planLabel} (₹${planData.amount} ${planData.cadence})! Payment gateway integration coming soon.`);
+
+    updateSubscriptionUI();
+  }
+
+  function toggleFaq(element) {
+    if (!element) return;
+    element.classList.toggle('open');
+  }
+
+  function updateSubscriptionUI() {
+    const current = state.isPremium ? (state.currentPlan || 'pro') : 'free';
+    const cycle = state.billingCycle || 'yearly';
+
+    // Update active tab on cadence switcher
+    const monthlyBtn = document.getElementById('cadenceMonthly');
+    const yearlyBtn = document.getElementById('cadenceYearly');
+    const lifetimeBtn = document.getElementById('cadenceLifetime');
+    if (monthlyBtn) monthlyBtn.classList.toggle('active', cycle === 'monthly');
+    if (yearlyBtn) yearlyBtn.classList.toggle('active', cycle === 'yearly');
+    if (lifetimeBtn) lifetimeBtn.classList.toggle('active', cycle === 'lifetime');
+
+    // Update Free price display
+    const freeEl = document.getElementById('priceDisplayFree');
+    if (freeEl) freeEl.textContent = '₹0';
+    const freeOfferEl = document.getElementById('priceOfferFree');
+    if (freeOfferEl) freeOfferEl.textContent = 'Forever free';
+
+    // Update Standard (Basic) price display
+    const basicEl = document.getElementById('priceDisplayBasic');
+    const basicOfferEl = document.getElementById('priceOfferBasic');
+    if (basicEl) {
+      const basicData = PLAN_PRICING.basic[cycle] || PLAN_PRICING.basic.yearly;
+      const periodHtml = basicData.period ? `<span class="seren-price-period" id="pricePeriodBasic">${basicData.period}</span>` : '';
+      basicEl.innerHTML = `${basicData.sym}${basicData.amount}${periodHtml}`;
+      if (basicOfferEl) basicOfferEl.textContent = basicData.offer;
+    }
+
+    // Update Pro price display
+    const proEl = document.getElementById('priceDisplayPro');
+    const proOfferEl = document.getElementById('priceOfferPro');
+    if (proEl) {
+      const proData = PLAN_PRICING.pro[cycle] || PLAN_PRICING.pro.yearly;
+      const periodHtml = proData.period ? `<span class="seren-price-period" id="pricePeriodPro">${proData.period}</span>` : '';
+      proEl.innerHTML = `${proData.sym}${proData.amount}${periodHtml}`;
+      if (proOfferEl) proOfferEl.textContent = proData.offer;
+    }
+
+    // Update CTA buttons
+    const btnFree = document.getElementById('btnPlanFree');
+    const btnBasic = document.getElementById('btnPlanBasic');
+    const btnPro = document.getElementById('btnPlanPro');
+
+    function setBtnLabel(btn, text, isCurrent) {
+      if (!btn) return;
+      const textSpan = btn.querySelector('.btn-tier-text');
+      if (textSpan) {
+        textSpan.textContent = text;
+      } else {
+        btn.textContent = text;
+      }
+      btn.disabled = isCurrent;
+      btn.classList.toggle('current-plan-btn', isCurrent);
+    }
+
+    if (btnFree) {
+      setBtnLabel(btnFree, current === 'free' ? 'Current Plan' : 'Get Started', current === 'free');
+    }
+
+    if (btnBasic) {
+      setBtnLabel(btnBasic, current === 'basic' ? 'Current Plan' : 'Upgrade to Basic', current === 'basic');
+    }
+
+    if (btnPro) {
+      setBtnLabel(btnPro, current === 'pro' ? 'Current Plan 👑' : 'Get Woobi Pro', current === 'pro');
+    }
+  }
+
+  function setBillingCycle(cycle) {
+    state.billingCycle = cycle;
+    updateSubscriptionUI();
+  }
+
+  function openLegalModal(docType) {
+    if (docType === 'terms') {
+      alert('Woobi Terms of Service:\n\n1. Enjoy personal styling, 3D mannequins & daily outfit streaks.\n2. In accordance with safety standards, payment integration is in final development; no charges apply today.\n3. Digital subscriptions renew automatically according to selected billing cycle once live billing launches.');
+    } else {
+      goToScreen('account-privacy');
+    }
+  }
+
+  function switchPlanView(planId) {
+    const track = document.getElementById('planCardsSliderTrack');
+    const pill = document.getElementById('segmentedSlidePill');
+    const btnFree = document.getElementById('segBtnFree');
+    const btnBasic = document.getElementById('segBtnBasic');
+    const btnPro = document.getElementById('segBtnPro');
+
+    const btns = [btnFree, btnBasic, btnPro];
+    btns.forEach(b => b && b.classList.remove('active'));
+
+    if (pill) {
+      pill.classList.remove('pill-free', 'pill-basic', 'pill-pro');
+    }
+
+    if (planId === 'free') {
+      if (btnFree) btnFree.classList.add('active');
+      if (pill) pill.classList.add('pill-free');
+      if (track) track.style.transform = 'translateX(0%)';
+    } else if (planId === 'basic') {
+      if (btnBasic) btnBasic.classList.add('active');
+      if (pill) pill.classList.add('pill-basic');
+      if (track) track.style.transform = 'translateX(-33.333333%)';
+    } else if (planId === 'pro') {
+      if (btnPro) btnPro.classList.add('active');
+      if (pill) pill.classList.add('pill-pro');
+      if (track) track.style.transform = 'translateX(-66.666666%)';
+    }
+
+    updateSubscriptionUI();
+  }
+
+  function initPlanSwipeGestures() {
+    const viewport = document.getElementById('planCardsViewport');
+    if (!viewport || viewport.dataset.swipeInit) return;
+    viewport.dataset.swipeInit = 'true';
+
+    let startX = 0;
+    const plans = ['free', 'basic', 'pro'];
+
+    viewport.addEventListener('touchstart', (e) => {
+      startX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    viewport.addEventListener('touchend', (e) => {
+      const endX = e.changedTouches[0].screenX;
+      const diff = startX - endX;
+      let activeIndex = 0;
+      if (document.getElementById('segBtnBasic')?.classList.contains('active')) activeIndex = 1;
+      else if (document.getElementById('segBtnPro')?.classList.contains('active')) activeIndex = 2;
+
+      if (Math.abs(diff) > 40) {
+        if (diff > 0 && activeIndex < plans.length - 1) {
+          switchPlanView(plans[activeIndex + 1]);
+        } else if (diff < 0 && activeIndex > 0) {
+          switchPlanView(plans[activeIndex - 1]);
+        }
+      }
+    }, { passive: true });
   }
 
   function saveProfile() {
@@ -1564,7 +2053,7 @@
     }
   ];
 
-  
+
   // ===================================================================
   // SÉRÉN 3D VIRTUAL FASHION STUDIO CONTROLLER
   // ===================================================================
@@ -1669,12 +2158,71 @@
 
   let serenCurrentCat = 'all';
 
+  let virtualStudioReady = null;
+
+  function prepareVirtualStudio() {
+    if (virtualStudioReady) return virtualStudioReady;
+    virtualStudioReady = Promise.resolve()
+      // Yield one frame without depending on the decorative welcome animation.
+      .then(() => new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0))))
+      .then(() => new Promise(resolve => {
+        const studio = window.Studio3D;
+        if (!studio) { resolve(false); return; }
+        const manager = window.THREE?.DefaultLoadingManager;
+        const previousStart = manager?.onStart;
+        const previousLoad = manager?.onLoad;
+        let loading = false;
+        let finished = false;
+        let timeout;
+        function complete() {
+          if (finished) return;
+          finished = true;
+          clearTimeout(timeout);
+          if (manager) {
+            if (manager.onStart === onStart) manager.onStart = previousStart;
+            if (manager.onLoad === onLoad) manager.onLoad = previousLoad;
+          }
+          resolve(studio.isInitialized);
+        }
+        function onStart(...args) {
+          loading = true;
+          previousStart?.apply(manager, args);
+        }
+        function onLoad(...args) {
+          try { previousLoad?.apply(manager, args); }
+          finally { complete(); }
+        }
+        if (manager) {
+          manager.onStart = onStart;
+          manager.onLoad = onLoad;
+        }
+        // Unavailable optional models must not keep the user on the welcome screen.
+        timeout = setTimeout(complete, 5000);
+        try {
+          studio.init('seren3dContainer', 'seren3dCanvas');
+          if (!loading) complete();
+        } catch (error) {
+          console.error('Studio startup failed:', error);
+          window.showStudio3DFallback?.('The 3D studio could not start. You can retry from the dashboard.');
+          complete();
+        }
+      }))
+      // Render loaded models once so shader compilation precedes the dashboard reveal.
+      .then(ready => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (document.querySelector('.app-welcome[open]')) {
+          window.Studio3D?.setRenderingPaused?.(true);
+        }
+        resolve(ready);
+      }))));
+    return virtualStudioReady;
+  }
+
   function initVirtualStudio() {
-    if (window.Studio3D) {
-      setTimeout(() => {
-        window.Studio3D.init('seren3dContainer', 'seren3dCanvas');
-      }, 50);
-    }
+    prepareVirtualStudio().then(() => {
+      if (window.Studio3D?.isInitialized && !document.querySelector('.app-welcome[open]')) {
+        window.Studio3D.onResize();
+      }
+    });
     renderSerenGarments('all');
     updateSerenGreeting();
   }
@@ -1841,21 +2389,58 @@
     serenCloseReview();
   }
 
-  function serenSaveCurrentLook() {
+    function serenSaveCurrentLook() {
+    if (!savedLooksManager) {
+      showToast('Saved Looks is currently unavailable.');
+      return;
+    }
+
+    const selection = state.builderSelection || {};
+
+    const selectedItems = [
+      selection.top,
+      selection.bottom,
+      selection.shoe,
+      selection.accessory
+    ]
+      .filter(Boolean)
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        photo: item.photo
+      }));
+
+    if (selectedItems.length === 0) {
+      showToast('Please select at least one wardrobe item first.');
+      return;
+    }
+
+    const date = new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+
     const currentOutfit = {
-      id: 'look_' + Date.now(),
-      name: 'Woobi Studio Look',
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      occasion: 'Everyday Luxury',
-      items: [
-        { name: 'Crop Tank', photo: 'assets/welcome_hero.jpg' },
-        { name: 'Cream Cardigan', photo: 'assets/style_casual.jpg' },
-        { name: 'Wide Linen Trousers', photo: 'assets/beige_chinos.jpg' }
-      ]
+      date,
+      occasion: 'Custom Outfit',
+      items: selectedItems
     };
 
-    if (!state.savedLooks) state.savedLooks = [];
-    state.savedLooks.unshift(currentOutfit);
+    const result = savedLooksManager.saveLook(
+      `My Outfit - ${date}`,
+      currentOutfit,
+      {},
+      ['Custom']
+    );
+
+    if (!result.success) {
+      showToast(result.error || 'Could not save look.');
+      return;
+    }
+
+    state.savedLooks = savedLooksManager.getAllLooks();
+    renderSavedLooks();
     showToast('Look saved to your collection! ♡');
   }
 
@@ -2090,6 +2675,12 @@
     } else {
       setupVanityClose();
     }
+
+    if (!sheet.classList.contains('hidden')) {
+      const currentGender = (window.Studio3D && window.Studio3D.avatarConfig && window.Studio3D.avatarConfig.gender) || 'female';
+      serenSyncAnatomyPanel(currentGender);
+      serenUpdateTesterPills();
+    }
   }
 
   function serenCloseVanity() {
@@ -2110,6 +2701,104 @@
       if (appView) appView.style.display = 'none';
       if (photoView) photoView.style.display = 'block';
     }
+  }
+
+  function toggleMannequinDropdown(event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    const btn = document.getElementById('selectMannequinBtn');
+    const menu = document.getElementById('mannequinDropdownMenu');
+    if (!menu) return;
+
+    const isOpen = menu.classList.contains('show');
+    if (isOpen) {
+      menu.classList.remove('show');
+      if (btn) {
+        btn.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    } else {
+      menu.classList.add('show');
+      if (btn) {
+        btn.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    }
+  }
+
+  function selectMannequin(gender) {
+    const targetGender = gender === 'male' || gender === 'masculine' ? 'male' : 'female';
+    const maleOpt = document.getElementById('mannequinOptMale');
+    const femaleOpt = document.getElementById('mannequinOptFemale');
+    const menu = document.getElementById('mannequinDropdownMenu');
+    const btn = document.getElementById('selectMannequinBtn');
+
+    if (maleOpt && femaleOpt) {
+      if (targetGender === 'male') {
+        maleOpt.classList.add('active');
+        femaleOpt.classList.remove('active');
+      } else {
+        femaleOpt.classList.add('active');
+        maleOpt.classList.remove('active');
+      }
+    }
+
+    if (menu) menu.classList.remove('show');
+    if (btn) {
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+
+    if (window.Studio3D && typeof window.Studio3D.setMannequinGender === 'function') {
+      window.Studio3D.setMannequinGender(targetGender);
+    } else if (window.Studio3D && typeof window.Studio3D.setGenderPresentation === 'function') {
+      window.Studio3D.setGenderPresentation(targetGender);
+    }
+
+    try {
+      localStorage.setItem('woobi_mannequin_gender', targetGender);
+    } catch (e) {}
+
+    showToast(`Switched to ${targetGender === 'male' ? 'Male' : 'Female'} Mannequin.`);
+  }
+
+  // Close mannequin dropdown on outside click
+  if (typeof document !== 'undefined') {
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('mannequinDropdownContainer');
+      if (container && !container.contains(e.target)) {
+        const menu = document.getElementById('mannequinDropdownMenu');
+        const btn = document.getElementById('selectMannequinBtn');
+        if (menu) menu.classList.remove('show');
+        if (btn) {
+          btn.classList.remove('open');
+          btn.setAttribute('aria-expanded', 'false');
+        }
+      }
+    });
+  }
+
+  function setMannequinGender(gender) {
+    return selectMannequin(gender);
+  }
+
+  function serenSetModelType(type, btn) {
+    const isMale = (type === 'mannequin_male');
+    const btnFemale = document.getElementById('btnQuickFemale');
+    const btnMale = document.getElementById('btnQuickMale');
+    if (btnFemale && btnMale) {
+      btnFemale.classList.toggle('active', !isMale);
+      btnMale.classList.toggle('active', isMale);
+    }
+    selectMannequin(isMale ? 'male' : 'female');
+    if (window.Studio3D && typeof window.Studio3D.setModelType === 'function') {
+      window.Studio3D.setModelType(type);
+    }
+    const label = type === 'mannequin_female' ? 'Female Mannequin by Astra' :
+                  type === 'mannequin_male' ? 'Male Mannequin by Astra' : 'Stylized Avatar';
+    showToast(`Display model set to ${label}.`);
   }
 
   function serenSetGender(gender, btn) {
@@ -2189,6 +2878,235 @@
     }
   }
 
+  function toggleTestingDock(forceOpen) {
+    const dock = document.getElementById('desktopTestingDock');
+    const launcher = document.getElementById('dockMiniLauncher');
+    if (!dock) return;
+
+    if (forceOpen === true) {
+      dock.classList.remove('collapsed');
+      if (launcher) launcher.classList.add('hidden');
+    } else if (forceOpen === false) {
+      dock.classList.add('collapsed');
+      if (launcher) launcher.classList.remove('hidden');
+    } else {
+      dock.classList.toggle('collapsed');
+      if (launcher) {
+        if (dock.classList.contains('collapsed')) launcher.classList.remove('hidden');
+        else launcher.classList.add('hidden');
+      }
+    }
+  }
+
+  function setStudioMannequinAngle(deg, btn) {
+    const rad = (parseFloat(deg) || 0) * (Math.PI / 180);
+    if (window.Studio3D && typeof window.Studio3D.setAvatarRotation === 'function') {
+      window.Studio3D.setAvatarRotation(rad);
+    }
+    if (btn) {
+      document.querySelectorAll('.dock-angle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    showToast(`Inspecting mannequin at ${deg}° angle.`);
+  }
+
+  function resetToPerfectModelAvatar() {
+    const isMale = (window.Studio3D && window.Studio3D.avatarConfig && window.Studio3D.avatarConfig.gender === 'male');
+
+    if (window.Studio3D) {
+      window.Studio3D.setAvatarRotation(0);
+    }
+
+    if (isMale) {
+      // Natural Male High-Fashion Model Sizing:
+      serenSetAnatomy('height', 1.85, 'male');
+      serenSetAnatomy('weight', 78, 'male');
+      serenSetAnatomy('waist', 70, 'male');
+      serenSetBodyFat(18);
+      if (window.Studio3D) window.Studio3D.setBodyProportions('athletic');
+    } else {
+      // Natural Female High-Fashion Runway Model Sizing:
+      serenSetAnatomy('height', 1.75, 'female');
+      serenSetAnatomy('weight', 56, 'female');
+      serenSetAnatomy('waist', 70, 'female');
+      serenSetBodyFat(20);
+      if (window.Studio3D) window.Studio3D.setBodyProportions('slim_fit');
+    }
+
+    if (window.Studio3D) {
+      window.Studio3D.updateBodyMeshScale();
+      window.Studio3D.savePreferences();
+    }
+
+    const currentGender = isMale ? 'male' : 'female';
+    serenSyncAnatomyPanel(currentGender);
+    serenUpdateTesterPills();
+
+    showToast(`✨ Reset to Natural Runway ${isMale ? 'Male' : 'Female'} Model Silhouette!`);
+  }
+
+  function resetToNormalBodyShape() {
+    const isMale = (window.Studio3D && window.Studio3D.avatarConfig && window.Studio3D.avatarConfig.gender === 'male');
+
+    if (window.Studio3D) {
+      if (typeof window.Studio3D.resetAnatomyToNormal === 'function') {
+        window.Studio3D.resetAnatomyToNormal();
+      }
+      window.Studio3D.setAvatarRotation(0);
+    }
+
+    // Reset Proportion Chips in Vanity Drawer
+    document.querySelectorAll('#proportionChips .vanity-chip').forEach(btn => {
+      if (btn.getAttribute('data-prop') === (isMale ? 'athletic' : 'slim_fit')) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    const currentGender = isMale ? 'male' : 'female';
+    serenSyncAnatomyPanel(currentGender);
+    serenUpdateTesterPills();
+
+    showToast(`🔄 Reset to Natural ${isMale ? 'Male' : 'Female'} Mannequin Form!`);
+  }
+
+  function resetMannequinToStandards() {
+    resetToNormalBodyShape();
+  }
+
+  function serenQuickSwitchGender(gender, btn) {
+    const isMale = (gender === 'male' || gender === 'masculine');
+    const targetGender = isMale ? 'male' : 'female';
+
+    // Update floating quick toggle pill on the 3D stage
+    const btnFemale = document.getElementById('btnQuickFemale');
+    const btnMale = document.getElementById('btnQuickMale');
+    if (btnFemale) btnFemale.classList.toggle('active', !isMale);
+    if (btnMale) btnMale.classList.toggle('active', isMale);
+
+    // Update vanity chips if present
+    document.querySelectorAll('#vanityAppearanceView [data-gender]').forEach(c => {
+      if (c.getAttribute('data-gender') === targetGender) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+
+    // Update model type chips if present
+    document.querySelectorAll('#vanityAppearanceView [data-model]').forEach(c => {
+      const m = c.getAttribute('data-model');
+      if (m === `mannequin_${targetGender}`) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+
+    if (window.Studio3D && typeof window.Studio3D.setGenderPresentation === 'function') {
+      window.Studio3D.setGenderPresentation(targetGender);
+    }
+
+    serenSyncAnatomyPanel(targetGender);
+    serenUpdateTesterPills();
+
+    showToast(`Switched to Natural ${isMale ? 'Male' : 'Female'} Mannequin.`);
+  }
+
+  function serenSetAnatomy(key, val, gender = null) {
+    const activeGender = gender || (window.Studio3D && window.Studio3D.avatarConfig.gender === 'male' ? 'male' : 'female');
+    const num = parseFloat(val);
+
+    if (window.Studio3D && typeof window.Studio3D.setAnatomy === 'function') {
+      window.Studio3D.setAnatomy(key, num, activeGender);
+    }
+
+    serenUpdateAnatomyLabel(key, num, activeGender);
+    serenUpdateTesterPills();
+  }
+
+  function serenSyncAnatomyPanel(gender) {
+    const isMale = (gender === 'male' || gender === 'masculine');
+
+    // Sync Vanity drawer panels (if open)
+    const fPanel = document.getElementById('femaleAnatomyPanel');
+    const mPanel = document.getElementById('maleAnatomyPanel');
+    if (fPanel) fPanel.style.display = isMale ? 'none' : 'block';
+    if (mPanel) mPanel.style.display = isMale ? 'block' : 'none';
+
+    if (window.Studio3D && window.Studio3D.avatarConfig && window.Studio3D.avatarConfig.anatomy) {
+      const data = isMale ? window.Studio3D.avatarConfig.anatomy.male : window.Studio3D.avatarConfig.anatomy.female;
+      if (data) {
+        const prefix = isMale ? 'male' : 'female';
+        Object.keys(data).forEach(k => {
+          const val = data[k];
+          const rawVal = k === 'height' ? Math.round(val * 100) : val;
+
+          // Sync drawer slider
+          const drawerSlider = document.getElementById(`${prefix}${k.charAt(0).toUpperCase() + k.slice(1)}Slider`);
+          if (drawerSlider) drawerSlider.value = rawVal;
+
+          serenUpdateAnatomyLabel(k, rawVal, prefix);
+        });
+      }
+    }
+  }
+
+  function serenUpdateAnatomyLabel(key, val, gender) {
+    const isMale = (gender === 'male' || gender === 'masculine');
+    const prefix = isMale ? 'male' : 'female';
+    const num = parseFloat(val);
+
+    let text = '';
+    if (key === 'height') {
+      const cm = Math.round(num > 3 ? num : num * 100);
+      const totalInches = cm / 2.54;
+      const ft = Math.floor(totalInches / 12);
+      const inches = Math.round(totalInches % 12);
+      text = `${cm} cm (${ft}'${inches}")`;
+    } else if (key === 'weight') {
+      text = `${Math.round(num)} kg`;
+    } else if (key === 'waist') {
+      let desc = 'Natural Fit';
+      if (num < 45) desc = 'Relaxed Fit';
+      else if (num < 65) desc = 'Natural Fit';
+      else if (num < 80) desc = 'Tailored Fit';
+      else desc = isMale ? 'Athletic Fit' : 'Slim Fit';
+      text = `${desc} (${Math.round(num)}%)`;
+    }
+
+    // Update Drawer label
+    const drawerLabel = document.getElementById(`${prefix}${key.charAt(0).toUpperCase() + key.slice(1)}Val`);
+    if (drawerLabel) drawerLabel.textContent = text;
+  }
+
+  function serenUpdateTesterPills() {
+    if (!window.Studio3D || !window.Studio3D.avatarConfig) return;
+    const cfg = window.Studio3D.avatarConfig;
+    const isMale = (cfg.gender === 'male' || cfg.gender === 'masculine');
+    const data = (cfg.anatomy && (isMale ? cfg.anatomy.male : cfg.anatomy.female)) || {};
+
+    const heightVal = data.height ? Math.round(data.height * 100) : (isMale ? 180 : 170);
+    const weightVal = data.weight ? Math.round(data.weight) : (isMale ? 78 : 58);
+    const fatVal = Math.round(cfg.bodyFat ?? (isMale ? 20 : 25));
+
+    // Update Dock Badges (in free space)
+    const dockHeight = document.getElementById('dockHeightBadge');
+    const dockWeight = document.getElementById('dockWeightBadge');
+    const dockFat = document.getElementById('dockFatBadge');
+
+    if (dockHeight) dockHeight.textContent = `${heightVal} cm`;
+    if (dockWeight) dockWeight.textContent = `${weightVal} kg`;
+    if (dockFat) dockFat.textContent = `${fatVal}%`;
+
+    // Also update dock body fat label if present
+    const dockFatVal = document.getElementById('dockBodyFatVal');
+    if (dockFatVal) {
+      let desc = 'Fit & Toned (15%)';
+      if (fatVal < 15) desc = `Ultra Lean (${fatVal}%)`;
+      else if (fatVal < 35) desc = `Slim & Fit (${fatVal}%)`;
+      else if (fatVal < 65) desc = `Natural (${fatVal}%)`;
+      else desc = `Full (${fatVal}%)`;
+      dockFatVal.textContent = desc;
+    }
+  }
+
+
   function serenSetSkinTone(hex, btn) {
     serenPushVanityHistory();
     if (btn) {
@@ -2229,6 +3147,39 @@
       }
     }
     showToast(`Body proportions adjusted to ${preset}.`);
+  }
+
+  function serenSetBodyFat(val) {
+    const num = Math.max(0, Math.min(100, parseFloat(val) || 0));
+    if (window.Studio3D && typeof window.Studio3D.setBodyFat === 'function') {
+      window.Studio3D.setBodyFat(num);
+    }
+    const labelEl = document.getElementById('bodyFatVal');
+    if (labelEl) {
+      let desc = 'Fit & Toned (15%)';
+      if (num < 15) desc = `Ultra Lean (${num}%)`;
+      else if (num < 35) desc = `Slim & Fit (${num}%)`;
+      else if (num < 65) desc = `Natural (${num}%)`;
+      else desc = `Full (${num}%)`;
+      labelEl.textContent = desc;
+    }
+    serenUpdateTesterPills();
+  }
+
+  function serenSetWaistDefinition(val) {
+    const num = Math.max(0, Math.min(100, parseFloat(val) || 0));
+    if (window.Studio3D && typeof window.Studio3D.setWaistDefinition === 'function') {
+      window.Studio3D.setWaistDefinition(num);
+    }
+    const labelEl = document.getElementById('waistDefVal');
+    if (labelEl) {
+      let desc = 'Cinched (70%)';
+      if (num < 30) desc = `Straight (${num}%)`;
+      else if (num < 60) desc = `Natural (${num}%)`;
+      else desc = `Cinched / Tailored (${num}%)`;
+      labelEl.textContent = desc;
+    }
+    serenUpdateTesterPills();
   }
 
   function serenToggleAccessory(name, btn) {
@@ -2789,7 +3740,7 @@
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       const dataUrl = e.target.result;
       const previewImg = document.getElementById('photoPreviewImg');
       const dropzoneEmpty = document.getElementById('dropzoneEmpty');
@@ -2802,7 +3753,7 @@
 
       // Local Canvas Tone Analysis (No server upload - 100% consent and privacy maintained)
       const img = new Image();
-      img.onload = function() {
+      img.onload = function () {
         const c = document.createElement('canvas');
         c.width = 64;
         c.height = 64;
@@ -2903,7 +3854,7 @@
       if (typeof localStorage !== 'undefined') {
         try {
           localStorage.removeItem('woobi_streak_user_mode');
-        } catch (e) {}
+        } catch (e) { }
       }
 
       state.streak = getStreakStatusSafe(engine);
@@ -2995,11 +3946,11 @@
         openMemoriesModal();
       };
     }
-    const calendarBtn = document.getElementById('streakCalendarBtn');
+    const calendarBtn = document.getElementById('plannerCalendarBtn') || document.getElementById('streakCalendarBtn');
     if (calendarBtn) {
       calendarBtn.onclick = (e) => {
         if (e) e.stopPropagation();
-        openStreakModal();
+        openWeeklyPlanner();
       };
     }
     const accountBtn = document.getElementById('streakAccountBtn');
@@ -3284,6 +4235,9 @@
 
     if (!gridEl) return;
     gridEl.innerHTML = '';
+    gridEl.classList.add('recessed-tiles-grid');
+    gridEl.style.display = 'grid';
+    gridEl.style.gridTemplateColumns = 'repeat(7, 1fr)';
 
     // Helper: Creates high-performance animated SVG with flowing fire streaks
     function createFlowingFireElement(level = 1) {
@@ -3498,6 +4452,125 @@
     }
   }
 
+  let activeExportMemoryId = null;
+  let activeDetailMemoryId = null;
+
+  async function downloadPhoto(url, filename = 'woobi-outfit.jpg') {
+    if (!url) return;
+    try {
+      if (url.startsWith('data:')) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✓ Saved to gallery');
+        return;
+      }
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
+      showToast('✓ Saved to gallery');
+    } catch (err) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('✓ Saved to gallery');
+    }
+  }
+
+  async function sharePhoto(url, title = 'Woobi Daily Outfit') {
+    if (!url) {
+      showToast('No photo available to share');
+      return;
+    }
+    if (navigator.share) {
+      try {
+        let filesToShare = null;
+        try {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          const mimeType = blob.type || 'image/jpeg';
+          const ext = mimeType.includes('png') ? 'png' : 'jpg';
+          const file = new File([blob], `woobi-outfit.${ext}`, { type: mimeType });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            filesToShare = [file];
+          }
+        } catch (e) {
+          // File conversion fallback
+        }
+
+        const shareData = filesToShare ? {
+          title: title,
+          text: 'My Woobi daily outfit streak!',
+          files: filesToShare
+        } : {
+          title: title,
+          text: 'My Woobi daily outfit streak!',
+          url: window.location.href
+        };
+
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          showToast('Sharing not available or cancelled');
+        }
+      }
+    } else {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(url.startsWith('http') ? url : window.location.href);
+          showToast('Link copied to clipboard');
+        } catch (e) {
+          showToast('Sharing not supported on this browser');
+        }
+      } else {
+        showToast('Sharing not supported on this browser');
+      }
+    }
+  }
+
+  function saveStreakPhotoRecord() {
+    if (!capturedPhotoDataUrl) return;
+    const engine = getStreakEngine();
+    if (engine) {
+      engine.recordDailyOutfitUpload({
+        photoUrl: capturedPhotoDataUrl,
+        note: 'Daily Outfit'
+      });
+      triggerFlameReigniteAnimation();
+      updateStreakUI();
+    }
+  }
+
+  async function downloadCapturedPhoto() {
+    if (!capturedPhotoDataUrl) {
+      showToast('No captured photo to download');
+      return;
+    }
+    await downloadPhoto(capturedPhotoDataUrl, `woobi-streak-${Date.now()}.jpg`);
+  }
+
+  async function shareCapturedPhoto() {
+    if (!capturedPhotoDataUrl) {
+      showToast('No captured photo to share');
+      return;
+    }
+    await sharePhoto(capturedPhotoDataUrl, 'My Daily Outfit Streak 🔥');
+  }
+
   function captureCameraSnapshot() {
     const videoEl = document.getElementById('cameraVideo');
     const canvas = document.getElementById('cameraCanvas');
@@ -3527,6 +4600,8 @@
     if (overlayFrame) overlayFrame.classList.add('hidden');
     if (liveControls) liveControls.classList.add('hidden');
     if (reviewControls) reviewControls.classList.remove('hidden');
+
+    saveStreakPhotoRecord();
   }
 
   function triggerFileInputClick() {
@@ -3542,7 +4617,7 @@
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       capturedPhotoDataUrl = e.target.result;
       const previewImg = document.getElementById('cameraCapturedPreview');
       const videoEl = document.getElementById('cameraVideo');
@@ -3560,6 +4635,8 @@
       if (overlayFrame) overlayFrame.classList.add('hidden');
       if (liveControls) liveControls.classList.add('hidden');
       if (reviewControls) reviewControls.classList.remove('hidden');
+
+      saveStreakPhotoRecord();
     };
     reader.readAsDataURL(file);
   }
@@ -3594,6 +4671,8 @@
     if (overlayFrame) overlayFrame.classList.add('hidden');
     if (liveControls) liveControls.classList.add('hidden');
     if (reviewControls) reviewControls.classList.remove('hidden');
+
+    saveStreakPhotoRecord();
   }
 
   function retakeCameraPhoto() {
@@ -3652,6 +4731,67 @@
     if (modal) modal.classList.add('hidden');
   }
 
+  function openPhotoExportModal(memoryId) {
+    activeExportMemoryId = memoryId || activeDetailMemoryId;
+    const modal = document.getElementById('photoExportModal');
+    if (modal) {
+      modal.style.zIndex = '1500';
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closeExportModal(e) {
+    if (e && e.target && e.target.closest('.export-modal-sheet') && !e.target.closest('.btn-export-sheet-cancel')) {
+      return;
+    }
+    const modal = document.getElementById('photoExportModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+    activeExportMemoryId = null;
+  }
+
+  function getActiveDetailMemoryId() {
+    return activeDetailMemoryId;
+  }
+
+  async function savePhotoToGallery(memoryId) {
+    const id = memoryId || activeDetailMemoryId || activeExportMemoryId;
+    const engine = getStreakEngine();
+    const memory = (engine && engine.memories) ? engine.memories.find(m => m.id === id) : null;
+    const url = memory ? memory.photoUrl : (capturedPhotoDataUrl || 'assets/welcome_hero.jpg');
+    await downloadPhoto(url, `woobi-outfit-${id || Date.now()}.jpg`);
+  }
+
+  async function saveDetailPhotoToGallery() {
+    await savePhotoToGallery(activeDetailMemoryId);
+  }
+
+  async function shareDetailPhoto() {
+    const id = activeDetailMemoryId;
+    const engine = getStreakEngine();
+    const memory = (engine && engine.memories) ? engine.memories.find(m => m.id === id) : null;
+    const url = memory ? memory.photoUrl : (capturedPhotoDataUrl || 'assets/welcome_hero.jpg');
+    const title = memory ? (memory.note || 'Woobi Outfit Memory') : 'Woobi Outfit Memory';
+    await sharePhoto(url, title);
+  }
+
+  async function downloadExportPhoto(memoryId) {
+    const id = memoryId || activeExportMemoryId || activeDetailMemoryId;
+    await savePhotoToGallery(id);
+    closeExportModal();
+  }
+
+  async function shareExportPhoto(memoryId) {
+    const id = memoryId || activeExportMemoryId || activeDetailMemoryId;
+    const engine = getStreakEngine();
+    const memory = (engine && engine.memories) ? engine.memories.find(m => m.id === id) : null;
+    const url = memory ? memory.photoUrl : (capturedPhotoDataUrl || 'assets/welcome_hero.jpg');
+    const title = memory ? (memory.note || 'Woobi Outfit Memory') : 'Woobi Outfit Memory';
+    await sharePhoto(url, title);
+    closeExportModal();
+  }
+
   function renderOutfitMemories() {
     const engine = getStreakEngine();
     const memories = (engine && typeof engine.getAllMemories === 'function') ? engine.getAllMemories() : [];
@@ -3684,6 +4824,14 @@
         <div class="memory-card-meta">
           <span class="memory-card-date">${formatReadableDate(mem.date)}</span>
           <span class="memory-card-note">${mem.note || 'Outfit Look'}</span>
+          <button type="button" class="btn-memory-save-gallery" onclick="event.stopPropagation(); app.savePhotoToGallery('${mem.id}')" title="Save to Gallery">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Save to Gallery</span>
+          </button>
         </div>
       `;
       card.addEventListener('click', () => openMemoryDetail(mem.id));
@@ -3706,6 +4854,7 @@
     const engine = getStreakEngine();
     if (!engine) return;
 
+    activeDetailMemoryId = memoryId;
     const memory = engine.memories.find(m => m.id === memoryId) || engine.memories[0];
     if (!memory) return;
 
@@ -3722,7 +4871,10 @@
     if (noteEl) noteEl.textContent = memory.note || 'Daily Outfit Look';
     if (timeEl) timeEl.textContent = `Logged on ${memory.date}`;
 
-    if (modal) modal.classList.remove('hidden');
+    if (modal) {
+      modal.style.zIndex = '1400';
+      modal.classList.remove('hidden');
+    }
   }
 
   function closeMemoryDetailModal() {
@@ -3742,6 +4894,7 @@
 
     const modal = document.getElementById('missedStreakModal');
     if (!modal) return;
+    modal.style.zIndex = '1400';
 
     const lostCountEl = document.getElementById('missedStreakLostCount');
     const statusCard = document.getElementById('restoreStatusCard');
@@ -4904,7 +6057,7 @@
         const isSelected = day.dateKey === plannerState.selectedDateKey;
         const hasPlan = !!plannerState.plannedOutfits[day.dateKey];
         return `
-          <div class="day-col ${isSelected ? 'selected-day-col' : ''} ${day.isToday ? 'is-today' : ''}" 
+          <div class="day-col ${isSelected ? 'selected-day-col' : ''} ${day.isToday ? 'is-today' : ''}"
                onclick="app.selectPlannerDate('${day.dateKey}', true)"
                title="${day.fullDisplay}${hasPlan ? ' (Outfit Planned)' : ''}">
             <span class="d-name">${day.dayName}</span>
@@ -4922,13 +6075,13 @@
         const outfit = plannerState.plannedOutfits[day.dateKey];
 
         if (outfit) {
-          const thumbsHtml = (outfit.items || []).slice(0, 4).map(it => 
+          const thumbsHtml = (outfit.items || []).slice(0, 4).map(it =>
             `<img src="${escapeHtml(it.photo)}" alt="${escapeHtml(it.name)}" title="${escapeHtml(it.name)}">`
           ).join('');
 
           return `
-            <div class="day-plan-card has-outfit ${isSelected ? 'selected-day' : ''}" 
-                 id="card-${day.dateKey}" 
+            <div class="day-plan-card has-outfit ${isSelected ? 'selected-day' : ''}"
+                 id="card-${day.dateKey}"
                  onclick="app.selectPlannerDate('${day.dateKey}', false)">
               <div class="dp-day-info">
                 <strong>${day.dayName}</strong>
@@ -4959,8 +6112,8 @@
           `;
         } else {
           return `
-            <div class="day-plan-card empty-day ${isSelected ? 'selected-day' : ''}" 
-                 id="card-${day.dateKey}" 
+            <div class="day-plan-card empty-day ${isSelected ? 'selected-day' : ''}"
+                 id="card-${day.dateKey}"
                  onclick="app.selectPlannerDate('${day.dateKey}', false)">
               <div class="dp-day-info">
                 <strong>${day.dayName}</strong>
@@ -5009,6 +6162,31 @@
     goToScreen('today');
   }
 
+  function openWeeklyPlanner() {
+    initPlannerState();
+    goToScreen('weekly-planning');
+  }
+
+  function getAllPlannerOutfits() {
+    const list = [...PLANNER_SAMPLE_OUTFITS];
+    if (state.savedLooks && Array.isArray(state.savedLooks)) {
+      state.savedLooks.forEach((look, idx) => {
+        if (!list.some(o => o.id === look.id)) {
+          list.push({
+            id: look.id || `saved_look_${idx}`,
+            title: look.title || look.name || `Saved Look ${idx + 1}`,
+            occasion: look.occasion || 'Saved Look',
+            tag: 'Saved',
+            caption: look.caption || 'From your personal wardrobe collection.',
+            previewPhoto: look.previewPhoto || look.photo || (look.items && look.items[0] && look.items[0].photo) || 'assets/model_tryon_navy.jpg',
+            items: look.items || []
+          });
+        }
+      });
+    }
+    return list;
+  }
+
   function openPlannerOutfitModal(dateKey) {
     plannerState.assigningForDateKey = dateKey;
     plannerState.selectedDateKey = dateKey;
@@ -5028,7 +6206,7 @@
       subEl.textContent = existingOutfit ? 'Replace Outfit' : 'Plan Outfit';
     }
     if (titleEl) {
-      titleEl.textContent = existingOutfit 
+      titleEl.textContent = existingOutfit
         ? `Replace look for ${dayObj.fullDisplay}`
         : `Choose look for ${dayObj.fullDisplay}`;
     }
@@ -5068,9 +6246,10 @@
     const dateKey = plannerState.assigningForDateKey;
     const currentOutfit = dateKey ? plannerState.plannedOutfits[dateKey] : null;
 
-    let filtered = PLANNER_SAMPLE_OUTFITS;
+    const allOutfits = getAllPlannerOutfits();
+    let filtered = allOutfits;
     if (plannerState.filterCategory && plannerState.filterCategory !== 'All') {
-      filtered = PLANNER_SAMPLE_OUTFITS.filter(o => 
+      filtered = allOutfits.filter(o =>
         (o.tag && o.tag.toLowerCase() === plannerState.filterCategory.toLowerCase()) ||
         (o.occasion && o.occasion.toLowerCase() === plannerState.filterCategory.toLowerCase())
       );
@@ -5078,12 +6257,12 @@
 
     gridEl.innerHTML = filtered.map(outfit => {
       const isCurrentlyAssigned = currentOutfit && currentOutfit.id === outfit.id;
-      const thumbsHtml = (outfit.items || []).slice(0, 4).map(it => 
+      const thumbsHtml = (outfit.items || []).slice(0, 4).map(it =>
         `<img src="${escapeHtml(it.photo)}" alt="${escapeHtml(it.name)}" title="${escapeHtml(it.name)}">`
       ).join('');
 
       return `
-        <div class="planner-outfit-pick-card ${isCurrentlyAssigned ? 'currently-assigned' : ''}" 
+        <div class="planner-outfit-pick-card ${isCurrentlyAssigned ? 'currently-assigned' : ''}"
              onclick="app.assignPlannerOutfit('${escapeHtml(outfit.id)}')">
           <img src="${escapeHtml(outfit.previewPhoto)}" class="pick-card-photo" alt="${escapeHtml(outfit.title)}">
           <div class="pick-card-body">
@@ -5096,10 +6275,10 @@
               ${thumbsHtml}
             </div>
           </div>
-          ${isCurrentlyAssigned 
-            ? '<span class="badge-current-assigned">✓ Assigned</span>' 
-            : `<button class="btn-pick-assign" onclick="event.stopPropagation(); app.assignPlannerOutfit('${escapeHtml(outfit.id)}')">${currentOutfit ? 'Select' : 'Assign'}</button>`
-          }
+          ${isCurrentlyAssigned
+          ? '<span class="badge-current-assigned">✓ Assigned</span>'
+          : `<button class="btn-pick-assign" onclick="event.stopPropagation(); app.assignPlannerOutfit('${escapeHtml(outfit.id)}')">${currentOutfit ? 'Select' : 'Assign'}</button>`
+        }
         </div>
       `;
     }).join('');
@@ -5109,7 +6288,8 @@
     const dateKey = plannerState.assigningForDateKey || plannerState.selectedDateKey;
     if (!dateKey) return;
 
-    const outfit = PLANNER_SAMPLE_OUTFITS.find(o => o.id === outfitId);
+    const allOutfits = getAllPlannerOutfits();
+    const outfit = allOutfits.find(o => o.id === outfitId);
     if (!outfit) return;
 
     plannerState.plannedOutfits[dateKey] = outfit;
@@ -5142,12 +6322,22 @@
       window.appBootstrap.start();
     }
     loadPersistedCapturedWardrobe();
+    hydratePersistentState();
+    initSavedLooksManager();
+    renderSavedLooks();
     initStreakState();
     initPlannerState();
 
     renderCurrentLook();
     renderWardrobeGrid();
     updateWardrobeCounts();
+
+    // Initialize 3D Mannequin Testing Dock with current avatar preferences
+    setTimeout(() => {
+      const g = (window.Studio3D && window.Studio3D.avatarConfig && window.Studio3D.avatarConfig.gender) || 'female';
+      serenSyncAnatomyPanel(g);
+      serenUpdateTesterPills();
+    }, 200);
 
     // Check URL parameters for direct screen access
     const params = new URLSearchParams(window.location.search);
@@ -5162,6 +6352,7 @@
 
   // Expose public API to window for inline HTML onclick handlers
   const appExports = {
+    prepareVirtualStudio,
     goToScreen,
     setTodayCanvasMode,
     cycleLook,
@@ -5179,6 +6370,17 @@
     filterWardrobeGrid,
     selectPlan,
     activatePremium,
+    openStyleHint,
+    selectSubscriptionPlan,
+    openUpgradeConfirmation,
+    closeUpgradeConfirmation,
+    confirmPlanPreference,
+    setBillingCycle,
+    openLegalModal,
+    toggleFaq,
+    updateSubscriptionUI,
+    switchPlanView,
+    scrollPlanCard: switchPlanView,
     saveReminderPreferences,
     exportWardrobe,
     exportUserData,
@@ -5257,11 +6459,26 @@
     serenOpenVanity,
     serenCloseVanity,
     serenSwitchVanityTab,
+    serenSetModelType,
+    toggleMannequinDropdown,
+    selectMannequin,
+    setMannequinGender,
     serenSetGender,
+    serenQuickSwitchGender,
+    serenSetAnatomy,
+    serenSyncAnatomyPanel,
+    serenUpdateTesterPills,
+    toggleTestingDock,
+    setStudioMannequinAngle,
+    resetMannequinToStandards,
+    resetToNormalBodyShape,
+    resetToPerfectModelAvatar,
     serenSetSkinTone,
     serenSetHairStyle,
     serenSetHairColor,
     serenSetProportions,
+    serenSetBodyFat,
+    serenSetWaistDefinition,
     serenToggleAccessory,
     serenSaveAvatarCustomization,
     serenRenderVanityCategories,
@@ -5322,6 +6539,19 @@
     loadSampleOutfitLook,
     confirmCapturedOutfit,
     retakeCameraPhoto,
+    downloadCapturedPhoto,
+    saveCapturedPhoto: downloadCapturedPhoto,
+    shareCapturedPhoto,
+    downloadPhoto,
+    savePhotoToGallery,
+    saveDetailPhotoToGallery,
+    shareDetailPhoto,
+    sharePhoto,
+    openPhotoExportModal,
+    closeExportModal,
+    downloadExportPhoto,
+    shareExportPhoto,
+    getActiveDetailMemoryId,
     openMemoriesModal,
     closeMemoriesModal,
     openMemoryDetail,
@@ -5389,6 +6619,7 @@
     plannerChangeWeek,
     plannerJumpToToday,
     weeklyPlannerGoBack,
+    openWeeklyPlanner,
     openPlannerOutfitModal,
     closePlannerOutfitModal,
     filterPlannerOutfits,

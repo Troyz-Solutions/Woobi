@@ -37,7 +37,7 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261106_v19">
+  <link rel="stylesheet" href="styles.css?v=20261108_v20">
 </head>
 
 <body>
@@ -594,6 +594,11 @@
               <span class="sparkle-ray r3">✦</span>
               <span class="sparkle-ray r4">✧</span>
             </div>
+
+            <!-- Premium Wardrobe FAB Button -->
+            <button class="pw-open-fab" onclick="app.togglePremiumWardrobe(true)" title="Open Premium Wardrobe" aria-label="Open Premium Wardrobe">
+              🗄️
+            </button>
           </div>
 
           <!-- Floating Bottom Navigation Bar (Pill) matching Reference D -->
@@ -4787,7 +4792,7 @@
   <script src="wardrobe3d.js?v=20261105_v1"></script>
   <script src="studio3d.js?v=20261106_v13"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261106_v12"></script>
+  <script src="app.js?v=20261108_v13"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');
@@ -4804,6 +4809,93 @@
       }
     };
   </script>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PREMIUM INTERACTIVE WARDROBE DRAWER
+       Slides up over 3D studio — separate from screen-wardrobe
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- Drop Zone Overlay over mannequin (active during drag) -->
+  <div id="premiumDropZone" class="pw-drop-zone" aria-label="Drop here to dress mannequin">
+    <div class="pw-drop-zone-inner">
+      <span class="pw-drop-icon">✦</span>
+      <span class="pw-drop-label">Drop to Dress</span>
+    </div>
+  </div>
+
+  <!-- Zoom Reveal Backdrop -->
+  <div id="pwZoomBackdrop" class="pw-zoom-backdrop" onclick="app.closePremiumZoom()"></div>
+
+  <!-- Zoomed Item Card (shown when item is selected) -->
+  <div id="pwZoomedCard" class="pw-zoomed-card">
+    <button class="pw-zoomed-close" onclick="app.closePremiumZoom()">✕</button>
+    <div class="pw-zoomed-img-wrap">
+      <img id="pwZoomedImg" src="" alt="" />
+    </div>
+    <div class="pw-zoomed-info">
+      <span id="pwZoomedName" class="pw-zoomed-name"></span>
+      <span id="pwZoomedCat"  class="pw-zoomed-cat"></span>
+      <span id="pwZoomedFit"  class="pw-zoomed-fit"></span>
+    </div>
+    <button class="pw-zoomed-drag-btn" id="pwDragStartBtn"
+      ontouchstart="app.premiumStartDrag(event)"
+      onmousedown="app.premiumStartDrag(event)">
+      <span>👗</span> Drag onto Mannequin
+    </button>
+  </div>
+
+  <!-- Floating Drag Ghost (follows pointer during drag) -->
+  <div id="pwDragGhost" class="pw-drag-ghost">
+    <img id="pwGhostImg" src="" alt="" />
+  </div>
+
+  <!-- The Premium Wardrobe Drawer -->
+  <div id="premiumWardrobeDrawer" class="pw-drawer pw-drawer--hidden" role="dialog" aria-modal="true" aria-label="Premium Wardrobe">
+
+    <!-- Drawer Handle -->
+    <div class="pw-handle-bar"></div>
+
+    <!-- Drawer Header -->
+    <div class="pw-header">
+      <div class="pw-header-left">
+        <span class="pw-header-icon">🗄️</span>
+        <div>
+          <h2 class="pw-title">My Wardrobe</h2>
+          <span class="pw-subtitle">Drag items onto your mannequin</span>
+        </div>
+      </div>
+      <button class="pw-close-btn" onclick="app.togglePremiumWardrobe(false)" aria-label="Close wardrobe">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="m18 6-12 12M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Category Tab Bar -->
+    <div class="pw-tab-bar" id="pwTabBar">
+      <button class="pw-tab pw-tab--active" data-cat="Tops" onclick="app.switchPremiumCategory(this,'Tops')">
+        <span class="pw-tab-icon">👕</span><span>Tops</span>
+      </button>
+      <button class="pw-tab" data-cat="Bottoms" onclick="app.switchPremiumCategory(this,'Bottoms')">
+        <span class="pw-tab-icon">👖</span><span>Bottoms</span>
+      </button>
+      <button class="pw-tab" data-cat="Shoes" onclick="app.switchPremiumCategory(this,'Shoes')">
+        <span class="pw-tab-icon">👟</span><span>Shoes</span>
+      </button>
+      <button class="pw-tab" data-cat="Accessories" onclick="app.switchPremiumCategory(this,'Accessories')">
+        <span class="pw-tab-icon">⌚</span><span>Accessories</span>
+      </button>
+    </div>
+
+    <!-- Category Sections Scroll Area (rendered by JS) -->
+    <div class="pw-scroll-area" id="pwScrollArea"></div>
+
+    <!-- Footer instruction -->
+    <div class="pw-footer-hint">
+      <span>✦ Tap an item to preview · Then drag to dress your mannequin ✦</span>
+    </div>
+  </div>
+
 </body>
 
 </html>

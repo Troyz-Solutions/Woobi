@@ -2638,10 +2638,11 @@
   }
 
   function equip3DGarmentToMannequin(garmentData) {
-    if (!garmentData) return;
+    const garment = garmentData || _s3dActiveGarment;
+    if (!garment) return;
 
-    const engineCat = garmentData.engineCategory || (garmentData.garmentCategory === 'Bottoms' ? 'bottom' : 'top');
-    const modelId = garmentData.modelId || 'navy_shirt';
+    const engineCat = garment.engineCategory || (garment.garmentCategory === 'Bottoms' ? 'bottom' : 'top');
+    const modelId = garment.modelId || 'navy_shirt';
 
     if (window.Studio3D && typeof window.Studio3D.equipGarment === 'function') {
       try {

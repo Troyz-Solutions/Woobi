@@ -9,6 +9,7 @@ export class CameraInteractions {
     this.targetWindow = null;
 
     // Callbacks
+    this.onPointerDown = options.onPointerDown || null; // (clientX, clientY) => boolean (true to cancel rotate/drag)
     this.onRotate = options.onRotate || null; // (deltaRotationY) => {}
     this.onZoom = options.onZoom || null;     // (deltaZoomFactor) => {}
     this.onClick = options.onClick || null;   // (clientX, clientY) => {}
@@ -86,6 +87,13 @@ export class CameraInteractions {
   }
 
   _handleMouseDown(e) {
+    if (typeof this.onPointerDown === 'function') {
+      const handled = this.onPointerDown(e.clientX, e.clientY);
+      if (handled) {
+        this.isPointerDown = false;
+        return;
+      }
+    }
     this.isPointerDown = true;
     this.hasDragged = false;
     this.pointerStartX = e.clientX;
@@ -121,6 +129,13 @@ export class CameraInteractions {
 
   _handleTouchStart(e) {
     if (e.touches.length === 1) {
+      if (typeof this.onPointerDown === 'function') {
+        const handled = this.onPointerDown(e.touches[0].clientX, e.touches[0].clientY);
+        if (handled) {
+          this.isPointerDown = false;
+          return;
+        }
+      }
       this.isPointerDown = true;
       this.hasDragged = false;
       this.pointerStartX = e.touches[0].clientX;

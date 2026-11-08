@@ -252,6 +252,9 @@
           height,
           initialPreset: 'STUDIO_OVERVIEW',
           maxZoomFactor: 1.0,
+          onPointerDown: (clientX, clientY) => {
+            return this.handlePointerDown(clientX, clientY);
+          },
           onRotate: (delta) => {
             this.targetRotationY += delta;
           },
@@ -2525,6 +2528,31 @@
       window.addEventListener('resize', () => {
         this.onResize();
       });
+    }
+
+    /**
+     * Intercepts pointerdown on 3D canvas: if touching a hanging garment, directly initiates drag
+     */
+    handlePointerDown(clientX, clientY) {
+      if (!this.canvas || !this.camera || !this.scene || !this.raycaster || !this.mouse) return false;
+      const rect = this.canvas.getBoundingClientRect();
+      this.mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
+      for (const hit of intersects) {
+        let candidate = hit.object;
+        while (candidate && !candidate.userData?.interactiveType && candidate.parent) {
+          candidate = candidate.parent;
+        }
+        if (candidate && candidate.userData?.interactiveType === 'wardrobe_garment') {
+          if (window.app && typeof window.app.start3DGarmentDrag === 'function') {
+            window.app.start3DGarmentDrag(candidate.userData, clientX, clientY);
+            return true;
+          }
+        }
+      }
+      return false;
     }
 
     /**

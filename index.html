@@ -40,7 +40,7 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261109_v29">
+  <link rel="stylesheet" href="styles.css?v=20261109_v30">
 </head>
 
 <body>
@@ -605,7 +605,7 @@
             </div>
 
             <!-- 3D Mannequin Interactive Drop Halo Target Area -->
-            <div id="studio3dMannequinDropTarget" class="studio-3d-mannequin-drop-target">
+            <div id="studio3dMannequinDropTarget" class="studio-3d-mannequin-drop-target" onclick="app.equip3DGarmentToMannequin()">
               <div class="studio-drop-halo-ring"></div>
               <div class="studio-drop-badge">
                 <span class="studio-drop-icon">✦</span>
@@ -4797,9 +4797,9 @@
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261109_v29"></script>
+  <script src="studio3d.js?v=20261109_v30"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261109_v29"></script>
+  <script src="app.js?v=20261109_v30"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

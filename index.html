@@ -37,7 +37,7 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261109_v25">
+  <link rel="stylesheet" href="styles.css?v=20261109_v26">
 </head>
 
 <body>
@@ -593,6 +593,21 @@
               <span class="sparkle-ray r2">✧</span>
               <span class="sparkle-ray r3">✦</span>
               <span class="sparkle-ray r4">✧</span>
+            </div>
+
+            <!-- 3D Studio Wardrobe Direct Drag Ghost (Follows pointer from 3D wardrobe) -->
+            <div id="studio3dDragGhost" class="studio-3d-drag-ghost">
+              <img id="studio3dGhostImg" src="" alt="" draggable="false">
+              <span id="studio3dGhostName" class="studio-3d-ghost-label"></span>
+            </div>
+
+            <!-- 3D Mannequin Interactive Drop Halo Target Area -->
+            <div id="studio3dMannequinDropTarget" class="studio-3d-mannequin-drop-target">
+              <div class="studio-drop-halo-ring"></div>
+              <div class="studio-drop-badge">
+                <span class="studio-drop-icon">✦</span>
+                <span class="studio-drop-label">Release to Wear on Mannequin</span>
+              </div>
             </div>
           </div>
 
@@ -4779,9 +4794,9 @@
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261106_v13"></script>
+  <script src="studio3d.js?v=20261109_v26"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261109_v25"></script>
+  <script src="app.js?v=20261109_v26"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

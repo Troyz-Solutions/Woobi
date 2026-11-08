@@ -2568,6 +2568,104 @@
     }, 450);
   }
 
+  // =========================================================================
+  // 3D STUDIO WARDROBE DIRECT DRAG-TO-MANNEQUIN INTERACTION
+  // =========================================================================
+  let _s3dActiveGarment = null;
+  let _s3dIsDragging = false;
+
+  function start3DGarmentDrag(garmentData, startX, startY) {
+    if (!garmentData) return;
+    _s3dActiveGarment = garmentData;
+
+    const ghost = document.getElementById('studio3dDragGhost');
+    const ghostImg = document.getElementById('studio3dGhostImg');
+    const ghostName = document.getElementById('studio3dGhostName');
+    const dropTarget = document.getElementById('studio3dMannequinDropTarget');
+
+    if (!ghost || !ghostImg || !dropTarget) return;
+
+    ghostImg.src = garmentData.photo || 'assets/navy_shirt.jpg';
+    if (ghostName) ghostName.textContent = garmentData.garmentName || 'Garment';
+
+    ghost.style.left = (startX - 45) + 'px';
+    ghost.style.top = (startY - 60) + 'px';
+    ghost.classList.add('active');
+
+    dropTarget.classList.add('active');
+    _s3dIsDragging = true;
+
+    const onMove = (e) => {
+      if (!_s3dIsDragging) return;
+      if (e.preventDefault && e.cancelable) e.preventDefault();
+
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+
+      ghost.style.left = (cx - 45) + 'px';
+      ghost.style.top = (cy - 60) + 'px';
+
+      const rect = dropTarget.getBoundingClientRect();
+      const isOver = cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom;
+      dropTarget.classList.toggle('hovering', isOver);
+    };
+
+    const onEnd = (e) => {
+      if (!_s3dIsDragging) return;
+      _s3dIsDragging = false;
+
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+
+      ghost.classList.remove('active');
+
+      const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+      const cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+      const rect = dropTarget.getBoundingClientRect();
+      const isSuccess = cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom;
+      dropTarget.classList.remove('active', 'hovering');
+
+      if (isSuccess && _s3dActiveGarment) {
+        equip3DGarmentToMannequin(_s3dActiveGarment);
+      } else if (_s3dActiveGarment) {
+        // Subtle hint or option to equip directly
+        showToast(`Selected "${_s3dActiveGarment.garmentName}". Drop over mannequin to wear!`);
+      }
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd, { once: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd, { once: true });
+  }
+
+  function equip3DGarmentToMannequin(garmentData) {
+    if (!garmentData) return;
+
+    const engineCat = garmentData.engineCategory || (garmentData.garmentCategory === 'Bottoms' ? 'bottom' : 'top');
+    const modelId = garmentData.modelId || 'navy_shirt';
+
+    if (window.Studio3D && typeof window.Studio3D.equipGarment === 'function') {
+      try {
+        window.Studio3D.equipGarment(engineCat, modelId);
+        window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+      } catch (err) {
+        console.warn('Studio3D equip error:', err);
+      }
+    }
+
+    const sparkles = document.getElementById('serenSparkles');
+    if (sparkles) {
+      sparkles.classList.add('active');
+      setTimeout(() => sparkles.classList.remove('active'), 1400);
+    }
+
+    showToast(`✦ ${garmentData.garmentName} worn on Mannequin! ♡`);
+  }
+
   function serenOpenStylingReview() {
     const modal = document.getElementById('serenReviewModal');
     if (!modal) return;
@@ -6063,7 +6161,11 @@
     wardrobeQuickEquip,
     wardrobeViewOnStudio,
     wardrobeEquipToMannequin,
-    toggleItemCondition
+    toggleItemCondition,
+
+    // 3D Studio Direct Wardrobe Drag API
+    start3DGarmentDrag,
+    equip3DGarmentToMannequin
   };
 
   window.app = Object.assign(window.app || {}, appExports);

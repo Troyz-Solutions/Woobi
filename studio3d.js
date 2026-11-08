@@ -1339,13 +1339,13 @@
       rail.castShadow = true;
       wardrobeGroup.add(rail);
 
-      // Shirts & blazers neatly hung, moderately sized so they don't dominate
+      // Shirts & blazers neatly hung, linked with Wardrobe garments for interactive 3D Drag
       const hangerGarments = [
-        { x: -0.32, color: 0xF4ECE1, len: 0.48, type: 'shirt' },
-        { x: -0.16, color: 0x33363B, len: 0.52, type: 'blazer' },
-        { x: 0.00,  color: 0xFAF8F5, len: 0.46, type: 'shirt' },
-        { x: 0.16,  color: 0x585B62, len: 0.50, type: 'blazer' },
-        { x: 0.32,  color: 0xD4C5B2, len: 0.48, type: 'shirt' }
+        { x: -0.32, id: 'item_1', name: 'Navy Shirt', color: 0x22354A, len: 0.48, type: 'shirt', modelId: 'navy_shirt', category: 'Tops', engineCategory: 'top', photo: 'assets/navy_shirt.jpg' },
+        { x: -0.16, id: 'item_16', name: 'Tailored Blazer', color: 0x8C7456, len: 0.52, type: 'blazer', modelId: 'blazer', category: 'Tops', engineCategory: 'top', photo: 'assets/smart_blazer.jpg' },
+        { x: 0.00,  id: 'item_7', name: 'White Linen Shirt', color: 0xF5F0E6, len: 0.46, type: 'shirt', modelId: 'wide_linen', category: 'Tops', engineCategory: 'top', photo: 'assets/white_linen_shirt.jpg' },
+        { x: 0.16,  id: 'item_3', name: 'Cream Kurta', color: 0xEDE2CE, len: 0.50, type: 'blazer', modelId: 'cardigan', category: 'Tops', engineCategory: 'top', photo: 'assets/olive_kurta.jpg' },
+        { x: 0.32,  id: 'item_5', name: 'Maroon Top', color: 0x6E1D24, len: 0.48, type: 'shirt', modelId: 'tank', category: 'Tops', engineCategory: 'top', photo: 'assets/maroon_top.jpg' }
       ];
 
       hangerGarments.forEach((g) => {
@@ -1392,7 +1392,20 @@
         garmentGroup.add(collar);
 
         hangerGroup.add(garmentGroup);
+
+        hangerGroup.userData = {
+          interactiveType: 'wardrobe_garment',
+          garmentId: g.id,
+          garmentName: g.name,
+          garmentCategory: g.category,
+          modelId: g.modelId,
+          engineCategory: g.engineCategory,
+          photo: g.photo,
+          color: g.color
+        };
+
         wardrobeGroup.add(hangerGroup);
+        this.interactiveObjects.push(hangerGroup);
       });
 
       // 3. HORIZONTAL HANGING ROD DIRECTLY BELOW SHIRTS & VERTICALLY HANGING TROUSERS
@@ -1405,11 +1418,11 @@
 
       // Vertically hanging trousers on clip hangers
       const trouserSpecs = [
-        { x: -0.30, color: 0x1E2A3A, len: 0.44 },
-        { x: -0.15, color: 0xC4AA78, len: 0.42 },
-        { x: 0.00,  color: 0x3A3A3C, len: 0.46 },
-        { x: 0.15,  color: 0x5C6B4A, len: 0.43 },
-        { x: 0.30,  color: 0xD4B896, len: 0.42 }
+        { x: -0.30, id: 'item_8', name: 'Dark Denim', color: 0x1E2A3A, len: 0.44, modelId: 'dark_denim', category: 'Bottoms', engineCategory: 'bottom', photo: 'assets/dark_denim.jpg' },
+        { x: -0.15, id: 'item_2', name: 'Beige Chinos', color: 0xC4AA78, len: 0.42, modelId: 'taupe_wide', category: 'Bottoms', engineCategory: 'bottom', photo: 'assets/beige_chinos.jpg' },
+        { x: 0.00,  id: 'item_6', name: 'Dark Skirt', color: 0x3A3A3C, len: 0.46, modelId: 'dark_skirt', category: 'Bottoms', engineCategory: 'bottom', photo: 'assets/dark_skirt.jpg' },
+        { x: 0.15,  id: 'item_13', name: 'Cream Palazzo', color: 0xF2ECE2, len: 0.43, modelId: 'taupe_wide', category: 'Bottoms', engineCategory: 'bottom', photo: 'assets/cream_palazzo.jpg' },
+        { x: 0.30,  id: 'item_2', name: 'Khaki Trousers', color: 0xD4B896, len: 0.42, modelId: 'taupe_wide', category: 'Bottoms', engineCategory: 'bottom', photo: 'assets/beige_chinos.jpg' }
       ];
 
       trouserSpecs.forEach((tr) => {
@@ -1443,7 +1456,19 @@
           trHanger.add(leg);
         });
 
+        trHanger.userData = {
+          interactiveType: 'wardrobe_garment',
+          garmentId: tr.id,
+          garmentName: tr.name,
+          garmentCategory: tr.category,
+          modelId: tr.modelId,
+          engineCategory: tr.engineCategory,
+          photo: tr.photo,
+          color: tr.color
+        };
+
         wardrobeGroup.add(trHanger);
+        this.interactiveObjects.push(trHanger);
       });
 
       // 4. DEDICATED FOOTWEAR AREA BELOW TROUSERS (Shoes, Sneakers, and Sandals)
@@ -2509,10 +2534,16 @@
       if (!this.canvas || !this.camera || !this.scene || !this.raycaster || !this.mouse) return;
       if (this.cameraController && typeof this.cameraController.raycastClick === 'function') {
         this.cameraController.raycastClick(clientX, clientY, this.canvas, this.interactiveObjects, (type, userData) => {
+          if (type === 'wardrobe_garment') {
+            if (window.app && typeof window.app.start3DGarmentDrag === 'function') {
+              window.app.start3DGarmentDrag(userData, clientX, clientY);
+              return;
+            }
+          }
           if (typeof this.onObjectClick === 'function') {
             this.onObjectClick(type, userData);
           } else if (window.app && typeof window.app.serenInteract === 'function') {
-            window.app.serenInteract(type);
+            window.app.serenInteract(type, userData);
           }
         });
         return;
@@ -2531,10 +2562,16 @@
         }
         if (obj && obj.userData.interactiveType) {
           const type = obj.userData.interactiveType;
+          if (type === 'wardrobe_garment') {
+            if (window.app && typeof window.app.start3DGarmentDrag === 'function') {
+              window.app.start3DGarmentDrag(obj.userData, clientX, clientY);
+              return;
+            }
+          }
           if (typeof this.onObjectClick === 'function') {
             this.onObjectClick(type, obj.userData);
           } else if (window.app && typeof window.app.serenInteract === 'function') {
-            window.app.serenInteract(type);
+            window.app.serenInteract(type, obj.userData);
           }
         }
       }

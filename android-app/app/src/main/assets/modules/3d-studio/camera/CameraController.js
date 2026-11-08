@@ -107,14 +107,32 @@ export class CameraController {
     const intersects = this.raycaster.intersectObjects(interactiveObjects, true);
 
     if (intersects.length > 0) {
-      let obj = intersects[0].object;
-      while (obj && !obj.userData.interactiveType && obj.parent) {
-        obj = obj.parent;
+      // Prioritize specific interactive elements (e.g. wardrobe_garment) over broad outer hitboxes
+      let chosenObj = null;
+      for (const hit of intersects) {
+        let candidate = hit.object;
+        while (candidate && !candidate.userData.interactiveType && candidate.parent) {
+          candidate = candidate.parent;
+        }
+        if (candidate && candidate.userData.interactiveType === 'wardrobe_garment') {
+          chosenObj = candidate;
+          break;
+        }
       }
-      if (obj && obj.userData.interactiveType && typeof onHitCallback === 'function') {
-        onHitCallback(obj.userData.interactiveType, obj.userData);
+
+      // If no specific garment was hit, fallback to the outermost/first hit object
+      if (!chosenObj) {
+        let first = intersects[0].object;
+        while (first && !first.userData.interactiveType && first.parent) {
+          first = first.parent;
+        }
+        chosenObj = first;
       }
-      return obj;
+
+      if (chosenObj && chosenObj.userData.interactiveType && typeof onHitCallback === 'function') {
+        onHitCallback(chosenObj.userData.interactiveType, chosenObj.userData);
+      }
+      return chosenObj;
     }
     return null;
   }

@@ -141,6 +141,35 @@ export class WardrobeModel {
     proceduralGroup.add(topBox);
     this.disposables.push(boxMat, boxGeo);
 
+    // Top Shelf Luxury Velvet Watch & Accessory Display Tray
+    const trayGeo = new THREE.BoxGeometry(0.32, 0.04, 0.28);
+    const velvetMat = new THREE.MeshStandardMaterial({ color: 0x1A1D20, roughness: 0.85, metalness: 0.1 });
+    const watchTray = new THREE.Mesh(trayGeo, velvetMat);
+    watchTray.position.set(0.24, 2.26, 0.02);
+    watchTray.castShadow = true;
+    proceduralGroup.add(watchTray);
+    this.disposables.push(trayGeo, velvetMat);
+
+    // Gold Watch Mesh inside Tray
+    const watchBezelGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.012, 16);
+    const watchMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, metalness: 0.85, roughness: 0.25 });
+    const watchMesh = new THREE.Mesh(watchBezelGeo, watchMat);
+    watchMesh.position.set(0.24, 2.29, 0.02);
+    watchMesh.castShadow = true;
+    watchMesh.userData = {
+      interactiveType: 'wardrobe_garment',
+      garmentId: 'item_watch_gold',
+      garmentName: 'Gold Heritage Watch',
+      modelId: 'gold_watch',
+      engineCategory: 'accessory',
+      garmentCategory: 'Accessories',
+      color: '#D4AF37',
+      photo: 'assets/smart_blazer.jpg'
+    };
+    proceduralGroup.add(watchMesh);
+    this.interactiveObjects.push(watchMesh);
+    this.disposables.push(watchBezelGeo, watchMat);
+
     // 1. Upper clothing rail with neatly hung shirts (positioned slightly upwards, balanced)
     const railY = 2.16;
     const railGeo = new THREE.CylinderGeometry(0.011, 0.011, width - 0.08, 16);
@@ -276,12 +305,22 @@ export class WardrobeModel {
       { x: 0.28,  mat: shoeMatLoafer, type: 'loafer' }
     ];
 
-    footItems.forEach((fi) => {
+    footItems.forEach((fi, idx) => {
       const sGeo = new THREE.BoxGeometry(0.10, 0.024, 0.16);
       const shoeMesh = new THREE.Mesh(sGeo, fi.mat);
       shoeMesh.position.set(fi.x, 0.14, 0.02);
       shoeMesh.castShadow = true;
+      shoeMesh.userData = {
+        interactiveType: 'wardrobe_garment',
+        garmentId: `wardrobe_shoe_${fi.type}_${idx}`,
+        garmentName: fi.type === 'sneaker' ? 'Clean Minimalist Sneakers' : (fi.type === 'loafer' ? 'Suede Loafers' : 'Woven Leather Sandals'),
+        modelId: fi.type === 'sneaker' ? 'white_sneakers' : 'leather_shoes',
+        engineCategory: 'shoes',
+        garmentCategory: 'Footwear',
+        photo: 'assets/smart_blazer.jpg'
+      };
       proceduralGroup.add(shoeMesh);
+      this.interactiveObjects.push(shoeMesh);
       this.disposables.push(sGeo);
     });
 

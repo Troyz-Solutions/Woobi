@@ -2556,22 +2556,39 @@
       const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
 
       if (intersects.length > 0) {
-        let obj = intersects[0].object;
-        while (obj && !obj.userData.interactiveType && obj.parent) {
-          obj = obj.parent;
+        // Prioritize specific interactive elements (e.g. wardrobe_garment) over broad outer hitboxes
+        let chosenObj = null;
+        for (const hit of intersects) {
+          let candidate = hit.object;
+          while (candidate && !candidate.userData.interactiveType && candidate.parent) {
+            candidate = candidate.parent;
+          }
+          if (candidate && candidate.userData.interactiveType === 'wardrobe_garment') {
+            chosenObj = candidate;
+            break;
+          }
         }
-        if (obj && obj.userData.interactiveType) {
-          const type = obj.userData.interactiveType;
+
+        if (!chosenObj) {
+          let first = intersects[0].object;
+          while (first && !first.userData.interactiveType && first.parent) {
+            first = first.parent;
+          }
+          chosenObj = first;
+        }
+
+        if (chosenObj && chosenObj.userData.interactiveType) {
+          const type = chosenObj.userData.interactiveType;
           if (type === 'wardrobe_garment') {
             if (window.app && typeof window.app.start3DGarmentDrag === 'function') {
-              window.app.start3DGarmentDrag(obj.userData, clientX, clientY);
+              window.app.start3DGarmentDrag(chosenObj.userData, clientX, clientY);
               return;
             }
           }
           if (typeof this.onObjectClick === 'function') {
-            this.onObjectClick(type, obj.userData);
+            this.onObjectClick(type, chosenObj.userData);
           } else if (window.app && typeof window.app.serenInteract === 'function') {
-            window.app.serenInteract(type, obj.userData);
+            window.app.serenInteract(type, chosenObj.userData);
           }
         }
       }

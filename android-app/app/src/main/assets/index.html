@@ -16,6 +16,9 @@
   </script>
 
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <title>Woobi | Good outfits. Already yours.</title>
@@ -37,7 +40,7 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261106_v19">
+  <link rel="stylesheet" href="styles.css?v=20261109_v28">
 </head>
 
 <body>
@@ -593,6 +596,21 @@
               <span class="sparkle-ray r2">✧</span>
               <span class="sparkle-ray r3">✦</span>
               <span class="sparkle-ray r4">✧</span>
+            </div>
+
+            <!-- 3D Studio Wardrobe Direct Drag Ghost (Follows pointer from 3D wardrobe) -->
+            <div id="studio3dDragGhost" class="studio-3d-drag-ghost">
+              <img id="studio3dGhostImg" src="" alt="" draggable="false">
+              <span id="studio3dGhostName" class="studio-3d-ghost-label"></span>
+            </div>
+
+            <!-- 3D Mannequin Interactive Drop Halo Target Area -->
+            <div id="studio3dMannequinDropTarget" class="studio-3d-mannequin-drop-target">
+              <div class="studio-drop-halo-ring"></div>
+              <div class="studio-drop-badge">
+                <span class="studio-drop-icon">✦</span>
+                <span class="studio-drop-label">Release to Wear on Mannequin</span>
+              </div>
             </div>
           </div>
 
@@ -1736,98 +1754,92 @@
         </section>
 
         <!-- ===================================================================
-             SCREEN 9: YOUR WARDROBE
+             SCREEN 9: YOUR WARDROBE (MASTERPIECE UPGRADED)
              =================================================================== -->
-        <section class="phone-screen" id="screen-wardrobe">
-          <div class="screen-body-padded" style="padding-top: 14px;">
-            <div class="wardrobe-header-row">
-              <div>
-                <h1 class="screen-headline-serif">Your wardrobe</h1>
-                <span class="wardrobe-items-count" id="wardrobeCountLabel">24 items</span>
+        <section class="phone-screen" id="screen-wardrobe" style="background: linear-gradient(175deg, #FFFDF8 0%, #FAF5EB 45%, #F4ECE1 100%); overflow-y: auto;">
+          <!-- In-screen Zoomed Garment Inspection & Drag Showcase -->
+          <div id="wZoomBackdrop" class="w-zoom-backdrop" onclick="app.wardrobeCloseZoom()"></div>
+          <div id="wZoomedCard" class="w-zoomed-card">
+            <button class="w-zoomed-close" onclick="app.wardrobeCloseZoom()">✕</button>
+            <div class="w-zoomed-img-wrap">
+              <img id="wZoomedImg" src="" alt="" />
+              <div class="w-zoomed-shine"></div>
+            </div>
+            <div class="w-zoomed-info">
+              <span id="wZoomedName" class="w-zoomed-name"></span>
+              <div class="w-zoomed-tags">
+                <span id="wZoomedCat" class="w-zoomed-cat-badge"></span>
+                <span id="wZoomedFit" class="w-zoomed-fit-badge"></span>
               </div>
-              <button class="btn-circle-add" onclick="app.goToScreen('add-wardrobe')" title="Add item">+</button>
+            </div>
+            <!-- Interactive Drag Handle that directly launches drag to mannequin -->
+            <button class="w-zoomed-drag-action" id="wTryDragBtn"
+              ontouchstart="app.wardrobeStartDrag(event)"
+              onmousedown="app.wardrobeStartDrag(event)">
+              <span class="w-spark-icon">✦</span> Drag onto Mannequin
+            </button>
+            <button class="w-zoomed-quick-equip" onclick="app.wardrobeQuickEquip()">
+              Direct Equip to Studio
+            </button>
+          </div>
+
+          <!-- Drag Ghost Entity for Wardrobe Screen & Global Screen -->
+          <div id="wDragGhost" class="w-drag-ghost">
+            <img id="wGhostImg" src="" alt="" />
+          </div>
+
+          <!-- Global Interactive Mannequin Drop Target Portal -->
+          <div id="wMannequinDropTarget" class="w-mannequin-drop-target">
+            <div class="w-drop-pulse-ring"></div>
+            <div class="w-drop-portal-content">
+              <span class="w-drop-icon">👗</span>
+              <span class="w-drop-text">Release to Dress Mannequin</span>
+            </div>
+          </div>
+
+          <div class="screen-body-padded" style="padding-top: 16px; padding-bottom: 90px;">
+            <!-- Premium Header -->
+            <div class="wardrobe-header-row" style="align-items: center; margin-bottom: 16px;">
+              <div>
+                <h1 class="screen-headline-serif" style="font-size: 1.75rem; margin-bottom: 2px; color: #2B1D0E; font-family: 'DM Serif Display', Georgia, serif;">Haute Wardrobe</h1>
+                <span class="wardrobe-items-count" id="wardrobeCountLabel" style="color: #92754C; font-weight: 500; font-size: 0.85rem;">Curated luxury collection</span>
+              </div>
+              <button class="btn-circle-add" onclick="app.goToScreen('add-wardrobe')" title="Add item" style="background: linear-gradient(135deg, #C8963E, #966C23); box-shadow: 0 4px 14px rgba(200, 150, 62, 0.35);">+</button>
             </div>
 
-            <div class="search-input-box">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A8073" stroke-width="2">
+            <!-- Polished Gold-Rim Search -->
+            <div class="search-input-box" style="background: rgba(255, 255, 255, 0.9); border: 1.5px solid rgba(200, 150, 62, 0.25); border-radius: 16px; box-shadow: 0 4px 16px rgba(180, 140, 70, 0.06); padding: 10px 14px; margin-bottom: 14px;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C8963E" stroke-width="2.2">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
               </svg>
-              <input type="text" placeholder="Search your wardrobe..." id="wardrobeSearchInput"
-                oninput="app.filterWardrobeGrid()">
+              <input type="text" placeholder="Search shirts, trousers, shoes, watches..." id="wardrobeSearchInput"
+                oninput="app.filterWardrobeGrid()" style="font-size: 0.9rem; color: #2B1D0E;">
             </div>
 
-            <!-- Wardrobe Condition Summary Banner -->
-            <div class="wardrobe-condition-banner">
-              <span class="banner-stat clean">✨ <strong id="wardrobeCleanCount">21</strong> Clean & Ready</span>
-              <span class="banner-stat laundry">🧺 <strong id="wardrobeLaundryCount">3</strong> In Laundry</span>
-              <span class="banner-hint">Tap badge to toggle status</span>
+            <!-- Condition / Valet Status Strip -->
+            <div class="wardrobe-condition-banner" style="background: linear-gradient(135deg, rgba(255,252,244,0.95), rgba(248,240,223,0.9)); border: 1px solid rgba(200, 150, 62, 0.28); border-radius: 14px; padding: 10px 14px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(160, 120, 50, 0.05);">
+              <span class="banner-stat clean" style="color: #2F6D38; font-weight: 600;">✨ <strong id="wardrobeCleanCount">21</strong> Ready</span>
+              <span style="color: rgba(200, 150, 62, 0.4);">|</span>
+              <span class="banner-stat laundry" style="color: #A0522D; font-weight: 600;">🧺 <strong id="wardrobeLaundryCount">3</strong> In Care</span>
+              <span class="banner-hint" style="color: #8C704B; font-size: 0.72rem;">Tap item to zoom &amp; drag</span>
             </div>
 
-            <div class="category-filter-bar" id="wardrobeCatFilter">
-              <button class="cat-pill active" onclick="app.filterWardrobeCategory('All', this)">All</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Clean', this)">✨ Clean</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Laundry', this)">🧺 In Laundry</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Tops', this)">Tops</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Bottoms', this)">Bottoms</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Shoes', this)">Shoes</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Accessories', this)">Accessories</button>
+            <!-- Sectional Category Selector with Custom Luxury Badges -->
+            <div class="category-filter-bar" id="wardrobeCatFilter" style="margin-bottom: 16px; gap: 8px;">
+              <button class="cat-pill active" onclick="app.filterWardrobeCategory('All', this)">All Pieces</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Tops', this)">👔 Shirts &amp; Tops</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Bottoms', this)">👖 Pants &amp; Skirts</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Shoes', this)">👟 Footwear</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Accessories', this)">⌚ Watches &amp; Acc</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Clean', this)">✨ Ready to Wear</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Laundry', this)">🧺 Valet Care</button>
             </div>
 
-            <div class="wardrobe-2col-grid" id="wardrobeCardsGrid">
-              <div class="wardrobe-item-box" onclick="app.goToScreen('edit-item')">
-                <div class="w-img-wrap"><img src="assets/navy_shirt.jpg" alt="Navy shirt"></div>
-                <div class="w-meta">
-                  <div class="w-name">Navy shirt</div>
-                  <div class="w-sub">Top</div>
-                </div>
-                <button class="w-dots">⋮</button>
-              </div>
-
-              <div class="wardrobe-item-box">
-                <div class="w-img-wrap"><img src="assets/beige_chinos.jpg" alt="Beige trousers"></div>
-                <div class="w-meta">
-                  <div class="w-name">Beige trousers</div>
-                  <div class="w-sub">Bottom</div>
-                </div>
-                <button class="w-dots">⋮</button>
-              </div>
-
-              <div class="wardrobe-item-box">
-                <div class="w-img-wrap"><img src="assets/olive_kurta.jpg" alt="Cream kurta"></div>
-                <div class="w-meta">
-                  <div class="w-name">Cream kurta</div>
-                  <div class="w-sub">Top</div>
-                </div>
-                <button class="w-dots">⋮</button>
-              </div>
-
-              <div class="wardrobe-item-box">
-                <div class="w-img-wrap"><img src="assets/white_sneakers.jpg" alt="White sneakers"></div>
-                <div class="w-meta">
-                  <div class="w-name">White sneakers</div>
-                  <div class="w-sub">Shoes</div>
-                </div>
-                <button class="w-dots">⋮</button>
-              </div>
-
-              <div class="wardrobe-item-box">
-                <div class="w-img-wrap"><img src="assets/maroon_top.jpg" alt="Maroon top"></div>
-                <div class="w-meta">
-                  <div class="w-name">Maroon top</div>
-                  <div class="w-sub">Top</div>
-                </div>
-                <button class="w-dots">⋮</button>
-              </div>
-
-              <div class="wardrobe-item-box">
-                <div class="w-img-wrap"><img src="assets/dark_skirt.jpg" alt="Dark skirt"></div>
-                <div class="w-meta">
-                  <div class="w-name">Dark skirt</div>
-                  <div class="w-sub">Bottom</div>
-                </div>
-                <button class="w-dots">⋮</button>
-              </div>
+            <!-- Sectional Organiser Container (Dedicated sections for Tops, Bottoms, Footwear, Watches) -->
+            <div id="wardrobeSectionsContainer" class="w-sections-container">
+              <!-- Dynamically populated by renderWardrobeGrid with distinct sections & drag triggers -->
+              <div class="wardrobe-2col-grid" id="wardrobeCardsGrid"></div>
             </div>
           </div>
 
@@ -4785,9 +4797,9 @@
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261106_v13"></script>
+  <script src="studio3d.js?v=20261109_v28"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261106_v12"></script>
+  <script src="app.js?v=20261109_v28"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

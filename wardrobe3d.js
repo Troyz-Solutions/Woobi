@@ -599,6 +599,32 @@
       hook.position.set(0, 0.016, 0);
       g.add(hook);
 
+      // Handle draped trousers over hanger bar
+      if (spec.type === 'trousers') {
+        const trouserWidth = 0.36;
+        const trouserDepth = 0.09;
+        const foldBar = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.016, 0.016, trouserWidth, 16),
+          spec.mat
+        );
+        foldBar.rotation.z = Math.PI / 2;
+        foldBar.position.set(0, -0.05, 0);
+        foldBar.castShadow = true;
+        g.add(foldBar);
+
+        [-1, 1].forEach(side => {
+          const leg = new THREE.Mesh(
+            new THREE.BoxGeometry(trouserWidth, spec.len * 0.90, trouserDepth / 2),
+            spec.mat
+          );
+          leg.position.set(0, -0.05 - (spec.len * 0.90) / 2, side * 0.022);
+          leg.castShadow = true;
+          leg.receiveShadow = true;
+          g.add(leg);
+        });
+        return g;
+      }
+
       // 2. Volumetric Garment Body Mesh with natural fabric curves
       const garmentBody = new THREE.Group();
       garmentBody.position.y = -0.055;

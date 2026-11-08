@@ -1070,8 +1070,11 @@
   }
 
   // =========================================================================
-  // 6. WARDROBE GRID & CONDITION (CLEAN / DIRTY / FIT) MANAGEMENT
+  // 6. WARDROBE GRID & INTERACTIVE SECTIONS (ZOOM & DRAG-TO-MANNEQUIN)
   // =========================================================================
+  let _wSelectedGarment = null;
+  let _wIsDragging = false;
+
   function renderWardrobeGrid(category = state.wardrobeActiveCategory, query = '') {
     const container = document.getElementById('wardrobeCardsGrid');
     if (!container) return;
@@ -1094,39 +1097,261 @@
     }
 
     container.innerHTML = '';
-    items.forEach(item => {
-      const box = document.createElement('div');
-      box.className = 'wardrobe-item-box';
 
-      const isClean = item.condition === 'clean';
-      const statusBadge = isClean
-        ? `<span class="badge-status clean" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark in laundry">✨ Clean</span>`
-        : `<span class="badge-status dirty" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark clean">🧺 In Laundry</span>`;
+    // If "All Pieces", present in dedicated Haute Couture Sections
+    if (category === 'All' && (!query || query.trim() === '')) {
+      const sectionDefs = [
+        { key: 'Tops', title: 'Shirts & Outerwear', icon: '👔', desc: 'Crisp linens, fine cottons & blazers' },
+        { key: 'Bottoms', title: 'Pants & Tailored Skirts', icon: '👖', desc: 'Chinos, relaxed denim & palazzos' },
+        { key: 'Shoes', title: 'Footwear Collection', icon: '👟', desc: 'Leather trainers, loafers & sandals' },
+        { key: 'Accessories', title: 'Watches & Accents', icon: '⌚', desc: 'Signature horology & leathercraft' }
+      ];
 
-      const fitBadge = item.fit === 'tight'
-        ? `<span class="badge-fit tight">Tight</span>`
-        : item.fit === 'loose'
-          ? `<span class="badge-fit loose">Loose</span>`
-          : `<span class="badge-fit">Perfect fit</span>`;
+      sectionDefs.forEach(sec => {
+        const secItems = items.filter(i => i.category === sec.key);
+        if (secItems.length === 0) return;
 
-      box.innerHTML = `
-        <div class="w-img-wrap" onclick="app.openConditionModal('${item.id}')">
-          <img src="${item.photo}" alt="${item.name}">
-        </div>
-        <div class="w-meta" onclick="app.openConditionModal('${item.id}')">
-          <div class="w-name">${item.name}</div>
-          <div class="w-sub" style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">
-            ${statusBadge}
-            ${fitBadge}
+        const secBlock = document.createElement('div');
+        secBlock.className = 'w-category-section-block';
+        secBlock.innerHTML = `
+          <div class="w-section-divider-header">
+            <div class="w-sec-icon-box">${sec.icon}</div>
+            <div class="w-sec-title-box">
+              <h2 class="w-sec-title">${sec.title}</h2>
+              <span class="w-sec-sub">${sec.desc} (${secItems.length})</span>
+            </div>
           </div>
-        </div>
-        <button class="w-dots" onclick="event.stopPropagation(); app.openConditionModal('${item.id}')">⋮</button>
-      `;
+          <div class="w-section-grid"></div>
+        `;
 
-      container.appendChild(box);
-    });
+        const secGrid = secBlock.querySelector('.w-section-grid');
+        secItems.forEach(item => {
+          secGrid.appendChild(createWardrobeCardElement(item));
+        });
+
+        container.appendChild(secBlock);
+      });
+    } else {
+      // Filtered view or Search result
+      const gridWrap = document.createElement('div');
+      gridWrap.className = 'w-section-grid single-category-grid';
+      items.forEach(item => {
+        gridWrap.appendChild(createWardrobeCardElement(item));
+      });
+      container.appendChild(gridWrap);
+    }
 
     updateWardrobeCounts();
+  }
+
+  function createWardrobeCardElement(item) {
+    const card = document.createElement('div');
+    card.className = 'wardrobe-luxury-card';
+    card.setAttribute('data-item-id', item.id);
+
+    const isClean = item.condition === 'clean';
+    const condClass = isClean ? 'clean' : 'dirty';
+    const condText = isClean ? 'Ready' : 'In Care';
+
+    const fitLabel = item.fit === 'tight' ? 'Fitted' : item.fit === 'loose' ? 'Relaxed' : 'Tailored';
+
+    card.innerHTML = `
+      <div class="w-card-visual" onclick="app.wardrobeOpenZoom('${item.id}')">
+        <img src="${item.photo}" alt="${item.name}" loading="lazy" draggable="false">
+        <div class="w-card-glamour-shine"></div>
+        <span class="w-status-bubble ${condClass}" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to toggle laundry status">
+          ${isClean ? '✨ ' + condText : '🧺 ' + condText}
+        </span>
+        <button class="w-zoom-preview-trigger" onclick="event.stopPropagation(); app.wardrobeOpenZoom('${item.id}')" title="Inspect & Drag">
+          <span>🔍</span>
+        </button>
+      </div>
+      <div class="w-card-details" onclick="app.wardrobeOpenZoom('${item.id}')">
+        <div class="w-card-headline">${item.name}</div>
+        <div class="w-card-pills-row">
+          <span class="w-fit-pill ${item.fit || 'perfect'}">${fitLabel}</span>
+          <span class="w-drag-affordance-hint">Drag ➔</span>
+        </div>
+      </div>
+    `;
+
+    return card;
+  }
+
+  function wardrobeOpenZoom(itemId) {
+    const item = WARDROBE_ITEMS.find(i => i.id === itemId);
+    if (!item) return;
+    _wSelectedGarment = item;
+
+    const zCard = document.getElementById('wZoomedCard');
+    const backdrop = document.getElementById('wZoomBackdrop');
+    if (!zCard || !backdrop) return;
+
+    document.getElementById('wZoomedImg').src = item.photo;
+    document.getElementById('wZoomedImg').alt = item.name;
+    document.getElementById('wZoomedName').textContent = item.name;
+
+    const catBadge = document.getElementById('wZoomedCat');
+    if (catBadge) catBadge.textContent = item.category.toUpperCase();
+
+    const fitBadge = document.getElementById('wZoomedFit');
+    if (fitBadge) {
+      const fitDesc = item.fit === 'tight' ? 'Snug silhouette' : item.fit === 'loose' ? 'Relaxed drape' : 'Perfect bespoke fit';
+      const condDesc = item.condition === 'clean' ? '✨ Pristine' : '🧺 Laundry';
+      fitBadge.textContent = `${fitDesc} · ${condDesc}`;
+    }
+
+    backdrop.classList.add('active');
+    zCard.classList.add('active');
+  }
+
+  function wardrobeCloseZoom() {
+    const zCard = document.getElementById('wZoomedCard');
+    const backdrop = document.getElementById('wZoomBackdrop');
+    if (zCard) zCard.classList.remove('active');
+    if (backdrop) backdrop.classList.remove('active');
+  }
+
+  function wardrobeStartDrag(e) {
+    if (!_wSelectedGarment) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Close preview modal and initiate grand drag experience
+    wardrobeCloseZoom();
+
+    const ghost = document.getElementById('wDragGhost');
+    const ghostImg = document.getElementById('wGhostImg');
+    if (!ghost || !ghostImg) return;
+
+    ghostImg.src = _wSelectedGarment.photo;
+    ghostImg.alt = _wSelectedGarment.name;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    ghost.style.left = (clientX - 50) + 'px';
+    ghost.style.top = (clientY - 65) + 'px';
+    ghost.classList.add('active');
+
+    // Activate global drop target overlay
+    const dropTarget = document.getElementById('wMannequinDropTarget');
+    if (dropTarget) dropTarget.classList.add('active');
+
+    _wIsDragging = true;
+
+    if (e.touches) {
+      document.addEventListener('touchmove', _wOnPointerMove, { passive: false });
+      document.addEventListener('touchend', _wOnPointerUp, { once: true });
+    } else {
+      document.addEventListener('mousemove', _wOnPointerMove);
+      document.addEventListener('mouseup', _wOnPointerUp, { once: true });
+    }
+  }
+
+  function _wOnPointerMove(e) {
+    if (!_wIsDragging) return;
+    e.preventDefault();
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const ghost = document.getElementById('wDragGhost');
+    if (ghost) {
+      ghost.style.left = (clientX - 50) + 'px';
+      ghost.style.top = (clientY - 65) + 'px';
+    }
+
+    const dropTarget = document.getElementById('wMannequinDropTarget');
+    if (dropTarget) {
+      const rect = dropTarget.getBoundingClientRect();
+      const isOver = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+      dropTarget.classList.toggle('hovering', isOver);
+    }
+  }
+
+  function _wOnPointerUp(e) {
+    if (!_wIsDragging) return;
+    _wIsDragging = false;
+
+    document.removeEventListener('touchmove', _wOnPointerMove);
+    document.removeEventListener('mousemove', _wOnPointerMove);
+
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+    const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+    const ghost = document.getElementById('wDragGhost');
+    if (ghost) ghost.classList.remove('active');
+
+    const dropTarget = document.getElementById('wMannequinDropTarget');
+    let isDropSuccess = false;
+    if (dropTarget) {
+      const rect = dropTarget.getBoundingClientRect();
+      isDropSuccess = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+      dropTarget.classList.remove('active', 'hovering');
+    }
+
+    if (isDropSuccess && _wSelectedGarment) {
+      wardrobeEquipToMannequin(_wSelectedGarment);
+    } else if (_wSelectedGarment) {
+      showToast(`Hint: Drop inside the portal to dress your mannequin! ✨`);
+    }
+  }
+
+  function wardrobeQuickEquip() {
+    if (!_wSelectedGarment) return;
+    wardrobeCloseZoom();
+    wardrobeEquipToMannequin(_wSelectedGarment);
+  }
+
+  function wardrobeViewOnStudio() {
+    if (!_wSelectedGarment) return;
+    wardrobeQuickEquip();
+  }
+
+  function wardrobeEquipToMannequin(item) {
+    const catMap = { Tops: 'top', Bottoms: 'bottom', Shoes: 'shoes', Accessories: 'top' };
+    const engineCat = catMap[item.category] || 'top';
+
+    const idMap = {
+      'Navy shirt': 'navy_shirt',
+      'White linen shirt': 'wide_linen',
+      'Cream kurta': 'cardigan',
+      'Maroon top': 'tank',
+      'Tailored blazer': 'blazer',
+      'Terracotta tee': 'tank',
+      'Indigo kurti': 'cardigan',
+      'Beige chinos': 'wide_linen',
+      'Dark denim': 'dark_denim',
+      'Dark skirt': 'dark_skirt',
+      'Cream palazzo': 'cream_palazzo',
+      'White sneakers': 'white_sneakers',
+      'Tan loafers': 'tan_loafers',
+      'Black trainers': 'black_trainers',
+      'Brown sandals': 'brown_sandals'
+    };
+    const garmentId = idMap[item.name] || 'navy_shirt';
+
+    // Transfer seamlessly to Studio Screen
+    goToScreen('today');
+
+    if (window.Studio3D && window.Studio3D.equipGarment) {
+      try {
+        const mappedId = garmentId === 'wide_linen' ? 'taupe_wide' : garmentId;
+        window.Studio3D.equipGarment(engineCat, mappedId);
+        window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+      } catch (err) {
+        // Fallback visual
+      }
+    }
+
+    const sparkles = document.getElementById('serenSparkles');
+    if (sparkles) {
+      sparkles.classList.add('active');
+      setTimeout(function() { sparkles.classList.remove('active'); }, 1400);
+    }
+
+    showToast(`✦ ${item.name} fitted on your studio mannequin! ♡`);
   }
 
   function filterWardrobeCategory(cat, btn) {
@@ -6020,12 +6245,14 @@
     assignPlannerOutfit,
     removePlannerOutfit,
 
-    // Premium Interactive Wardrobe API
-    togglePremiumWardrobe,
-    switchPremiumCategory,
-    premiumSelectItem,
-    closePremiumZoom,
-    premiumStartDrag
+    // Masterpiece Interactive Wardrobe API
+    wardrobeOpenZoom,
+    wardrobeCloseZoom,
+    wardrobeStartDrag,
+    wardrobeQuickEquip,
+    wardrobeViewOnStudio,
+    wardrobeEquipToMannequin,
+    toggleItemCondition
   };
 
   window.app = Object.assign(window.app || {}, appExports);

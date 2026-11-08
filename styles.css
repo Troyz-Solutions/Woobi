@@ -13904,3 +13904,455 @@ body.premium-mode .phone-screen-container::-webkit-scrollbar,
   box-shadow: 0 8px 24px rgba(200,150,62,0.55);
 }
 
+
+/* ==========================================================================
+   MASTERPIECE INTEGRATED WARDROBE STYLES (ZOOM, SECTIONS, LUXURY DRAG)
+   ========================================================================== */
+
+/* Section Blocks */
+.w-sections-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.w-category-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.w-section-divider-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 4px;
+  border-bottom: 1.5px solid rgba(200, 150, 62, 0.2);
+}
+
+.w-sec-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #FFF6E0, #F3E5C8);
+  border: 1px solid rgba(200, 150, 62, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  box-shadow: 0 2px 6px rgba(180, 130, 50, 0.12);
+}
+
+.w-sec-title-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.w-sec-title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 1.15rem;
+  color: #2D1D0D;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.w-sec-sub {
+  font-size: 0.72rem;
+  color: #8C704B;
+  font-weight: 500;
+}
+
+.w-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* Luxury Garment Card */
+.wardrobe-luxury-card {
+  background: linear-gradient(155deg, #FFFFFF 0%, #FFFDF8 100%);
+  border: 1.5px solid rgba(200, 150, 62, 0.22);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(160, 120, 50, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wardrobe-luxury-card:hover,
+.wardrobe-luxury-card:active {
+  transform: translateY(-4px) scale(1.02);
+  border-color: #C8963E;
+  box-shadow: 0 10px 24px rgba(200, 150, 62, 0.22);
+}
+
+.w-card-visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F9F4EB, #F2E9DB);
+}
+
+.w-card-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.wardrobe-luxury-card:hover .w-card-visual img {
+  transform: scale(1.06);
+}
+
+.w-card-glamour-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.w-status-bubble {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.w-status-bubble.clean {
+  background: rgba(240, 255, 240, 0.9);
+  color: #1F6B30;
+}
+
+.w-status-bubble.dirty {
+  background: rgba(255, 240, 230, 0.9);
+  color: #A04A15;
+}
+
+.w-zoom-preview-trigger {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(200, 150, 62, 0.35);
+  color: #6A4B1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.w-zoom-preview-trigger:hover {
+  transform: scale(1.15);
+  background: #C8963E;
+  color: #FFFFFF;
+}
+
+.w-card-details {
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.w-card-headline {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #2D1D0D;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.w-card-pills-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.w-fit-pill {
+  font-size: 0.68rem;
+  color: #8C704B;
+  background: rgba(200, 150, 62, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.w-drag-affordance-hint {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #C8963E;
+  letter-spacing: 0.5px;
+}
+
+/* Zoom Backdrop & Big Card Inspection */
+.w-zoom-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 12, 6, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.w-zoom-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.w-zoomed-card {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.65);
+  width: min(320px, 86vw);
+  background: linear-gradient(165deg, #FFFDF9 0%, #FBF5EC 100%);
+  border: 2px solid #C8963E;
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(10, 6, 2, 0.55), 0 0 0 1px rgba(255, 215, 120, 0.4);
+  z-index: 9300;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.w-zoomed-card.active {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.w-zoomed-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(200, 150, 62, 0.35);
+  color: #5A3F14;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.w-zoomed-img-wrap {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  position: relative;
+  background: #F4EBDD;
+}
+
+.w-zoomed-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.w-zoomed-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 60%, rgba(20,12,4,0.3) 100%);
+  pointer-events: none;
+}
+
+.w-zoomed-info {
+  padding: 12px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.w-zoomed-name {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 1.25rem;
+  color: #2D1D0D;
+}
+
+.w-zoomed-tags {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.w-zoomed-cat-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #C8963E;
+  letter-spacing: 0.6px;
+}
+
+.w-zoomed-fit-badge {
+  font-size: 0.75rem;
+  color: #7A6348;
+}
+
+.w-zoomed-drag-action {
+  margin: 10px 18px 6px;
+  padding: 13px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #C8963E, #E2B254, #B88532);
+  color: #FFFFFF;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: grab;
+  box-shadow: 0 4px 16px rgba(200, 150, 62, 0.45);
+  transition: transform 0.2s ease;
+  touch-action: none;
+}
+
+.w-zoomed-drag-action:active {
+  cursor: grabbing;
+  transform: scale(0.97);
+}
+
+.w-spark-icon {
+  font-size: 1.1rem;
+}
+
+.w-zoomed-quick-equip {
+  margin: 0 18px 16px;
+  padding: 9px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1.5px solid rgba(200, 150, 62, 0.4);
+  color: #8C6A35;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.w-zoomed-quick-equip:hover {
+  background: rgba(200, 150, 62, 0.1);
+  color: #553A15;
+}
+
+/* Drag Ghost & Drop Target Portal */
+.w-drag-ghost {
+  position: fixed;
+  width: 100px;
+  height: 130px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid #E2B254;
+  box-shadow: 0 16px 36px rgba(10, 6, 2, 0.45), 0 0 0 3px rgba(226, 178, 84, 0.4);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transform: scale(0.8) rotate(-4deg);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  will-change: left, top;
+}
+
+.w-drag-ghost.active {
+  opacity: 1;
+  transform: scale(1) rotate(-4deg);
+}
+
+.w-drag-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.w-mannequin-drop-target {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, 100vw);
+  height: 60vh;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 0 0 32px 32px;
+}
+
+.w-mannequin-drop-target.active {
+  pointer-events: auto;
+  opacity: 1;
+  background: radial-gradient(ellipse at center, rgba(200, 150, 62, 0.22) 0%, rgba(200, 150, 62, 0.05) 60%, transparent 80%);
+  border: 2.5px dashed rgba(226, 178, 84, 0.85);
+  border-top: none;
+}
+
+.w-mannequin-drop-target.hovering {
+  background: radial-gradient(ellipse at center, rgba(226, 178, 84, 0.4) 0%, rgba(200, 150, 62, 0.15) 70%, transparent 90%);
+  border-color: #FFF2C6;
+  transform: translateX(-50%) scale(1.02);
+}
+
+.w-drop-portal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 252, 245, 0.94);
+  padding: 16px 24px;
+  border-radius: 24px;
+  border: 1.5px solid #C8963E;
+  box-shadow: 0 8px 30px rgba(180, 130, 40, 0.3);
+}
+
+.w-drop-icon {
+  font-size: 2.2rem;
+  animation: wPortalPulse 1.8s ease-in-out infinite;
+}
+
+.w-drop-text {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 1.05rem;
+  color: #2D1D0D;
+  letter-spacing: 0.3px;
+}
+
+@keyframes wPortalPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2) rotate(4deg); }
+}
+

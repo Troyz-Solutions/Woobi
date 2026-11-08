@@ -40,7 +40,7 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261109_v28">
+  <link rel="stylesheet" href="styles.css?v=20261109_v29">
 </head>
 
 <body>
@@ -554,7 +554,7 @@
               <span class="hint-arrow">›</span>
             </button>
 
-            <div class="spatial-3d-hint avatar-hint" id="serenDragHint">
+            <div class="spatial-3d-hint avatar-hint" id="serenDragHint" onclick="app.resetStudioView()" title="Drag to rotate · Click to reset view" style="cursor: pointer;">
               <span class="hint-icon">🔄</span>
               <span class="hint-text">Drag to Rotate</span>
             </div>
@@ -4797,9 +4797,9 @@
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261109_v28"></script>
+  <script src="studio3d.js?v=20261109_v29"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261109_v28"></script>
+  <script src="app.js?v=20261109_v29"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

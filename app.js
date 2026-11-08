@@ -2508,18 +2508,13 @@
 
     if (forceOpen === undefined) {
       sheet.classList.toggle('hidden');
-      if (!sheet.classList.contains('hidden')) {
-        setStudioCamera('WARDROBE_CLOSEUP');
-      } else {
-        setStudioCamera('STUDIO_OVERVIEW');
-      }
     } else if (forceOpen) {
       sheet.classList.remove('hidden');
-      setStudioCamera('WARDROBE_CLOSEUP');
     } else {
       sheet.classList.add('hidden');
-      setStudioCamera('STUDIO_OVERVIEW');
     }
+    // Always keep Studio Overview active so the mannequin remains center-stage
+    setStudioCamera('STUDIO_OVERVIEW');
   }
 
   function serenToggleDailyLooks(forceOpen) {
@@ -2798,15 +2793,21 @@
     onStudioCameraChanged(stateName);
   }
 
+  function resetStudioView() {
+    setStudioCamera('STUDIO_OVERVIEW');
+    if (window.Studio3D) {
+      window.Studio3D.setAvatarRotation(0);
+      if (typeof window.Studio3D.resetCamera === 'function') {
+        window.Studio3D.resetCamera();
+      }
+    }
+  }
+
   function serenInteract(type) {
     if (type === 'vanity' || type === 'mirror') {
       serenOpenVanity(true);
     } else if (type === 'wardrobe') {
-      if (window.Studio3D && window.Studio3D.currentCameraState === 'WARDROBE_CLOSEUP') {
-        serenToggleWardrobe(true);
-      } else {
-        setStudioCamera('WARDROBE_CLOSEUP');
-      }
+      serenToggleWardrobe(true);
     } else if (window.Studio3D) {
       if (typeof window.Studio3D.handleCanvasClick === 'function') {
         window.Studio3D.handleCanvasClick();
@@ -6031,6 +6032,7 @@
     setStudioMannequinAngle,
     resetMannequinToStandards,
     resetToNormalBodyShape,
+    resetStudioView,
     resetToPerfectModelAvatar,
     serenSetSkinTone,
     serenSetHairStyle,

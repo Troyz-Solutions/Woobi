@@ -209,7 +209,7 @@ export class WardrobeModel {
 
     this.group.add(proceduralGroup);
 
-    // 3. Attempt to load authentic Astra 3D GLB wardrobe
+    // 3. Primary 3D Wardrobe: Load authentic revised 3D GLB model
     WardrobeAssets.loadAstraWardrobe(
       THREE,
       scale,
@@ -217,9 +217,17 @@ export class WardrobeModel {
         this.group.add(model);
         this.isGLBLoaded = true;
         proceduralGroup.visible = false;
+
+        // Clean up procedural placeholder geometry to prevent any duplicate/overlapping geometry
+        while (proceduralGroup.children && proceduralGroup.children.length > 0) {
+          const child = proceduralGroup.children[0];
+          proceduralGroup.remove(child);
+          if (child.geometry && typeof child.geometry.dispose === 'function') child.geometry.dispose();
+          if (child.material && typeof child.material.dispose === 'function') child.material.dispose();
+        }
       },
       () => {
-        // Procedural group remains visible as primary representation
+        // Fallback representation only when GLB is absent
         this.isGLBLoaded = false;
       }
     );

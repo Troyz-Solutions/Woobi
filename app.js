@@ -50,22 +50,22 @@
 
   // Complete user wardrobe collection with laundry & fit telemetry
   const WARDROBE_ITEMS = [
-    { id: 'item_1', name: 'Navy shirt', category: 'Tops', photo: 'assets/navy_shirt.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_2', name: 'Beige chinos', category: 'Bottoms', photo: 'assets/beige_chinos.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_3', name: 'Cream kurta', category: 'Tops', photo: 'assets/olive_kurta.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_4', name: 'White sneakers', category: 'Shoes', photo: 'assets/white_sneakers.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_5', name: 'Maroon top', category: 'Tops', photo: 'assets/maroon_top.jpg', condition: 'clean', fit: 'tight' },
-    { id: 'item_6', name: 'Dark skirt', category: 'Bottoms', photo: 'assets/dark_skirt.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_7', name: 'White linen shirt', category: 'Tops', photo: 'assets/white_linen_shirt.jpg', condition: 'clean', fit: 'loose' },
-    { id: 'item_8', name: 'Dark denim', category: 'Bottoms', photo: 'assets/dark_denim.jpg', condition: 'dirty', fit: 'perfect' },
-    { id: 'item_9', name: 'Tan loafers', category: 'Shoes', photo: 'assets/tan_loafers.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_10', name: 'Leather watch', category: 'Accessories', photo: 'assets/leather_watch.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_11', name: 'Black trainers', category: 'Shoes', photo: 'assets/black_trainers.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_12', name: 'Brown sandals', category: 'Shoes', photo: 'assets/brown_sandals.jpg', condition: 'clean', fit: 'perfect' },
-    { id: 'item_13', name: 'Cream palazzo', category: 'Bottoms', photo: 'assets/cream_palazzo.jpg', condition: 'clean', fit: 'loose' },
-    { id: 'item_14', name: 'Indigo kurti', category: 'Tops', photo: 'assets/indigo_kurti.jpg', condition: 'dirty', fit: 'perfect' },
-    { id: 'item_15', name: 'Terracotta tee', category: 'Tops', photo: 'assets/terracotta_tee.jpg', condition: 'dirty', fit: 'tight' },
-    { id: 'item_16', name: 'Tailored blazer', category: 'Tops', photo: 'assets/smart_blazer.jpg', condition: 'clean', fit: 'tight' }
+    { id: 'item_1', name: 'Navy shirt', category: 'Tops', subCategory: 'Shirt', photo: 'assets/navy_shirt.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_2', name: 'Beige chinos', category: 'Bottoms', subCategory: 'Pant', photo: 'assets/beige_chinos.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_3', name: 'Cream kurta', category: 'Tops', subCategory: 'Kurta', photo: 'assets/olive_kurta.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_4', name: 'White sneakers', category: 'Shoes', subCategory: 'Shoe', photo: 'assets/white_sneakers.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_5', name: 'Maroon top', category: 'Tops', subCategory: 'Top', photo: 'assets/maroon_top.jpg', condition: 'clean', fit: 'tight' },
+    { id: 'item_6', name: 'Dark skirt', category: 'Bottoms', subCategory: 'Skirt', photo: 'assets/dark_skirt.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_7', name: 'White linen shirt', category: 'Tops', subCategory: 'Shirt', photo: 'assets/white_linen_shirt.jpg', condition: 'clean', fit: 'loose' },
+    { id: 'item_8', name: 'Dark denim', category: 'Bottoms', subCategory: 'Pant', photo: 'assets/dark_denim.jpg', condition: 'dirty', fit: 'perfect' },
+    { id: 'item_9', name: 'Tan loafers', category: 'Shoes', subCategory: 'Shoe', photo: 'assets/tan_loafers.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_10', name: 'Leather watch', category: 'Accessories', subCategory: 'Accessory', photo: 'assets/leather_watch.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_11', name: 'Black trainers', category: 'Shoes', subCategory: 'Shoe', photo: 'assets/black_trainers.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_12', name: 'Brown sandals', category: 'Shoes', subCategory: 'Shoe', photo: 'assets/brown_sandals.jpg', condition: 'clean', fit: 'perfect' },
+    { id: 'item_13', name: 'Cream palazzo', category: 'Bottoms', subCategory: 'Pant', photo: 'assets/cream_palazzo.jpg', condition: 'clean', fit: 'loose' },
+    { id: 'item_14', name: 'Indigo kurti', category: 'Tops', subCategory: 'Kurti', photo: 'assets/indigo_kurti.jpg', condition: 'dirty', fit: 'perfect' },
+    { id: 'item_15', name: 'Terracotta tee', category: 'Tops', subCategory: 'Shirt', photo: 'assets/terracotta_tee.jpg', condition: 'dirty', fit: 'tight' },
+    { id: 'item_16', name: 'Tailored blazer', category: 'Tops', subCategory: 'Blazer', photo: 'assets/smart_blazer.jpg', condition: 'clean', fit: 'tight' }
   ];
 
   // Pre-calculated AI Stylist Curations for "Need an outfit?" alternative cycling
@@ -311,10 +311,19 @@
         typeof item.category === 'string'
       )
     ) {
+      const normalizedSaved = savedWardrobe.map(item => {
+        if (!item.subCategory) {
+          if (isShirt(item)) item.subCategory = 'Shirt';
+          else if (isPant(item)) item.subCategory = 'Pant';
+          else if (isShoe(item)) item.subCategory = 'Shoe';
+          else if (isAccessory(item)) item.subCategory = 'Accessory';
+        }
+        return item;
+      });
       WARDROBE_ITEMS.splice(
         0,
         WARDROBE_ITEMS.length,
-        ...savedWardrobe
+        ...normalizedSaved
       );
     }
 
@@ -373,6 +382,8 @@
     if (screenId === 'wardrobe') {
       renderWardrobeGrid();
       updateWardrobeCounts();
+    } else if (screenId === 'swap-item') {
+      renderSwapGrid(state.activeSwapSlot || 'footwear');
     } else if (screenId === 'ai-stylist') {
       resetStylistQuestionnaire();
       updateStylistWardrobeStats();
@@ -699,9 +710,9 @@
     updateAIStep(4, 'pending');
 
     // Filter clean wardrobe items
-    const cleanTops = WARDROBE_ITEMS.filter(i => i.category === 'Tops' && i.condition === 'clean');
-    const cleanBottoms = WARDROBE_ITEMS.filter(i => i.category === 'Bottoms' && i.condition === 'clean');
-    const cleanShoes = WARDROBE_ITEMS.filter(i => i.category === 'Shoes' && i.condition === 'clean');
+    const cleanTops = WARDROBE_ITEMS.filter(i => (i.category === 'Tops' || isShirt(i)) && i.condition === 'clean');
+    const cleanBottoms = WARDROBE_ITEMS.filter(i => (i.category === 'Bottoms' || isPant(i)) && i.condition === 'clean');
+    const cleanShoes = WARDROBE_ITEMS.filter(i => (i.category === 'Shoes' || isShoe(i)) && i.condition === 'clean');
 
     // Select pieces tailored to occasion & vibe
     let top, bottom, footwear, localFallback, flatLay;
@@ -911,10 +922,10 @@
     if (!container) return;
 
     const items = WARDROBE_ITEMS.filter(item => {
-      if (state.builderCurrentTab === 'Tops') return item.category === 'Tops';
-      if (state.builderCurrentTab === 'Bottoms') return item.category === 'Bottoms';
-      if (state.builderCurrentTab === 'Shoes') return item.category === 'Shoes';
-      if (state.builderCurrentTab === 'Accessories') return item.category === 'Accessories';
+      if (state.builderCurrentTab === 'Tops' || state.builderCurrentTab === 'Shirts') return isShirt(item) || item.category === 'Tops';
+      if (state.builderCurrentTab === 'Bottoms' || state.builderCurrentTab === 'Pants') return isPant(item) || item.category === 'Bottoms';
+      if (state.builderCurrentTab === 'Shoes') return isShoe(item) || item.category === 'Shoes';
+      if (state.builderCurrentTab === 'Accessories') return isAccessory(item) || item.category === 'Accessories';
       return true;
     });
 
@@ -952,18 +963,18 @@
   }
 
   function isItemSelectedInBuilder(item) {
-    if (item.category === 'Tops' && state.builderSelection.top?.id === item.id) return true;
-    if (item.category === 'Bottoms' && state.builderSelection.bottom?.id === item.id) return true;
-    if (item.category === 'Shoes' && state.builderSelection.shoe?.id === item.id) return true;
-    if (item.category === 'Accessories' && state.builderSelection.accessory?.id === item.id) return true;
+    if ((isShirt(item) || item.category === 'Tops') && state.builderSelection.top?.id === item.id) return true;
+    if ((isPant(item) || item.category === 'Bottoms') && state.builderSelection.bottom?.id === item.id) return true;
+    if ((isShoe(item) || item.category === 'Shoes') && state.builderSelection.shoe?.id === item.id) return true;
+    if ((isAccessory(item) || item.category === 'Accessories') && state.builderSelection.accessory?.id === item.id) return true;
     return false;
   }
 
   function selectBuilderItem(item) {
-    if (item.category === 'Tops') state.builderSelection.top = item;
-    if (item.category === 'Bottoms') state.builderSelection.bottom = item;
-    if (item.category === 'Shoes') state.builderSelection.shoe = item;
-    if (item.category === 'Accessories') state.builderSelection.accessory = item;
+    if (isShirt(item) || item.category === 'Tops') state.builderSelection.top = item;
+    if (isPant(item) || item.category === 'Bottoms') state.builderSelection.bottom = item;
+    if (isShoe(item) || item.category === 'Shoes') state.builderSelection.shoe = item;
+    if (isAccessory(item) || item.category === 'Accessories') state.builderSelection.accessory = item;
 
     if (item.condition === 'dirty') {
       showToast(`⚠️ Note: ${item.name} is in laundry, but we will still preview it!`);
@@ -1070,61 +1081,420 @@
   }
 
   // =========================================================================
-  // 6. WARDROBE GRID & CONDITION (CLEAN / DIRTY / FIT) MANAGEMENT
+  // 6. WARDROBE CATEGORY NORMALIZATION, ITEM CLASSIFIER & GRID MANAGEMENT
   // =========================================================================
+
+  function isShoe(item) {
+    if (!item) return false;
+    const cat = (item.category || '').toLowerCase();
+    const sub = (item.subCategory || '').toLowerCase();
+    const name = (item.name || '').toLowerCase();
+    return (
+      cat === 'shoes' || cat === 'shoe' || cat === 'footwear' ||
+      sub === 'shoe' || sub === 'shoes' || sub === 'footwear' ||
+      name.includes('sneaker') || name.includes('loafer') ||
+      name.includes('trainer') || name.includes('sandal') ||
+      name.includes('boot') || name.includes('shoe') || name.includes('slides')
+    );
+  }
+
+  function isAccessory(item) {
+    if (!item) return false;
+    const cat = (item.category || '').toLowerCase();
+    const sub = (item.subCategory || '').toLowerCase();
+    const name = (item.name || '').toLowerCase();
+    return (
+      cat === 'accessories' || cat === 'accessory' ||
+      sub === 'accessory' || sub === 'accessories' ||
+      name.includes('watch') || name.includes('belt') ||
+      name.includes('bag') || name.includes('sunglass') ||
+      name.includes('hat') || name.includes('cap') ||
+      name.includes('scarf') || name.includes('jewelry') ||
+      name.includes('wallet')
+    );
+  }
+
+  function isPant(item) {
+    if (!item) return false;
+    if (isShoe(item) || isAccessory(item)) return false;
+    const cat = (item.category || '').toLowerCase();
+    const sub = (item.subCategory || '').toLowerCase();
+    const name = (item.name || '').toLowerCase();
+    return (
+      cat === 'bottoms' || cat === 'bottom' || cat === 'pants' || cat === 'pant' || cat === 'trousers' ||
+      sub === 'pant' || sub === 'pants' || sub === 'bottoms' || sub === 'trousers' || sub === 'skirt' ||
+      name.includes('chino') || name.includes('trouser') || name.includes('pant') ||
+      name.includes('denim') || name.includes('jean') || name.includes('palazzo') ||
+      name.includes('skirt') || name.includes('short') || name.includes('slacks') ||
+      name.includes('bottom')
+    );
+  }
+
+  function isShirt(item) {
+    if (!item) return false;
+    if (isPant(item) || isShoe(item) || isAccessory(item)) return false;
+    const cat = (item.category || '').toLowerCase();
+    const sub = (item.subCategory || '').toLowerCase();
+    const name = (item.name || '').toLowerCase();
+
+    // Exclude heavier outerwear (blazers/jackets/coats) from shirts
+    if (name.includes('blazer') || name.includes('coat') || name.includes('jacket')) {
+      return false;
+    }
+
+    return (
+      cat === 'shirts' || cat === 'shirt' || cat === 'tops' || cat === 'top' ||
+      sub === 'shirt' || sub === 'shirts' || sub === 'top' || sub === 'kurta' || sub === 'kurti' ||
+      name.includes('shirt') || name.includes('tee') || name.includes('t-shirt') ||
+      name.includes('oxford') || name.includes('linen') || name.includes('kurta') ||
+      name.includes('kurti') || name.includes('polo') || name.includes('top')
+    );
+  }
+
+  function getItemCategoryMeta(item) {
+    if (isShirt(item)) return { group: 'Shirts', icon: '👕', label: 'Shirt' };
+    if (isPant(item)) {
+      const n = (item.name || '').toLowerCase();
+      const lbl = n.includes('skirt') ? 'Skirt' : (n.includes('trouser') || n.includes('chino') ? 'Trousers' : (n.includes('denim') || n.includes('jean') ? 'Jeans' : 'Pants'));
+      return { group: 'Pants', icon: '👖', label: lbl };
+    }
+    if (isShoe(item)) {
+      const n = (item.name || '').toLowerCase();
+      const lbl = n.includes('sneaker') ? 'Sneakers' : (n.includes('loafer') ? 'Loafers' : (n.includes('sandal') ? 'Sandals' : 'Shoes'));
+      return { group: 'Shoes', icon: '👟', label: lbl };
+    }
+    if (isAccessory(item)) return { group: 'Accessories', icon: '⌚', label: 'Accessory' };
+    return { group: 'Other', icon: '🧥', label: item.category || 'Garment' };
+  }
+
+  function matchItemCategory(item, targetCategory) {
+    if (!targetCategory) return true;
+    const norm = targetCategory.toLowerCase().trim();
+    if (norm === 'all') return true;
+    if (norm === 'clean') return item.condition === 'clean';
+    if (norm === 'laundry' || norm === 'in laundry') return item.condition === 'dirty';
+
+    if (norm === 'shirts' || norm === 'shirt' || norm === 'tops' || norm === 'top') {
+      return isShirt(item);
+    }
+    if (norm === 'pants' || norm === 'pant' || norm === 'bottoms' || norm === 'bottom') {
+      return isPant(item);
+    }
+    if (norm === 'shoes' || norm === 'shoe' || norm === 'footwear') {
+      return isShoe(item);
+    }
+    if (norm === 'accessories' || norm === 'accessory') {
+      return isAccessory(item);
+    }
+    return (item.category || '').toLowerCase() === norm;
+  }
+
+  function getFullOutfitCombinations() {
+    const outfits = [];
+
+    // 1. Curated looks from LOOKS_DATA
+    LOOKS_DATA.forEach(look => {
+      outfits.push({
+        id: look.id,
+        title: look.title,
+        caption: look.caption,
+        modelPhoto: look.modelPhoto,
+        top: { name: look.top.name, photo: look.top.photo, condition: look.top.condition || 'clean' },
+        bottom: { name: look.bottom.name, photo: look.bottom.photo, condition: look.bottom.condition || 'clean' },
+        footwear: { name: look.footwear.name, photo: look.footwear.photo, condition: look.footwear.condition || 'clean' },
+        accessory: look.accessory ? { name: look.accessory.name, photo: look.accessory.photo, condition: look.accessory.condition || 'clean' } : null,
+        isClean: (look.top.condition !== 'dirty' && look.bottom.condition !== 'dirty' && look.footwear.condition !== 'dirty'),
+        source: 'curated'
+      });
+    });
+
+    // 2. Curated options from STYLIST_OPTIONS
+    STYLIST_OPTIONS.forEach(opt => {
+      if (!outfits.some(o => o.title.toLowerCase() === opt.title.toLowerCase())) {
+        const topItem = WARDROBE_ITEMS.find(i => i.name === opt.top.name) || opt.top;
+        const botItem = WARDROBE_ITEMS.find(i => i.name === opt.bottom.name) || opt.bottom;
+        const shoeItem = WARDROBE_ITEMS.find(i => i.name === opt.footwear.name) || opt.footwear;
+        const accItem = WARDROBE_ITEMS.find(i => isAccessory(i)) || null;
+
+        outfits.push({
+          id: opt.id,
+          title: opt.title,
+          caption: opt.caption,
+          modelPhoto: opt.modelPhoto,
+          top: { name: opt.top.name, photo: opt.top.photo, condition: topItem.condition || 'clean' },
+          bottom: { name: opt.bottom.name, photo: opt.bottom.photo, condition: botItem.condition || 'clean' },
+          footwear: { name: opt.footwear.name, photo: opt.footwear.photo, condition: shoeItem.condition || 'clean' },
+          accessory: accItem ? { name: accItem.name, photo: accItem.photo, condition: accItem.condition || 'clean' } : null,
+          isClean: (topItem.condition !== 'dirty' && botItem.condition !== 'dirty' && shoeItem.condition !== 'dirty'),
+          source: 'stylist'
+        });
+      }
+    });
+
+    // 3. Saved looks from savedLooksManager
+    if (savedLooksManager && typeof savedLooksManager.getAllLooks === 'function') {
+      try {
+        const saved = savedLooksManager.getAllLooks();
+        saved.forEach(sl => {
+          if (sl.outfit && !outfits.some(o => o.id === sl.id)) {
+            const items = sl.outfit.items || [];
+            const t = items.find(i => isShirt(i)) || items[0] || { name: 'Top', photo: 'assets/navy_shirt.jpg' };
+            const b = items.find(i => isPant(i)) || items[1] || { name: 'Bottom', photo: 'assets/beige_chinos.jpg' };
+            const s = items.find(i => isShoe(i)) || items[2] || { name: 'Shoes', photo: 'assets/white_sneakers.jpg' };
+            const a = items.find(i => isAccessory(i)) || null;
+
+            outfits.push({
+              id: sl.id,
+              title: sl.name || 'Saved Look',
+              caption: sl.occasion ? `${sl.occasion.toUpperCase()} • Custom Curated Look` : 'Personal saved outfit',
+              modelPhoto: sl.photo || null,
+              top: { name: t.name, photo: t.photo || 'assets/navy_shirt.jpg', condition: 'clean' },
+              bottom: { name: b.name, photo: b.photo || 'assets/beige_chinos.jpg', condition: 'clean' },
+              footwear: { name: s.name, photo: s.photo || 'assets/white_sneakers.jpg', condition: 'clean' },
+              accessory: a ? { name: a.name, photo: a.photo, condition: 'clean' } : null,
+              isClean: true,
+              source: 'saved'
+            });
+          }
+        });
+      } catch (e) {
+        console.warn('Error reading saved looks for outfits:', e);
+      }
+    }
+
+    // 4. Dynamic outfit from uploaded clothes if captured clothes exist
+    const capturedItems = WARDROBE_ITEMS.filter(i => i.capturedVia === 'clothing_silhouette_capture');
+    if (capturedItems.length > 0) {
+      const capShirt = capturedItems.find(i => isShirt(i)) || WARDROBE_ITEMS.find(i => isShirt(i) && i.condition === 'clean');
+      const capPant = capturedItems.find(i => isPant(i)) || WARDROBE_ITEMS.find(i => isPant(i) && i.condition === 'clean');
+      const capShoe = capturedItems.find(i => isShoe(i)) || WARDROBE_ITEMS.find(i => isShoe(i) && i.condition === 'clean');
+      const acc = WARDROBE_ITEMS.find(i => isAccessory(i));
+
+      if (capShirt && capPant && capShoe) {
+        outfits.unshift({
+          id: 'outfit_captured_personal',
+          title: 'My Captured Wardrobe Look',
+          caption: 'Complete personalized outfit combination featuring your uploaded pieces.',
+          modelPhoto: null,
+          top: { name: capShirt.name, photo: capShirt.photo, condition: capShirt.condition },
+          bottom: { name: capPant.name, photo: capPant.photo, condition: capPant.condition },
+          footwear: { name: capShoe.name, photo: capShoe.photo, condition: capShoe.condition },
+          accessory: acc ? { name: acc.name, photo: acc.photo, condition: acc.condition } : null,
+          isClean: (capShirt.condition === 'clean' && capPant.condition === 'clean' && capShoe.condition === 'clean'),
+          source: 'captured'
+        });
+      }
+    }
+
+    return outfits;
+  }
+
+  function wearFullOutfit(id) {
+    const lookIdx = LOOKS_DATA.findIndex(l => l.id === id);
+    if (lookIdx !== -1) {
+      state.currentLookIndex = lookIdx;
+      renderCurrentLook();
+      showToast(`✨ Outfit "${LOOKS_DATA[lookIdx].title}" chosen for Today!`);
+      goToScreen('today');
+      return;
+    }
+    const opt = STYLIST_OPTIONS.find(o => o.id === id);
+    if (opt) {
+      state.builderSelection = {
+        top: WARDROBE_ITEMS.find(i => i.name === opt.top.name) || { name: opt.top.name, photo: opt.top.photo, condition: 'clean', fit: 'perfect' },
+        bottom: WARDROBE_ITEMS.find(i => i.name === opt.bottom.name) || { name: opt.bottom.name, photo: opt.bottom.photo, condition: 'clean', fit: 'perfect' },
+        shoe: WARDROBE_ITEMS.find(i => i.name === opt.footwear.name) || { name: opt.footwear.name, photo: opt.footwear.photo, condition: 'clean', fit: 'perfect' },
+        accessory: WARDROBE_ITEMS.find(i => isAccessory(i)) || null
+      };
+      showToast(`✨ Outfit "${opt.title}" chosen!`);
+      goToScreen('today');
+      return;
+    }
+    showToast('✨ Selected outfit ready to wear!');
+    goToScreen('today');
+  }
+
+  function previewFullOutfit(id) {
+    const lookIdx = LOOKS_DATA.findIndex(l => l.id === id);
+    if (lookIdx !== -1) {
+      state.currentLookIndex = lookIdx;
+      renderCurrentLook();
+      goToScreen('outfit-details');
+      return;
+    }
+    const opt = STYLIST_OPTIONS.find(o => o.id === id);
+    if (opt) {
+      state.currentStylistOptionIndex = STYLIST_OPTIONS.findIndex(o => o.id === id);
+      goToScreen('ai-stylist');
+      return;
+    }
+    goToScreen('today');
+  }
+
   function renderWardrobeGrid(category = state.wardrobeActiveCategory, query = '') {
     const container = document.getElementById('wardrobeCardsGrid');
     if (!container) return;
 
+    const activeCat = category || 'All';
+    const normCat = activeCat.toLowerCase().trim();
+    const q = (query || '').toLowerCase().trim();
+
+    // 1. FULL OUTFIT COMBINATIONS VIEW
+    if (normCat === 'full outfit' || normCat === 'full outfits' || normCat === 'outfit' || normCat === 'outfits') {
+      let outfits = getFullOutfitCombinations();
+
+      if (q) {
+        outfits = outfits.filter(o =>
+          o.title.toLowerCase().includes(q) ||
+          o.caption.toLowerCase().includes(q) ||
+          o.top.name.toLowerCase().includes(q) ||
+          o.bottom.name.toLowerCase().includes(q) ||
+          o.footwear.name.toLowerCase().includes(q) ||
+          (o.accessory && o.accessory.name.toLowerCase().includes(q))
+        );
+      }
+
+      container.innerHTML = '';
+
+      if (outfits.length === 0) {
+        container.innerHTML = `
+          <div class="wardrobe-empty-state">
+            <span class="empty-icon">👔</span>
+            <h3>No outfit combinations found</h3>
+            <p>${q ? `No outfits match "${query}".` : 'Add pieces to your wardrobe to create full outfits.'}</p>
+            <button class="btn-olive-primary" style="font-size:0.8rem; padding:8px 16px;" onclick="app.goToScreen('custom-builder')">
+              Create an Outfit in Studio 🪡
+            </button>
+          </div>
+        `;
+      } else {
+        outfits.forEach(outfit => {
+          const card = document.createElement('div');
+          card.className = 'wardrobe-outfit-box';
+          card.onclick = () => app.previewFullOutfit(outfit.id);
+
+          const accHtml = outfit.accessory ? `
+            <div class="w-piece-card">
+              <div class="w-piece-img-wrap"><img src="${outfit.accessory.photo}" alt="${outfit.accessory.name}" onerror="this.src='assets/leather_watch.jpg'"></div>
+              <span class="w-piece-cat">⌚ Acc</span>
+              <span class="w-piece-name" title="${outfit.accessory.name}">${outfit.accessory.name}</span>
+            </div>
+          ` : '';
+
+          card.innerHTML = `
+            <div class="w-outfit-header-row">
+              <div>
+                <span class="w-outfit-tag">Full Outfit</span>
+                <h3 class="w-outfit-title">${outfit.title}</h3>
+                <p class="w-outfit-sub">${outfit.caption}</p>
+              </div>
+              <span class="w-outfit-clean-badge ${outfit.isClean ? 'clean' : 'laundry'}">
+                ${outfit.isClean ? '✨ Clean & Ready' : '🧺 Contains Laundry'}
+              </span>
+            </div>
+
+            <div class="w-outfit-pieces-grid">
+              <div class="w-piece-card">
+                <div class="w-piece-img-wrap"><img src="${outfit.top.photo}" alt="${outfit.top.name}" onerror="this.src='assets/navy_shirt.jpg'"></div>
+                <span class="w-piece-cat">👕 Shirt</span>
+                <span class="w-piece-name" title="${outfit.top.name}">${outfit.top.name}</span>
+              </div>
+              <div class="w-piece-card">
+                <div class="w-piece-img-wrap"><img src="${outfit.bottom.photo}" alt="${outfit.bottom.name}" onerror="this.src='assets/beige_chinos.jpg'"></div>
+                <span class="w-piece-cat">👖 Pants</span>
+                <span class="w-piece-name" title="${outfit.bottom.name}">${outfit.bottom.name}</span>
+              </div>
+              <div class="w-piece-card">
+                <div class="w-piece-img-wrap"><img src="${outfit.footwear.photo}" alt="${outfit.footwear.name}" onerror="this.src='assets/white_sneakers.jpg'"></div>
+                <span class="w-piece-cat">👟 Shoes</span>
+                <span class="w-piece-name" title="${outfit.footwear.name}">${outfit.footwear.name}</span>
+              </div>
+              ${accHtml}
+            </div>
+
+            <div class="w-outfit-actions">
+              <button type="button" class="btn-outfit-wear" onclick="event.stopPropagation(); app.wearFullOutfit('${outfit.id}')">
+                <span>✨ Wear this look</span>
+              </button>
+              <button type="button" class="btn-outfit-preview" onclick="event.stopPropagation(); app.previewFullOutfit('${outfit.id}')">
+                <span>👤 Try in Studio</span>
+              </button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      updateWardrobeCounts();
+      return;
+    }
+
+    // 2. CATEGORY-SPECIFIC GARMENTS VIEW
     let items = WARDROBE_ITEMS.slice();
 
     // Category Filter
-    if (category === 'Clean') {
-      items = items.filter(i => i.condition === 'clean');
-    } else if (category === 'Laundry') {
-      items = items.filter(i => i.condition === 'dirty');
-    } else if (category && category !== 'All') {
-      items = items.filter(i => i.category.toLowerCase() === category.toLowerCase());
+    if (activeCat !== 'All') {
+      items = items.filter(i => matchItemCategory(i, activeCat));
     }
 
     // Search Query Filter
-    if (query && query.trim() !== '') {
-      const q = query.toLowerCase().trim();
-      items = items.filter(i => i.name.toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
+    if (q) {
+      items = items.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        (i.category || '').toLowerCase().includes(q) ||
+        (i.subCategory || '').toLowerCase().includes(q)
+      );
     }
 
     container.innerHTML = '';
-    items.forEach(item => {
-      const box = document.createElement('div');
-      box.className = 'wardrobe-item-box';
 
-      const isClean = item.condition === 'clean';
-      const statusBadge = isClean
-        ? `<span class="badge-status clean" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark in laundry">✨ Clean</span>`
-        : `<span class="badge-status dirty" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark clean">🧺 In Laundry</span>`;
-
-      const fitBadge = item.fit === 'tight'
-        ? `<span class="badge-fit tight">Tight</span>`
-        : item.fit === 'loose'
-          ? `<span class="badge-fit loose">Loose</span>`
-          : `<span class="badge-fit">Perfect fit</span>`;
-
-      box.innerHTML = `
-        <div class="w-img-wrap" onclick="app.openConditionModal('${item.id}')">
-          <img src="${item.photo}" alt="${item.name}">
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="wardrobe-empty-state">
+          <span class="empty-icon">${activeCat === 'Shirts' ? '👕' : (activeCat === 'Pants' ? '👖' : (activeCat === 'Shoes' ? '👟' : (activeCat === 'Accessories' ? '⌚' : '👗')))}</span>
+          <h3>No ${activeCat} found</h3>
+          <p>${q ? `No items match "${query}" in this category.` : `You don't have any items in ${activeCat} yet.`}</p>
+          <button class="btn-olive-primary" style="font-size:0.8rem; padding:8px 16px;" onclick="app.goToScreen('add-wardrobe')">
+            + Add to ${activeCat}
+          </button>
         </div>
-        <div class="w-meta" onclick="app.openConditionModal('${item.id}')">
-          <div class="w-name">${item.name}</div>
-          <div class="w-sub" style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">
-            ${statusBadge}
-            ${fitBadge}
-          </div>
-        </div>
-        <button class="w-dots" onclick="event.stopPropagation(); app.openConditionModal('${item.id}')">⋮</button>
       `;
+    } else {
+      items.forEach(item => {
+        const box = document.createElement('div');
+        box.className = 'wardrobe-item-box';
 
-      container.appendChild(box);
-    });
+        const isClean = item.condition === 'clean';
+        const statusBadge = isClean
+          ? `<span class="badge-status clean" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark in laundry">✨ Clean</span>`
+          : `<span class="badge-status dirty" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark clean">🧺 In Laundry</span>`;
+
+        const fitBadge = item.fit === 'tight'
+          ? `<span class="badge-fit tight">Tight</span>`
+          : item.fit === 'loose'
+            ? `<span class="badge-fit loose">Loose</span>`
+            : `<span class="badge-fit">Perfect fit</span>`;
+
+        const meta = getItemCategoryMeta(item);
+
+        box.innerHTML = `
+          <div class="w-img-wrap" onclick="app.openConditionModal('${item.id}')">
+            <img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='assets/navy_shirt.jpg'">
+            <span class="w-item-cat-badge">${meta.icon} ${meta.label}</span>
+          </div>
+          <div class="w-meta" onclick="app.openConditionModal('${item.id}')">
+            <div class="w-name" title="${item.name}">${item.name}</div>
+            <div class="w-sub-badges">
+              ${statusBadge}
+              ${fitBadge}
+            </div>
+          </div>
+          <button class="w-dots" onclick="event.stopPropagation(); app.openConditionModal('${item.id}')" title="Item options">⋮</button>
+        `;
+
+        container.appendChild(box);
+      });
+    }
 
     updateWardrobeCounts();
   }
@@ -1151,7 +1521,18 @@
     const dirtyCount = WARDROBE_ITEMS.filter(i => i.condition === 'dirty').length;
 
     const countLabel = document.getElementById('wardrobeCountLabel');
-    if (countLabel) countLabel.textContent = `${WARDROBE_ITEMS.length} items`;
+    if (countLabel) {
+      const normCat = (state.wardrobeActiveCategory || 'All').toLowerCase().trim();
+      if (normCat === 'full outfit' || normCat === 'full outfits' || normCat === 'outfit' || normCat === 'outfits') {
+        const outfits = getFullOutfitCombinations();
+        countLabel.textContent = `${outfits.length} complete looks`;
+      } else if (normCat !== 'all') {
+        const catItems = WARDROBE_ITEMS.filter(i => matchItemCategory(i, state.wardrobeActiveCategory));
+        countLabel.textContent = `${catItems.length} items`;
+      } else {
+        countLabel.textContent = `${WARDROBE_ITEMS.length} items`;
+      }
+    }
 
     const cleanEl = document.getElementById('wardrobeCleanCount');
     const dirtyEl = document.getElementById('wardrobeLaundryCount');
@@ -1249,14 +1630,126 @@
   // =========================================================================
   // 7. SWAP AN ITEM INTERACTION
   // =========================================================================
+  function renderSwapGrid(slot = state.activeSwapSlot || 'footwear') {
+    const grid = document.getElementById('swapGrid');
+    if (!grid) return;
+
+    const normSlot = (slot || 'footwear').toLowerCase().trim();
+    const isTop = normSlot === 'top' || normSlot === 'shirts' || normSlot === 'shirt';
+    const isBot = normSlot === 'bottom' || normSlot === 'pants' || normSlot === 'pant' || normSlot === 'trousers';
+    const isFoot = normSlot === 'footwear' || normSlot === 'shoes' || normSlot === 'shoe';
+    const isAcc = normSlot === 'accessory' || normSlot === 'accessories';
+
+    let candidateItems = WARDROBE_ITEMS.filter(item => {
+      if (isTop) return isShirt(item) || (item.category || '').toLowerCase() === 'tops';
+      if (isBot) return isPant(item) || (item.category || '').toLowerCase() === 'bottoms';
+      if (isFoot) return isShoe(item) || (item.category || '').toLowerCase() === 'shoes';
+      if (isAcc) return isAccessory(item) || (item.category || '').toLowerCase() === 'accessories';
+      return false;
+    });
+
+    // Subtitle indicates "Only available items" - prefer clean items
+    const cleanItems = candidateItems.filter(item => item.condition !== 'dirty');
+    const items = cleanItems.length > 0 ? cleanItems : candidateItems;
+
+    grid.innerHTML = '';
+
+    if (items.length === 0) {
+      grid.innerHTML = `
+        <div class="wardrobe-empty-state" style="grid-column: 1 / -1; padding: 24px 12px; text-align: center;">
+          <span class="empty-icon" style="font-size: 2rem;">${isTop ? '👕' : (isBot ? '👖' : (isAcc ? '⌚' : '👟'))}</span>
+          <h3 style="font-size: 0.95rem; margin: 8px 0 4px;">No items found</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Add more garments to your wardrobe to swap.</p>
+          <button class="btn-olive-primary" style="font-size: 0.8rem; padding: 6px 14px; width: auto;" onclick="app.goToScreen('add-wardrobe')">
+            + Add garment
+          </button>
+        </div>
+      `;
+      state.selectedSwapChoice = null;
+      return;
+    }
+
+    // Determine current item name in outfit if possible
+    const look = LOOKS_DATA[state.currentLookIndex];
+    let currentItemName = '';
+    let currentItemPhoto = '';
+    if (look) {
+      if (isTop) {
+        currentItemName = (look.top?.name || '').toLowerCase();
+        currentItemPhoto = look.top?.photo || '';
+      } else if (isBot) {
+        currentItemName = (look.bottom?.name || '').toLowerCase();
+        currentItemPhoto = look.bottom?.photo || '';
+      } else if (isFoot) {
+        currentItemName = (look.footwear?.name || '').toLowerCase();
+        currentItemPhoto = look.footwear?.photo || '';
+      } else if (isAcc) {
+        currentItemName = (look.accessory?.name || '').toLowerCase();
+        currentItemPhoto = look.accessory?.photo || '';
+      }
+    }
+
+    // Select the currently equipped item if found in list, else default to the first item
+    let selectedItem = items.find(i =>
+      (currentItemName && i.name.toLowerCase() === currentItemName) ||
+      (currentItemPhoto && i.photo === currentItemPhoto)
+    ) || items[0];
+
+    state.selectedSwapChoice = {
+      id: selectedItem.id,
+      name: selectedItem.name,
+      photo: selectedItem.photo
+    };
+
+    const checkSvg = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    `;
+
+    items.forEach(item => {
+      const isSelected = item.id === selectedItem.id;
+      const card = document.createElement('div');
+      card.className = `swap-card ${isSelected ? 'selected' : ''}`;
+      card.onclick = function () {
+        selectSwapOption(item.id, item.name, item.photo, this);
+      };
+
+      card.innerHTML = `
+        <div class="swap-img-box">
+          <img src="${item.photo}" alt="${item.name}" onerror="this.src='assets/navy_shirt.jpg'">
+          <div class="choice-checkbox ${isSelected ? 'checked' : ''}">
+            ${isSelected ? checkSvg : ''}
+          </div>
+        </div>
+        <span class="swap-title">${item.name}</span>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
   function openSwapScreen(slot) {
     state.activeSwapSlot = slot;
+    const normSlot = (slot || 'footwear').toLowerCase().trim();
     const title = document.getElementById('swapHeaderTitle');
+    const confirmBtn = document.getElementById('confirmSwapBtn');
+
     if (title) {
-      if (slot === 'top') title.textContent = 'Choose a different top';
-      else if (slot === 'bottom') title.textContent = 'Choose different trousers';
+      if (normSlot === 'top' || normSlot === 'shirts' || normSlot === 'shirt') title.textContent = 'Choose a different top';
+      else if (normSlot === 'bottom' || normSlot === 'pants' || normSlot === 'pant' || normSlot === 'trousers') title.textContent = 'Choose different trousers';
+      else if (normSlot === 'accessory' || normSlot === 'accessories') title.textContent = 'Choose a different accessory';
       else title.textContent = 'Choose different shoes';
     }
+
+    if (confirmBtn) {
+      if (normSlot === 'top' || normSlot === 'shirts' || normSlot === 'shirt') confirmBtn.textContent = 'Use this top';
+      else if (normSlot === 'bottom' || normSlot === 'pants' || normSlot === 'pant' || normSlot === 'trousers') confirmBtn.textContent = 'Use these trousers';
+      else if (normSlot === 'accessory' || normSlot === 'accessories') confirmBtn.textContent = 'Use this accessory';
+      else confirmBtn.textContent = 'Use these shoes';
+    }
+
+    renderSwapGrid(slot);
     goToScreen('swap-item');
   }
 
@@ -1264,31 +1757,112 @@
     document.querySelectorAll('#swapGrid .swap-card').forEach(c => {
       c.classList.remove('selected');
       const chk = c.querySelector('.choice-checkbox');
-      if (chk) chk.classList.remove('checked');
+      if (chk) {
+        chk.classList.remove('checked');
+        chk.innerHTML = '';
+      }
     });
-    cardEl.classList.add('selected');
-    const chk = cardEl.querySelector('.choice-checkbox');
-    if (chk) chk.classList.add('checked');
+
+    if (cardEl) {
+      cardEl.classList.add('selected');
+      const chk = cardEl.querySelector('.choice-checkbox');
+      if (chk) {
+        chk.classList.add('checked');
+        chk.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        `;
+      }
+    }
 
     state.selectedSwapChoice = { id, name, photo };
   }
 
   function confirmSwap() {
-    const slot = state.activeSwapSlot;
+    const slot = state.activeSwapSlot || 'footwear';
     const choice = state.selectedSwapChoice;
 
-    if (slot === 'footwear') {
+    if (!choice) {
+      showToast('Please select an item to swap');
+      return;
+    }
+
+    const normSlot = (slot || 'footwear').toLowerCase().trim();
+    const isTop = normSlot === 'top' || normSlot === 'shirts' || normSlot === 'shirt';
+    const isBot = normSlot === 'bottom' || normSlot === 'pants' || normSlot === 'pant' || normSlot === 'trousers';
+    const isFoot = normSlot === 'footwear' || normSlot === 'shoes' || normSlot === 'shoe';
+    const isAcc = normSlot === 'accessory' || normSlot === 'accessories';
+
+    const look = LOOKS_DATA[state.currentLookIndex];
+    if (look) {
+      if (isTop) {
+        look.top = { ...look.top, name: choice.name, photo: choice.photo, condition: 'clean', fit: 'perfect' };
+        const choiceLower = (choice.name || '').toLowerCase();
+        if (choiceLower.includes('linen')) {
+          look.modelPhoto = 'assets/model_tryon_linen.jpg';
+        } else if (choiceLower.includes('kurta') || choiceLower.includes('kurti')) {
+          look.modelPhoto = 'assets/model_tryon_kurta.jpg';
+        } else if (choiceLower.includes('maroon')) {
+          look.modelPhoto = 'assets/model_tryon_maroon.jpg';
+        } else if (choiceLower.includes('navy')) {
+          look.modelPhoto = 'assets/model_tryon_navy.jpg';
+        }
+      } else if (isBot) {
+        look.bottom = { ...look.bottom, name: choice.name, photo: choice.photo, condition: 'clean', fit: 'perfect' };
+      } else if (isFoot) {
+        look.footwear = { ...look.footwear, name: choice.name, photo: choice.photo, condition: 'clean', fit: 'perfect' };
+      } else if (isAcc) {
+        look.accessory = { ...look.accessory, name: choice.name, photo: choice.photo, condition: 'clean', fit: 'perfect' };
+      }
+      renderCurrentLook();
+    }
+
+    // Direct DOM fallback updates
+    if (isTop) {
+      const qTop = document.getElementById('quadImgTop');
+      const detTop = document.getElementById('detImgTop');
+      const readyTop = document.getElementById('readyImgTop');
+      const rowThumb = document.getElementById('rowThumbTop');
+      const rowName = document.getElementById('rowNameTop');
+      if (qTop) qTop.src = choice.photo;
+      if (detTop) detTop.src = choice.photo;
+      if (readyTop) readyTop.src = choice.photo;
+      if (rowThumb) rowThumb.src = choice.photo;
+      if (rowName) rowName.textContent = choice.name;
+    } else if (isBot) {
+      const qBot = document.getElementById('quadImgBot');
+      const detBot = document.getElementById('detImgBot');
+      const readyBot = document.getElementById('readyImgBot');
+      const rowThumb = document.getElementById('rowThumbBot');
+      const rowName = document.getElementById('rowNameBot');
+      if (qBot) qBot.src = choice.photo;
+      if (detBot) detBot.src = choice.photo;
+      if (readyBot) readyBot.src = choice.photo;
+      if (rowThumb) rowThumb.src = choice.photo;
+      if (rowName) rowName.textContent = choice.name;
+    } else if (isFoot) {
       const qShoe = document.getElementById('quadImgShoe');
       const detShoe = document.getElementById('detImgShoe');
-      const rowShoe = document.getElementById('rowThumbShoe');
+      const readyShoe = document.getElementById('readyImgShoe');
+      const rowThumb = document.getElementById('rowThumbShoe');
       const rowName = document.getElementById('rowNameShoe');
-
       if (qShoe) qShoe.src = choice.photo;
       if (detShoe) detShoe.src = choice.photo;
-      if (rowShoe) rowShoe.src = choice.photo;
+      if (readyShoe) readyShoe.src = choice.photo;
+      if (rowThumb) rowThumb.src = choice.photo;
       if (rowName) rowName.textContent = choice.name;
+    } else if (isAcc) {
+      const qAcc = document.getElementById('quadImgAcc');
+      const detAcc = document.getElementById('detImgAcc');
+      const readyAcc = document.getElementById('readyImgAcc');
+      if (qAcc) qAcc.src = choice.photo;
+      if (detAcc) detAcc.src = choice.photo;
+      if (readyAcc) readyAcc.src = choice.photo;
     }
-    showToast(`Swapped ${slot} to ${choice.name}`);
+
+    const slotLabel = isTop ? 'top' : (isBot ? 'trousers' : (isFoot ? 'shoes' : 'accessory'));
+    showToast(`Swapped ${slotLabel} to ${choice.name}`);
     goToScreen('outfit-details');
   }
 
@@ -2239,14 +2813,31 @@
     }
 
     if (state.wardrobe && state.wardrobe.length > 0) {
-      const userItems = state.wardrobe.map(item => ({
-        id: item.id,
-        cat: item.category ? item.category.toLowerCase() : 'tops',
-        name: item.name,
-        photo: item.photo,
-        is3D: false,
-        sub: 'Closet Photo'
-      }));
+      const userItems = state.wardrobe.map(item => {
+        let cat = 'tops';
+        let sub = 'Shirt';
+        if (isShoe(item)) {
+          cat = 'shoes';
+          sub = 'Shoes';
+        } else if (isPant(item)) {
+          cat = 'bottoms';
+          sub = 'Pants';
+        } else if (isShirt(item)) {
+          cat = 'tops';
+          sub = 'Shirt';
+        } else if (isAccessory(item)) {
+          cat = 'accessories';
+          sub = 'Accessory';
+        }
+        return {
+          id: item.id,
+          cat,
+          name: item.name,
+          photo: item.photo,
+          is3D: false,
+          sub
+        };
+      });
 
       if (serenCurrentCat === 'all') {
         items = [...items, ...userItems];
@@ -5594,6 +6185,7 @@
     cycleLook,
     setTodayOccasion,
     openSwapScreen,
+    renderSwapGrid,
     selectSwapOption,
     confirmSwap,
     markAsWorn,
@@ -5604,6 +6196,14 @@
     saveReviewedItem,
     filterWardrobeCategory,
     filterWardrobeGrid,
+    wearFullOutfit,
+    previewFullOutfit,
+    isShirt,
+    isPant,
+    isShoe,
+    isAccessory,
+    getItemCategoryMeta,
+    getFullOutfitCombinations,
     selectPlan,
     activatePremium,
     openStyleHint,

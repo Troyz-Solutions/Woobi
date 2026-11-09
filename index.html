@@ -37,7 +37,7 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261106_v19">
+  <link rel="stylesheet" href="styles.css?v=20261109_v2">
 </head>
 
 <body>
@@ -1589,49 +1589,11 @@
             <p class="screen-caption-sub center-text">Only available items</p>
 
             <div class="swap-options-grid" id="swapGrid">
-              <div class="swap-card selected"
-                onclick="app.selectSwapOption('white_sneakers', 'White sneakers', 'assets/white_sneakers.jpg', this)">
-                <div class="swap-img-box">
-                  <img src="assets/white_sneakers.jpg" alt="White sneakers">
-                  <div class="choice-checkbox checked">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                </div>
-                <span class="swap-title">White sneakers</span>
-              </div>
-
-              <div class="swap-card"
-                onclick="app.selectSwapOption('black_trainers', 'Black trainers', 'assets/black_trainers.jpg', this)">
-                <div class="swap-img-box">
-                  <img src="assets/black_trainers.jpg" alt="Black trainers">
-                  <div class="choice-checkbox"></div>
-                </div>
-                <span class="swap-title">Black trainers</span>
-              </div>
-
-              <div class="swap-card"
-                onclick="app.selectSwapOption('tan_loafers', 'Brown loafers', 'assets/tan_loafers.jpg', this)">
-                <div class="swap-img-box">
-                  <img src="assets/tan_loafers.jpg" alt="Brown loafers">
-                  <div class="choice-checkbox"></div>
-                </div>
-                <span class="swap-title">Brown loafers</span>
-              </div>
-
-              <div class="swap-card"
-                onclick="app.selectSwapOption('sandals', 'Sandals', 'assets/brown_sandals.jpg', this)">
-                <div class="swap-img-box">
-                  <img src="assets/brown_sandals.jpg" alt="Sandals">
-                  <div class="choice-checkbox"></div>
-                </div>
-                <span class="swap-title">Sandals</span>
-              </div>
+              <!-- Dynamically rendered via app.renderSwapGrid() based on active slot -->
             </div>
 
             <div class="screen-footer-action">
-              <button class="btn-olive-primary" onclick="app.confirmSwap()">
+              <button class="btn-olive-primary" id="confirmSwapBtn" onclick="app.confirmSwap()">
                 Use these shoes
               </button>
             </div>
@@ -1766,12 +1728,13 @@
 
             <div class="category-filter-bar" id="wardrobeCatFilter">
               <button class="cat-pill active" onclick="app.filterWardrobeCategory('All', this)">All</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Shirts', this)">👕 Shirts</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Pants', this)">👖 Pants</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Shoes', this)">👟 Shoes</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Accessories', this)">⌚ Accessories</button>
+              <button class="cat-pill" onclick="app.filterWardrobeCategory('Full Outfit', this)">👔 Full Outfit</button>
               <button class="cat-pill" onclick="app.filterWardrobeCategory('Clean', this)">✨ Clean</button>
               <button class="cat-pill" onclick="app.filterWardrobeCategory('Laundry', this)">🧺 In Laundry</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Tops', this)">Tops</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Bottoms', this)">Bottoms</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Shoes', this)">Shoes</button>
-              <button class="cat-pill" onclick="app.filterWardrobeCategory('Accessories', this)">Accessories</button>
             </div>
 
             <div class="wardrobe-2col-grid" id="wardrobeCardsGrid">
@@ -5233,7 +5196,7 @@
   <script src="wardrobe3d.js?v=20261105_v1"></script>
   <script src="studio3d.js?v=20261106_v13"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261106_v12"></script>
+  <script src="app.js?v=20261109_v2"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

@@ -13984,3 +13984,180 @@ body.premium-mode .phone-screen-container::-webkit-scrollbar,
   }
 }
 
+/* ==========================================================================
+   WOOBI FLUID SILK WAVE HOMEPAGE BACKDROP
+   ========================================================================== */
+
+.woobi-silk-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  background: #FAF9F6;
+}
+
+.woobi-silk-bg__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.woobi-silk-bg .silk-wave-layer {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.woobi-silk-bg .silk-wave-motion {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.woobi-silk-bg .silk-wave-motion--diag {
+  animation: silkWaveDriftA 46s ease-in-out -8s infinite alternate;
+}
+
+.woobi-silk-bg .silk-wave-motion--mid {
+  animation: silkWaveDriftB 38s ease-in-out -14s infinite alternate;
+}
+
+.woobi-silk-bg .silk-wave-motion--champagne {
+  animation: silkWaveDriftC 54s ease-in-out -22s infinite alternate;
+}
+
+.woobi-silk-bg .silk-wave-motion--beige {
+  animation: silkWaveDriftB 42s ease-in-out -6s infinite alternate;
+}
+
+.woobi-silk-bg .silk-wave-motion--sand {
+  animation: silkWaveDriftA 34s ease-in-out -18s infinite alternate;
+}
+
+.woobi-silk-bg .silk-wave-motion--front {
+  animation: silkWaveDriftC 60s ease-in-out -27s infinite alternate;
+}
+
+@keyframes silkWaveDriftA {
+  0% {
+    transform: translate3d(-10px, 4px, 0) rotate(-0.1deg);
+  }
+
+  50% {
+    transform: translate3d(4px, -5px, 0) rotate(0.06deg);
+  }
+
+  100% {
+    transform: translate3d(16px, 2px, 0) rotate(-0.04deg);
+  }
+}
+
+@keyframes silkWaveDriftB {
+  0% {
+    transform: translate3d(10px, -4px, 0) rotate(0.08deg);
+  }
+
+  50% {
+    transform: translate3d(-5px, 5px, 0) rotate(-0.05deg);
+  }
+
+  100% {
+    transform: translate3d(-16px, -3px, 0) rotate(0.04deg);
+  }
+}
+
+@keyframes silkWaveDriftC {
+  0% {
+    transform: translate3d(-8px, -4px, 0) rotate(-0.06deg);
+  }
+
+  50% {
+    transform: translate3d(6px, 4px, 0) rotate(0.05deg);
+  }
+
+  100% {
+    transform: translate3d(12px, -2px, 0) rotate(-0.03deg);
+  }
+}
+
+.desktop-editorial-frame {
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 1024px) {
+  .silk-wave-layer--diag {
+    transform: translateY(-10px);
+  }
+
+  .silk-wave-layer--mid {
+    transform: translateY(8px);
+  }
+
+  .silk-wave-layer--champagne {
+    transform: translateY(16px);
+  }
+
+  .silk-wave-layer--beige {
+    transform: translateY(22px);
+  }
+
+  .silk-wave-layer--sand {
+    transform: translateY(10px);
+  }
+}
+
+@media (max-width: 767px) {
+  .silk-wave-layer--diag {
+    transform: translateY(-30px);
+  }
+
+  .silk-wave-layer--mid {
+    transform: translateY(12px);
+  }
+
+  .silk-wave-layer--champagne {
+    transform: translateY(28px);
+  }
+
+  .silk-wave-layer--beige {
+    transform: translateY(40px);
+  }
+
+  .silk-wave-layer--sand {
+    transform: translateY(18px);
+  }
+}
+
+@media (max-width: 479px) {
+  .silk-wave-layer--diag {
+    transform: translateY(-54px);
+  }
+
+  .silk-wave-layer--mid {
+    transform: translateY(10px);
+  }
+
+  .silk-wave-layer--champagne {
+    transform: translateY(36px);
+  }
+
+  .silk-wave-layer--beige {
+    transform: translateY(56px);
+  }
+
+  .silk-wave-layer--sand {
+    transform: translateY(30px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .woobi-silk-bg .silk-wave-motion {
+    animation: none;
+    will-change: auto;
+  }
+}
+

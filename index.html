@@ -37,10 +37,148 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261106_v19">
+  <link rel="stylesheet" href="styles.css?v=20261110_silk_fluid">
 </head>
 
 <body>
+
+  <div class="woobi-silk-bg" aria-hidden="true">
+    <svg class="woobi-silk-bg__svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"
+      xmlns="http://www.w3.org/2000/svg" focusable="false">
+      <defs>
+        <linearGradient id="woobiSilkBaseGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.72" />
+          <stop offset="54%" stop-color="#FAF9F6" stop-opacity="0.12" />
+          <stop offset="100%" stop-color="#FAF9F6" stop-opacity="0" />
+        </linearGradient>
+        <radialGradient id="woobiSilkTopLight" cx="50%" cy="0%" r="78%">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.68" />
+          <stop offset="54%" stop-color="#F7F4EF" stop-opacity="0.18" />
+          <stop offset="100%" stop-color="#F7F4EF" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="woobiSilkDiag" x1="0%" y1="0%" x2="18%" y2="100%">
+          <stop offset="0%" stop-color="#FAF9F6" />
+          <stop offset="48%" stop-color="#F7F4EF" />
+          <stop offset="100%" stop-color="#F1E9DF" />
+        </linearGradient>
+        <linearGradient id="woobiSilkOffWhite" x1="0%" y1="0%" x2="10%" y2="100%">
+          <stop offset="0%" stop-color="#F7F4EF" />
+          <stop offset="58%" stop-color="#F3EDE4" />
+          <stop offset="100%" stop-color="#EDE2D5" />
+        </linearGradient>
+        <linearGradient id="woobiSilkChampagne" x1="0%" y1="0%" x2="14%" y2="100%">
+          <stop offset="0%" stop-color="#F1E9DF" />
+          <stop offset="54%" stop-color="#EBDFD0" />
+          <stop offset="100%" stop-color="#E8D9C7" />
+        </linearGradient>
+        <linearGradient id="woobiSilkBeige" x1="0%" y1="0%" x2="12%" y2="100%">
+          <stop offset="0%" stop-color="#E8D9C7" />
+          <stop offset="58%" stop-color="#E3D1BC" />
+          <stop offset="100%" stop-color="#DDC6AF" />
+        </linearGradient>
+        <linearGradient id="woobiSilkSand" x1="0%" y1="0%" x2="8%" y2="100%">
+          <stop offset="0%" stop-color="#EDE2D5" />
+          <stop offset="62%" stop-color="#F3ECE2" />
+          <stop offset="100%" stop-color="#FAF9F6" />
+        </linearGradient>
+        <linearGradient id="woobiSilkFront" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#F7F4EF" />
+          <stop offset="100%" stop-color="#FAF9F6" />
+        </linearGradient>
+        <linearGradient id="woobiSilkEdge" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0" />
+          <stop offset="22%" stop-color="#FFFFFF" stop-opacity="0.9" />
+          <stop offset="58%" stop-color="#FFFFFF" stop-opacity="0.72" />
+          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+        </linearGradient>
+        <filter id="woobiSilkShadowSoft" x="-18%" y="-24%" width="136%" height="152%" color-interpolation-filters="sRGB">
+          <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#A58B70" flood-opacity="0.16" />
+        </filter>
+        <filter id="woobiSilkShadowDeep" x="-18%" y="-28%" width="136%" height="158%" color-interpolation-filters="sRGB">
+          <feDropShadow dx="0" dy="26" stdDeviation="28" flood-color="#8E765C" flood-opacity="0.13" />
+        </filter>
+      </defs>
+
+      <rect width="1600" height="1000" fill="#FAF9F6" />
+      <rect width="1600" height="1000" fill="url(#woobiSilkBaseGlow)" />
+      <ellipse cx="800" cy="-46" rx="780" ry="440" fill="url(#woobiSilkTopLight)" />
+
+      <g class="silk-wave-layer silk-wave-layer--diag">
+        <g class="silk-wave-motion silk-wave-motion--diag">
+          <path
+            d="M -160 102 C -126.7 98.7 -30.0 77.7 40 82 C 110.0 86.3 183.3 108.7 260 128 C 336.7 147.3 416.7 173.0 500 198 C 583.3 223.0 673.3 256.7 760 278 C 846.7 299.3 933.3 323.7 1020 326 C 1106.7 328.3 1196.7 305.3 1280 292 C 1363.3 278.7 1440.0 246.0 1520 246 C 1600.0 246.0 1720.0 284.3 1760 292 L 1760 1080 L -160 1080 Z"
+            fill="url(#woobiSilkDiag)" opacity="0.96" filter="url(#woobiSilkShadowSoft)" />
+          <path
+            d="M -160 116 C -126.7 112.7 -30.0 91.7 40 96 C 110.0 100.3 183.3 122.7 260 142 C 336.7 161.3 416.7 187.0 500 212 C 583.3 237.0 673.3 270.7 760 292 C 846.7 313.3 933.3 337.7 1020 340 C 1106.7 342.3 1196.7 319.3 1280 306 C 1363.3 292.7 1440.0 260.0 1520 260 C 1600.0 260.0 1720.0 298.3 1760 306"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="10" stroke-linecap="round" opacity="0.18" />
+        </g>
+      </g>
+
+      <g class="silk-wave-layer silk-wave-layer--mid">
+        <g class="silk-wave-motion silk-wave-motion--mid">
+          <path
+            d="M -160 310 C -126.7 304.7 -30.0 279.7 40 278 C 110.0 276.3 183.3 283.7 260 300 C 336.7 316.3 416.7 348.0 500 376 C 583.3 404.0 673.3 454.0 760 468 C 846.7 482.0 933.3 468.0 1020 460 C 1106.7 452.0 1196.7 433.3 1280 420 C 1363.3 406.7 1440.0 379.0 1520 380 C 1600.0 381.0 1720.0 418.3 1760 426 L 1760 1080 L -160 1080 Z"
+            fill="url(#woobiSilkOffWhite)" opacity="0.98" filter="url(#woobiSilkShadowSoft)" />
+          <path
+            d="M -160 324 C -126.7 318.7 -30.0 293.7 40 292 C 110.0 290.3 183.3 297.7 260 314 C 336.7 330.3 416.7 362.0 500 390 C 583.3 418.0 673.3 468.0 760 482 C 846.7 496.0 933.3 482.0 1020 474 C 1106.7 466.0 1196.7 447.3 1280 434 C 1363.3 420.7 1440.0 393.0 1520 394 C 1600.0 395.0 1720.0 432.3 1760 440"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="11" stroke-linecap="round" opacity="0.2" />
+          <path
+            d="M -160 310 C -126.7 304.7 -30.0 279.7 40 278 C 110.0 276.3 183.3 283.7 260 300 C 336.7 316.3 416.7 348.0 500 376 C 583.3 404.0 673.3 454.0 760 468 C 846.7 482.0 933.3 468.0 1020 460 C 1106.7 452.0 1196.7 433.3 1280 420 C 1363.3 406.7 1440.0 379.0 1520 380 C 1600.0 381.0 1720.0 418.3 1760 426"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="1.6" stroke-linecap="round" opacity="0.86" />
+        </g>
+      </g>
+
+      <g class="silk-wave-layer silk-wave-layer--champagne">
+        <g class="silk-wave-motion silk-wave-motion--champagne">
+          <path
+            d="M -160 500 C -126.7 495.0 -30.0 466.7 40 470 C 110.0 473.3 183.3 500.0 260 520 C 336.7 540.0 416.7 576.0 500 590 C 583.3 604.0 673.3 599.0 760 604 C 846.7 609.0 933.3 624.0 1020 620 C 1106.7 616.0 1196.7 595.0 1280 580 C 1363.3 565.0 1440.0 528.3 1520 530 C 1600.0 531.7 1720.0 580.0 1760 590 L 1760 1080 L -160 1080 Z"
+            fill="url(#woobiSilkChampagne)" opacity="0.92" filter="url(#woobiSilkShadowDeep)" />
+          <path
+            d="M -160 514 C -126.7 509.0 -30.0 480.7 40 484 C 110.0 487.3 183.3 514.0 260 534 C 336.7 554.0 416.7 590.0 500 604 C 583.3 618.0 673.3 613.0 760 618 C 846.7 623.0 933.3 638.0 1020 634 C 1106.7 630.0 1196.7 609.0 1280 594 C 1363.3 579.0 1440.0 542.3 1520 544 C 1600.0 545.7 1720.0 594.0 1760 604"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="12" stroke-linecap="round" opacity="0.18" />
+          <path
+            d="M -160 500 C -126.7 495.0 -30.0 466.7 40 470 C 110.0 473.3 183.3 500.0 260 520 C 336.7 540.0 416.7 576.0 500 590 C 583.3 604.0 673.3 599.0 760 604 C 846.7 609.0 933.3 624.0 1020 620 C 1106.7 616.0 1196.7 595.0 1280 580 C 1363.3 565.0 1440.0 528.3 1520 530 C 1600.0 531.7 1720.0 580.0 1760 590"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="1.5" stroke-linecap="round" opacity="0.78" />
+        </g>
+      </g>
+
+      <g class="silk-wave-layer silk-wave-layer--beige">
+        <g class="silk-wave-motion silk-wave-motion--beige">
+          <path
+            d="M -160 676 C -126.7 671.7 -30.0 646.0 40 650 C 110.0 654.0 183.3 680.7 260 700 C 336.7 719.3 416.7 758.7 500 766 C 583.3 773.3 673.3 755.0 760 744 C 846.7 733.0 933.3 712.0 1020 700 C 1106.7 688.0 1196.7 670.0 1280 672 C 1363.3 674.0 1440.0 697.3 1520 712 C 1600.0 726.7 1720.0 752.0 1760 760 L 1760 1080 L -160 1080 Z"
+            fill="url(#woobiSilkBeige)" opacity="0.82" filter="url(#woobiSilkShadowDeep)" />
+          <path
+            d="M -160 690 C -126.7 685.7 -30.0 660.0 40 664 C 110.0 668.0 183.3 694.7 260 714 C 336.7 733.3 416.7 772.7 500 780 C 583.3 787.3 673.3 769.0 760 758 C 846.7 747.0 933.3 726.0 1020 714 C 1106.7 702.0 1196.7 684.0 1280 686 C 1363.3 688.0 1440.0 711.3 1520 726 C 1600.0 740.7 1720.0 766.0 1760 774"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="11" stroke-linecap="round" opacity="0.2" />
+          <path
+            d="M -160 676 C -126.7 671.7 -30.0 646.0 40 650 C 110.0 654.0 183.3 680.7 260 700 C 336.7 719.3 416.7 758.7 500 766 C 583.3 773.3 673.3 755.0 760 744 C 846.7 733.0 933.3 712.0 1020 700 C 1106.7 688.0 1196.7 670.0 1280 672 C 1363.3 674.0 1440.0 697.3 1520 712 C 1600.0 726.7 1720.0 752.0 1760 760"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="1.4" stroke-linecap="round" opacity="0.7" />
+        </g>
+      </g>
+
+      <g class="silk-wave-layer silk-wave-layer--sand">
+        <g class="silk-wave-motion silk-wave-motion--sand">
+          <path
+            d="M -160 820 C -126.7 814.3 -30.0 781.0 40 786 C 110.0 791.0 183.3 830.7 260 850 C 336.7 869.3 416.7 891.7 500 902 C 583.3 912.3 673.3 917.0 760 912 C 846.7 907.0 933.3 887.0 1020 872 C 1106.7 857.0 1196.7 833.0 1280 822 C 1363.3 811.0 1440.0 800.0 1520 806 C 1600.0 812.0 1720.0 849.3 1760 858 L 1760 1080 L -160 1080 Z"
+            fill="url(#woobiSilkSand)" opacity="0.96" filter="url(#woobiSilkShadowSoft)" />
+          <path
+            d="M -160 834 C -126.7 828.3 -30.0 795.0 40 800 C 110.0 805.0 183.3 844.7 260 864 C 336.7 883.3 416.7 905.7 500 916 C 583.3 926.3 673.3 931.0 760 926 C 846.7 921.0 933.3 901.0 1020 886 C 1106.7 871.0 1196.7 847.0 1280 836 C 1363.3 825.0 1440.0 814.0 1520 820 C 1600.0 826.0 1720.0 863.3 1760 872"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="10" stroke-linecap="round" opacity="0.18" />
+          <path
+            d="M -160 820 C -126.7 814.3 -30.0 781.0 40 786 C 110.0 791.0 183.3 830.7 260 850 C 336.7 869.3 416.7 891.7 500 902 C 583.3 912.3 673.3 917.0 760 912 C 846.7 907.0 933.3 887.0 1020 872 C 1106.7 857.0 1196.7 833.0 1280 822 C 1363.3 811.0 1440.0 800.0 1520 806 C 1600.0 812.0 1720.0 849.3 1760 858"
+            fill="none" stroke="url(#woobiSilkEdge)" stroke-width="1.7" stroke-linecap="round" opacity="0.9" />
+        </g>
+      </g>
+
+      <g class="silk-wave-layer silk-wave-layer--front">
+        <g class="silk-wave-motion silk-wave-motion--front">
+          <path
+            d="M -160 934 C -126.7 929.3 -30.0 905.0 40 906 C 110.0 907.0 183.3 929.0 260 940 C 336.7 951.0 416.7 965.0 500 972 C 583.3 979.0 673.3 979.7 760 982 C 846.7 984.3 933.3 990.0 1020 986 C 1106.7 982.0 1196.7 967.0 1280 958 C 1363.3 949.0 1440.0 930.7 1520 932 C 1600.0 933.3 1720.0 960.3 1760 966 L 1760 1080 L -160 1080 Z"
+            fill="url(#woobiSilkFront)" opacity="0.98" />
+        </g>
+      </g>
+    </svg>
+  </div>
 
   <!-- =========================================================================
        MAIN APPLICATION VIEWPORT

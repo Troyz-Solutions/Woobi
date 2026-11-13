@@ -1951,12 +1951,26 @@
     if (sm && sm.appearance) {
       sm.appearance.setAppTheme(theme);
     }
+    let effectiveTheme = theme;
+    if (theme === 'system') {
+      effectiveTheme = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    if (typeof document !== 'undefined') {
+      document.body.classList.remove('theme-light', 'theme-dark');
+      document.body.classList.add(`theme-${effectiveTheme}`);
+      document.body.dataset.theme = effectiveTheme;
+    }
     ['btnThemeLight', 'btnThemeDark', 'btnThemeSystem'].forEach(id => {
       const btn = document.getElementById(id);
       if (btn) btn.classList.remove('active');
     });
     const activeBtn = document.getElementById(theme === 'light' ? 'btnThemeLight' : theme === 'dark' ? 'btnThemeDark' : 'btnThemeSystem');
     if (activeBtn) activeBtn.classList.add('active');
+
+    // Bridge with native Android WebView if registered
+    if (typeof window !== 'undefined' && window.AndroidBridge && typeof window.AndroidBridge.onThemeChanged === 'function') {
+      try { window.AndroidBridge.onThemeChanged(effectiveTheme); } catch (e) {}
+    }
     showToast(`Theme switched to ${theme}`);
   }
 
@@ -1966,14 +1980,116 @@
     if (sm && sm.appearance) {
       sm.appearance.setStudioTheme(theme, studio);
     }
-    ['theme-check-luxury', 'theme-check-nordic', 'theme-check-terracotta'].forEach(id => {
+
+    // 1. Update Appearance Settings Screen Checkmarks
+    const checkmarkIds = [
+      'checkThemeLuxury', 'checkThemeMediterranean', 'checkThemeNordic', 'checkThemeTerracotta',
+      'theme-check-luxury', 'theme-check-nordic', 'theme-check-terracotta'
+    ];
+    checkmarkIds.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.textContent = '';
+      if (el) {
+        el.textContent = '';
+        el.style.display = 'none';
+      }
     });
-    const checkId = theme === 'luxury-cream' ? 'theme-check-luxury' : theme === 'nordic-minimal' ? 'theme-check-nordic' : 'theme-check-terracotta';
-    const target = document.getElementById(checkId);
-    if (target) target.textContent = '✓';
+
+    const activeSettingsCheck = theme === 'luxury-cream' ? 'checkThemeLuxury'
+      : theme === 'mediterranean-luxury' ? 'checkThemeMediterranean'
+      : theme === 'nordic-minimal' ? 'checkThemeNordic'
+      : 'checkThemeTerracotta';
+    const targetEl = document.getElementById(activeSettingsCheck);
+    if (targetEl) {
+      targetEl.textContent = '✓';
+      targetEl.style.display = 'inline-block';
+    }
+
+    // Legacy fallback checkmark IDs
+    const legacyTarget = document.getElementById(theme === 'luxury-cream' ? 'theme-check-luxury' : theme === 'nordic-minimal' ? 'theme-check-nordic' : 'theme-check-terracotta');
+    if (legacyTarget) legacyTarget.textContent = '✓';
+
+    // 2. Update 3D Studio In-HUD Dropdown Controls
+    const hudItems = [
+      { id: 'atmOptLuxury', check: 'checkAtmLuxury', key: 'luxury-cream', name: 'Luxury Cream' },
+      { id: 'atmOptMediterranean', check: 'checkAtmMediterranean', key: 'mediterranean-luxury', name: 'Mediterranean' },
+      { id: 'atmOptNordic', check: 'checkAtmNordic', key: 'nordic-minimal', name: 'Nordic Minimal' },
+      { id: 'atmOptTerracotta', check: 'checkAtmTerracotta', key: 'warm-terracotta', name: 'Warm Terracotta' }
+    ];
+
+    let currentDisplayName = 'Luxury Cream';
+    hudItems.forEach(item => {
+      const optBtn = document.getElementById(item.id);
+      const chk = document.getElementById(item.check);
+      const isMatch = item.key === theme;
+      if (optBtn) {
+        if (isMatch) optBtn.classList.add('active');
+        else optBtn.classList.remove('active');
+      }
+      if (chk) {
+        chk.style.display = isMatch ? 'inline-flex' : 'none';
+      }
+      if (isMatch) currentDisplayName = item.name;
+    });
+
+    const activeAtmText = document.getElementById('activeAtmosphereText');
+    if (activeAtmText) activeAtmText.textContent = currentDisplayName;
+
+    // 3. Update Desktop Right Aside Theme Buttons
+    const desktopThemeButtons = [
+      { id: 'dtThemeLuxury', key: 'luxury-cream' },
+      { id: 'dtThemeMediterranean', key: 'mediterranean-luxury' },
+      { id: 'dtThemeNordic', key: 'nordic-minimal' },
+      { id: 'dtThemeTerracotta', key: 'warm-terracotta' }
+    ];
+    desktopThemeButtons.forEach(dt => {
+      const b = document.getElementById(dt.id);
+      if (b) {
+        if (dt.key === theme) b.classList.add('active');
+        else b.classList.remove('active');
+      }
+    });
+
     showToast(`3D Studio atmosphere set to ${theme}`);
+  }
+
+  function toggleAtmosphereDropdown(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const menu = document.getElementById('atmosphereDropdownMenu');
+    const btn = document.getElementById('selectAtmosphereBtn');
+    if (!menu) return;
+    const isShowing = menu.classList.contains('show') || menu.classList.contains('open');
+    if (isShowing) {
+      menu.classList.remove('show', 'open');
+      if (btn) {
+        btn.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    } else {
+      menu.classList.add('show', 'open');
+      if (btn) {
+        btn.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+      // Close mannequin dropdown if open
+      const manMenu = document.getElementById('mannequinDropdownMenu');
+      const manBtn = document.getElementById('selectMannequinBtn');
+      if (manMenu) manMenu.classList.remove('show', 'open');
+      if (manBtn) {
+        manBtn.classList.remove('open');
+        manBtn.setAttribute('aria-expanded', 'false');
+      }
+    }
+  }
+
+  function selectStudioAtmosphere(theme) {
+    setStudioTheme(theme);
+    const menu = document.getElementById('atmosphereDropdownMenu');
+    const btn = document.getElementById('selectAtmosphereBtn');
+    if (menu) menu.classList.remove('show', 'open');
+    if (btn) {
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
   }
 
   function setStudioLighting(preset) {
@@ -5893,6 +6009,23 @@
     renderWardrobeGrid();
     updateWardrobeCounts();
 
+    // Hydrate saved appearance and studio theme preferences
+    try {
+      const sm = getSettingsManager();
+      if (sm && sm.appearance) {
+        const cur = sm.appearance.getAppearance();
+        if (cur) {
+          if (cur.appTheme) setAppTheme(cur.appTheme);
+          if (cur.studioTheme) setStudioTheme(cur.studioTheme);
+          if (cur.highContrast && typeof toggleHighContrast === 'function') {
+            toggleHighContrast(cur.highContrast);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not hydrate appearance settings:', e);
+    }
+
     // Initialize 3D Mannequin Testing Dock with current avatar preferences
     setTimeout(() => {
       const g = (window.Studio3D && window.Studio3D.avatarConfig && window.Studio3D.avatarConfig.gender) || 'female';
@@ -6023,6 +6156,8 @@
     serenSetModelType,
     toggleMannequinDropdown,
     selectMannequin,
+    toggleAtmosphereDropdown,
+    selectStudioAtmosphere,
     setMannequinGender,
     serenSetGender,
     serenQuickSwitchGender,

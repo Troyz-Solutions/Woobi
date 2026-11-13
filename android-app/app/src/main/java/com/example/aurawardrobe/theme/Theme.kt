@@ -8,26 +8,45 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(primary = Purple80, secondary = PurpleGrey80, tertiary = Pink80)
+private val DarkColorScheme =
+    darkColorScheme(
+        primary = WoobiDarkOlive,
+        onPrimary = WoobiDarkOnOlive,
+        primaryContainer = WoobiOliveDark,
+        onPrimaryContainer = WoobiOliveSoft,
+        secondary = WoobiDarkSageMuted,
+        tertiary = WoobiOliveLight,
+        background = WoobiDarkBackground,
+        surface = WoobiDarkSurface,
+        surfaceVariant = WoobiDarkSurfaceVariant,
+        onBackground = WoobiWarmLinen,
+        onSurface = WoobiWarmLinen,
+        onSurfaceVariant = WoobiDarkSageMuted,
+        outline = WoobiDarkOutline,
+    )
 
 private val LightColorScheme =
-  lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-  )
+    lightColorScheme(
+        primary = WoobiOlivePrimary,
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = WoobiOliveSoft,
+        onPrimaryContainer = WoobiCharcoalInk,
+        secondary = WoobiOliveDark,
+        onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = WoobiSandstoneTint,
+        onSecondaryContainer = WoobiSubtleInk,
+        tertiary = WoobiOliveLight,
+        background = WoobiWarmLinen,
+        surface = WoobiWarmLinen,
+        surfaceVariant = WoobiSandstoneTint,
+        onBackground = WoobiCharcoalInk,
+        onSurface = WoobiCharcoalInk,
+        onSurfaceVariant = WoobiSubtleInk,
+        outline = WoobiStoneHairline,
+    )
 
 @Composable
 fun AuraWardrobeTheme(

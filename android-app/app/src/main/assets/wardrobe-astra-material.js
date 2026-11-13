@@ -29,13 +29,13 @@
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
 
-    // Base European natural oak gradient (Warm Mediterranean Luxury Honey Oak: #A87B4C)
+    // Base European natural oak gradient (Warm Scandinavian Luxury White Oak: #CCA67D)
     const grad = ctx.createLinearGradient(0, 0, 0, 1024);
-    grad.addColorStop(0.00, '#A87B4C');
-    grad.addColorStop(0.25, '#9A6D3E');
-    grad.addColorStop(0.50, '#B68854');
-    grad.addColorStop(0.75, '#8C6033');
-    grad.addColorStop(1.00, '#A87B4C');
+    grad.addColorStop(0.00, '#CCA67D');
+    grad.addColorStop(0.25, '#BA946A');
+    grad.addColorStop(0.50, '#D6B48D');
+    grad.addColorStop(0.75, '#AF8960');
+    grad.addColorStop(1.00, '#CCA67D');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 1024);
 
@@ -132,35 +132,35 @@
       oakFrame: new THREE.MeshStandardMaterial({
         map: woodTex,
         bumpMap: woodBumpTex,
-        bumpScale: 0.006,
-        color: 0xA27443, // Natural European honey oak with rich organic grain (#A27443)
-        roughness: 0.46,
+        bumpScale: 0.005,
+        color: 0xCCA67D, // Modern Scandinavian Cashmere Natural Oak (#CCA67D)
+        roughness: 0.40,
         metalness: 0.02
       }),
       oakBackboard: new THREE.MeshStandardMaterial({
         map: woodTex,
         bumpMap: woodBumpTex,
-        bumpScale: 0.005,
-        color: 0x946536, // Deeper honey oak backboard
-        roughness: 0.52,
+        bumpScale: 0.004,
+        color: 0xBA946A, // Refined Cashmere oak backboard
+        roughness: 0.48,
         metalness: 0.02
       }),
       oakDrawers: new THREE.MeshStandardMaterial({
         map: woodTex,
         bumpMap: woodBumpTex,
-        bumpScale: 0.006,
-        color: 0xA27443, // European oak drawer faces
-        roughness: 0.44,
+        bumpScale: 0.005,
+        color: 0xCCA67D, // Cashmere oak drawer faces
+        roughness: 0.38,
         metalness: 0.02
       }),
       brass: new THREE.MeshStandardMaterial({
-        color: 0x74583D, // Antique bronze (#74583D)
-        roughness: 0.35,
-        metalness: 0.75
+        color: 0xC5A059, // Brushed champagne brass (#C5A059)
+        roughness: 0.28,
+        metalness: 0.82
       }),
       hangerWood: new THREE.MeshStandardMaterial({
-        color: 0xA87B4C, // European honey oak hanger wood
-        roughness: 0.48,
+        color: 0xCCA67D, // Cashmere natural oak hanger wood
+        roughness: 0.42,
         metalness: 0.02
       }),
       boxLinen: new THREE.MeshStandardMaterial({

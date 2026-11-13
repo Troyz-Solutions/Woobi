@@ -38,9 +38,10 @@ export const THEME_PRESETS = {
       far: 24.0
     },
     wall: {
-      color: 0xFFFFFF, // Full texture fidelity for custom wall map (authentic red-brown brick wall)
-      roughness: 0.85,
-      metalness: 0.01
+      color: 0xE6D8C3, // Warm Venetian desert sand plaster
+      roughness: 0.88,
+      metalness: 0.01,
+      useBrick: false
     },
     architectural: {
       color: 0xCBB18D, // Warm beige

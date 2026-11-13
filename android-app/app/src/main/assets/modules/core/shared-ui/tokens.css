@@ -5,11 +5,11 @@
    ========================================================================== */
 
 :root {
-  color-scheme: only light !important;
+  color-scheme: light dark;
   --font-serif: 'DM Serif Display', 'Playfair Display', Georgia, serif;
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Exact warm white-cream palette matching reference mockups */
+  /* Warm White Cream Alabaster Studio Palette (Default Light) */
   --bg-board: #F8F7F4;
   --bg-phone: #FAF9F6;
   --bg-card: #FFFFFF;
@@ -39,10 +39,57 @@
   --radius-xl: 30px;
   --radius-phone: 48px;
 
-  --shadow-phone: 0 30px 80px -15px rgba(26, 31, 25, 0.22), 0 0 0 1px #D6D0C5;
+  --shadow-phone: 0 35px 90px -15px rgba(26, 31, 25, 0.24), 0 0 0 1px rgba(214, 208, 197, 0.8);
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.04);
   --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
 
   --transition-fast: 0.15s ease;
   --transition-smooth: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark Theme Tokens matching Android Jetpack Compose Material 3 Scheme */
+body.theme-dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-board: #121411;
+  --bg-phone: #161815;
+  --bg-card: #1D201C;
+  --bg-subtle: #252923;
+  --bg-border: #3A4036;
+  --bg-border-light: #2A3026;
+
+  --text-main: #FAF9F6;
+  --text-sub: #D5DACF;
+  --text-muted: #9DA396;
+  --text-dim: #72786B;
+
+  --olive-primary: #8FA785;
+  --olive-dark: #A6BE9C;
+  --olive-light: #B8C9B0;
+  --olive-soft: rgba(143, 167, 133, 0.18);
+  --olive-border: rgba(143, 167, 133, 0.36);
+
+  --shadow-phone: 0 35px 90px -15px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(68, 72, 65, 0.8);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* High Contrast Mode Tokens */
+body.high-contrast {
+  --text-main: #000000;
+  --text-sub: #1A1A1A;
+  --text-muted: #333333;
+  --bg-border: #000000;
+  --bg-border-light: #333333;
+  --olive-primary: #253322;
+}
+
+body.theme-dark.high-contrast,
+[data-theme="dark"].high-contrast {
+  --text-main: #FFFFFF;
+  --text-sub: #F0F0F0;
+  --text-muted: #DCDCDC;
+  --bg-border: #FFFFFF;
+  --bg-border-light: #CCCCCC;
+  --olive-primary: #B5D2A9;
 }

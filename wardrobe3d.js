@@ -67,7 +67,7 @@
       oakCanvas.width = 512;
       oakCanvas.height = 1024;
       const oCtx = oakCanvas.getContext('2d');
-      oCtx.fillStyle = '#C89D6C'; // Warm natural oak base
+      oCtx.fillStyle = '#CCA67D'; // Modern Cashmere Scandinavian Oak Base
       oCtx.fillRect(0, 0, 512, 1024);
 
       // Fine grain pores and organic growth lines

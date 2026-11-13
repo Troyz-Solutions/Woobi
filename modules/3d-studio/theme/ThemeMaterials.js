@@ -34,13 +34,14 @@ export class ThemeMaterials {
     });
     this.disposables.push(this.floorMat);
 
-    // 2. Smooth Architectural Wall Material (Authentic Red-Brown Brick Wall with Plaster Fallback)
-    const wallTexture = this.textures.brickWall || this.textures.sandPlaster || null;
+    // 2. Smooth Architectural Wall Material (Refined Atelier Stucco Plaster)
+    const useBrick = Boolean(preset && preset.wall && preset.wall.useBrick && this.textures.brickWall);
+    const wallTexture = useBrick ? this.textures.brickWall : (this.textures.sandPlaster || null);
     this.wallMat = new THREE.MeshStandardMaterial({
       map: wallTexture,
       bumpMap: this.textures.wallBump || this.textures.stoneBump || null,
       bumpScale: 0.0020,
-      color: this.textures.brickWall ? 0xFFFFFF : preset.wall.color,
+      color: useBrick ? 0xFFFFFF : preset.wall.color,
       roughness: preset.wall.roughness,
       metalness: preset.wall.metalness,
       side: THREE.BackSide
@@ -52,7 +53,7 @@ export class ThemeMaterials {
       map: wallTexture,
       bumpMap: this.textures.wallBump || this.textures.stoneBump || null,
       bumpScale: 0.0020,
-      color: this.textures.brickWall ? 0xFFFFFF : preset.wall.color,
+      color: useBrick ? 0xFFFFFF : preset.wall.color,
       roughness: preset.wall.roughness,
       metalness: preset.wall.metalness,
       side: THREE.BackSide
@@ -119,11 +120,13 @@ export class ThemeMaterials {
     }
 
     if (this.wallMat) {
-      if (!this.textures.brickWall) {
-        this.wallMat.color.set(preset.wall.color);
-      } else {
+      const useBrick = Boolean(preset.wall && preset.wall.useBrick && this.textures.brickWall);
+      if (useBrick) {
         this.wallMat.color.setHex(0xFFFFFF);
         this.wallMat.map = this.textures.brickWall;
+      } else {
+        this.wallMat.color.set(preset.wall.color);
+        this.wallMat.map = this.textures.sandPlaster || null;
       }
       this.wallMat.roughness = preset.wall.roughness;
       this.wallMat.metalness = preset.wall.metalness;
@@ -131,10 +134,13 @@ export class ThemeMaterials {
     }
 
     if (this.frontWallMat) {
-      if (!this.textures.brickWall) {
-        this.frontWallMat.color.set(preset.wall.color);
-      } else {
+      const useBrick = Boolean(preset.wall && preset.wall.useBrick && this.textures.brickWall);
+      if (useBrick) {
         this.frontWallMat.color.setHex(0xFFFFFF);
+        this.frontWallMat.map = this.textures.brickWall;
+      } else {
+        this.frontWallMat.color.set(preset.wall.color);
+        this.frontWallMat.map = this.textures.sandPlaster || null;
       }
       this.frontWallMat.roughness = preset.wall.roughness;
       this.frontWallMat.metalness = preset.wall.metalness;

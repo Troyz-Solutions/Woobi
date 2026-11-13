@@ -9,24 +9,24 @@ export class WardrobeMaterials {
     return new THREE.MeshStandardMaterial({
       map: woodTexture || null,
       bumpMap: bumpTexture || null,
-      bumpScale: 0.006,
-      color: 0xA27443, // Natural European honey oak with rich grain depth (#A27443)
-      roughness: 0.48,
+      bumpScale: 0.005,
+      color: 0xCCA67D, // Modern Scandinavian Cashmere Natural Oak (#CCA67D) - silky satin finish
+      roughness: 0.40,
       metalness: 0.02
     });
   }
 
   static createBrassMaterial(THREE) {
     return new THREE.MeshStandardMaterial({
-      color: 0x74583D, // Antique bronze (#74583D)
-      metalness: 0.75,
-      roughness: 0.35
+      color: 0xC5A059, // Brushed Champagne Brass (#C5A059)
+      metalness: 0.82,
+      roughness: 0.28
     });
   }
 
   static createLedMaterial(THREE) {
     return new THREE.MeshBasicMaterial({
-      color: 0xFFF2D0 // Warm 3000K recessed glow
+      color: 0xFFF5DD // Warm 3000K diffused LED glow
     });
   }
 

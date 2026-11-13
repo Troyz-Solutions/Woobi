@@ -11,6 +11,7 @@ export const APP_THEMES = {
 
 export const STUDIO_THEMES = {
   LUXURY_CREAM: 'luxury-cream',
+  MEDITERRANEAN_LUXURY: 'mediterranean-luxury',
   NORDIC_MINIMAL: 'nordic-minimal',
   WARM_TERRACOTTA: 'warm-terracotta'
 };

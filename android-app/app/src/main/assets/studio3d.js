@@ -731,20 +731,23 @@
             if (THREE.sRGBEncoding) {
               loadedTex.encoding = THREE.sRGBEncoding;
             }
-            if (this.themeModel && this.themeModel.materials && this.themeModel.materials.wallMat) {
-              this.themeModel.materials.wallMat.map = loadedTex;
-              this.themeModel.materials.wallMat.color.setHex(0xFFFFFF);
-              this.themeModel.materials.wallMat.needsUpdate = true;
-            }
-            if (this.themeModel && this.themeModel.backWall && this.themeModel.backWall.material) {
-              this.themeModel.backWall.material.map = loadedTex;
-              this.themeModel.backWall.material.color.setHex(0xFFFFFF);
-              this.themeModel.backWall.material.needsUpdate = true;
-            }
-            if (this.fallbackWallMat) {
-              this.fallbackWallMat.map = loadedTex;
-              this.fallbackWallMat.color.setHex(0xFFFFFF);
-              this.fallbackWallMat.needsUpdate = true;
+            const isBrickTheme = (this.currentThemePreset === 'industrial-brick' || (this.themeModel && this.themeModel.currentPreset === 'industrial-brick'));
+            if (isBrickTheme) {
+              if (this.themeModel && this.themeModel.materials && this.themeModel.materials.wallMat) {
+                this.themeModel.materials.wallMat.map = loadedTex;
+                this.themeModel.materials.wallMat.color.setHex(0xFFFFFF);
+                this.themeModel.materials.wallMat.needsUpdate = true;
+              }
+              if (this.themeModel && this.themeModel.backWall && this.themeModel.backWall.material) {
+                this.themeModel.backWall.material.map = loadedTex;
+                this.themeModel.backWall.material.color.setHex(0xFFFFFF);
+                this.themeModel.backWall.material.needsUpdate = true;
+              }
+              if (this.fallbackWallMat) {
+                this.fallbackWallMat.map = loadedTex;
+                this.fallbackWallMat.color.setHex(0xFFFFFF);
+                this.fallbackWallMat.needsUpdate = true;
+              }
             }
           },
           undefined,
@@ -956,13 +959,13 @@
       floor.receiveShadow = true;
       this.scene.add(floor);
 
-      // 2. Architectural Wall Material (Authentic Brick Wall with Plaster Fallback)
+      // 2. Architectural Wall Material (Smooth Parisian Atelier Plaster)
       this.fallbackWallMat = new THREE.MeshStandardMaterial({
-        map: this.textures.brickWall || this.textures.sandPlaster || null,
+        map: this.textures.sandPlaster || null,
         bumpMap: this.textures.wallBump || this.textures.stoneBump || null,
         bumpScale: 0.0020,
-        color: this.textures.brickWall ? 0xFFFFFF : 0xDCC5A3,
-        roughness: 0.85,
+        color: 0xF7F2EA, // Smooth warm cream plaster
+        roughness: 0.88,
         metalness: 0.01,
         side: THREE.BackSide
       });

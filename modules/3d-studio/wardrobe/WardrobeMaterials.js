@@ -65,6 +65,53 @@ export class WardrobeMaterials {
       roughness: 0.85
     });
   }
+
+  /**
+   * Applies the elegant Beige Aesthetic to the 3D wardrobe model:
+   * Warm champagne beige tones, natural matte finishes, enhanced normal depth,
+   * and soft internal shelf illumination.
+   */
+  static applyBeigeAesthetic(model, THREE) {
+    if (!model) return;
+
+    model.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+
+        const mat = child.material;
+        if (mat.color && typeof mat.color.setHex === 'function') {
+          mat.color.setHex(0xF5EAE0); // Warm champagne beige
+        }
+        mat.roughness = 0.80; // Natural matte finish
+        mat.metalness = 0.04; // Gentle sheen without excessive glossiness
+
+        if (mat.normalMap && mat.normalScale && typeof mat.normalScale.set === 'function') {
+          mat.normalScale.set(1.25, 1.25);
+        }
+        mat.needsUpdate = true;
+      }
+    });
+
+    // Add calibrated warm internal illumination
+    if (typeof THREE !== 'undefined' && typeof THREE.PointLight !== 'undefined') {
+      if (!model.userData.hasShelfLights) {
+        model.userData.hasShelfLights = true;
+
+        const topLight = new THREE.PointLight(0xFFE8D0, 0.45, 1.2);
+        topLight.position.set(0.04, 0.35, 0);
+        model.add(topLight);
+
+        const midLight = new THREE.PointLight(0xFFE2C4, 0.40, 1.2);
+        midLight.position.set(0.04, 0.02, 0);
+        model.add(midLight);
+
+        const botLight = new THREE.PointLight(0xFFDFBD, 0.35, 1.0);
+        botLight.position.set(0.04, -0.34, 0);
+        model.add(botLight);
+      }
+    }
+  }
 }
 
 export default WardrobeMaterials;

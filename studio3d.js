@@ -1171,17 +1171,61 @@
 
       if (typeof THREE.GLTFLoader !== 'undefined') {
         const gltfLoader = new THREE.GLTFLoader();
-        const astraPath = '3D- Wardrobe by Astra/wardrobe.glb';
-        const fallbackPath = 'wardrobe.glb';
+
+        // Configure DRACOLoader for compressed GLB geometry
+        const DracoClass = THREE.DRACOLoader || (typeof window !== 'undefined' ? (window.THREE?.DRACOLoader || window.DRACOLoader) : null);
+        if (DracoClass) {
+          try {
+            const draco = new DracoClass();
+            draco.setDecoderPath('libs/draco/gltf/');
+            if (typeof draco.preload === 'function') draco.preload();
+            gltfLoader.setDRACOLoader(draco);
+          } catch (e) {}
+        }
+        const Meshopt = (typeof MeshoptDecoder !== 'undefined') ? MeshoptDecoder : (typeof window !== 'undefined' ? window.MeshoptDecoder : null);
+        if (Meshopt && typeof gltfLoader.setMeshoptDecoder === 'function') {
+          gltfLoader.setMeshoptDecoder(Meshopt);
+        }
+
+        const wardrobePaths = [
+          '3D- Wardrobe by Astra/wardrobe.glb',
+          'wardrobe.glb',
+          'wardrobe-revised-compressed.glb'
+        ];
 
         const onWardrobeLoad = (gltf) => {
           const model = gltf.scene;
-          // Widen the wardrobe horizontally (1.38x) for a spacious, modern open closet layout
-          model.scale.set(scale * 1.38, scale, scale);
-          model.position.set(0, 0, 0);
-          model.rotation.y = Math.PI;
 
-          // Apply authentic 100% matched Astra materials & internal shelf lights pipeline
+          // Orient front opening towards room interior (+Z in Three.js coordinates)
+          model.rotation.y = -Math.PI / 2;
+
+          // Scale uniformly preserving original proportions to 2.40m height
+          const targetHeight = 2.40;
+          let scaleFactor = 2.44;
+          try {
+            if (THREE.Box3) {
+              const bbox = new THREE.Box3().setFromObject(model);
+              const rawHeight = bbox.max.y - bbox.min.y;
+              if (rawHeight > 0.05) {
+                scaleFactor = targetHeight / rawHeight;
+              }
+            }
+          } catch (e) {}
+          model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+          // Align base flush on floor
+          try {
+            if (THREE.Box3) {
+              const scaledBbox = new THREE.Box3().setFromObject(model);
+              model.position.set(0, -scaledBbox.min.y, 0);
+            } else {
+              model.position.set(0, 1.195, 0);
+            }
+          } catch (e) {
+            model.position.set(0, 1.195, 0);
+          }
+
+          // Apply authentic Beige aesthetic styling & internal shelf lights
           if (typeof AstraWardrobeStyling !== 'undefined') {
             AstraWardrobeStyling.applyMaterials(model);
           } else if (typeof window !== 'undefined' && window.AstraWardrobeStyling) {
@@ -1191,20 +1235,19 @@
           wardrobeGroup.add(model);
         };
 
-        gltfLoader.load(
-          astraPath,
-          onWardrobeLoad,
-          undefined,
-          () => gltfLoader.load(fallbackPath, onWardrobeLoad)
-        );
+        const tryLoadNext = (idx) => {
+          if (idx >= wardrobePaths.length) return;
+          gltfLoader.load(wardrobePaths[idx], onWardrobeLoad, undefined, () => tryLoadNext(idx + 1));
+        };
+        tryLoadNext(0);
 
         // Raycastable Bounding Box for Touch / Click
         const hitBox = new THREE.Mesh(
-          new THREE.BoxGeometry(width + 0.2, height, depth + 0.3),
+          new THREE.BoxGeometry(1.40, height, 0.70),
           new THREE.MeshBasicMaterial({ visible: false })
         );
         hitBox.position.set(0, height / 2, 0);
-        hitBox.userData = { interactiveType: 'wardrobe', name: 'Built-in Oak Wardrobe' };
+        hitBox.userData = { interactiveType: 'wardrobe', name: 'Beige Boutique Wardrobe' };
         wardrobeGroup.add(hitBox);
         this.interactiveObjects.push(hitBox);
 

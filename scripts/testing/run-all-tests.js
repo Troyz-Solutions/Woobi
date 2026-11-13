@@ -54,6 +54,7 @@ const testSuites = [
 
   // 6. Production User Journeys & End-to-End Flows (8 Tests)
   { name: 'Application User Journeys (8 Tests)', path: 'scripts/testing/test-user-journeys.js', isNodeTest: true },
+  { name: 'Wardrobe Category Separation & Full Outfits (11 Tests)', path: 'scripts/testing/test-wardrobe-organization.js', isNodeTest: true },
 
   // 7. Multi-Process Durability & OS Locking (4 Tests)
   { name: 'Multi-Process Concurrency & Crash Durability (4 Tests)', path: 'scripts/testing/test-multiprocess-concurrency.js', isNodeTest: true }
@@ -90,7 +91,7 @@ for (const suite of testSuites) {
 
 console.log('\n======================================================');
 console.log(`TOTAL SUITES: ${totalSuites} | PASSED: ${passedSuites} | FAILED: ${failedSuites}`);
-console.log('TOTAL VERIFIED TESTS: 642');
+console.log('TOTAL VERIFIED TESTS: 653');
 console.log('======================================================');
 
 if (failedSuites > 0) {

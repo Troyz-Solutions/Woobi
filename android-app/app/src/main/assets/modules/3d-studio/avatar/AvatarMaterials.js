@@ -15,8 +15,10 @@ export const AVATAR_PALETTE = {
   lashBlack: 0x1A100A,
   browDarkBrown: 0x24160E,
   earringWarmBrass: 0xD4AF37,
-  cropTankIvory: 0xF7F5F0,
-  trousersSand: 0xD6C7B2,
+  jacketPink: 0xD98AA5,
+  leggingsBlack: 0x1C1C1E,
+  cropTankIvory: 0xD98AA5,
+  trousersSand: 0x1C1C1E,
   sneakersWhite: 0xFCFCFC,
   sneakersSole: 0xEDE8DF,
   hairTieDark: 0x140E0A

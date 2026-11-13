@@ -553,6 +553,123 @@ body.theme-dark.high-contrast,
   }
 }
 
+/* Floating Pill Bottom Navigation Bar (Matches Sérén / Woobi Reference Aesthetic) */
+#screen-today .phone-bottom-nav,
+.phone-bottom-nav.floating-pill-nav {
+  position: absolute;
+  bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 10px) + 12px);
+  left: 18px;
+  right: 18px;
+  width: calc(100% - 36px);
+  max-width: 420px;
+  margin: 0 auto;
+  height: 62px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(228, 222, 212, 0.92);
+  border-radius: 9999px;
+  box-shadow: 0 10px 30px rgba(32, 28, 24, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 12px;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  #screen-today .phone-bottom-nav,
+  .phone-bottom-nav.floating-pill-nav {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: 396px;
+    border-radius: 9999px;
+    padding-bottom: 0;
+  }
+}
+
+.floating-pill-nav .nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: #55524B;
+  cursor: pointer;
+  padding: 4px 0;
+  border-radius: 12px;
+  transition: color 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.floating-pill-nav .nav-tab span {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: inherit;
+}
+
+.floating-pill-nav .nav-tab svg {
+  color: inherit;
+  transition: transform 0.18s ease;
+}
+
+.floating-pill-nav .nav-tab:hover {
+  color: #4E5D47;
+}
+
+.floating-pill-nav .nav-tab:hover svg {
+  transform: translateY(-1px);
+}
+
+.floating-pill-nav .nav-tab:active {
+  transform: scale(0.95);
+}
+
+/* Elevated Center Action Button (+) */
+.nav-tab-center-elevated {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #4E5D47;
+  color: #FFFFFF;
+  border: 3.5px solid rgba(255, 255, 255, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-13px);
+  box-shadow: 0 6px 18px rgba(78, 93, 71, 0.40);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+  z-index: 1010;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-tab-center-elevated svg {
+  stroke: #FFFFFF;
+}
+
+.nav-tab-center-elevated:hover {
+  background: #3F4C39;
+  transform: translateY(-15px) scale(1.05);
+  box-shadow: 0 8px 24px rgba(78, 93, 71, 0.48);
+}
+
+.nav-tab-center-elevated:active {
+  transform: translateY(-11px) scale(0.96);
+}
+
 .nav-tab {
   background: transparent;
   border: none;
@@ -8086,29 +8203,43 @@ body.theme-dark.high-contrast,
    =================================================================== */
 
 .studio-controls-dock {
-  position: absolute;
-  bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 6px) + 96px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 35;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  pointer-events: auto;
-  user-select: none;
-  font-family: inherit;
-  width: auto;
-  max-width: 90%;
+  display: contents;
 }
 
-.mannequin-dropdown-container,
-.atmosphere-dropdown-container {
-  position: relative;
-  z-index: 35;
+.mannequin-dropdown-container {
+  position: absolute;
+  bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 144px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
   pointer-events: auto;
   user-select: none;
   font-family: inherit;
+}
+
+.avatar-hint {
+  bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 98px) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 38 !important;
+}
+
+.atmosphere-dropdown-container {
+  position: absolute;
+  bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 82px);
+  right: 22px;
+  left: auto;
+  transform: none;
+  z-index: 40;
+  pointer-events: auto;
+  user-select: none;
+  font-family: inherit;
+}
+
+@media (min-width: 768px) {
+  .atmosphere-dropdown-container {
+    right: calc(50% - 198px + 16px);
+  }
 }
 
 .select-mannequin-btn,

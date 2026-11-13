@@ -165,7 +165,7 @@ export class AvatarAssets {
               } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
                 ensureUVs(child.geometry);
                 if (child.material) {
-                  child.material.color = new THREE.Color(0xF7F5F0);
+                  child.material.color = new THREE.Color(0xD98AA5);
                   if (this.materials?.tankMat?.map) child.material.map = this.materials.tankMat.map;
                   if (this.materials?.tankMat?.bumpMap) {
                     child.material.bumpMap = this.materials.tankMat.bumpMap;
@@ -178,7 +178,7 @@ export class AvatarAssets {
               } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
                 ensureUVs(child.geometry);
                 if (child.material) {
-                  child.material.color = new THREE.Color(0xD6C7B2);
+                  child.material.color = new THREE.Color(0x1C1C1E);
                   if (this.materials?.trouserMat?.map) child.material.map = this.materials.trouserMat.map;
                   if (this.materials?.trouserMat?.bumpMap) {
                     child.material.bumpMap = this.materials.trouserMat.bumpMap;

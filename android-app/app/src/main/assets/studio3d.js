@@ -72,6 +72,8 @@
     lightWood: 0xD8B992,
     softTaupe: 0xA58F7A,
     primaryText: 0x51463E,
+    jacketPink: 0xD98AA5, // Athletic soft rose-pink zip jacket matching visual reference
+    leggingsBlack: 0x1C1C1E, // Athletic sleek black contour leggings
     trousersSand: 0xC8BAA7, // Elegant sand/beige fluid tailored linen trousers
     cropTankIvory: 0xFAF6EF, // Ribbed knit cream high-neck crop tank
     honeyOak: 0xC69967,
@@ -935,8 +937,8 @@
     buildRoomArchitecture() {
       // Delegate to modular 3D Studio Theme & Environment submodule if available
       if (typeof window !== 'undefined' && window.WoobiTheme && typeof window.WoobiTheme.createStudioTheme === 'function') {
-        const themePreset = (window.WoobiTheme.THEME_PRESETS && window.WoobiTheme.THEME_PRESETS['mediterranean-luxury'])
-          ? 'mediterranean-luxury'
+        const themePreset = (window.WoobiTheme.THEME_PRESETS && window.WoobiTheme.THEME_PRESETS['luxury-cream'])
+          ? 'luxury-cream'
           : 'luxury-cream';
         this.themeModel = window.WoobiTheme.createStudioTheme(this.scene, this.textures, themePreset, THREE);
         return;
@@ -2017,12 +2019,12 @@
       this.chestGroup = new THREE.Group();
       this.chestGroup.position.set(0, 1.22, 0);
 
-      // 5. WEARABLE OUTFIT: Off-White Ribbed Crop Tank Top with Tactile Ribbed Depth
+      // 5. WEARABLE OUTFIT: Athletic Soft Rose-Pink Top with Tactile Depth
       const tankMat = new THREE.MeshStandardMaterial({
         map: this.textures.ribbedKnit,
         bumpMap: this.textures.ribbedKnit,
         bumpScale: 0.0025,
-        color: COLOR_PALETTE.cropTankIvory,
+        color: COLOR_PALETTE.jacketPink,
         roughness: 0.68,
         metalness: 0.02
       });
@@ -2086,12 +2088,12 @@
         this.sculptedAvatarGroup.add(armGroup);
       });
 
-      // 7. HIGH-WAISTED FLUID WIDE-LEG TAILORED TROUSERS WITH TACTILE LINEN WEAVE
+      // 7. HIGH-WAISTED SLEEK BLACK ATHLETIC CONTOUR LEGGINGS / TROUSERS
       const trouserMat = new THREE.MeshStandardMaterial({
         map: this.textures.linenWeave,
         bumpMap: this.textures.linenWeave,
         bumpScale: 0.0020,
-        color: COLOR_PALETTE.trousersSand,
+        color: COLOR_PALETTE.leggingsBlack,
         roughness: 0.72,
         metalness: 0.01
       });
@@ -2321,8 +2323,11 @@
                   child.material.metalness = 0.0;
                 }
 
-                // Configure skin, hair, and clothing materials to match reference
-                if (child.name.includes('Hair')) {
+                // Configure skin, hair, and clothing materials to match visual reference (pink athletic zip jacket, black leggings, white sneakers)
+                if (child.material && child.material.map) {
+                  // Keep full vibrant contrast of embedded textures (pink jacket with chest stripe, black leggings, white sneakers)
+                  child.material.color = new THREE.Color(0xFFFFFF);
+                } else if (child.name.includes('Hair')) {
                   child.material.color = new THREE.Color(COLOR_PALETTE.honeyOak).multiplyScalar(0.2);
                   child.material.roughness = 0.78;
                   this.hairMaterials.push(child.material);
@@ -2330,10 +2335,10 @@
                   this.skinMaterials.push(child.material);
                   child.material.roughness = 0.82;
                 } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.cropTankIvory);
+                  child.material.color = new THREE.Color(COLOR_PALETTE.jacketPink);
                   child.material.roughness = 0.85;
                 } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.trousersSand);
+                  child.material.color = new THREE.Color(COLOR_PALETTE.leggingsBlack);
                   child.material.roughness = 0.88;
                 } else if (child.name.includes('Footwear') || child.name.includes('Shoes')) {
                   child.material.color = new THREE.Color(COLOR_PALETTE.sneakersWhite);

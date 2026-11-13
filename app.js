@@ -1443,12 +1443,40 @@
         </div>
       `;
     } else {
-      const gridWrap = document.createElement('div');
-      gridWrap.className = 'w-section-grid single-category-grid';
       items.forEach(item => {
-        gridWrap.appendChild(createWardrobeCardElement(item));
+        const box = document.createElement('div');
+        box.className = 'wardrobe-item-box';
+
+        const isClean = item.condition === 'clean';
+        const statusBadge = isClean
+          ? `<span class="badge-status clean" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark in laundry">✨ Clean</span>`
+          : `<span class="badge-status dirty" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark clean">🧺 In Laundry</span>`;
+
+        const fitBadge = item.fit === 'tight'
+          ? `<span class="badge-fit tight">Tight</span>`
+          : item.fit === 'loose'
+            ? `<span class="badge-fit loose">Loose</span>`
+            : `<span class="badge-fit">Perfect fit</span>`;
+
+        const meta = getItemCategoryMeta(item);
+
+        box.innerHTML = `
+          <div class="w-img-wrap" onclick="app.openConditionModal('${item.id}')">
+            <img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='assets/navy_shirt.jpg'">
+            <span class="w-item-cat-badge">${meta.icon} ${meta.label}</span>
+          </div>
+          <div class="w-meta" onclick="app.openConditionModal('${item.id}')">
+            <div class="w-name" title="${item.name}">${item.name}</div>
+            <div class="w-sub-badges">
+              ${statusBadge}
+              ${fitBadge}
+            </div>
+          </div>
+          <button class="w-dots" onclick="event.stopPropagation(); app.openConditionModal('${item.id}')" title="Item options">⋮</button>
+        `;
+
+        container.appendChild(box);
       });
-      container.appendChild(gridWrap);
     }
 
     updateWardrobeCounts();

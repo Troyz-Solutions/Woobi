@@ -1158,6 +1158,34 @@
      * Powered by extracted Wardrobe module: modules/3d-studio/wardrobe/WardrobeModel.js
      */
     buildWardrobeFurniture() {
+      // 1. Build authentic Scandinavian Cashmere Oak Wardrobe from wardrobe3d.js (matches visual reference)
+      const WardrobeClass = (typeof Wardrobe3D !== 'undefined') ? Wardrobe3D : (typeof window !== 'undefined' ? window.Wardrobe3D : null);
+      if (WardrobeClass) {
+        console.log('Studio3D: Building authentic Scandinavian Cashmere Oak Wardrobe from wardrobe3d.js');
+        const wardrobeInstance = new WardrobeClass({ enableLights: true });
+        this.wardrobeInstance = wardrobeInstance;
+        this.wardrobeGroup = wardrobeInstance.group;
+
+        // Scale and position precisely to match the Sérén / Woobi reference framing (on left of mannequin, close and visible)
+        const scale = 0.82;
+        this.wardrobeGroup.scale.set(scale, scale, scale);
+        this.wardrobeGroup.position.set(-1.08, 0, -0.22);
+        this.wardrobeGroup.rotation.y = 0.30;
+
+        // Interactive bounding hitBox for touch & click
+        const hitBox = new THREE.Mesh(
+          new THREE.BoxGeometry(2.20 * scale + 0.2, 2.95 * scale, 0.65 * scale + 0.3),
+          new THREE.MeshBasicMaterial({ visible: false })
+        );
+        hitBox.position.set(0, (2.95 * scale) / 2, 0);
+        hitBox.userData = { interactiveType: 'wardrobe', name: 'Built-in Oak Wardrobe' };
+        this.wardrobeGroup.add(hitBox);
+        this.interactiveObjects.push(hitBox);
+
+        this.scene.add(this.wardrobeGroup);
+        return;
+      }
+
       if (typeof window !== 'undefined' && window.WoobiWardrobe && typeof window.WoobiWardrobe.createWardrobe === 'function') {
         this.wardrobeModel = window.WoobiWardrobe.createWardrobe(this.scene, this.textures, THREE);
         this.wardrobeGroup = this.wardrobeModel.group;
@@ -1169,8 +1197,8 @@
 
       const wardrobeGroup = new THREE.Group();
       // Position naturally on left wall with angled perspective matching Reference D
-      wardrobeGroup.position.set(-1.65, 0, -3.50);
-      wardrobeGroup.rotation.y = 0.35;
+      wardrobeGroup.position.set(-1.08, 0, -0.22);
+      wardrobeGroup.rotation.y = 0.30;
 
       const scale = 2.40 / 3.00;
       const width = 2.20 * scale;
@@ -1184,8 +1212,7 @@
 
         const onWardrobeLoad = (gltf) => {
           const model = gltf.scene;
-          // Widen the wardrobe horizontally (1.38x) for a spacious, modern open closet layout
-          model.scale.set(scale * 1.38, scale, scale);
+          model.scale.set(scale, scale, scale);
           model.position.set(0, 0, 0);
           model.rotation.y = Math.PI;
 

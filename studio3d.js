@@ -1683,9 +1683,9 @@
       backArc.position.set(0, straightH, -frameDepth / 2 - 0.004);
       mirrorGroup.add(backArc);
 
-      // I. Classic Parisian Horlogerie Wall Clock Mounted at Height Between Wardrobe and Mirror
+      // I. Classic Parisian Horlogerie Wall Clock Mounted at Height Between Wardrobe and Mirror (Matching User Target)
       const clockGroup = this.buildClassicWallClock(brassMat, polishedGoldMat);
-      clockGroup.position.set(-0.075, 2.35, -2.95);
+      clockGroup.position.set(0.35, 2.72, -2.95);
       clockGroup.rotation.set(0, 0, 0);
       this.scene.add(clockGroup);
       this.clockGroup = clockGroup;

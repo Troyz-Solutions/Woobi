@@ -20,7 +20,7 @@ export const VANITY_CONFIG = {
   stoolPosition: { x: 0.12, y: 0, z: 0.42 },
   stoolRadius: 0.25,
   stoolHeight: 0.40,
-  clockPosition: { x: -0.075, y: 2.35, z: -2.95 }
+  clockPosition: { x: 0.35, y: 2.72, z: -2.95 }
 };
 
 export class VanityModel {
@@ -384,9 +384,9 @@ export class VanityModel {
     this.mirrorGroup.add(backArc);
     this.disposables.push(mirrorBackMat, backRectGeo, backArcGeo);
 
-    // I. Classic Parisian Horlogerie Wall Clock Mounted at Elevated Height Between Wardrobe and Mirror
+    // I. Classic Parisian Horlogerie Wall Clock Mounted at Elevated Height Between Wardrobe and Mirror (Matching User Target)
     this.clockGroup = this.buildClassicWallClock(THREE, brassMat, polishedGoldMat);
-    const clockPos = this.config.clockPosition || { x: -0.075, y: 2.35, z: -2.95 };
+    const clockPos = this.config.clockPosition || { x: 0.35, y: 2.72, z: -2.95 };
     this.clockGroup.position.set(clockPos.x, clockPos.y, clockPos.z);
     this.clockGroup.rotation.set(0, 0, 0);
     scene.add(this.clockGroup);

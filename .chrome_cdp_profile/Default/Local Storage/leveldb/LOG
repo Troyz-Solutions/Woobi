@@ -1,0 +1,4 @@
+2026/11/14-14:50:22.094 263c Reusing MANIFEST C:\Users\DELL\OneDrive\Desktop\Woobi\Woobi\.chrome_cdp_profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/11/14-14:50:22.096 263c Recovering log #3
+2026/11/14-14:50:22.096 263c (ignoring error) C:\Users\DELL\OneDrive\Desktop\Woobi\Woobi\.chrome_cdp_profile\Default\Local Storage\leveldb/000003.log: dropping 1891 bytes; Corruption: checksum mismatch
+2026/11/14-14:50:22.109 263c Reusing old log C:\Users\DELL\OneDrive\Desktop\Woobi\Woobi\.chrome_cdp_profile\Default\Local Storage\leveldb/000003.log 

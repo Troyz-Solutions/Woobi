@@ -319,12 +319,41 @@
       // 5.5 Initialize 3D Studio Features (Try-On, Interactions, Recommendations, Customizer, Animations, Saved Looks)
       this.initStudioFeatures();
 
-      // 6. Start Render Loop
+      // 6. Pre-warm WebGL Shaders & GPU Pipeline to eliminate startup stutter/hitch
+      if (this.renderer && this.scene && this.camera && typeof this.renderer.compile === 'function') {
+        try {
+          this.renderer.compile(this.scene, this.camera);
+          this.renderer.render(this.scene, this.camera);
+        } catch (e) {
+          console.warn('Studio3D: WebGL pre-compile bypassed', e);
+        }
+      }
+
+      // 7. Start Render Loop
       this.isInitialized = true;
       this.animate = this.animate.bind(this);
       this.animate();
 
+      // Fail-safe veil dismissal ensures studio is revealed smoothly even if network is throttled
+      setTimeout(() => {
+        this.dismissLoadingVeil();
+      }, 750);
+
       console.log('Studio3D: Sérén Studio Production V4 Initialized with Stylized Avatar & Atmospheric Dressing Room.');
+    }
+
+    /**
+     * Smoothly dissolves the atelier opening veil curtain with luxury cross-fade
+     */
+    dismissLoadingVeil() {
+      if (typeof document === 'undefined') return;
+      const veil = document.getElementById('atelierStudioVeil');
+      if (veil && !veil.classList.contains('veil-hidden')) {
+        veil.classList.add('veil-hidden');
+        setTimeout(() => {
+          veil.style.display = 'none';
+        }, 550);
+      }
     }
 
     /**
@@ -2765,6 +2794,10 @@
             if (typeof this.updateBodyMeshScale === 'function') {
               this.updateBodyMeshScale();
             }
+            if (this.renderer && this.scene && this.camera && typeof this.renderer.compile === 'function') {
+              try { this.renderer.compile(this.scene, this.camera); } catch (e) {}
+            }
+            this.dismissLoadingVeil();
           },
           (err) => {
             console.log('Studio3D: Using high-definition sculpted avatar.');
@@ -2774,6 +2807,10 @@
             if (typeof this.updateBodyMeshScale === 'function') {
               this.updateBodyMeshScale();
             }
+            if (this.renderer && this.scene && this.camera && typeof this.renderer.compile === 'function') {
+              try { this.renderer.compile(this.scene, this.camera); } catch (e) {}
+            }
+            this.dismissLoadingVeil();
           }
         );
         return;

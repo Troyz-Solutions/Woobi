@@ -3191,6 +3191,9 @@
     prepareVirtualStudio().then(() => {
       if (window.Studio3D?.isInitialized && !document.querySelector('.app-welcome[open]')) {
         window.Studio3D.onResize();
+        if (typeof window.Studio3D.dismissLoadingVeil === 'function') {
+          window.Studio3D.dismissLoadingVeil();
+        }
       }
     });
     renderSerenGarments('all');

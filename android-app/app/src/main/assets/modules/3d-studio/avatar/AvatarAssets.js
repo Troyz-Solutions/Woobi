@@ -5,37 +5,35 @@
 
 export const FEMALE_AVATAR_PATHS = [
   'assets/models/avatar_female.glb',
-  'Woobi_Female_Mannequin_Fixed.glb',
-  'woobi_female_mannequin.glb',
-  'seren_avatar.glb',
-  'female_mannequin.glb',
-  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb'
+  'seren_avatar.glb'
 ];
 
 export const MALE_AVATAR_PATHS = [
   'assets/models/avatar_male.glb',
-  'woobi_male_mannequin.glb',
-  'male_mannequin.glb',
-  '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb'
+  'woobi_male_mannequin.glb'
 ];
 
 export const AVATAR_ASSET_PATHS = [
   'seren_avatar.glb',
   'assets/models/avatar_female.glb',
   'assets/models/avatar_male.glb',
-  'Woobi_Female_Mannequin_Fixed.glb',
   'woobi_female_mannequin.glb',
-  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb'
+  'Woobi_Female_Mannequin_Fixed.glb',
+  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
+  'https://readyplayerme.github.io/visage/female.glb'
 ];
 
 export const MANNEQUIN_ASSET_PATHS = {
   female: [
+    'assets/models/avatar_female.glb',
+    'seren_avatar.glb',
     'Woobi_Female_Mannequin_Fixed.glb',
     'woobi_female_mannequin.glb',
     '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
     '3D - Mannequin By Astra/female/Woobi_Female_Mannequin.glb'
   ],
   male: [
+    'assets/models/avatar_male.glb',
     'woobi_male_mannequin.glb',
     '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb',
     '3D - Mannequin By Astra/male/Woobi_Male_Mannequin.glb'
@@ -53,17 +51,11 @@ export class AvatarAssets {
     this.isDisposed = false;
   }
 
-  async loadRiggedModel(onSuccess, onError, assetPaths = AVATAR_ASSET_PATHS) {
+  loadRiggedModel(onSuccess, onError, assetPaths = AVATAR_ASSET_PATHS) {
     const THREE = this.THREE;
     if (!THREE || typeof THREE.GLTFLoader === 'undefined') {
       if (onError) onError(new Error('GLTFLoader not available'));
       return;
-    }
-
-    if (typeof window !== 'undefined' && window.MeshoptDecoder && window.MeshoptDecoder.ready) {
-      try {
-        await window.MeshoptDecoder.ready;
-      } catch (e) {}
     }
 
     this.isLoading = true;
@@ -84,8 +76,7 @@ export class AvatarAssets {
       }
 
       const url = urls[index];
-      try {
-        loader.load(
+      loader.load(
         url,
         (gltf) => {
           if (this.isDisposed) {
@@ -146,31 +137,36 @@ export class AvatarAssets {
               child.castShadow = true;
               child.receiveShadow = true;
 
-              if (child.material) {
-                // Eliminate oily/glossy shine across all meshes:
-                // Remove specular roughness maps that induce oily glare
-                child.material.roughnessMap = null;
-                child.material.metalnessMap = null;
-                if ('clearcoat' in child.material) child.material.clearcoat = 0;
-                if ('clearcoatRoughness' in child.material) child.material.clearcoatRoughness = 1;
-              }
+              const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+              const hasTextureMap = mats.some(m => m && (m.map?.isTexture || m.map));
 
-              // Check if model has pre-baked texture maps (such as female_mannequin or avatar_female)
-              if (child.material && child.material.map) {
-                child.material.color = new THREE.Color(0xFFFFFF);
-                if (child.name.includes('Hair') || child.name.includes('Eyeleashes') || child.name.includes('Eyelashes')) {
-                  child.material.roughness = 0.78;
-                  child.material.metalness = 0.02;
-                } else {
-                  // Natural soft matte finish for skin and clothing
-                  child.material.roughness = 0.85;
-                  child.material.metalness = 0.0;
-                }
-                child.material.needsUpdate = true;
+              mats.forEach((mat) => {
+                if (!mat) return;
+                mat.roughnessMap = null;
+                mat.metalnessMap = null;
+                if ('clearcoat' in mat) mat.clearcoat = 0;
+                if ('clearcoatRoughness' in mat) mat.clearcoatRoughness = 1;
+              });
+
+              // Check if model has pre-baked texture maps (such as avatar_female.glb or avatar_male.glb)
+              if (hasTextureMap) {
+                mats.forEach((mat) => {
+                  if (!mat) return;
+                  if (mat.map) mat.color = new THREE.Color(0xFFFFFF);
+                  if (child.name.includes('Hair') || child.name.includes('Eyeleashes') || child.name.includes('Eyelashes')) {
+                    mat.roughness = 0.78;
+                    mat.metalness = 0.02;
+                    if (this.materials) this.materials.registerHairMaterial(mat);
+                  } else {
+                    mat.roughness = 0.85;
+                    mat.metalness = 0.0;
+                  }
+                  mat.needsUpdate = true;
+                });
               } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
                 ensureUVs(child.geometry);
                 if (child.material) {
-                  child.material.color = new THREE.Color(0xD98AA5);
+                  child.material.color = new THREE.Color(0xFAF6EF);
                   if (this.materials?.tankMat?.map) child.material.map = this.materials.tankMat.map;
                   if (this.materials?.tankMat?.bumpMap) {
                     child.material.bumpMap = this.materials.tankMat.bumpMap;
@@ -183,7 +179,7 @@ export class AvatarAssets {
               } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
                 ensureUVs(child.geometry);
                 if (child.material) {
-                  child.material.color = new THREE.Color(0x1C1C1E);
+                  child.material.color = new THREE.Color(0xC8BAA7);
                   if (this.materials?.trouserMat?.map) child.material.map = this.materials.trouserMat.map;
                   if (this.materials?.trouserMat?.bumpMap) {
                     child.material.bumpMap = this.materials.trouserMat.bumpMap;
@@ -259,11 +255,6 @@ export class AvatarAssets {
           tryLoad(index + 1);
         }
       );
-      } catch (err) {
-        if (this.isDisposed) return;
-        console.warn(`AvatarAssets: Model ${url} threw during load, trying next candidate...`, err);
-        tryLoad(index + 1);
-      }
     };
 
     tryLoad(0);

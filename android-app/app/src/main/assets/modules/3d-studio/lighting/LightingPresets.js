@@ -161,4 +161,25 @@ export const LIGHTING_PRESETS = {
   }
 };
 
+// AppearanceContract & 3D themes lighting aliases (resolved transparently by StudioLighting)
+export const LIGHTING_ALIASES = {
+  'editorial_soft': LIGHTING_PRESETS['editorial-neutral'],
+  'warm_atelier': LIGHTING_PRESETS['luxury-warm'],
+  'golden_hour': LIGHTING_PRESETS['soft-evening'],
+  'high_key_clean': {
+    ...LIGHTING_PRESETS['editorial-neutral'],
+    name: 'high_key_clean',
+    ambient: { color: 0xFFFFFF, intensity: 0.78 },
+    keySunlight: { ...LIGHTING_PRESETS['editorial-neutral'].keySunlight, intensity: 1.30 }
+  },
+  'dramatic_chiaroscuro': {
+    ...LIGHTING_PRESETS['luxury-warm'],
+    name: 'dramatic_chiaroscuro',
+    ambient: { color: 0xE8D2B8, intensity: 0.42 },
+    keySunlight: { ...LIGHTING_PRESETS['luxury-warm'].keySunlight, intensity: 1.50 },
+    fillLight: { ...LIGHTING_PRESETS['luxury-warm'].fillLight, intensity: 0.20 },
+    rimLight: { ...LIGHTING_PRESETS['luxury-warm'].rimLight, intensity: 1.10 }
+  }
+};
+
 export const DEFAULT_LIGHTING_PRESET = 'luxury-warm';

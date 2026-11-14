@@ -390,19 +390,20 @@
     } else if (screenId === 'custom-builder') {
       renderBuilderGrid();
       updateBuilderTray();
-    } else if (screenId === 'today' || screenId === 'virtual-studio') {
-      initVirtualStudio();
-    } else if (screenId === 'weekly-planning') {
-      renderWeeklyCalendar();
     } else if (screenId === 'today-recommendation') {
       if (!_activeDailyRecommendation) {
         const todayStr = new Date().toISOString().slice(0, 10);
         openDailyRecommendation(todayStr);
       }
+    } else if (screenId === 'today' || screenId === 'virtual-studio') {
+      initVirtualStudio();
+    } else if (screenId === 'weekly-planning') {
+      renderWeeklyCalendar();
+    } else if (screenId === 'profile') {
+      updateProfileScreenData();
     } else if (screenId === 'premium') {
       updateSubscriptionUI();
-      const initialPlan = (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('plan')) || 'pro';
-      switchPlanView(initialPlan);
+      switchPlanView('pro');
       initPlanSwipeGestures();
       const screenPremium = document.getElementById('screen-premium');
       if (screenPremium) {
@@ -2834,6 +2835,31 @@
     goToScreen('profile');
   }
 
+  function updateProfileScreenData() {
+    const wCountEl = document.getElementById('profileStatWardrobe');
+    if (wCountEl && typeof WARDROBE_ITEMS !== 'undefined') {
+      wCountEl.textContent = WARDROBE_ITEMS.length;
+    }
+    const lCountEl = document.getElementById('profileStatLooks');
+    if (lCountEl && typeof LOOKS_DATA !== 'undefined') {
+      lCountEl.textContent = LOOKS_DATA.length;
+    }
+    const sCountEl = document.getElementById('profileStatStreak');
+    if (sCountEl) {
+      let streak = 1;
+      if (state.streak && typeof state.streak.currentStreak === 'number') {
+        streak = state.streak.currentStreak;
+      }
+      sCountEl.textContent = `${streak} ${streak === 1 ? 'Day' : 'Days'}`;
+    }
+    const tierBadge = document.getElementById('profileTierLabel');
+    if (tierBadge) {
+      tierBadge.innerHTML = state.isPremium 
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Woobi Pro`
+        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Free Tier`;
+    }
+  }
+
   function exportWardrobe() {
     exportUserData();
   }
@@ -3170,6 +3196,9 @@
     prepareVirtualStudio().then(() => {
       if (window.Studio3D?.isInitialized && !document.querySelector('.app-welcome[open]')) {
         window.Studio3D.onResize();
+        if (typeof window.Studio3D.dismissLoadingVeil === 'function') {
+          window.Studio3D.dismissLoadingVeil();
+        }
       }
     });
     renderSerenGarments('all');
@@ -3270,6 +3299,38 @@
     } else {
       drawer.classList.add('hidden');
     }
+  }
+
+  function serenWearGarment(cat, garmentId, is3D) {
+    if (is3D && window.Studio3D) {
+      let engineCat = 'top';
+      if (cat === 'bottoms' || cat === 'bottom') engineCat = 'bottom';
+      else if (cat === 'shoes' || cat === 'shoe') engineCat = 'shoes';
+      else engineCat = 'top';
+
+      const mappedId = garmentId === 'wide_linen' ? 'taupe_wide' : garmentId;
+      window.Studio3D.equipGarment(engineCat, mappedId);
+      window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+
+      const itemRecord = SEREN_GARMENTS.find(g => g.id === garmentId);
+      const displayName = itemRecord ? itemRecord.name : garmentId.replace('_', ' ');
+      showToast(`Equipped: ${displayName} ♡`);
+
+      const thumb = document.getElementById('serenReviewThumb');
+      if (thumb) {
+        if (garmentId === 'cardigan') thumb.src = 'assets/style_casual.jpg';
+        else if (garmentId === 'blazer') thumb.src = 'assets/smart_blazer.jpg';
+        else if (garmentId === 'navy_shirt') thumb.src = 'assets/navy_shirt.jpg';
+        else if (garmentId === 'striped_sweater') thumb.src = 'assets/style_casual.jpg';
+        else if (garmentId === 'tank') thumb.src = 'assets/welcome_hero.jpg';
+      }
+    } else {
+      showToast(`2D item selected. Previewing in wardrobe catalog.`);
+    }
+
+    setTimeout(() => {
+      serenToggleWardrobe(false);
+    }, 450);
   }
 
   // =========================================================================
@@ -3861,6 +3922,7 @@
       serenToggleWardrobe(false);
     }, 450);
   }
+
 
   // =========================================================================
   // 3D STUDIO WARDROBE DIRECT DRAG-TO-MANNEQUIN INTERACTION
@@ -7269,6 +7331,7 @@
     switchPlanView,
     scrollPlanCard: switchPlanView,
     saveReminderPreferences,
+    updateProfileScreenData,
     exportWardrobe,
     exportUserData,
     saveProfile,

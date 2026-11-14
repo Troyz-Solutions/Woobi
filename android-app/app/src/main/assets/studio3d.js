@@ -1319,8 +1319,22 @@
       }
 
       const vanityGroup = new THREE.Group();
+      vanityGroup.name = 'woobi_vanity_root';
       vanityGroup.position.set(1.60, 0, -3.30);
       vanityGroup.rotation.y = -0.32; // Angled gracefully towards stage
+      this.vanityGroup = vanityGroup;
+
+      // Continuous 3000K warm halo radiance radiating from the arched grooming mirror
+      const vanityHaloLight = new THREE.PointLight(0xFFE2B8, 2.0, 4.0);
+      vanityHaloLight.position.set(0, 1.45, 0.28);
+      vanityGroup.add(vanityHaloLight);
+
+      // Angled warm boutique spotlight washing over the Calacatta marble table and cosmetics
+      const vanityTableSpot = new THREE.SpotLight(0xFFF2DC, 1.8, 3.5, Math.PI / 4, 0.45, 1.0);
+      vanityTableSpot.position.set(0, 2.15, 0.45);
+      vanityTableSpot.target.position.set(0, 0.82, 0);
+      vanityGroup.add(vanityTableSpot);
+      vanityGroup.add(vanityTableSpot.target);
 
       const brassMat = new THREE.MeshStandardMaterial({
         color: COLOR_PALETTE.warmBrass,
@@ -1553,28 +1567,133 @@
       vanityGroup.add(hitBox);
       this.interactiveObjects.push(hitBox);
 
-      // Attempt authentic Woobi Vanity GLB loading
+      // Attempt authentic Woobi Vanity GLB loading with DRACOLoader & Mirror Reflection Pipeline
       if (typeof THREE.GLTFLoader !== 'undefined') {
         const gltfLoader = new THREE.GLTFLoader();
+
+        const DracoClass = THREE.DRACOLoader || (typeof window !== 'undefined' ? (window.THREE?.DRACOLoader || window.DRACOLoader) : null);
+        if (DracoClass) {
+          try {
+            const draco = new DracoClass();
+            draco.setDecoderPath('libs/draco/gltf/');
+            if (typeof draco.preload === 'function') draco.preload();
+            gltfLoader.setDRACOLoader(draco);
+          } catch (e) {}
+        }
+
         const vanityPaths = [
           '3D - Mirror and stuffs/woobi_vanity.glb',
           'woobi_vanity.glb',
           'seren_vanity.glb'
         ];
+
         const tryLoadGLB = (idx) => {
           if (idx >= vanityPaths.length) return;
           gltfLoader.load(vanityPaths[idx], (gltf) => {
             const model = gltf.scene;
-            model.position.set(0, 0, 0);
+
+            // Align base of legs and ottoman flush on floor (Y = 0)
+            let yOffset = 0.365;
+            try {
+              if (THREE.Box3) {
+                const bbox = new THREE.Box3().setFromObject(model);
+                if (!isNaN(bbox.min.y)) yOffset = -bbox.min.y;
+              }
+            } catch (e) {}
+            model.position.set(0, yOffset, 0);
+
+            // Subtle scale for luxurious presence
+            model.scale.set(1.08, 1.08, 1.08);
+
             model.traverse((child) => {
               if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
-                if (child.name === 'Mirror_Surface' || child.name.toLowerCase().includes('mirror_surface')) {
+
+                const name = (child.name || '').toLowerCase();
+
+                // 1. True Reflective Mirror Surface with Planar UV Coordinates
+                if (name === 'mirror_surface' || name.includes('mirror_surface')) {
+                  if (child.geometry && !child.geometry.attributes?.uv && child.geometry.attributes?.position && THREE.BufferAttribute) {
+                    const pos = child.geometry.attributes.position;
+                    if (typeof child.geometry.computeBoundingBox === 'function') {
+                      child.geometry.computeBoundingBox();
+                    }
+                    const bb = child.geometry.boundingBox;
+                    const minX = bb ? bb.min.x : -0.505;
+                    const maxX = bb ? bb.max.x : 0.505;
+                    const minY = bb ? bb.min.y : 0;
+                    const maxY = bb ? bb.max.y : 1.625;
+                    const spanX = (maxX - minX) || 1.0;
+                    const spanY = (maxY - minY) || 1.0;
+
+                    const uvs = new Float32Array(pos.count * 2);
+                    for (let i = 0; i < pos.count; i++) {
+                      const x = pos.getX(i);
+                      const y = pos.getY(i);
+                      // Horizontal flip for true optical planar mirror reflection
+                      uvs[i * 2] = 1.0 - ((x - minX) / spanX);
+                      uvs[i * 2 + 1] = (y - minY) / spanY;
+                    }
+                    child.geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                  }
+
+                  if (this.mirrorRenderTarget) {
+                    child.material = new THREE.MeshBasicMaterial({
+                      map: this.mirrorRenderTarget.texture,
+                      toneMapped: false
+                    });
+                  }
                   this.mirrorGlassMesh = child;
+                } else if (name.includes('illuminated_edge') || name.includes('led')) {
+                  // Warm 3000K diffused LED halo ring
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: 0xFFF0D4,
+                    emissive: 0xFFDE9E,
+                    emissiveIntensity: 3.2,
+                    roughness: 0.20
+                  });
+                } else if (name.includes('mirror_frame')) {
+                  // Brushed champagne brass arched frame
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: 0xD4B886,
+                    metalness: 0.88,
+                    roughness: 0.22
+                  });
+                } else if (name.includes('vanity_top') || name.includes('marble')) {
+                  // Calacatta Gold marble tabletop with polished specular reflection
+                  if (child.material) {
+                    child.material.roughness = 0.22;
+                    child.material.metalness = 0.04;
+                    child.material.needsUpdate = true;
+                  }
+                } else if (name.includes('bench_seat') || name.includes('stool_top')) {
+                  // Soft cream bouclé upholstered ottoman
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: 0xF7F4EE,
+                    roughness: 0.82,
+                    metalness: 0.02
+                  });
+                } else if (name.includes('bench_base') || name.includes('stool_brass')) {
+                  // Polished champagne brass plinth base ring
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: 0xD4B886,
+                    metalness: 0.88,
+                    roughness: 0.22
+                  });
+                } else if (name.includes('glass') || name.includes('perfume_glass')) {
+                  // Crystal clear perfume and floral vase glass
+                  child.material = new THREE.MeshStandardMaterial({
+                    color: 0xFFFFFF,
+                    roughness: 0.08,
+                    metalness: 0.12,
+                    transparent: true,
+                    opacity: 0.75
+                  });
                 }
               }
             });
+
             topSlab.visible = false;
             mirrorGroup.visible = false;
             perfumeGroup.visible = false;
@@ -1582,6 +1701,7 @@
             vaseGroup.visible = false;
             stoolGroup.visible = false;
             vanityGroup.add(model);
+            console.log('Studio3D: High-Fidelity 3D Dressing Vanity & Arched Illuminated Mirror GLB loaded successfully.');
           }, undefined, () => tryLoadGLB(idx + 1));
         };
         tryLoadGLB(0);
@@ -2165,15 +2285,15 @@
         }
 
         const renderFormat = (typeof THREE.RGBAFormat !== 'undefined') ? THREE.RGBAFormat : (THREE.RGBFormat || 1022);
-        this.mirrorRenderTarget = new THREE.WebGLRenderTarget(512, 512, {
+        this.mirrorRenderTarget = new THREE.WebGLRenderTarget(1024, 1024, {
           format: renderFormat,
           generateMipmaps: false,
           minFilter: THREE.LinearFilter,
           magFilter: THREE.LinearFilter
         });
 
-        this.mirrorCamera = new THREE.PerspectiveCamera(24, 0.62, 1.8, 60);
-        this.mirrorCamera.position.set(2.25, 1.25, -3.50);
+        this.mirrorCamera = new THREE.PerspectiveCamera(26, 0.62, 1.2, 60);
+        this.mirrorCamera.position.set(1.60, 1.45, -3.30);
         this.mirrorCamera.lookAt(0, 1.15, 0);
         this.scene.add(this.mirrorCamera);
 
@@ -3179,7 +3299,7 @@
         this.vanityModel.reflection.update(this.renderer, this.scene, this.camera);
       } else if (this.mirrorRenderTarget && this.mirrorCamera && activeMirrorMesh) {
         activeMirrorMesh.visible = false;
-        this.mirrorCamera.position.set(2.25, 1.25, -3.50);
+        this.mirrorCamera.position.set(1.60, 1.45, -3.30);
         this.mirrorCamera.lookAt(0, 1.15, 0); // Looking towards avatar torso from optical reflection position
         this.mirrorCamera.far = 60.0;
 

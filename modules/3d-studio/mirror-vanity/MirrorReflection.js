@@ -10,13 +10,18 @@ export class MirrorReflection {
     this.renderTarget = null;
     this.mirrorCamera = null;
     this.mirrorMesh = null;
+    this.auxiliaryMirrorMesh = null;
     this.scene = null;
     this.isContextLost = false;
-    this.mirrorPosition = options.mirrorPosition || { x: 2.25, y: 1.25, z: -3.50 };
+    this.mirrorPosition = options.mirrorPosition || { x: 1.15, y: 1.65, z: -2.80 };
     this.lookAtPosition = options.lookAtPosition || { x: 0.0, y: 1.15, z: 0.0 };
-    this.fov = options.fov || 24;
-    this.near = options.near || 1.8;
-    this.far = options.far || 60;
+    this.fov = options.fov || 34;
+    this.near = options.near || 0.15;
+    this.far = options.far || 40;
+  }
+
+  setAuxiliaryMirrorMesh(mesh) {
+    this.auxiliaryMirrorMesh = mesh;
   }
 
   /**
@@ -117,11 +122,13 @@ export class MirrorReflection {
     if (this.mirrorMesh) {
       this.mirrorMesh.visible = false; // Hide mirror surface to prevent feedback loop
     }
+    if (this.auxiliaryMirrorMesh) {
+      this.auxiliaryMirrorMesh.visible = false;
+    }
 
     try {
-      // Calculate true optical planar reflection position
-      let pX = 1.15, pY = 1.45, pZ = -2.85;
-      let nX = 0.276, nY = 0, nZ = 0.961;
+      // Calculate true mirror position in world coordinates
+      let pX = 1.15, pY = 1.65, pZ = -2.85;
 
       if (this.mirrorMesh && typeof this.mirrorMesh.getWorldPosition === 'function') {
         const tempPos = { x: 0, y: 0, z: 0 };
@@ -129,78 +136,34 @@ export class MirrorReflection {
         pX = tempPos.x;
         pY = tempPos.y;
         pZ = tempPos.z;
-
-        if (typeof this.mirrorMesh.getWorldQuaternion === 'function') {
-          const tempQuat = { x: 0, y: 0, z: 0, w: 1 };
-          this.mirrorMesh.getWorldQuaternion(tempQuat);
-          const qx = tempQuat.x, qy = tempQuat.y, qz = tempQuat.z, qw = tempQuat.w;
-          nX = 2 * (qx * qz + qw * qy);
-          nY = 2 * (qy * qz - qw * qx);
-          nZ = 1 - 2 * (qx * qx + qy * qy);
-        }
       }
 
-      if (mainCamera && mainCamera.position) {
-        const cX = mainCamera.position.x;
-        const cY = mainCamera.position.y;
-        const cZ = mainCamera.position.z;
-
-        const vX = cX - pX;
-        const vY = cY - pY;
-        const vZ = cZ - pZ;
-
-        const dot = vX * nX + vY * nY + vZ * nZ;
-
-        const refX = cX - 2 * dot * nX;
-        const refY = cY;
-        const refZ = cZ - 2 * dot * nZ;
-
-        if (this.mirrorCamera.position && typeof this.mirrorCamera.position.set === 'function') {
-          this.mirrorCamera.position.set(refX, refY, refZ);
-        }
-        if (typeof this.mirrorCamera.lookAt === 'function') {
-          this.mirrorCamera.lookAt(this.lookAtPosition.x, this.lookAtPosition.y, this.lookAtPosition.z);
-        }
-        this.mirrorCamera.fov = 28;
-        this.mirrorCamera.near = Math.max(0.5, Math.abs(dot) * 0.5);
-        this.mirrorCamera.far = 60.0;
-        if (typeof this.mirrorCamera.updateProjectionMatrix === 'function') {
-          this.mirrorCamera.updateProjectionMatrix();
-        }
-      } else {
-        if (this.mirrorCamera.position && typeof this.mirrorCamera.position.set === 'function') {
-          this.mirrorCamera.position.set(pX, pY, pZ);
-        }
-        if (typeof this.mirrorCamera.lookAt === 'function') {
-          this.mirrorCamera.lookAt(this.lookAtPosition.x, this.lookAtPosition.y, this.lookAtPosition.z);
-        }
-        this.mirrorCamera.far = 60.0;
-        if (typeof this.mirrorCamera.updateProjectionMatrix === 'function') {
-          this.mirrorCamera.updateProjectionMatrix();
-        }
+      // Position mirror camera directly at the mirror plane inside the room facing the avatar
+      if (this.mirrorCamera.position && typeof this.mirrorCamera.position.set === 'function') {
+        this.mirrorCamera.position.set(pX, pY, pZ + 0.06);
       }
-
-      // Temporarily extend fog distance so the mirror reflection captures the complete room architecture without void fading
-      const origFog = scene.fog;
-      if (origFog && typeof origFog.color !== 'undefined') {
-        const FogClass = (scene.fog && scene.fog.constructor) || (typeof window !== 'undefined' && window.THREE && window.THREE.Fog);
-        if (FogClass) {
-          scene.fog = new FogClass(origFog.color, 18.0, 60.0);
-        }
+      if (typeof this.mirrorCamera.lookAt === 'function') {
+        this.mirrorCamera.lookAt(this.lookAtPosition.x, this.lookAtPosition.y, this.lookAtPosition.z);
+      }
+      this.mirrorCamera.fov = 34;
+      this.mirrorCamera.near = 0.15;
+      this.mirrorCamera.far = 40.0;
+      if (typeof this.mirrorCamera.updateProjectionMatrix === 'function') {
+        this.mirrorCamera.updateProjectionMatrix();
       }
 
       renderer.setRenderTarget(this.renderTarget);
+      renderer.clear();
       renderer.render(scene, this.mirrorCamera);
       renderer.setRenderTarget(null);
-
-      if (origFog) {
-        scene.fog = origFog;
-      }
     } catch (err) {
       console.warn('[MirrorReflection] Error rendering mirror reflection:', err);
     } finally {
       if (this.mirrorMesh) {
         this.mirrorMesh.visible = true;
+      }
+      if (this.auxiliaryMirrorMesh) {
+        this.auxiliaryMirrorMesh.visible = true;
       }
     }
   }

@@ -160,7 +160,7 @@ export class VanityModel {
     this.mirrorGroup.position.set(0, tableHeight + 0.032, -tableDepth / 2 + 0.045);
 
     const archR = mirrorRadius || 0.48;
-    const straightH = 0.54;
+    const straightH = 1.05; // Grand increased mirror height per user request
 
     // A. Lower Rectangular Mirror Surface
     const lowerMirrorGeo = new THREE.BoxGeometry(archR * 2, straightH, 0.002);
@@ -234,6 +234,9 @@ export class VanityModel {
     // Initialize Mirror Reflection Pipeline
     this.reflection.init(THREE, scene, this.mirrorGlassMesh);
     if (this.lowerMirrorGlassMesh && this.reflection.renderTarget) {
+      if (typeof this.reflection.setAuxiliaryMirrorMesh === 'function') {
+        this.reflection.setAuxiliaryMirrorMesh(this.lowerMirrorGlassMesh);
+      }
       this.reflection.bindMirrorMesh(this.lowerMirrorGlassMesh, THREE);
     }
 
@@ -320,36 +323,39 @@ export class VanityModel {
     proceduralGroup.add(vaseGroup);
 
     // 4. ROUND CREAM BOUCLÉ UPHOLSTERED OTTOMAN STOOL WITH BRASS BASE
-    const stoolGroup = new THREE.Group();
-    stoolGroup.position.set(this.config.stoolPosition.x, this.config.stoolPosition.y, this.config.stoolPosition.z);
+    // Cushion beneath the table removed per user request: "remove the cussion benath the table"
+    if (this.config.showStool) {
+      const stoolGroup = new THREE.Group();
+      stoolGroup.position.set(this.config.stoolPosition.x, this.config.stoolPosition.y, this.config.stoolPosition.z);
 
-    const stoolPlinthGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.05, 36);
-    const stoolPlinth = new THREE.Mesh(stoolPlinthGeo, brassMat);
-    stoolPlinth.position.y = 0.025;
-    stoolPlinth.castShadow = true;
-    stoolGroup.add(stoolPlinth);
-    this.disposables.push(stoolPlinthGeo);
+      const stoolPlinthGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.05, 36);
+      const stoolPlinth = new THREE.Mesh(stoolPlinthGeo, brassMat);
+      stoolPlinth.position.y = 0.025;
+      stoolPlinth.castShadow = true;
+      stoolGroup.add(stoolPlinth);
+      this.disposables.push(stoolPlinthGeo);
 
-    const stoolBodyGeo = new THREE.CylinderGeometry(0.245, 0.238, 0.33, 36);
-    const stoolBody = new THREE.Mesh(stoolBodyGeo, boucleMat);
-    stoolBody.position.y = 0.215;
-    stoolBody.castShadow = true;
-    stoolGroup.add(stoolBody);
-    this.disposables.push(stoolBodyGeo);
+      const stoolBodyGeo = new THREE.CylinderGeometry(0.245, 0.238, 0.33, 36);
+      const stoolBody = new THREE.Mesh(stoolBodyGeo, boucleMat);
+      stoolBody.position.y = 0.215;
+      stoolBody.castShadow = true;
+      stoolGroup.add(stoolBody);
+      this.disposables.push(stoolBodyGeo);
 
-    const stoolCushionGeo = new THREE.CylinderGeometry(this.config.stoolRadius, 0.245, 0.07, 36);
-    const cushionMat = new THREE.MeshStandardMaterial({
-      color: 0xF8F4EE,
-      roughness: 0.82,
-      metalness: 0.02
-    });
-    const stoolCushion = new THREE.Mesh(stoolCushionGeo, cushionMat);
-    stoolCushion.position.y = 0.415;
-    stoolCushion.castShadow = true;
-    stoolGroup.add(stoolCushion);
-    this.disposables.push(stoolCushionGeo, cushionMat);
+      const stoolCushionGeo = new THREE.CylinderGeometry(this.config.stoolRadius, 0.245, 0.07, 36);
+      const cushionMat = new THREE.MeshStandardMaterial({
+        color: 0xF8F4EE,
+        roughness: 0.82,
+        metalness: 0.02
+      });
+      const stoolCushion = new THREE.Mesh(stoolCushionGeo, cushionMat);
+      stoolCushion.position.y = 0.415;
+      stoolCushion.castShadow = true;
+      stoolGroup.add(stoolCushion);
+      this.disposables.push(stoolCushionGeo, cushionMat);
 
-    proceduralGroup.add(stoolGroup);
+      proceduralGroup.add(stoolGroup);
+    }
 
     this.group.add(proceduralGroup);
 

@@ -899,6 +899,15 @@
         this.scene.add(studioRearFill.target);
         this.studioRearFill = studioRearFill;
 
+        // Front-facing avatar light situated directly at the mirror plane to ensure vibrant clothing reflection
+        const mirrorAvatarLight = new THREE.DirectionalLight(0xFFF4E6, 0.95);
+        mirrorAvatarLight.name = 'Studio_MirrorAvatarLight';
+        mirrorAvatarLight.position.set(1.15, 1.65, -2.75);
+        mirrorAvatarLight.target.position.set(0, 1.15, 0);
+        this.scene.add(mirrorAvatarLight);
+        this.scene.add(mirrorAvatarLight.target);
+        this.mirrorAvatarLight = mirrorAvatarLight;
+
         return;
       }
 
@@ -963,6 +972,15 @@
       this.scene.add(studioRearFill);
       this.scene.add(studioRearFill.target);
       this.studioRearFill = studioRearFill;
+
+      // Front-facing avatar light situated directly at the mirror plane to ensure vibrant clothing reflection
+      const mirrorAvatarLight = new THREE.DirectionalLight(0xFFF4E6, 0.95);
+      mirrorAvatarLight.name = 'Studio_MirrorAvatarLight';
+      mirrorAvatarLight.position.set(1.15, 1.65, -2.75);
+      mirrorAvatarLight.target.position.set(0, 1.15, 0);
+      this.scene.add(mirrorAvatarLight);
+      this.scene.add(mirrorAvatarLight.target);
+      this.mirrorAvatarLight = mirrorAvatarLight;
     }
 
     /**
@@ -1465,7 +1483,7 @@
       mirrorGroup.position.set(0, tableHeight + 0.032, -tableDepth / 2 + 0.045);
 
       const archR = 0.44;
-      const straightH = 0.54;
+      const straightH = 1.05; // Grand increased mirror height per user request
 
       // Lower Rectangular Mirror Surface
       const lowerMirror = new THREE.Mesh(
@@ -1621,50 +1639,7 @@
       }
       vanityGroup.add(vaseGroup);
 
-      // 4. ROUND CREAM BOUCLÉ UPHOLSTERED OTTOMAN STOOL WITH BRASS BASE
-      const stoolGroup = new THREE.Group();
-      stoolGroup.position.set(0.10, 0, 0.40);
-
-      // Cream Bouclé Upholstery Material
-      const stoolMat = new THREE.MeshStandardMaterial({
-        color: 0xF5EFEB,
-        roughness: 0.85,
-        metalness: 0.02
-      });
-
-      // Warm Champagne Brass Plinth Base Ring
-      const stoolPlinth = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.24, 0.24, 0.05, 36),
-        brassMat
-      );
-      stoolPlinth.position.y = 0.025;
-      stoolPlinth.castShadow = true;
-      stoolGroup.add(stoolPlinth);
-
-      // Soft Upholstered Ottoman Drum Body
-      const stoolBody = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.245, 0.238, 0.33, 36),
-        stoolMat
-      );
-      stoolBody.position.y = 0.215;
-      stoolBody.castShadow = true;
-      stoolGroup.add(stoolBody);
-
-      // Plush Cream Cushion Seat
-      const cushionMat = new THREE.MeshStandardMaterial({
-        color: 0xF8F4EE,
-        roughness: 0.80,
-        metalness: 0.02
-      });
-      const stoolCushion = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.25, 0.245, 0.07, 36),
-        cushionMat
-      );
-      stoolCushion.position.y = 0.415;
-      stoolCushion.castShadow = true;
-      stoolGroup.add(stoolCushion);
-
-      vanityGroup.add(stoolGroup);
+      // 4. Stool / Cushion beneath table removed per user request: "remove the cussion benath the table"
 
       // Raycastable Bounding Box
       const hitBox = new THREE.Mesh(
@@ -2390,6 +2365,9 @@
           if (targetMesh && this.vanityModel.reflection.bindMirrorMesh) {
             this.vanityModel.reflection.bindMirrorMesh(targetMesh, THREE);
           }
+          if (this.vanityModel.lowerMirrorGlassMesh && this.vanityModel.reflection.bindMirrorMesh) {
+            this.vanityModel.reflection.bindMirrorMesh(this.vanityModel.lowerMirrorGlassMesh, THREE);
+          }
           return;
         }
 
@@ -2401,9 +2379,9 @@
           magFilter: THREE.LinearFilter
         });
 
-        this.mirrorCamera = new THREE.PerspectiveCamera(28, 0.62, 1.0, 60);
-        this.mirrorCamera.position.set(1.15, 1.45, -2.85);
-        this.mirrorCamera.lookAt(0, 1.12, 0);
+        this.mirrorCamera = new THREE.PerspectiveCamera(34, 0.62, 0.15, 40);
+        this.mirrorCamera.position.set(1.15, 1.65, -2.80);
+        this.mirrorCamera.lookAt(0, 1.15, 0);
         this.scene.add(this.mirrorCamera);
 
         if (this.mirrorGlassMesh) {
@@ -3408,26 +3386,23 @@
       // 6. Real-time Mirror Rendering (Render from optical planar reflection perspective)
       const activeMirrorMesh = (this.vanityModel && this.vanityModel.mirrorGlassMesh) ? this.vanityModel.mirrorGlassMesh : this.mirrorGlassMesh;
       if (this.vanityModel && this.vanityModel.reflection) {
-        this.vanityModel.reflection.update(this.renderer, this.scene, this.camera);
+        this.vanityModel.reflection.update(this.renderer, this.scene);
       } else if (this.mirrorRenderTarget && this.mirrorCamera && activeMirrorMesh) {
         activeMirrorMesh.visible = false;
         if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = false;
-        this.mirrorCamera.position.set(1.15, 1.45, -2.85);
-        this.mirrorCamera.lookAt(0, 1.12, 0); // Looking towards avatar torso from optical reflection position
-        this.mirrorCamera.far = 60.0;
-
-        const origFog = this.scene.fog;
-        if (origFog && typeof origFog.color !== 'undefined') {
-          this.scene.fog = new THREE.Fog(origFog.color, 18.0, 60.0);
+        this.mirrorCamera.position.set(1.15, 1.65, -2.80);
+        this.mirrorCamera.lookAt(0, 1.15, 0); // Looking towards avatar torso from mirror position
+        this.mirrorCamera.fov = 34;
+        this.mirrorCamera.near = 0.15;
+        this.mirrorCamera.far = 40.0;
+        if (typeof this.mirrorCamera.updateProjectionMatrix === 'function') {
+          this.mirrorCamera.updateProjectionMatrix();
         }
 
         this.renderer.setRenderTarget(this.mirrorRenderTarget);
+        this.renderer.clear();
         this.renderer.render(this.scene, this.mirrorCamera);
         this.renderer.setRenderTarget(null);
-
-        if (origFog) {
-          this.scene.fog = origFog;
-        }
 
         activeMirrorMesh.visible = true;
         if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = true;

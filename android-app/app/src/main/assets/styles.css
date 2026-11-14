@@ -17051,11 +17051,10 @@ body.theme-dark .woobi-silk-bg,
   inset: 0;
   background: #FAF9F6;
   z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: all;
-  opacity: 1;
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
   transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.45s;
   will-change: opacity, transform;
   transform: translateZ(0);

@@ -4,8 +4,8 @@
  */
 
 export const FEMALE_AVATAR_PATHS = [
-  'seren_avatar.glb',
-  'assets/models/avatar_female.glb'
+  'assets/models/avatar_female.glb',
+  'seren_avatar.glb'
 ];
 
 export const MALE_AVATAR_PATHS = [
@@ -25,12 +25,15 @@ export const AVATAR_ASSET_PATHS = [
 
 export const MANNEQUIN_ASSET_PATHS = {
   female: [
+    'assets/models/avatar_female.glb',
+    'seren_avatar.glb',
     'Woobi_Female_Mannequin_Fixed.glb',
     'woobi_female_mannequin.glb',
     '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
     '3D - Mannequin By Astra/female/Woobi_Female_Mannequin.glb'
   ],
   male: [
+    'assets/models/avatar_male.glb',
     'woobi_male_mannequin.glb',
     '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb',
     '3D - Mannequin By Astra/male/Woobi_Male_Mannequin.glb'
@@ -134,32 +137,32 @@ export class AvatarAssets {
               child.castShadow = true;
               child.receiveShadow = true;
 
-              if (child.material) {
-                // Eliminate oily/glossy shine across all meshes:
-                // Remove specular roughness maps that induce oily glare
-                child.material.roughnessMap = null;
-                child.material.metalnessMap = null;
-                if ('clearcoat' in child.material) child.material.clearcoat = 0;
-                if ('clearcoatRoughness' in child.material) child.material.clearcoatRoughness = 1;
-              }
+              const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+              const hasTextureMap = mats.some(m => m && (m.map?.isTexture || m.map));
 
-              // Check if model has pre-baked texture maps (such as female_mannequin or male_mannequin)
-              if (child.material && child.material.map) {
-                child.material.color = new THREE.Color(0xFFFFFF);
-                if (child.name.includes('Hair') || child.name.includes('Eyeleashes') || child.name.includes('Eyelashes')) {
-                  child.material.roughness = 0.78;
-                  child.material.metalness = 0.02;
-                  if (this.materials) this.materials.registerHairMaterial(child.material);
-                } else {
-                  // Natural soft matte finish for skin and clothing
-                  child.material.roughness = 0.85;
-                  child.material.metalness = 0.0;
-                  // If mesh already has baked texture map, do not override with flat skin tones
-                  if (this.materials && !child.material.map && (child.name.includes('Body') || child.name.includes('Head'))) {
-                    this.materials.registerSkinMaterial(child.material);
+              mats.forEach((mat) => {
+                if (!mat) return;
+                mat.roughnessMap = null;
+                mat.metalnessMap = null;
+                if ('clearcoat' in mat) mat.clearcoat = 0;
+                if ('clearcoatRoughness' in mat) mat.clearcoatRoughness = 1;
+              });
+
+              // Check if model has pre-baked texture maps (such as avatar_female.glb or avatar_male.glb)
+              if (hasTextureMap) {
+                mats.forEach((mat) => {
+                  if (!mat) return;
+                  if (mat.map) mat.color = new THREE.Color(0xFFFFFF);
+                  if (child.name.includes('Hair') || child.name.includes('Eyeleashes') || child.name.includes('Eyelashes')) {
+                    mat.roughness = 0.78;
+                    mat.metalness = 0.02;
+                    if (this.materials) this.materials.registerHairMaterial(mat);
+                  } else {
+                    mat.roughness = 0.85;
+                    mat.metalness = 0.0;
                   }
-                }
-                child.material.needsUpdate = true;
+                  mat.needsUpdate = true;
+                });
               } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
                 ensureUVs(child.geometry);
                 if (child.material) {

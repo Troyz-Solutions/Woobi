@@ -2801,8 +2801,8 @@
         loader.setMeshoptDecoder(window.MeshoptDecoder);
       }
       const modelUrls = [
-        'seren_avatar.glb',
-        'assets/models/avatar_female.glb'
+        'assets/models/avatar_female.glb',
+        'seren_avatar.glb'
       ];
 
       const tryLoad = (index) => {
@@ -2828,36 +2828,51 @@
                 child.castShadow = true;
                 child.receiveShadow = true;
 
-                if (child.material) {
-                  child.material.roughnessMap = null;
-                  child.material.metalnessMap = null;
-                  if ('clearcoat' in child.material) child.material.clearcoat = 0;
-                  child.material.roughness = 0.85;
-                  child.material.metalness = 0.0;
-                }
+                const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+                const hasTextureMap = mats.some(m => m && (m.map?.isTexture || m.map));
+
+                mats.forEach((mat) => {
+                  if (!mat) return;
+                  mat.roughnessMap = null;
+                  mat.metalnessMap = null;
+                  if ('clearcoat' in mat) mat.clearcoat = 0;
+                  mat.roughness = 0.85;
+                  mat.metalness = 0.0;
+                  if (mat.map) {
+                    mat.color = new THREE.Color(0xFFFFFF);
+                  }
+                });
 
                 // Preserve full vibrant contrast of embedded textures; only assign procedural tones when untextured
-                if (child.material && child.material.map) {
-                  child.material.color = new THREE.Color(0xFFFFFF);
+                if (hasTextureMap) {
+                  // Retain original baked clothing and skin textures from avatar GLB
                 } else if (child.name.includes('Hair')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.honeyOak).multiplyScalar(0.2);
-                  child.material.roughness = 0.78;
-                  this.hairMaterials.push(child.material);
+                  mats.forEach((mat) => {
+                    mat.color = new THREE.Color(COLOR_PALETTE.honeyOak).multiplyScalar(0.2);
+                    mat.roughness = 0.78;
+                    this.hairMaterials.push(mat);
+                  });
                 } else if (child.name.includes('Head') || child.name.includes('Body')) {
-                  if (!child.material.map) {
-                    child.material.color = new THREE.Color(0xF3D5C6);
-                    this.skinMaterials.push(child.material);
-                  }
-                  child.material.roughness = 0.82;
+                  mats.forEach((mat) => {
+                    mat.color = new THREE.Color(0xF3D5C6);
+                    mat.roughness = 0.82;
+                    this.skinMaterials.push(mat);
+                  });
                 } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.cropTankIvory);
-                  child.material.roughness = 0.85;
+                  mats.forEach((mat) => {
+                    mat.color = new THREE.Color(COLOR_PALETTE.cropTankIvory);
+                    mat.roughness = 0.85;
+                  });
                 } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.trousersSand);
-                  child.material.roughness = 0.88;
+                  mats.forEach((mat) => {
+                    mat.color = new THREE.Color(COLOR_PALETTE.trousersSand);
+                    mat.roughness = 0.88;
+                  });
                 } else if (child.name.includes('Footwear') || child.name.includes('Shoes')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.sneakersWhite);
-                  child.material.roughness = 0.72;
+                  mats.forEach((mat) => {
+                    mat.color = new THREE.Color(COLOR_PALETTE.sneakersWhite);
+                    mat.roughness = 0.72;
+                  });
                 }
 
                 if (child.geometry && child.geometry.attributes && child.geometry.attributes.position) {
@@ -3643,8 +3658,8 @@
             'woobi_male_mannequin.glb'
           ]
         : [
-            'seren_avatar.glb',
-            'assets/models/avatar_female.glb'
+            'assets/models/avatar_female.glb',
+            'seren_avatar.glb'
           ];
 
       const tryLoad = (idx) => {
@@ -3662,12 +3677,20 @@
             }
 
             // Position model cleanly on the dais (avatarRoot provides the 0.080m dais elevation)
+            model.scale.set(0.96, 0.96, 0.96);
             model.position.set(0, 0, 0);
 
             model.traverse((child) => {
               if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
+                const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+                mats.forEach((mat) => {
+                  if (!mat) return;
+                  if (mat.map) mat.color = new THREE.Color(0xFFFFFF);
+                  mat.roughness = 0.85;
+                  mat.metalness = 0.0;
+                });
                 if (child.geometry && child.geometry.attributes && child.geometry.attributes.position) {
                   if (!child.geometry.userData.basePositions) {
                     child.geometry.userData.basePositions = new Float32Array(child.geometry.attributes.position.array);

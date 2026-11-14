@@ -1714,6 +1714,16 @@
     };
     const garmentId = idMap[item.name] || item.id || 'navy_shirt';
 
+    if (window.WoobiTryOn && typeof window.WoobiTryOn.registerDynamicGarment === 'function') {
+      window.WoobiTryOn.registerDynamicGarment({
+        id: garmentId,
+        name: item.name,
+        category: engineCat,
+        photo: item.photo,
+        color: item.color
+      });
+    }
+
     // Transfer seamlessly to Studio Screen if not already on it
     if (state.currentScreen !== 'today') {
       goToScreen('today');
@@ -1722,7 +1732,13 @@
     const studio = window.Studio3D || window.studio3d;
     if (studio && typeof studio.equipGarment === 'function') {
       try {
-        studio.equipGarment(engineCat, garmentId);
+        studio.equipGarment(engineCat, garmentId, {
+          item: item,
+          garment: item,
+          name: item.name,
+          photo: item.photo,
+          color: item.color
+        });
         if (typeof studio.setCameraState === 'function') {
           studio.setCameraState('AVATAR_FULL_BODY');
         }

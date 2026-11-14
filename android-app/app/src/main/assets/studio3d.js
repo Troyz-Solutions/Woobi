@@ -2945,11 +2945,17 @@
         return this.avatarModel.setMannequinGender(gender, (model) => {
           this.gltfAvatarGroup = this.avatarModel.gltfAvatarGroup;
           this.activeAvatarType = this.avatarModel.activeAvatarType;
+          if (this.features && this.features.tryOn && typeof this.features.tryOn.applyCurrentOutfitToAvatar === 'function') {
+            this.features.tryOn.applyCurrentOutfitToAvatar();
+          }
           if (callback) callback(model);
         });
       }
       if (this.avatarController && typeof this.avatarController.setGenderPresentation === 'function') {
         this.avatarController.setGenderPresentation(gender);
+        if (this.features && this.features.tryOn && typeof this.features.tryOn.applyCurrentOutfitToAvatar === 'function') {
+          this.features.tryOn.applyCurrentOutfitToAvatar();
+        }
       }
     }
 
@@ -3782,6 +3788,10 @@
 
             this.updateBodyMeshScale();
             this.savePreferences();
+
+            if (this.features && this.features.tryOn && typeof this.features.tryOn.applyCurrentOutfitToAvatar === 'function') {
+              this.features.tryOn.applyCurrentOutfitToAvatar();
+            }
           },
           undefined,
           () => tryLoad(idx + 1)
@@ -3859,7 +3869,7 @@
     /**
      * Equips Garments on Avatar
      */
-    equipGarment(category, id) {
+    equipGarment(category, id, options = {}) {
       this.activeGarments = this.activeGarments || {};
       this.activeGarments[category] = id;
       if (!this.features) {
@@ -3869,7 +3879,7 @@
         this.features.setAvatarModel(this.avatarModel);
       }
       if (this.features && this.features.tryOn && typeof this.features.tryOn.equipGarment === 'function') {
-        return this.features.tryOn.equipGarment(category, id);
+        return this.features.tryOn.equipGarment(category, id, options);
       }
       console.log(`Studio3D: Equipped [${category}] -> [${id}]`);
     }

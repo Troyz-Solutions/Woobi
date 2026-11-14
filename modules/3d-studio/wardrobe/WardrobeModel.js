@@ -141,35 +141,6 @@ export class WardrobeModel {
     proceduralGroup.add(topBox);
     this.disposables.push(boxMat, boxGeo);
 
-    // Top Shelf Luxury Velvet Watch & Accessory Display Tray
-    const trayGeo = new THREE.BoxGeometry(0.32, 0.04, 0.28);
-    const velvetMat = new THREE.MeshStandardMaterial({ color: 0x1A1D20, roughness: 0.85, metalness: 0.1 });
-    const watchTray = new THREE.Mesh(trayGeo, velvetMat);
-    watchTray.position.set(0.24, 2.26, 0.02);
-    watchTray.castShadow = true;
-    proceduralGroup.add(watchTray);
-    this.disposables.push(trayGeo, velvetMat);
-
-    // Gold Watch Mesh inside Tray
-    const watchBezelGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.012, 16);
-    const watchMat = new THREE.MeshStandardMaterial({ color: 0xD4AF37, metalness: 0.85, roughness: 0.25 });
-    const watchMesh = new THREE.Mesh(watchBezelGeo, watchMat);
-    watchMesh.position.set(0.24, 2.29, 0.02);
-    watchMesh.castShadow = true;
-    watchMesh.userData = {
-      interactiveType: 'wardrobe_garment',
-      garmentId: 'item_watch_gold',
-      garmentName: 'Gold Heritage Watch',
-      modelId: 'gold_watch',
-      engineCategory: 'accessory',
-      garmentCategory: 'Accessories',
-      color: '#D4AF37',
-      photo: 'assets/smart_blazer.jpg'
-    };
-    proceduralGroup.add(watchMesh);
-    this.interactiveObjects.push(watchMesh);
-    this.disposables.push(watchBezelGeo, watchMat);
-
     // 1. Upper clothing rail with neatly hung shirts (positioned slightly upwards, balanced)
     const railY = 2.16;
     const railGeo = new THREE.CylinderGeometry(0.011, 0.011, width - 0.08, 16);
@@ -180,58 +151,16 @@ export class WardrobeModel {
     proceduralGroup.add(rail);
     this.disposables.push(railGeo);
 
-    // Hanging shirts on upper rail (Linked with Wardrobe Items & Interactive Drag)
-    const shirtData = [
-      { id: 'item_1', name: 'Navy Shirt', color: 0x22354A, photo: 'assets/navy_shirt.jpg', category: 'Tops', modelId: 'navy_shirt', type: 'top' },
-      { id: 'item_7', name: 'White Linen Shirt', color: 0xF5F0E6, photo: 'assets/white_linen_shirt.jpg', category: 'Tops', modelId: 'wide_linen', type: 'top' },
-      { id: 'item_3', name: 'Cream Kurta', color: 0xEDE2CE, photo: 'assets/olive_kurta.jpg', category: 'Tops', modelId: 'cardigan', type: 'top' },
-      { id: 'item_16', name: 'Tailored Blazer', color: 0x8C7456, photo: 'assets/smart_blazer.jpg', category: 'Tops', modelId: 'blazer', type: 'top' },
-      { id: 'item_5', name: 'Maroon Top', color: 0x6E1D24, photo: 'assets/maroon_top.jpg', category: 'Tops', modelId: 'tank', type: 'top' }
-    ];
-
-    const shirtOffsets = [-0.32, -0.16, 0.00, 0.16, 0.32];
-    shirtData.forEach((sd, idx) => {
-      const sx = shirtOffsets[idx];
-      const hanger = new THREE.Group();
-      hanger.position.set(sx, railY, 0);
-
-      const hBarGeo = new THREE.CylinderGeometry(0.007, 0.007, 0.28, 12);
-      const hBar = new THREE.Mesh(hBarGeo, oakMat);
-      hBar.rotation.z = Math.PI / 2;
-      hBar.position.y = -0.04;
-      hanger.add(hBar);
-
-      const hookGeo = new THREE.CylinderGeometry(0.003, 0.003, 0.035, 8);
-      const hook = new THREE.Mesh(hookGeo, brassMat);
-      hook.position.y = -0.015;
-      hanger.add(hook);
-
+    // Hanging shirts on upper rail
+    [-0.24, 0.00, 0.24].forEach((sx, idx) => {
       const shirtGeo = new THREE.CylinderGeometry(0.08, 0.11, 0.46, 16);
-      const shirtMat = new THREE.MeshStandardMaterial({
-        color: sd.color,
-        roughness: 0.65,
-        metalness: 0.03
-      });
-
-      const shirtMesh = new THREE.Mesh(shirtGeo, shirtMat);
-      shirtMesh.position.y = -0.28;
-      shirtMesh.castShadow = true;
-      hanger.add(shirtMesh);
-
-      hanger.userData = {
-        interactiveType: 'wardrobe_garment',
-        garmentId: sd.id,
-        garmentName: sd.name,
-        garmentCategory: sd.category,
-        modelId: sd.modelId,
-        engineCategory: sd.type,
-        photo: sd.photo,
-        color: sd.color
-      };
-
-      proceduralGroup.add(hanger);
-      this.interactiveObjects.push(hanger);
-      this.disposables.push(hBarGeo, hookGeo, shirtGeo, shirtMat);
+      const shirtColors = [0xF4ECE1, 0xFAF8F5, 0x33363B];
+      const shirtMat = new THREE.MeshStandardMaterial({ color: shirtColors[idx], roughness: 0.70 });
+      const shirt = new THREE.Mesh(shirtGeo, shirtMat);
+      shirt.position.set(sx, railY - 0.28, 0);
+      shirt.castShadow = true;
+      proceduralGroup.add(shirt);
+      this.disposables.push(shirtGeo, shirtMat);
     });
 
     // 2. Horizontal hanging rod directly below shirts section & vertically hanging trousers
@@ -244,52 +173,16 @@ export class WardrobeModel {
     proceduralGroup.add(trRail);
     this.disposables.push(trRailGeo);
 
-    // Hanging trousers on lower rail (Linked with Wardrobe Items & Interactive Drag)
-    const trouserData = [
-      { id: 'item_2', name: 'Beige Chinos', color: 0xD4B896, photo: 'assets/beige_chinos.jpg', category: 'Bottoms', modelId: 'taupe_wide', type: 'bottom', len: 0.44 },
-      { id: 'item_8', name: 'Dark Denim', color: 0x1E2A3A, photo: 'assets/dark_denim.jpg', category: 'Bottoms', modelId: 'dark_denim', type: 'bottom', len: 0.48 },
-      { id: 'item_6', name: 'Dark Skirt', color: 0x2A2B30, photo: 'assets/dark_skirt.jpg', category: 'Bottoms', modelId: 'dark_skirt', type: 'bottom', len: 0.42 },
-      { id: 'item_13', name: 'Cream Palazzo', color: 0xF2ECE2, photo: 'assets/cream_palazzo.jpg', category: 'Bottoms', modelId: 'taupe_wide', type: 'bottom', len: 0.46 }
-    ];
-
-    const trouserOffsets = [-0.27, -0.09, 0.09, 0.27];
-    trouserData.forEach((td, idx) => {
-      const tx = trouserOffsets[idx];
-      const trHanger = new THREE.Group();
-      trHanger.position.set(tx, trouserRailY, 0);
-
-      const clipBarGeo = new THREE.CylinderGeometry(0.005, 0.005, 0.22, 10);
-      const clipBar = new THREE.Mesh(clipBarGeo, oakMat);
-      clipBar.rotation.z = Math.PI / 2;
-      clipBar.position.y = -0.03;
-      trHanger.add(clipBar);
-
-      const legGeo = new THREE.BoxGeometry(0.13, td.len, 0.06);
-      const trMat = new THREE.MeshStandardMaterial({
-        color: td.color,
-        roughness: 0.72,
-        metalness: 0.02
-      });
-
-      const trMesh = new THREE.Mesh(legGeo, trMat);
-      trMesh.position.set(0, -0.05 - td.len / 2, 0);
-      trMesh.castShadow = true;
-      trHanger.add(trMesh);
-
-      trHanger.userData = {
-        interactiveType: 'wardrobe_garment',
-        garmentId: td.id,
-        garmentName: td.name,
-        garmentCategory: td.category,
-        modelId: td.modelId,
-        engineCategory: td.type,
-        photo: td.photo,
-        color: td.color
-      };
-
-      proceduralGroup.add(trHanger);
-      this.interactiveObjects.push(trHanger);
-      this.disposables.push(clipBarGeo, legGeo, trMat);
+    // Hanging trousers
+    const trColors = [0x1E2A3A, 0xC4AA78, 0x5C6B4A];
+    [-0.24, 0.00, 0.24].forEach((tx, idx) => {
+      const legGeo = new THREE.BoxGeometry(0.14, 0.42, 0.06);
+      const trMat = new THREE.MeshStandardMaterial({ color: trColors[idx], roughness: 0.72 });
+      const tr = new THREE.Mesh(legGeo, trMat);
+      tr.position.set(tx, trouserRailY - 0.25, 0);
+      tr.castShadow = true;
+      proceduralGroup.add(tr);
+      this.disposables.push(legGeo, trMat);
     });
 
     // 3. Dedicated Footwear Area below trousers (shoes, sneakers, and sandals)
@@ -305,28 +198,18 @@ export class WardrobeModel {
       { x: 0.28,  mat: shoeMatLoafer, type: 'loafer' }
     ];
 
-    footItems.forEach((fi, idx) => {
+    footItems.forEach((fi) => {
       const sGeo = new THREE.BoxGeometry(0.10, 0.024, 0.16);
       const shoeMesh = new THREE.Mesh(sGeo, fi.mat);
       shoeMesh.position.set(fi.x, 0.14, 0.02);
       shoeMesh.castShadow = true;
-      shoeMesh.userData = {
-        interactiveType: 'wardrobe_garment',
-        garmentId: `wardrobe_shoe_${fi.type}_${idx}`,
-        garmentName: fi.type === 'sneaker' ? 'Clean Minimalist Sneakers' : (fi.type === 'loafer' ? 'Suede Loafers' : 'Woven Leather Sandals'),
-        modelId: fi.type === 'sneaker' ? 'white_sneakers' : 'leather_shoes',
-        engineCategory: 'shoes',
-        garmentCategory: 'Footwear',
-        photo: 'assets/smart_blazer.jpg'
-      };
       proceduralGroup.add(shoeMesh);
-      this.interactiveObjects.push(shoeMesh);
       this.disposables.push(sGeo);
     });
 
     this.group.add(proceduralGroup);
 
-    // 3. Attempt to load authentic Astra 3D GLB wardrobe
+    // 3. Primary 3D Wardrobe: Load authentic revised 3D GLB model
     WardrobeAssets.loadAstraWardrobe(
       THREE,
       scale,
@@ -334,9 +217,17 @@ export class WardrobeModel {
         this.group.add(model);
         this.isGLBLoaded = true;
         proceduralGroup.visible = false;
+
+        // Clean up procedural placeholder geometry to prevent any duplicate/overlapping geometry
+        while (proceduralGroup.children && proceduralGroup.children.length > 0) {
+          const child = proceduralGroup.children[0];
+          proceduralGroup.remove(child);
+          if (child.geometry && typeof child.geometry.dispose === 'function') child.geometry.dispose();
+          if (child.material && typeof child.material.dispose === 'function') child.material.dispose();
+        }
       },
       () => {
-        // Procedural group remains visible as primary representation
+        // Fallback representation only when GLB is absent
         this.isGLBLoaded = false;
       }
     );

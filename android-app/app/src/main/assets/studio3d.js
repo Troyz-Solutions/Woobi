@@ -1158,94 +1158,143 @@
      * Powered by extracted Wardrobe module: modules/3d-studio/wardrobe/WardrobeModel.js
      */
     buildWardrobeFurniture() {
-      // 1. Build authentic Scandinavian Cashmere Oak Wardrobe from wardrobe3d.js (matches visual reference)
+      const wardrobeGroup = new THREE.Group();
+      wardrobeGroup.name = 'woobi_wardrobe_root';
+      // Scale and position precisely to match the Sérén / Woobi reference framing (on left of mannequin)
+      wardrobeGroup.position.set(-1.12, 0, -0.22);
+      wardrobeGroup.rotation.y = 0.30;
+      this.wardrobeGroup = wardrobeGroup;
+
+      const scale = 0.85;
+      const height = 2.40;
+
+      // Raycastable Bounding Box for Touch & Click Interaction
+      const hitBox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.60, height, 0.75),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      hitBox.position.set(0, height / 2, 0);
+      hitBox.userData = { interactiveType: 'wardrobe', name: 'Beige Boutique Wardrobe' };
+      wardrobeGroup.add(hitBox);
+      this.interactiveObjects.push(hitBox);
+
+      // Model interface for studio interaction handlers
+      this.wardrobeModel = {
+        group: wardrobeGroup,
+        doorsOpen: false,
+        openDoors: () => { this.wardrobeModel.doorsOpen = true; },
+        closeDoors: () => { this.wardrobeModel.doorsOpen = false; }
+      };
+
+      // 1. Initial responsive representation while 3D GLB model streams in
       const WardrobeClass = (typeof Wardrobe3D !== 'undefined') ? Wardrobe3D : (typeof window !== 'undefined' ? window.Wardrobe3D : null);
       if (WardrobeClass) {
-        console.log('Studio3D: Building authentic Scandinavian Cashmere Oak Wardrobe from wardrobe3d.js');
-        const wardrobeInstance = new WardrobeClass({ enableLights: true });
-        this.wardrobeInstance = wardrobeInstance;
-        this.wardrobeGroup = wardrobeInstance.group;
-
-        // Scale and position precisely to match the Sérén / Woobi reference framing (on left of mannequin, close and visible)
-        const scale = 0.82;
-        this.wardrobeGroup.scale.set(scale, scale, scale);
-        this.wardrobeGroup.position.set(-1.08, 0, -0.22);
-        this.wardrobeGroup.rotation.y = 0.30;
-
-        // Interactive bounding hitBox for touch & click
-        const hitBox = new THREE.Mesh(
-          new THREE.BoxGeometry(2.20 * scale + 0.2, 2.95 * scale, 0.65 * scale + 0.3),
-          new THREE.MeshBasicMaterial({ visible: false })
-        );
-        hitBox.position.set(0, (2.95 * scale) / 2, 0);
-        hitBox.userData = { interactiveType: 'wardrobe', name: 'Built-in Oak Wardrobe' };
-        this.wardrobeGroup.add(hitBox);
-        this.interactiveObjects.push(hitBox);
-
-        this.scene.add(this.wardrobeGroup);
-        return;
-      }
-
-      if (typeof window !== 'undefined' && window.WoobiWardrobe && typeof window.WoobiWardrobe.createWardrobe === 'function') {
-        this.wardrobeModel = window.WoobiWardrobe.createWardrobe(this.scene, this.textures, THREE);
-        this.wardrobeGroup = this.wardrobeModel.group;
-        if (Array.isArray(this.wardrobeModel.interactiveObjects)) {
-          this.wardrobeModel.interactiveObjects.forEach(obj => this.interactiveObjects.push(obj));
+        try {
+          const wardrobeInstance = new WardrobeClass({ enableLights: true });
+          this.wardrobeInstance = wardrobeInstance;
+          const pScale = 0.82;
+          wardrobeInstance.group.scale.set(pScale, pScale, pScale);
+          wardrobeGroup.add(wardrobeInstance.group);
+        } catch (e) {
+          console.warn('Initial wardrobe placeholder warning:', e);
         }
-        return;
       }
 
-      const wardrobeGroup = new THREE.Group();
-      // Position naturally on left wall with angled perspective matching Reference D
-      wardrobeGroup.position.set(-1.08, 0, -0.22);
-      wardrobeGroup.rotation.y = 0.30;
-
-      const scale = 2.40 / 3.00;
-      const width = 2.20 * scale;
-      const height = 3.00 * scale;
-      const depth = 0.65 * scale;
-
+      // 2. Load PR #42 Authentic 3D Wardrobe GLB with Draco Compression & Beige Aesthetic
       if (typeof THREE.GLTFLoader !== 'undefined') {
         const gltfLoader = new THREE.GLTFLoader();
-        const astraPath = '3D- Wardrobe by Astra/wardrobe.glb';
-        const fallbackPath = 'wardrobe.glb';
+
+        // Configure DRACOLoader for compressed GLB geometry
+        const DracoClass = THREE.DRACOLoader || (typeof window !== 'undefined' ? (window.THREE?.DRACOLoader || window.DRACOLoader) : null);
+        if (DracoClass) {
+          try {
+            const draco = new DracoClass();
+            draco.setDecoderPath('libs/draco/gltf/');
+            if (typeof draco.preload === 'function') draco.preload();
+            gltfLoader.setDRACOLoader(draco);
+          } catch (e) {
+            console.warn('[Studio3D] DRACOLoader setup error:', e);
+          }
+        }
+
+        // Configure MeshoptDecoder if available
+        const Meshopt = (typeof MeshoptDecoder !== 'undefined') ? MeshoptDecoder : (typeof window !== 'undefined' ? window.MeshoptDecoder : null);
+        if (Meshopt && typeof gltfLoader.setMeshoptDecoder === 'function') {
+          gltfLoader.setMeshoptDecoder(Meshopt);
+        }
+
+        const wardrobePaths = [
+          '3D- Wardrobe by Astra/wardrobe.glb',
+          'wardrobe.glb',
+          'wardrobe-revised-compressed.glb'
+        ];
 
         const onWardrobeLoad = (gltf) => {
           const model = gltf.scene;
-          model.scale.set(scale, scale, scale);
-          model.position.set(0, 0, 0);
-          model.rotation.y = Math.PI;
 
-          // Apply authentic 100% matched Astra materials & internal shelf lights pipeline
+          // Orient front opening towards room interior (+Z in Three.js coordinates)
+          model.rotation.y = -Math.PI / 2;
+
+          // Scale uniformly preserving original proportions to 2.40m height
+          const targetHeight = 2.40;
+          let scaleFactor = 2.44;
+          try {
+            if (THREE.Box3) {
+              const bbox = new THREE.Box3().setFromObject(model);
+              const rawHeight = bbox.max.y - bbox.min.y;
+              if (rawHeight > 0.05) {
+                scaleFactor = targetHeight / rawHeight;
+              }
+            }
+          } catch (e) {}
+          model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+          // Align base flush on floor
+          try {
+            if (THREE.Box3) {
+              const scaledBbox = new THREE.Box3().setFromObject(model);
+              model.position.set(0, -scaledBbox.min.y, 0);
+            } else {
+              model.position.set(0, 1.195, 0);
+            }
+          } catch (e) {
+            model.position.set(0, 1.195, 0);
+          }
+
+          // Apply PR #42 authentic Beige aesthetic styling & internal warm shelf lights
           if (typeof AstraWardrobeStyling !== 'undefined') {
             AstraWardrobeStyling.applyMaterials(model);
           } else if (typeof window !== 'undefined' && window.AstraWardrobeStyling) {
             window.AstraWardrobeStyling.applyMaterials(model);
           }
 
+          // Transition from placeholder to authentic 3D GLB model
+          if (this.wardrobeInstance && this.wardrobeInstance.group) {
+            wardrobeGroup.remove(this.wardrobeInstance.group);
+            this.wardrobeInstance = null;
+          }
+
           wardrobeGroup.add(model);
+          this.wardrobeGLB = model;
+          console.log('Studio3D: PR #42 3D Wardrobe successfully loaded with Draco & Beige Aesthetic.');
         };
 
-        gltfLoader.load(
-          astraPath,
-          onWardrobeLoad,
-          undefined,
-          () => gltfLoader.load(fallbackPath, onWardrobeLoad)
-        );
+        const tryLoadNext = (idx) => {
+          if (idx >= wardrobePaths.length) return;
+          gltfLoader.load(
+            wardrobePaths[idx],
+            onWardrobeLoad,
+            undefined,
+            () => tryLoadNext(idx + 1)
+          );
+        };
 
-        // Raycastable Bounding Box for Touch / Click
-        const hitBox = new THREE.Mesh(
-          new THREE.BoxGeometry(width + 0.2, height, depth + 0.3),
-          new THREE.MeshBasicMaterial({ visible: false })
-        );
-        hitBox.position.set(0, height / 2, 0);
-        hitBox.userData = { interactiveType: 'wardrobe', name: 'Built-in Oak Wardrobe' };
-        wardrobeGroup.add(hitBox);
-        this.interactiveObjects.push(hitBox);
-
-        this.scene.add(wardrobeGroup);
-        return;
+        tryLoadNext(0);
       }
+
+      this.scene.add(wardrobeGroup);
+      return wardrobeGroup;
+    }
 
       const oakMat = new THREE.MeshStandardMaterial({
         map: this.textures.oak,

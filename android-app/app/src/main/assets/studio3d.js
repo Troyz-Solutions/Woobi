@@ -1683,6 +1683,10 @@
       backArc.position.set(0, straightH, -frameDepth / 2 - 0.004);
       mirrorGroup.add(backArc);
 
+      // I. Classic Parisian Horlogerie Wall Clock Mounted Above the Grooming Mirror
+      const clockGroup = this.buildClassicWallClock(straightH, frameOuterR, brassMat, polishedGoldMat);
+      mirrorGroup.add(clockGroup);
+
       // Warm continuous radiance light from the mirror ring
       const mirrorGlowLight = new THREE.PointLight(0xFFE8BE, 1.4, 3.2);
       mirrorGlowLight.position.set(0, straightH * 0.75, 0.25);
@@ -1920,6 +1924,282 @@
       }
 
       this.scene.add(vanityGroup);
+    }
+
+    /**
+     * Builds an authentic classic Parisian horlogerie wall clock mounted directly above the grooming mirror.
+     */
+    buildClassicWallClock(straightH, frameOuterR, brassMat, polishedGoldMat) {
+      const clockGroup = new THREE.Group();
+      clockGroup.name = 'studio_classic_wall_clock';
+      const clockCenterY = straightH + frameOuterR + 0.34;
+      clockGroup.position.set(0, clockCenterY, -0.015);
+
+      const clockR = 0.22; // 44cm diameter classic station wall clock
+
+      // 1. Deep Antique Dark Walnut Wooden Outer Casing
+      const casingGeo = new THREE.CylinderGeometry(clockR + 0.018, clockR + 0.018, 0.042, 48);
+      const casingMat = new THREE.MeshStandardMaterial({ color: 0x2A1E14, roughness: 0.65 });
+      const casing = new THREE.Mesh(casingGeo, casingMat);
+      casing.rotation.x = Math.PI / 2;
+      casing.position.set(0, 0, -0.012);
+      casing.castShadow = true;
+      clockGroup.add(casing);
+
+      // 2. Stepped Beveled Champagne Brass Outer Bezel Ring
+      const outerBezelGeo = new THREE.TorusGeometry(clockR + 0.008, 0.014, 16, 64);
+      const outerBezel = new THREE.Mesh(outerBezelGeo, brassMat);
+      outerBezel.position.set(0, 0, 0.006);
+      outerBezel.castShadow = true;
+      clockGroup.add(outerBezel);
+
+      // 3. Inner Polished Gilded Bezel Ring
+      const innerBezelGeo = new THREE.TorusGeometry(clockR - 0.016, 0.008, 16, 64);
+      const innerBezel = new THREE.Mesh(innerBezelGeo, polishedGoldMat);
+      innerBezel.position.set(0, 0, 0.012);
+      clockGroup.add(innerBezel);
+
+      // 4. Dial Face (Antique Parchment Ivory with Roman Numerals & Railway Ticks)
+      const clockDialTexture = this.createStudioClockDialTexture();
+      const dialMat = new THREE.MeshStandardMaterial({
+        map: clockDialTexture,
+        color: clockDialTexture ? 0xFFFFFF : 0xF7F4EB,
+        roughness: 0.32,
+        metalness: 0.02
+      });
+      const dialGeo = new THREE.CircleGeometry(clockR - 0.018, 64);
+      const dial = new THREE.Mesh(dialGeo, dialMat);
+      dial.position.set(0, 0, 0.014);
+      dial.receiveShadow = true;
+      clockGroup.add(dial);
+
+      // 5. Central Brass Pinion Hub
+      const pinionGeo = new THREE.CylinderGeometry(0.010, 0.010, 0.014, 20);
+      const pinion = new THREE.Mesh(pinionGeo, polishedGoldMat);
+      pinion.rotation.x = Math.PI / 2;
+      pinion.position.set(0, 0, 0.026);
+      clockGroup.add(pinion);
+
+      // 6. Classical Breguet Blued-Steel Hour & Minute Hands
+      const steelMat = new THREE.MeshStandardMaterial({
+        color: 0x1A1D20, // Antique blued charcoal steel
+        roughness: 0.38,
+        metalness: 0.82
+      });
+
+      // Hour Hand
+      const hourHandGroup = new THREE.Group();
+      hourHandGroup.position.set(0, 0, 0.020);
+      const hourShaft = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.082, 0.003), steelMat);
+      hourShaft.position.set(0, 0.041, 0);
+      hourHandGroup.add(hourShaft);
+
+      const hourMoon = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.0025, 8, 20), steelMat);
+      hourMoon.position.set(0, 0.068, 0);
+      hourHandGroup.add(hourMoon);
+
+      const hourPointerGeo = (typeof THREE.ConeGeometry !== 'undefined')
+        ? new THREE.ConeGeometry(0.0035, 0.016, 8)
+        : new THREE.CylinderGeometry(0.001, 0.0035, 0.016, 8);
+      const hourPointer = new THREE.Mesh(hourPointerGeo, steelMat);
+      hourPointer.position.set(0, 0.088, 0);
+      hourHandGroup.add(hourPointer);
+      clockGroup.add(hourHandGroup);
+
+      // Minute Hand
+      const minuteHandGroup = new THREE.Group();
+      minuteHandGroup.position.set(0, 0, 0.024);
+      const minShaft = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.126, 0.003), steelMat);
+      minShaft.position.set(0, 0.063, 0);
+      minuteHandGroup.add(minShaft);
+
+      const minMoon = new THREE.Mesh(new THREE.TorusGeometry(0.009, 0.002, 8, 20), steelMat);
+      minMoon.position.set(0, 0.114, 0);
+      minuteHandGroup.add(minMoon);
+
+      const minPointerGeo = (typeof THREE.ConeGeometry !== 'undefined')
+        ? new THREE.ConeGeometry(0.0025, 0.022, 8)
+        : new THREE.CylinderGeometry(0.001, 0.0025, 0.022, 8);
+      const minPointer = new THREE.Mesh(minPointerGeo, steelMat);
+      minPointer.position.set(0, 0.136, 0);
+      minuteHandGroup.add(minPointer);
+      clockGroup.add(minuteHandGroup);
+
+      // Slender Golden Second Hand with Counterweight
+      const secondHandGroup = new THREE.Group();
+      secondHandGroup.position.set(0, 0, 0.028);
+      const secShaft = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.155, 0.002), polishedGoldMat);
+      secShaft.position.set(0, 0.052, 0);
+      secondHandGroup.add(secShaft);
+
+      const secDisc = new THREE.Mesh(new THREE.CircleGeometry(0.008, 16), polishedGoldMat);
+      secDisc.position.set(0, -0.025, 0);
+      secondHandGroup.add(secDisc);
+      clockGroup.add(secondHandGroup);
+
+      // 7. Protective Convex Glossy Crystal Glass Lens
+      const lensMat = new THREE.MeshStandardMaterial({
+        color: 0xFFFFFF,
+        roughness: 0.05,
+        metalness: 0.10,
+        transparent: true,
+        opacity: 0.18
+      });
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(clockR - 0.014, 48), lensMat);
+      lens.position.set(0, 0, 0.032);
+      clockGroup.add(lens);
+
+      // 8. Classical Forged Brass Wall Hanging Loop & Wall Anchor Rosette
+      const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.024, 0.022), brassMat);
+      hangerBase.position.set(0, clockR + 0.022, 0.004);
+      clockGroup.add(hangerBase);
+
+      const hangerRing = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.006, 16, 32), polishedGoldMat);
+      hangerRing.position.set(0, clockR + 0.056, 0.004);
+      clockGroup.add(hangerRing);
+
+      const rosette = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.010, 24), brassMat);
+      rosette.rotation.x = Math.PI / 2;
+      rosette.position.set(0, clockR + 0.086, -0.006);
+      clockGroup.add(rosette);
+
+      this.studioClockHands = {
+        hourHand: hourHandGroup,
+        minuteHand: minuteHandGroup,
+        secondHand: secondHandGroup
+      };
+
+      this.updateStudioClock();
+
+      return clockGroup;
+    }
+
+    /**
+     * Generates canvas texture for studio classic wall clock dial.
+     */
+    createStudioClockDialTexture() {
+      if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+        return null;
+      }
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        const cx = 256;
+        const cy = 256;
+        const r = 246;
+
+        const grad = ctx.createRadialGradient(cx, cy, 30, cx, cy, r);
+        grad.addColorStop(0.0, '#FFFDF8');
+        grad.addColorStop(0.70, '#F7F3E8');
+        grad.addColorStop(1.0, '#ECE4D4');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#28221B';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 236, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 214, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = '#7D6955';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 142, 0, Math.PI * 2);
+        ctx.stroke();
+
+        for (let m = 0; m < 60; m++) {
+          const angle = (m * Math.PI) / 30;
+          const isHour = (m % 5 === 0);
+          const innerDist = isHour ? 214 : 224;
+          const outerDist = 236;
+
+          ctx.strokeStyle = isHour ? '#1C1916' : '#6A5C4F';
+          ctx.lineWidth = isHour ? 3.5 : 1.5;
+
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.sin(angle) * innerDist, cy - Math.cos(angle) * innerDist);
+          ctx.lineTo(cx + Math.sin(angle) * outerDist, cy - Math.cos(angle) * outerDist);
+          ctx.stroke();
+
+          if (isHour) {
+            ctx.fillStyle = '#C89D52';
+            ctx.beginPath();
+            ctx.arc(cx + Math.sin(angle) * 206, cy - Math.cos(angle) * 206, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        const romanNumerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+        ctx.fillStyle = '#1C1916';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 36px "Cinzel", "Playfair Display", "Times New Roman", Georgia, serif';
+
+        for (let h = 0; h < 12; h++) {
+          const angle = (h * Math.PI) / 6;
+          const textDist = 176;
+          const tx = cx + Math.sin(angle) * textDist;
+          const ty = cy - Math.cos(angle) * textDist;
+          ctx.fillText(romanNumerals[h], tx, ty);
+        }
+
+        ctx.fillStyle = '#42382E';
+        ctx.font = '600 15px "Cinzel", "Times New Roman", Georgia, serif';
+        ctx.fillText('S É R È N', cx, cy - 64);
+
+        ctx.fillStyle = '#7A6B5C';
+        ctx.font = 'italic 500 11px "Times New Roman", Georgia, serif';
+        ctx.fillText('Horlogerie d\'Atelier', cx, cy - 48);
+
+        ctx.fillStyle = '#8C7C6D';
+        ctx.font = '500 10px "Times New Roman", Georgia, serif';
+        ctx.fillText('PARIS • 1889', cx, cy + 54);
+
+        ctx.fillStyle = '#C89D52';
+        ctx.font = '14px serif';
+        ctx.fillText('✦', cx, cy + 70);
+
+        if (THREE && typeof THREE.CanvasTexture !== 'undefined') {
+          const tex = new THREE.CanvasTexture(canvas);
+          if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+          return tex;
+        }
+      } catch (e) {
+        console.warn('Studio3D: Canvas clock texture fallback active:', e);
+      }
+      return null;
+    }
+
+    /**
+     * Updates studio fallback clock hands with real local time.
+     */
+    updateStudioClock() {
+      if (!this.studioClockHands) return;
+      const now = new Date();
+      const hrs = (now.getHours() % 12) + now.getMinutes() / 60;
+      const mins = now.getMinutes() + now.getSeconds() / 60;
+      const secs = now.getSeconds() + now.getMilliseconds() / 1000;
+
+      if (this.studioClockHands.hourHand) {
+        this.studioClockHands.hourHand.rotation.z = -hrs * (Math.PI / 6);
+      }
+      if (this.studioClockHands.minuteHand) {
+        this.studioClockHands.minuteHand.rotation.z = -mins * (Math.PI / 30);
+      }
+      if (this.studioClockHands.secondHand) {
+        this.studioClockHands.secondHand.rotation.z = -secs * (Math.PI / 30);
+      }
     }
 
     /**
@@ -3518,6 +3798,13 @@
         const targetFov = Math.max(this.minFov, Math.min(this.maxFov, baseFov * effectiveZoom));
         this.camera.fov += (targetFov - this.camera.fov) * 0.1;
         this.camera.updateProjectionMatrix();
+      }
+
+      // 5.5. Real-time Classic Wall Clock Movement (Synchronized with Local Time)
+      if (this.vanityModel && typeof this.vanityModel.updateClock === 'function') {
+        this.vanityModel.updateClock();
+      } else if (typeof this.updateStudioClock === 'function') {
+        this.updateStudioClock();
       }
 
       // 6. Real-time Optical Planar Mirror Rendering (True Physical Reflector)

@@ -380,6 +380,10 @@ export class VanityModel {
     this.mirrorGroup.add(backArc);
     this.disposables.push(mirrorBackMat, backRectGeo, backArcGeo);
 
+    // I. Classic Parisian Horlogerie Wall Clock Mounted Above the Grooming Mirror
+    const clockGroup = this.buildClassicWallClock(THREE, straightH, frameOuterR, brassMat, polishedGoldMat);
+    this.mirrorGroup.add(clockGroup);
+
     // Initialize Vanity Radiance Lighting
     this.lighting.init(THREE, this.mirrorGroup);
 
@@ -581,6 +585,311 @@ export class VanityModel {
     return this.group;
   }
 
+  /**
+   * Builds an authentic classic Parisian horlogerie wall clock mounted directly above the grooming mirror.
+   */
+  buildClassicWallClock(THREE, straightH, frameOuterR, brassMat, polishedGoldMat) {
+    const clockGroup = new THREE.Group();
+    clockGroup.name = 'vanity_classic_wall_clock';
+    // Positioned gracefully centered directly above the arched mirror frame
+    const clockCenterY = straightH + frameOuterR + 0.34;
+    clockGroup.position.set(0, clockCenterY, -0.015);
+
+    const clockR = 0.22; // 44cm diameter classic station wall clock
+
+    // 1. Deep Antique Dark Walnut Wooden Outer Casing
+    const casingGeo = new THREE.CylinderGeometry(clockR + 0.018, clockR + 0.018, 0.042, 48);
+    const casingMat = VanityMaterials.createMirrorBackMaterial(THREE);
+    const casing = new THREE.Mesh(casingGeo, casingMat);
+    casing.rotation.x = Math.PI / 2;
+    casing.position.set(0, 0, -0.012);
+    casing.castShadow = true;
+    clockGroup.add(casing);
+    this.disposables.push(casingGeo, casingMat);
+
+    // 2. Stepped Beveled Champagne Brass Outer Bezel Ring
+    const outerBezelGeo = new THREE.TorusGeometry(clockR + 0.008, 0.014, 16, 64);
+    const outerBezel = new THREE.Mesh(outerBezelGeo, brassMat);
+    outerBezel.position.set(0, 0, 0.006);
+    outerBezel.castShadow = true;
+    clockGroup.add(outerBezel);
+    this.disposables.push(outerBezelGeo);
+
+    // 3. Inner Polished Gilded Bezel Ring
+    const innerBezelGeo = new THREE.TorusGeometry(clockR - 0.016, 0.008, 16, 64);
+    const innerBezel = new THREE.Mesh(innerBezelGeo, polishedGoldMat);
+    innerBezel.position.set(0, 0, 0.012);
+    clockGroup.add(innerBezel);
+    this.disposables.push(innerBezelGeo);
+
+    // 4. Dial Face (Antique Parchment Ivory with Roman Numerals & Railway Ticks)
+    const clockDialTexture = this.createClockDialTexture(THREE);
+    const dialMat = new THREE.MeshStandardMaterial({
+      map: clockDialTexture,
+      color: clockDialTexture ? 0xFFFFFF : 0xF7F4EB,
+      roughness: 0.32,
+      metalness: 0.02
+    });
+    const dialGeo = new THREE.CircleGeometry(clockR - 0.018, 64);
+    const dial = new THREE.Mesh(dialGeo, dialMat);
+    dial.position.set(0, 0, 0.014);
+    dial.receiveShadow = true;
+    clockGroup.add(dial);
+    this.disposables.push(dialGeo, dialMat);
+    if (clockDialTexture) this.disposables.push(clockDialTexture);
+
+    // 5. Central Brass Pinion Hub
+    const pinionGeo = new THREE.CylinderGeometry(0.010, 0.010, 0.014, 20);
+    const pinion = new THREE.Mesh(pinionGeo, polishedGoldMat);
+    pinion.rotation.x = Math.PI / 2;
+    pinion.position.set(0, 0, 0.026);
+    clockGroup.add(pinion);
+    this.disposables.push(pinionGeo);
+
+    // 6. Classical Breguet Blued-Steel Hour & Minute Hands
+    const steelMat = new THREE.MeshStandardMaterial({
+      color: 0x1A1D20, // Antique blued charcoal steel
+      roughness: 0.38,
+      metalness: 0.82
+    });
+    this.disposables.push(steelMat);
+
+    // Hour Hand
+    const hourHandGroup = new THREE.Group();
+    hourHandGroup.position.set(0, 0, 0.020);
+    const hourShaftGeo = new THREE.BoxGeometry(0.007, 0.082, 0.003);
+    const hourShaft = new THREE.Mesh(hourShaftGeo, steelMat);
+    hourShaft.position.set(0, 0.041, 0);
+    hourHandGroup.add(hourShaft);
+
+    const hourMoonGeo = new THREE.TorusGeometry(0.012, 0.0025, 8, 20);
+    const hourMoon = new THREE.Mesh(hourMoonGeo, steelMat);
+    hourMoon.position.set(0, 0.068, 0);
+    hourHandGroup.add(hourMoon);
+
+    const hourPointerGeo = (typeof THREE.ConeGeometry !== 'undefined')
+      ? new THREE.ConeGeometry(0.0035, 0.016, 8)
+      : new THREE.CylinderGeometry(0.001, 0.0035, 0.016, 8);
+    const hourPointer = new THREE.Mesh(hourPointerGeo, steelMat);
+    hourPointer.position.set(0, 0.088, 0);
+    hourHandGroup.add(hourPointer);
+    clockGroup.add(hourHandGroup);
+    this.disposables.push(hourShaftGeo, hourMoonGeo, hourPointerGeo);
+
+    // Minute Hand
+    const minuteHandGroup = new THREE.Group();
+    minuteHandGroup.position.set(0, 0, 0.024);
+    const minShaftGeo = new THREE.BoxGeometry(0.005, 0.126, 0.003);
+    const minShaft = new THREE.Mesh(minShaftGeo, steelMat);
+    minShaft.position.set(0, 0.063, 0);
+    minuteHandGroup.add(minShaft);
+
+    const minMoonGeo = new THREE.TorusGeometry(0.009, 0.002, 8, 20);
+    const minMoon = new THREE.Mesh(minMoonGeo, steelMat);
+    minMoon.position.set(0, 0.114, 0);
+    minuteHandGroup.add(minMoon);
+
+    const minPointerGeo = (typeof THREE.ConeGeometry !== 'undefined')
+      ? new THREE.ConeGeometry(0.0025, 0.022, 8)
+      : new THREE.CylinderGeometry(0.001, 0.0025, 0.022, 8);
+    const minPointer = new THREE.Mesh(minPointerGeo, steelMat);
+    minPointer.position.set(0, 0.136, 0);
+    minuteHandGroup.add(minPointer);
+    clockGroup.add(minuteHandGroup);
+    this.disposables.push(minShaftGeo, minMoonGeo, minPointerGeo);
+
+    // Slender Golden Second Hand with Counterweight
+    const secondHandGroup = new THREE.Group();
+    secondHandGroup.position.set(0, 0, 0.028);
+    const secShaftGeo = new THREE.BoxGeometry(0.002, 0.155, 0.002);
+    const secShaft = new THREE.Mesh(secShaftGeo, polishedGoldMat);
+    secShaft.position.set(0, 0.052, 0);
+    secondHandGroup.add(secShaft);
+
+    const secDiscGeo = new THREE.CircleGeometry(0.008, 16);
+    const secDisc = new THREE.Mesh(secDiscGeo, polishedGoldMat);
+    secDisc.position.set(0, -0.025, 0);
+    secondHandGroup.add(secDisc);
+    clockGroup.add(secondHandGroup);
+    this.disposables.push(secShaftGeo, secDiscGeo);
+
+    // 7. Protective Convex Glossy Crystal Glass Lens
+    const lensGeo = new THREE.CircleGeometry(clockR - 0.014, 48);
+    const lensMat = new THREE.MeshStandardMaterial({
+      color: 0xFFFFFF,
+      roughness: 0.05,
+      metalness: 0.10,
+      transparent: true,
+      opacity: 0.18
+    });
+    const lens = new THREE.Mesh(lensGeo, lensMat);
+    lens.position.set(0, 0, 0.032);
+    clockGroup.add(lens);
+    this.disposables.push(lensGeo, lensMat);
+
+    // 8. Classical Forged Brass Wall Hanging Loop & Wall Anchor Rosette
+    const hangerBaseGeo = new THREE.BoxGeometry(0.038, 0.024, 0.022);
+    const hangerBase = new THREE.Mesh(hangerBaseGeo, brassMat);
+    hangerBase.position.set(0, clockR + 0.022, 0.004);
+    clockGroup.add(hangerBase);
+
+    const hangerRingGeo = new THREE.TorusGeometry(0.036, 0.006, 16, 32);
+    const hangerRing = new THREE.Mesh(hangerRingGeo, polishedGoldMat);
+    hangerRing.position.set(0, clockR + 0.056, 0.004);
+    clockGroup.add(hangerRing);
+
+    const rosetteGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.010, 24);
+    const rosette = new THREE.Mesh(rosetteGeo, brassMat);
+    rosette.rotation.x = Math.PI / 2;
+    rosette.position.set(0, clockR + 0.086, -0.006);
+    clockGroup.add(rosette);
+    this.disposables.push(hangerBaseGeo, hangerRingGeo, rosetteGeo);
+
+    this.clockHands = {
+      hourHand: hourHandGroup,
+      minuteHand: minuteHandGroup,
+      secondHand: secondHandGroup
+    };
+
+    // Initialize to current time immediately
+    this.updateClock();
+
+    return clockGroup;
+  }
+
+  /**
+   * Generates high-definition antique parchment clock dial with Roman numerals and railroad track.
+   */
+  createClockDialTexture(THREE) {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+      return null;
+    }
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      const cx = 256;
+      const cy = 256;
+      const r = 246;
+
+      // Antique Warm Ivory Enamel Face with subtle aged parchment radial gradient
+      const grad = ctx.createRadialGradient(cx, cy, 30, cx, cy, r);
+      grad.addColorStop(0.0, '#FFFDF8');
+      grad.addColorStop(0.70, '#F7F3E8');
+      grad.addColorStop(1.0, '#ECE4D4');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outer and Inner Concentric Chapter Rings
+      ctx.strokeStyle = '#28221B';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 236, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 214, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = '#7D6955';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 142, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 60-Minute Railroad Track Ticks
+      for (let m = 0; m < 60; m++) {
+        const angle = (m * Math.PI) / 30;
+        const isHour = (m % 5 === 0);
+        const innerDist = isHour ? 214 : 224;
+        const outerDist = 236;
+
+        ctx.strokeStyle = isHour ? '#1C1916' : '#6A5C4F';
+        ctx.lineWidth = isHour ? 3.5 : 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.sin(angle) * innerDist, cy - Math.cos(angle) * innerDist);
+        ctx.lineTo(cx + Math.sin(angle) * outerDist, cy - Math.cos(angle) * outerDist);
+        ctx.stroke();
+
+        if (isHour) {
+          ctx.fillStyle = '#C89D52';
+          ctx.beginPath();
+          ctx.arc(cx + Math.sin(angle) * 206, cy - Math.cos(angle) * 206, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Classic Serif Roman Numerals
+      const romanNumerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+      ctx.fillStyle = '#1C1916';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 36px "Cinzel", "Playfair Display", "Times New Roman", Georgia, serif';
+
+      for (let h = 0; h < 12; h++) {
+        const angle = (h * Math.PI) / 6;
+        const textDist = 176;
+        const tx = cx + Math.sin(angle) * textDist;
+        const ty = cy - Math.cos(angle) * textDist;
+        ctx.fillText(romanNumerals[h], tx, ty);
+      }
+
+      // Vintage Horology Inscription
+      ctx.fillStyle = '#42382E';
+      ctx.font = '600 15px "Cinzel", "Times New Roman", Georgia, serif';
+      ctx.fillText('S É R È N', cx, cy - 64);
+
+      ctx.fillStyle = '#7A6B5C';
+      ctx.font = 'italic 500 11px "Times New Roman", Georgia, serif';
+      ctx.fillText('Horlogerie d\'Atelier', cx, cy - 48);
+
+      ctx.fillStyle = '#8C7C6D';
+      ctx.font = '500 10px "Times New Roman", Georgia, serif';
+      ctx.fillText('PARIS • 1889', cx, cy + 54);
+
+      ctx.fillStyle = '#C89D52';
+      ctx.font = '14px serif';
+      ctx.fillText('✦', cx, cy + 70);
+
+      if (THREE && typeof THREE.CanvasTexture !== 'undefined') {
+        const tex = new THREE.CanvasTexture(canvas);
+        if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+        return tex;
+      }
+    } catch (e) {
+      console.warn('[VanityModel] Canvas clock dial fallback active:', e);
+    }
+    return null;
+  }
+
+  /**
+   * Updates the clock hands to match real live time.
+   */
+  updateClock() {
+    if (!this.clockHands) return;
+    const now = new Date();
+    const hrs = (now.getHours() % 12) + now.getMinutes() / 60;
+    const mins = now.getMinutes() + now.getSeconds() / 60;
+    const secs = now.getSeconds() + now.getMilliseconds() / 1000;
+
+    if (this.clockHands.hourHand) {
+      this.clockHands.hourHand.rotation.z = -hrs * (Math.PI / 6);
+    }
+    if (this.clockHands.minuteHand) {
+      this.clockHands.minuteHand.rotation.z = -mins * (Math.PI / 30);
+    }
+    if (this.clockHands.secondHand) {
+      this.clockHands.secondHand.rotation.z = -secs * (Math.PI / 30);
+    }
+  }
+
   setVanityLightsEnabled(enabled) {
     this.lighting.setEnabled(enabled);
   }
@@ -599,6 +908,7 @@ export class VanityModel {
     }
     this.lighting.dispose(this.mirrorGroup);
     this.reflection.dispose();
+    this.clockHands = null;
 
     this.disposables.forEach(d => {
       if (d && typeof d.dispose === 'function') {

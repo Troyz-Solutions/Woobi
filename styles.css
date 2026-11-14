@@ -13456,6 +13456,107 @@ body.theme-dark .search-input,
   transform: translateY(-1px);
 }
 
+/* Dual-Side (Front / Back) Selector Bar */
+.clothing-side-selector-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.clothing-side-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ECE5DD;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.clothing-side-pill.active {
+  background: rgba(160, 131, 101, 0.35);
+  border-color: #A08365;
+  color: #FFFFFF;
+  box-shadow: 0 2px 10px rgba(160, 131, 101, 0.4);
+}
+
+.clothing-side-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #A08365;
+}
+
+.clothing-side-check {
+  font-size: 0.72rem;
+  color: #6EDB8F;
+  font-weight: bold;
+}
+
+/* Review Controls & HD Color Swatch */
+.clothing-review-buttons-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.clothing-hd-color-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+  width: fit-content;
+  margin-inline: auto;
+}
+
+.clothing-hd-color-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 6px rgba(0,0,0,0.5);
+  display: inline-block;
+}
+
+.clothing-hd-color-code {
+  color: #F8F3ED;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.clothing-btn-side-toggle {
+  flex: 1.2;
+  padding: 13px 10px;
+  border-radius: 999px;
+  background: rgba(160, 131, 101, 0.3);
+  color: #F0E6DB;
+  border: 1px solid #A08365;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.clothing-btn-side-toggle:hover {
+  background: rgba(160, 131, 101, 0.5);
+  color: #FFFFFF;
+}
+
 /* Final Review Modal / Page */
 .clothing-review-modal {
   position: fixed;

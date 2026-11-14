@@ -4043,13 +4043,18 @@
             this.targetCameraPos.z + (dz / len) * dollyOffset
           );
         }
+        const aspect = this.camera.aspect;
+        const isPortrait = aspect < 0.75;
+        let lookAtTarget = this.targetCameraLookAt;
+        if (isPortrait && this.currentCameraState === 'STUDIO_OVERVIEW' && this.targetCameraLookAt) {
+          // Compensate for mobile bottom navigation bar (80px), framing the mannequin completely from head to toe
+          lookAtTarget = new THREE.Vector3(this.targetCameraLookAt.x, this.targetCameraLookAt.y - 0.16, this.targetCameraLookAt.z);
+        }
         this.camera.position.lerp(effectivePos, 0.075);
-        this.currentCameraLookAt.lerp(this.targetCameraLookAt, 0.075);
+        this.currentCameraLookAt.lerp(lookAtTarget, 0.075);
         this.camera.lookAt(this.currentCameraLookAt);
 
         // 5. Update FOV with zoom damping
-        const aspect = this.camera.aspect;
-        const isPortrait = aspect < 0.75;
         const baseFov = isPortrait ?
           this.cameraStates[this.currentCameraState].fovPortrait :
           this.cameraStates[this.currentCameraState].fovLandscape;

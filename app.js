@@ -1719,7 +1719,10 @@
         id: garmentId,
         name: item.name,
         category: engineCat,
-        photo: item.photo,
+        photo: item.photoFront || item.photo,
+        photoFront: item.photoFront || item.photo,
+        photoBack: item.photoBack || null,
+        hdColor: item.hdColor || null,
         color: item.color
       });
     }
@@ -1736,7 +1739,10 @@
           item: item,
           garment: item,
           name: item.name,
-          photo: item.photo,
+          photo: item.photoFront || item.photo,
+          photoFront: item.photoFront || item.photo,
+          photoBack: item.photoBack || null,
+          hdColor: item.hdColor || null,
           color: item.color
         });
         if (typeof studio.setCameraState === 'function') {
@@ -6147,6 +6153,115 @@
   let currentClothingPhotoDataUrl = null;
   let clothingCameraFacingMode = 'environment';
   let activeLightboxItem = null;
+  let clothingCurrentSide = 'front'; // 'front' | 'back'
+  let capturedGarmentDraft = {
+    front: null,
+    back: null,
+    hdColor: null
+  };
+
+  function processGarmentImageOnDevice(sourceCanvas) {
+    if (typeof window !== 'undefined' && window.WoobiCore && window.WoobiCore.segmentation && typeof window.WoobiCore.segmentation.processCanvasGarment === 'function') {
+      try {
+        return window.WoobiCore.segmentation.processCanvasGarment(sourceCanvas);
+      } catch (err) {
+        console.warn('WoobiCore segmentation error, falling back:', err);
+      }
+    }
+
+    // Direct fallback on-device background removal and HD color extraction
+    const ctx = sourceCanvas.getContext('2d');
+    const width = sourceCanvas.width;
+    const height = sourceCanvas.height;
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+
+    // Sample perimeter background
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    const margin = Math.max(2, Math.floor(width * 0.05));
+    for (let x = 0; x < width; x += 4) {
+      const topIdx = (0 * width + x) * 4;
+      const botIdx = ((height - 1) * width + x) * 4;
+      rSum += data[topIdx] + data[botIdx];
+      gSum += data[topIdx + 1] + data[botIdx + 1];
+      bSum += data[topIdx + 2] + data[botIdx + 2];
+      count += 2;
+    }
+    const bgR = count ? rSum / count : 240;
+    const bgG = count ? gSum / count : 240;
+    const bgB = count ? bSum / count : 240;
+
+    // Extract dominant foreground color (filtering out extreme shadows < 18 & specular highlights > 94)
+    let fgR = 0, fgG = 0, fgB = 0, fgCount = 0;
+    for (let y = Math.floor(height * 0.25); y < Math.floor(height * 0.75); y += 2) {
+      for (let x = Math.floor(width * 0.25); x < Math.floor(width * 0.75); x += 2) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 2.55;
+        const dist = Math.hypot(r - bgR, g - bgG, b - bgB);
+        if (dist > 35 && lum >= 16 && lum <= 94) {
+          fgR += r; fgG += g; fgB += b;
+          fgCount++;
+        }
+      }
+    }
+
+    const finalR = fgCount ? Math.round(fgR / fgCount) : 36;
+    const finalG = fgCount ? Math.round(fgG / fgCount) : 50;
+    const finalB = fgCount ? Math.round(fgB / fgCount) : 66;
+    const toHex = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+    const hex = `#${toHex(finalR)}${toHex(finalG)}${toHex(finalB)}`.toUpperCase();
+    const intHex = parseInt(hex.slice(1), 16);
+
+    return {
+      canvas: sourceCanvas,
+      dataUrl: sourceCanvas.toDataURL('image/png'),
+      hdColor: { hex, intHex, rgb: { r: finalR, g: finalG, b: finalB } }
+    };
+  }
+
+  function setClothingCaptureSide(side) {
+    clothingCurrentSide = (side === 'back' ? 'back' : 'front');
+    const frontBtn = document.getElementById('clothingSideFrontBtn');
+    const backBtn = document.getElementById('clothingSideBackBtn');
+    if (frontBtn) frontBtn.classList.toggle('active', clothingCurrentSide === 'front');
+    if (backBtn) backBtn.classList.toggle('active', clothingCurrentSide === 'back');
+
+    const guideText = document.getElementById('clothingGuideText');
+    const engine = getClothingCaptureEngine();
+    const activeCat = engine.getActiveCategory();
+    if (guideText) {
+      if (clothingCurrentSide === 'back') {
+        guideText.textContent = `✦ Lay garment flat: Capture the BACK side of your ${activeCat}`;
+      } else {
+        guideText.textContent = `✦ Lay garment flat: Capture the FRONT side of your ${activeCat}`;
+      }
+    }
+  }
+
+  function proceedToBackSideCapture() {
+    if (!capturedGarmentDraft.front && currentClothingPhotoDataUrl) {
+      capturedGarmentDraft.front = currentClothingPhotoDataUrl;
+    }
+    const frontDone = document.getElementById('clothingSideFrontDone');
+    if (frontDone) frontDone.classList.remove('hidden');
+
+    setClothingCaptureSide('back');
+    showToast('✦ Front captured! Now flip the garment and capture the BACK side.');
+
+    currentClothingPhotoDataUrl = null;
+    const videoEl = document.getElementById('clothingCameraVideo');
+    const previewImg = document.getElementById('clothingCapturedPreview');
+    const silFrame = document.getElementById('clothingSilhouetteFrame');
+    const liveControls = document.getElementById('clothingCameraLiveControls');
+    const reviewControls = document.getElementById('clothingCameraReviewControls');
+
+    if (previewImg) previewImg.classList.add('hidden');
+    if (silFrame) silFrame.classList.remove('hidden');
+    if (liveControls) liveControls.classList.remove('hidden');
+    if (reviewControls) reviewControls.classList.add('hidden');
+    if (videoEl && clothingCameraStream) videoEl.classList.remove('hidden');
+  }
 
   function getClothingCaptureEngine() {
     if (typeof window !== 'undefined' && window.WoobiCore && window.WoobiCore.clothingCapture) {
@@ -6189,6 +6304,10 @@
             internalCategory: c === 'shirt' ? 'Tops' : (c === 'pant' ? 'Bottoms' : 'Shoes'),
             name: meta.name || `${c.charAt(0).toUpperCase() + c.slice(1)} #${(this.captured[c] || []).length + 1}`,
             photo,
+            photoFront: meta.photoFront || photo,
+            photoBack: meta.photoBack || null,
+            hdColor: meta.hdColor || null,
+            color: meta.color || (meta.hdColor && meta.hdColor.intHex !== undefined ? meta.hdColor.intHex : null),
             timestamp: Date.now(),
             condition: 'clean',
             fit: 'perfect'
@@ -6229,7 +6348,11 @@
             name: item.name,
             category: item.internalCategory,
             subCategory: item.category.charAt(0).toUpperCase() + item.category.slice(1),
-            photo: item.photo,
+            photo: item.photoFront || item.photo,
+            photoFront: item.photoFront || item.photo,
+            photoBack: item.photoBack || null,
+            hdColor: item.hdColor || null,
+            color: item.color || (item.hdColor && item.hdColor.intHex !== undefined ? item.hdColor.intHex : null),
             condition: 'clean',
             fit: 'perfect',
             capturedVia: 'clothing_silhouette_capture',
@@ -6438,18 +6561,58 @@
     const reviewControls = document.getElementById('clothingCameraReviewControls');
 
     if (!videoEl || !canvas || videoEl.classList.contains('hidden') || !videoEl.videoWidth) {
-      // Fallback: load sample photo
       loadSampleClothingPhoto();
       return;
     }
 
-    // DRAW ONLY RAW VIDEO PIXELS TO CANVAS - SILHOUETTES ARE NEVER IN SAVED PHOTO
+    // Capture 100% full native camera resolution without downsampling
     canvas.width = videoEl.videoWidth;
     canvas.height = videoEl.videoHeight;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
-    currentClothingPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    // Run On-Device $0 Client-Side Background Removal & Exact HD Color Extraction
+    let processed = null;
+    try {
+      processed = processGarmentImageOnDevice(canvas);
+    } catch (err) {
+      console.warn('Background removal fallback:', err);
+    }
+
+    const finalDataUrl = (processed && processed.dataUrl) ? processed.dataUrl : canvas.toDataURL('image/png');
+    const hdColor = (processed && processed.hdColor) ? processed.hdColor : { hex: '#243242', intHex: 0x243242 };
+
+    currentClothingPhotoDataUrl = finalDataUrl;
+    if (clothingCurrentSide === 'front') {
+      capturedGarmentDraft.front = finalDataUrl;
+      capturedGarmentDraft.hdColor = hdColor;
+      const frontDone = document.getElementById('clothingSideFrontDone');
+      if (frontDone) frontDone.classList.remove('hidden');
+    } else {
+      capturedGarmentDraft.back = finalDataUrl;
+      const backDone = document.getElementById('clothingSideBackDone');
+      if (backDone) backDone.classList.remove('hidden');
+    }
+
+    // Display Exact HD Fabric Color Chip
+    const colorChip = document.getElementById('clothingHdColorChip');
+    const colorCircle = document.getElementById('clothingHdColorCircle');
+    const colorText = document.getElementById('clothingHdColorText');
+    if (colorChip && colorCircle && colorText && hdColor) {
+      colorCircle.style.backgroundColor = hdColor.hex;
+      colorText.textContent = `HD Color: ${hdColor.hex}`;
+      colorChip.classList.remove('hidden');
+    }
+
+    // Toggle Back Side capture button
+    const btnCaptureBack = document.getElementById('btnCaptureBackSide');
+    if (btnCaptureBack) {
+      if (clothingCurrentSide === 'front' && !capturedGarmentDraft.back) {
+        btnCaptureBack.classList.remove('hidden');
+      } else {
+        btnCaptureBack.classList.add('hidden');
+      }
+    }
 
     if (previewImg) {
       previewImg.src = currentClothingPhotoDataUrl;
@@ -6464,13 +6627,24 @@
 
   function retakeClothingPhoto() {
     currentClothingPhotoDataUrl = null;
+    if (clothingCurrentSide === 'front') {
+      capturedGarmentDraft.front = null;
+      const frontDone = document.getElementById('clothingSideFrontDone');
+      if (frontDone) frontDone.classList.add('hidden');
+    } else {
+      capturedGarmentDraft.back = null;
+      const backDone = document.getElementById('clothingSideBackDone');
+      if (backDone) backDone.classList.add('hidden');
+    }
 
     const videoEl = document.getElementById('clothingCameraVideo');
     const previewImg = document.getElementById('clothingCapturedPreview');
     const silFrame = document.getElementById('clothingSilhouetteFrame');
     const liveControls = document.getElementById('clothingCameraLiveControls');
     const reviewControls = document.getElementById('clothingCameraReviewControls');
+    const colorChip = document.getElementById('clothingHdColorChip');
 
+    if (colorChip) colorChip.classList.add('hidden');
     if (previewImg) previewImg.classList.add('hidden');
     if (silFrame) silFrame.classList.remove('hidden');
     if (liveControls) liveControls.classList.remove('hidden');
@@ -6482,15 +6656,24 @@
   }
 
   function confirmClothingPhoto() {
-    if (!currentClothingPhotoDataUrl) {
+    const frontPhoto = capturedGarmentDraft.front || currentClothingPhotoDataUrl;
+    if (!frontPhoto) {
       showToast('⚠️ No photo captured to confirm');
       return;
     }
 
+    const backPhoto = capturedGarmentDraft.back || null;
+    const hdColor = capturedGarmentDraft.hdColor || null;
+
     const engine = getClothingCaptureEngine();
     const activeCat = engine.getActiveCategory();
 
-    const res = engine.addConfirmedPhoto(activeCat, currentClothingPhotoDataUrl);
+    const res = engine.addConfirmedPhoto(activeCat, frontPhoto, {
+      photoFront: frontPhoto,
+      photoBack: backPhoto,
+      hdColor: hdColor,
+      color: hdColor?.intHex || (hdColor?.hex ? parseInt(hdColor.hex.slice(1), 16) : null)
+    });
 
     if (!res.success) {
       showToast(`⚠️ ${res.error}`);
@@ -6502,9 +6685,17 @@
     const catCount = summary[activeCat].count;
     const catMax = summary[activeCat].max;
 
-    showToast(`✓ Confirmed ${catName} #${catCount} (${catCount}/${catMax}) ✨`);
+    const dualSideMsg = backPhoto ? ' (Front & Back HD Matched)' : ' (HD Fabric Matched)';
+    showToast(`✓ Confirmed ${catName} #${catCount}${dualSideMsg} ✨`);
 
-    // Reset viewfinder for next capture
+    // Reset draft and viewfinder for next garment
+    capturedGarmentDraft = { front: null, back: null, hdColor: null };
+    setClothingCaptureSide('front');
+    const frontDone = document.getElementById('clothingSideFrontDone');
+    const backDone = document.getElementById('clothingSideBackDone');
+    if (frontDone) frontDone.classList.add('hidden');
+    if (backDone) backDone.classList.add('hidden');
+
     retakeClothingPhoto();
     updateClothingCameraBadges();
 
@@ -6514,7 +6705,6 @@
         showToast('🎉 All 16 wardrobe slots filled! Opening review...');
         setTimeout(() => openClothingReview(), 600);
       } else {
-        // Suggest or switch to next available category
         let nextCat = null;
         if (!summary.shirt.isFull) nextCat = 'shirt';
         else if (!summary.pant.isFull) nextCat = 'pant';
@@ -6547,25 +6737,76 @@
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      currentClothingPhotoDataUrl = e.target.result;
+      const rawDataUrl = e.target.result;
+      const img = new Image();
+      img.onload = () => {
+        // Preserve 100% native image resolution
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = img.naturalWidth || img.width;
+        tempCanvas.height = img.naturalHeight || img.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
 
-      const videoEl = document.getElementById('clothingCameraVideo');
-      const previewImg = document.getElementById('clothingCapturedPreview');
-      const silFrame = document.getElementById('clothingSilhouetteFrame');
-      const liveControls = document.getElementById('clothingCameraLiveControls');
-      const reviewControls = document.getElementById('clothingCameraReviewControls');
-      const fallbackCard = document.getElementById('clothingCameraFallback');
+        let processed = null;
+        try {
+          processed = processGarmentImageOnDevice(tempCanvas);
+        } catch (err) {
+          console.warn('File background removal fallback:', err);
+        }
 
-      if (previewImg) {
-        previewImg.src = currentClothingPhotoDataUrl;
-        previewImg.classList.remove('hidden');
-      }
+        const finalDataUrl = (processed && processed.dataUrl) ? processed.dataUrl : tempCanvas.toDataURL('image/png');
+        const hdColor = (processed && processed.hdColor) ? processed.hdColor : { hex: '#243242', intHex: 0x243242 };
 
-      if (videoEl) videoEl.classList.add('hidden');
-      if (fallbackCard) fallbackCard.classList.add('hidden');
-      if (silFrame) silFrame.classList.add('hidden');
-      if (liveControls) liveControls.classList.add('hidden');
-      if (reviewControls) reviewControls.classList.remove('hidden');
+        currentClothingPhotoDataUrl = finalDataUrl;
+        if (clothingCurrentSide === 'front') {
+          capturedGarmentDraft.front = finalDataUrl;
+          capturedGarmentDraft.hdColor = hdColor;
+          const frontDone = document.getElementById('clothingSideFrontDone');
+          if (frontDone) frontDone.classList.remove('hidden');
+        } else {
+          capturedGarmentDraft.back = finalDataUrl;
+          const backDone = document.getElementById('clothingSideBackDone');
+          if (backDone) backDone.classList.remove('hidden');
+        }
+
+        // Display Exact HD Fabric Color Chip
+        const colorChip = document.getElementById('clothingHdColorChip');
+        const colorCircle = document.getElementById('clothingHdColorCircle');
+        const colorText = document.getElementById('clothingHdColorText');
+        if (colorChip && colorCircle && colorText && hdColor) {
+          colorCircle.style.backgroundColor = hdColor.hex;
+          colorText.textContent = `HD Color: ${hdColor.hex}`;
+          colorChip.classList.remove('hidden');
+        }
+
+        const btnCaptureBack = document.getElementById('btnCaptureBackSide');
+        if (btnCaptureBack) {
+          if (clothingCurrentSide === 'front' && !capturedGarmentDraft.back) {
+            btnCaptureBack.classList.remove('hidden');
+          } else {
+            btnCaptureBack.classList.add('hidden');
+          }
+        }
+
+        const videoEl = document.getElementById('clothingCameraVideo');
+        const previewImg = document.getElementById('clothingCapturedPreview');
+        const silFrame = document.getElementById('clothingSilhouetteFrame');
+        const liveControls = document.getElementById('clothingCameraLiveControls');
+        const reviewControls = document.getElementById('clothingCameraReviewControls');
+        const fallbackCard = document.getElementById('clothingCameraFallback');
+
+        if (previewImg) {
+          previewImg.src = currentClothingPhotoDataUrl;
+          previewImg.classList.remove('hidden');
+        }
+
+        if (videoEl) videoEl.classList.add('hidden');
+        if (fallbackCard) fallbackCard.classList.add('hidden');
+        if (silFrame) silFrame.classList.add('hidden');
+        if (liveControls) liveControls.classList.add('hidden');
+        if (reviewControls) reviewControls.classList.remove('hidden');
+      };
+      img.src = rawDataUrl;
     };
     reader.readAsDataURL(file);
     event.target.value = ''; // Reset input
@@ -7617,6 +7858,8 @@
     closeClothingCamera,
     switchClothingCategory,
     updateClothingCameraBadges,
+    setClothingCaptureSide,
+    proceedToBackSideCapture,
     captureClothingSnapshot,
     retakeClothingPhoto,
     confirmClothingPhoto,

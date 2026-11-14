@@ -335,14 +335,57 @@ export class VirtualTryOn {
               mat = cloned;
             }
 
-            if (garmentRecord.photo && typeof window !== 'undefined' && window.THREE && window.THREE.TextureLoader) {
+            const photoFront = garmentRecord.photoFront || garmentRecord.photo;
+            const photoBack = garmentRecord.photoBack || photoFront;
+
+            if (photoFront && typeof window !== 'undefined' && window.THREE && window.THREE.TextureLoader) {
               try {
                 const texLoader = new window.THREE.TextureLoader();
-                texLoader.load(garmentRecord.photo, (texture) => {
-                  texture.wrapS = window.THREE.RepeatWrapping;
-                  texture.wrapT = window.THREE.RepeatWrapping;
-                  mat.map = texture;
-                  mat.color.setHex(0xFFFFFF);
+                texLoader.load(photoFront, (frontTexture) => {
+                  frontTexture.wrapS = window.THREE.RepeatWrapping;
+                  frontTexture.wrapT = window.THREE.RepeatWrapping;
+                  mat.map = frontTexture;
+
+                  if (garmentRecord.color !== undefined) {
+                    if (typeof mat.color?.setHex === 'function') mat.color.setHex(garmentRecord.color);
+                    else mat.color = garmentRecord.color;
+                  } else {
+                    mat.color.setHex(0xFFFFFF);
+                  }
+
+                  // If back photo is also provided, setup Dual-Side UV Projection
+                  if (garmentRecord.photoBack && garmentRecord.photoBack !== photoFront) {
+                    texLoader.load(garmentRecord.photoBack, (backTexture) => {
+                      backTexture.wrapS = window.THREE.RepeatWrapping;
+                      backTexture.wrapT = window.THREE.RepeatWrapping;
+                      mat.userData.uFrontMap = { value: frontTexture };
+                      mat.userData.uBackMap = { value: backTexture };
+                      mat.onBeforeCompile = (shader) => {
+                        shader.uniforms.uFrontMap = mat.userData.uFrontMap;
+                        shader.uniforms.uBackMap = mat.userData.uBackMap;
+                        shader.vertexShader = shader.vertexShader.replace(
+                          '#include <common>',
+                          '#include <common>\nvarying vec3 vModelNormal;'
+                        );
+                        shader.vertexShader = shader.vertexShader.replace(
+                          '#include <defaultnormal_vertex>',
+                          '#include <defaultnormal_vertex>\nvModelNormal = normal;'
+                        );
+                        shader.fragmentShader = shader.fragmentShader.replace(
+                          '#include <common>',
+                          '#include <common>\nuniform sampler2D uFrontMap;\nuniform sampler2D uBackMap;\nvarying vec3 vModelNormal;'
+                        );
+                        shader.fragmentShader = shader.fragmentShader.replace(
+                          '#include <map_fragment>',
+                          '#ifdef USE_MAP\nvec4 frontTex = texture2D(uFrontMap, vUv);\nvec4 backTex = texture2D(uBackMap, vUv);\nfloat sideBlend = smoothstep(-0.06, 0.06, vModelNormal.z);\nvec4 texelColor = mix(backTex, frontTex, sideBlend);\ndiffuseColor *= texelColor;\n#endif'
+                        );
+                      };
+                      mat.needsUpdate = true;
+                    });
+                  } else {
+                    mat.onBeforeCompile = null;
+                  }
+
                   mat.needsUpdate = true;
                 }, undefined, () => {
                   mat.map = null;
@@ -362,6 +405,7 @@ export class VirtualTryOn {
             } else if (garmentRecord.color !== undefined) {
               // Unbind pre-baked suit texture so garment color renders cleanly and purely
               mat.map = null;
+              mat.onBeforeCompile = null;
               if (typeof mat.color?.setHex === 'function') {
                 mat.color.setHex(garmentRecord.color);
               } else {

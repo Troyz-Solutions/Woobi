@@ -196,6 +196,10 @@ export class ClothingCaptureState {
       internalCategory: meta.internalCategory,
       name: metadata.name || `${meta.label} #${currentCount + 1}`,
       photo: photoDataUrl,
+      photoFront: metadata.photoFront || photoDataUrl,
+      photoBack: metadata.photoBack || null,
+      hdColor: metadata.hdColor || null,
+      color: metadata.color || metadata.hdColor?.intHex || metadata.hdColor || null,
       timestamp: Date.now(),
       condition: 'clean',
       fit: 'perfect',
@@ -289,12 +293,17 @@ export class ClothingCaptureState {
     const all = this.getAllPhotos();
     return all.map((item, index) => {
       const meta = CATEGORY_METADATA[item.category];
+      const primaryPhoto = item.photoFront || item.photo;
       return {
         id: `wardrobe_item_${Date.now()}_${index}_${item.id}`,
         name: item.name || `${meta.label} ${index + 1}`,
         category: meta.internalCategory, // 'Tops' | 'Bottoms' | 'Shoes'
         subCategory: meta.label,
-        photo: item.photo,
+        photo: primaryPhoto,
+        photoFront: primaryPhoto,
+        photoBack: item.photoBack || null,
+        hdColor: item.hdColor || null,
+        color: item.color || (item.hdColor && item.hdColor.intHex !== undefined ? item.hdColor.intHex : null),
         condition: item.condition || 'clean',
         fit: item.fit || 'perfect',
         capturedVia: 'clothing_silhouette_capture',

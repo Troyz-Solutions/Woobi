@@ -315,6 +315,9 @@ export function registerDynamicGarment(garmentData) {
   }
 
   let color = garmentData.color;
+  if (!color && garmentData.hdColor) {
+    color = typeof garmentData.hdColor === 'object' ? garmentData.hdColor.intHex || garmentData.hdColor.hex : garmentData.hdColor;
+  }
   if (typeof color === 'string') {
     if (color.startsWith('#')) color = parseInt(color.slice(1), 16);
     else if (color.startsWith('0x')) color = parseInt(color, 16);
@@ -344,8 +347,11 @@ export function registerDynamicGarment(garmentData) {
     name: garmentData.name || 'Custom Garment',
     category,
     color,
-    photo: garmentData.photo || garmentData.textureUrl || null,
-    textureUrl: garmentData.photo || garmentData.textureUrl || null,
+    photo: garmentData.photoFront || garmentData.photo || garmentData.textureUrl || null,
+    photoFront: garmentData.photoFront || garmentData.photo || null,
+    photoBack: garmentData.photoBack || null,
+    hdColor: garmentData.hdColor || null,
+    textureUrl: garmentData.photoFront || garmentData.photo || garmentData.textureUrl || null,
     roughness: garmentData.roughness !== undefined ? garmentData.roughness : 0.65,
     metalness: garmentData.metalness !== undefined ? garmentData.metalness : 0.04,
     layer: garmentData.layer || 1,

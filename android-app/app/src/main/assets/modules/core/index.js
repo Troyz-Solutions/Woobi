@@ -12,6 +12,14 @@ import {
   CATEGORY_METADATA,
   CAPTURE_EVENTS
 } from './state/ClothingCaptureState.js';
+import {
+  removeBackgroundOnDevice,
+  processCanvasGarment,
+  extractExactHDColor,
+  colorDistance,
+  rgbToHex,
+  toHexInt
+} from './capture/ClothingSegmentation.js';
 import { toastService } from './shared-ui/ToastService.js';
 import { modalService } from './shared-ui/ModalService.js';
 import { GlobalErrorHandler, globalErrorHandler } from './errors/GlobalErrorHandler.js';
@@ -38,6 +46,12 @@ export {
   TOTAL_LIMIT,
   CATEGORY_METADATA,
   CAPTURE_EVENTS,
+  removeBackgroundOnDevice,
+  processCanvasGarment,
+  extractExactHDColor,
+  colorDistance,
+  rgbToHex,
+  toHexInt,
   toastService,
   modalService,
   GlobalErrorHandler,
@@ -73,6 +87,16 @@ export const CoreContract = {
 
   // Clothing Capture & Silhouette Digitization Engine
   clothingCapture: clothingCaptureState,
+
+  // On-Device $0 Background Removal & Exact HD Color Extraction
+  segmentation: {
+    removeBackgroundOnDevice: (imgData, opt) => removeBackgroundOnDevice(imgData, opt),
+    processCanvasGarment: (canvas, opt) => processCanvasGarment(canvas, opt),
+    extractExactHDColor: (imgData, mask) => extractExactHDColor(imgData, mask),
+    colorDistance,
+    rgbToHex,
+    toHexInt
+  },
   
   // Shared UI & Design System
   ui: {

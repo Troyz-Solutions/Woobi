@@ -76,8 +76,18 @@ export class CameraTransitions {
       };
     }
 
+    let effectiveLookAt = this.targetCameraLookAt;
+    const isPortrait = (aspect || camera.aspect) < 0.75;
+    if (isPortrait && this.currentPreset === 'STUDIO_OVERVIEW' && this.targetCameraLookAt) {
+      effectiveLookAt = {
+        x: this.targetCameraLookAt.x,
+        y: this.targetCameraLookAt.y - 0.16,
+        z: this.targetCameraLookAt.z
+      };
+    }
+
     camera.position.lerp(effectivePos, this.positionLerpSpeed);
-    this.currentCameraLookAt.lerp(this.targetCameraLookAt, this.lookAtLerpSpeed);
+    this.currentCameraLookAt.lerp(effectiveLookAt, this.lookAtLerpSpeed);
     camera.lookAt(this.currentCameraLookAt);
 
     // 2. Update FOV with zoom damping

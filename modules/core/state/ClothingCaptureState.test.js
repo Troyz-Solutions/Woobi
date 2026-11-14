@@ -215,5 +215,26 @@ describe('ClothingCaptureState Engine', () => {
     state.clearAll();
     assert.equal(state.getTotalCount(), 0);
   });
+
+  test('Supports Dual-Side (Front & Back) capture and exact HD color extraction metadata', () => {
+    const res = state.addConfirmedPhoto('shirt', 'data:image/png;base64,front_photo_100res', {
+      name: 'Emerald Silk Shirt',
+      photoFront: 'data:image/png;base64,front_photo_100res',
+      photoBack: 'data:image/png;base64,back_photo_100res',
+      hdColor: { hex: '#1E5838', intHex: 0x1E5838, rgb: { r: 30, g: 88, b: 56 } }
+    });
+
+    assert.equal(res.success, true);
+    assert.equal(res.item.photoFront, 'data:image/png;base64,front_photo_100res');
+    assert.equal(res.item.photoBack, 'data:image/png;base64,back_photo_100res');
+    assert.equal(res.item.color, 0x1E5838);
+
+    const exported = state.exportToWardrobeItems();
+    assert.equal(exported.length, 1);
+    assert.equal(exported[0].photoFront, 'data:image/png;base64,front_photo_100res');
+    assert.equal(exported[0].photoBack, 'data:image/png;base64,back_photo_100res');
+    assert.equal(exported[0].color, 0x1E5838);
+    assert.equal(exported[0].hdColor.hex, '#1E5838');
+  });
 });
 

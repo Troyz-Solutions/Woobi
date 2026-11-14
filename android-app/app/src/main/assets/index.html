@@ -5350,6 +5350,20 @@
       </button>
     </div>
 
+    <!-- Dual-Side (Front / Back) Capture Mode Selector -->
+    <div class="clothing-side-selector-bar">
+      <button type="button" class="clothing-side-pill active" id="clothingSideFrontBtn" onclick="app.setClothingCaptureSide('front')">
+        <span class="clothing-side-dot"></span>
+        <span id="clothingSideFrontLabel">✦ Front Side</span>
+        <span class="clothing-side-check hidden" id="clothingSideFrontDone">✓</span>
+      </button>
+      <button type="button" class="clothing-side-pill" id="clothingSideBackBtn" onclick="app.setClothingCaptureSide('back')">
+        <span class="clothing-side-dot"></span>
+        <span id="clothingSideBackLabel">✦ Back Side</span>
+        <span class="clothing-side-check hidden" id="clothingSideBackDone">✓</span>
+      </button>
+    </div>
+
     <!-- Live Viewfinder / Silhouette Guide -->
     <div class="clothing-viewfinder-wrap" id="clothingViewfinderContainer">
       <video id="clothingCameraVideo" class="clothing-camera-video" autoplay playsinline muted></video>
@@ -5470,13 +5484,23 @@
 
       <!-- Review & Confirm Controls (after capture) -->
       <div class="clothing-review-controls hidden" id="clothingCameraReviewControls">
-        <button type="button" class="clothing-btn-retake" onclick="app.retakeClothingPhoto()">
-          ↺ Retake
-        </button>
-        <button type="button" class="clothing-btn-confirm" id="btnConfirmClothingPhoto"
-          onclick="app.confirmClothingPhoto()">
-          ✓ Confirm &amp; Save Photo
-        </button>
+        <!-- Exact HD Color Swatch Match -->
+        <div class="clothing-hd-color-chip hidden" id="clothingHdColorChip">
+          <span class="clothing-hd-color-circle" id="clothingHdColorCircle"></span>
+          <span class="clothing-hd-color-code" id="clothingHdColorText">Fabric HD Color Matched</span>
+        </div>
+        <div class="clothing-review-buttons-row">
+          <button type="button" class="clothing-btn-retake" onclick="app.retakeClothingPhoto()">
+            ↺ Retake
+          </button>
+          <button type="button" class="clothing-btn-side-toggle" id="btnCaptureBackSide" onclick="app.proceedToBackSideCapture()">
+            ✦ Next: Capture Back Side
+          </button>
+          <button type="button" class="clothing-btn-confirm" id="btnConfirmClothingPhoto"
+            onclick="app.confirmClothingPhoto()">
+            ✓ Confirm &amp; Save
+          </button>
+        </div>
       </div>
     </div>
   </div>

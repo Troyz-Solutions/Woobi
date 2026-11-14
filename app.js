@@ -396,7 +396,8 @@
       renderWeeklyCalendar();
     } else if (screenId === 'premium') {
       updateSubscriptionUI();
-      switchPlanView('pro');
+      const initialPlan = (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('plan')) || 'pro';
+      switchPlanView(initialPlan);
       initPlanSwipeGestures();
       const screenPremium = document.getElementById('screen-premium');
       if (screenPremium) {

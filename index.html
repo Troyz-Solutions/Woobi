@@ -283,7 +283,7 @@
           <div class="screen-sub-header">
             <button class="nav-back-arrow" onclick="app.goToScreen('welcome')">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <patht to d="m15 18-6-6 6-6" />
+                <path d="m15 18-6-6 6-6" />
               </svg>
             </button>
             <div class="step-progress-dots">
@@ -2522,6 +2522,7 @@
             </div>
           </div>
 
+<<<<<<< Updated upstream
           <!-- 3 Vertically Stacked Plan Cards (Fully Filled) -->
           <div class="seren-plan-cards-stack">
             <!-- 1. Free Card -->
@@ -2597,6 +2598,38 @@
           <div class="seren-plan-trust-footer">
             <p class="seren-disclaimer-text">Cancel anytime. Terms of service apply.</p>
           </div>
+=======
+          <!-- Bottom Navigation Bar for Screen Premium (Matches Reference Image 2) -->
+          <nav class="phone-bottom-nav premium-bottom-nav">
+            <button type="button" class="nav-tab" onclick="app.goToScreen('wardrobe')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3a2.2 2.2 0 0 0-2 2.2c0 .9.6 1.7 1.5 2V8.5L3.8 15.2a1.8 1.8 0 0 0 1.2 3h14a1.8 1.8 0 0 0 1.2-3L12.5 8.5V7.2c.9-.3 1.5-1.1 1.5-2A2.2 2.2 0 0 0 12 3z" />
+              </svg>
+              <span>Wardrobe</span>
+            </button>
+            <button type="button" class="nav-tab" onclick="app.openStyleHint()">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m12 2-2.3 6.9a2 2 0 0 1-1.3 1.3L1.5 12.5l6.9 2.3a2 2 0 0 1 1.3 1.3l2.3 6.9 2.3-6.9a2 2 0 0 1 1.3-1.3l6.9-2.3-6.9-2.3a2 2 0 0 1-1.3-1.3L12 2Z"/>
+              </svg>
+              <span>Style Hint</span>
+            </button>
+            <button type="button" class="nav-tab active" onclick="app.goToScreen('premium')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
+                <path d="M5 19h14"/>
+              </svg>
+              <span>Premium</span>
+            </button>
+            <button type="button" class="nav-tab" onclick="app.goToScreen('profile')">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span>Profile</span>
+            </button>
+          </nav>
+          <div class="phone-home-indicator"></div>
+>>>>>>> Stashed changes
         </section>
 
         <!-- ===================================================================

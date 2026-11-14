@@ -3154,7 +3154,7 @@
             const cat = userData?.category || 'top';
             const gId = userData?.garmentId || 'navy_shirt';
             this.equipGarment(cat, gId);
-            this.setCameraState('AVATAR_FULL_BODY');
+            this.setCameraState('STUDIO_OVERVIEW');
             if (window.app && typeof window.app.showToast === 'function') {
               window.app.showToast(`✦ ${userData?.name || 'Garment'} equipped on your mannequin! ♡`);
             }
@@ -3211,7 +3211,7 @@
             const cat = chosenObj.userData.category || 'top';
             const gId = chosenObj.userData.garmentId || 'navy_shirt';
             this.equipGarment(cat, gId);
-            this.setCameraState('AVATAR_FULL_BODY');
+            this.setCameraState('STUDIO_OVERVIEW');
             if (window.app && typeof window.app.showToast === 'function') {
               window.app.showToast(`✦ ${chosenObj.userData.name || 'Garment'} equipped on your mannequin! ♡`);
             }

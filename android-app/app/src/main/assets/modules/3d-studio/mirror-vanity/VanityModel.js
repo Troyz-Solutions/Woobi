@@ -19,7 +19,8 @@ export const VANITY_CONFIG = {
   mirrorRadius: 0.48,
   stoolPosition: { x: 0.12, y: 0, z: 0.42 },
   stoolRadius: 0.25,
-  stoolHeight: 0.40
+  stoolHeight: 0.40,
+  clockPosition: { x: -0.075, y: 2.35, z: -2.95 }
 };
 
 export class VanityModel {
@@ -28,6 +29,7 @@ export class VanityModel {
     this.group = null;
     this.mirrorGlassMesh = null;
     this.mirrorGroup = null;
+    this.clockGroup = null;
     this.interactiveObjects = [];
     this.disposables = [];
     this.lighting = new VanityLighting();
@@ -382,9 +384,12 @@ export class VanityModel {
     this.mirrorGroup.add(backArc);
     this.disposables.push(mirrorBackMat, backRectGeo, backArcGeo);
 
-    // I. Classic Parisian Horlogerie Wall Clock Mounted Above the Grooming Mirror
-    const clockGroup = this.buildClassicWallClock(THREE, straightH, frameOuterR, brassMat, polishedGoldMat);
-    this.mirrorGroup.add(clockGroup);
+    // I. Classic Parisian Horlogerie Wall Clock Mounted at Elevated Height Between Wardrobe and Mirror
+    this.clockGroup = this.buildClassicWallClock(THREE, brassMat, polishedGoldMat);
+    const clockPos = this.config.clockPosition || { x: -0.075, y: 2.35, z: -2.95 };
+    this.clockGroup.position.set(clockPos.x, clockPos.y, clockPos.z);
+    this.clockGroup.rotation.set(0, 0, 0);
+    scene.add(this.clockGroup);
 
     // Initialize Vanity Radiance Lighting
     this.lighting.init(THREE, this.mirrorGroup);
@@ -588,14 +593,19 @@ export class VanityModel {
   }
 
   /**
-   * Builds an authentic classic Parisian horlogerie wall clock mounted directly above the grooming mirror.
+   * Builds an authentic classic Parisian horlogerie wall clock mounted at elevated height between the wardrobe and mirror.
    */
-  buildClassicWallClock(THREE, straightH, frameOuterR, brassMat, polishedGoldMat) {
+  buildClassicWallClock(THREE, arg2, arg3, arg4, arg5) {
+    let brassMat = arg2;
+    let polishedGoldMat = arg3;
+    if (typeof arg2 === 'number') {
+      brassMat = arg4;
+      polishedGoldMat = arg5;
+    }
+
     const clockGroup = new THREE.Group();
     clockGroup.name = 'vanity_classic_wall_clock';
-    // Positioned gracefully centered directly above the arched mirror frame
-    const clockCenterY = straightH + frameOuterR + 0.34;
-    clockGroup.position.set(0, clockCenterY, -0.015);
+    clockGroup.position.set(0, 0, 0);
 
     const proceduralClockGroup = new THREE.Group();
     proceduralClockGroup.name = 'procedural_clock_group';
@@ -966,9 +976,13 @@ export class VanityModel {
     if (this.group && scene) {
       scene.remove(this.group);
     }
+    if (this.clockGroup && scene) {
+      scene.remove(this.clockGroup);
+    }
     this.lighting.dispose(this.mirrorGroup);
     this.reflection.dispose();
     this.clockHands = null;
+    this.clockGroup = null;
     this.isClockGLBLoaded = false;
 
     this.disposables.forEach(d => {

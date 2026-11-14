@@ -158,6 +158,10 @@ const vanityRoot = vanity.build(mockScene, { calacatta: mockSharedMarbleTexture,
 
 // Scene Construction Test
 assert(mockScene.children.includes(vanityRoot), 'vanity.build() mounts root group onto the Scene');
+assert(vanity.clockGroup !== null, 'vanity initializes clockGroup');
+assert(mockScene.children.includes(vanity.clockGroup), 'vanity.build() mounts clockGroup onto Scene between wardrobe and mirror');
+assert(vanity.clockGroup.position.y === 2.35, 'Clock is mounted at elevated wall height (y=2.35m)');
+assert(vanity.clockGroup.position.x === -0.075, 'Clock is centered between wardrobe and mirror (x=-0.075m)');
 assert(vanity.interactiveObjects.length > 0, 'vanity registers raycast hitBox in interactiveObjects');
 assert(vanity.interactiveObjects[0].userData.interactiveType === 'vanity', 'hitBox has correct interactiveType');
 
@@ -166,9 +170,12 @@ assert(vanity.isGLBLoaded === false, 'When GLB is missing, isGLBLoaded is set to
 const proceduralVanity = vanityRoot.children.find(c => c.name === 'procedural_vanity');
 assert(proceduralVanity && proceduralVanity.visible === true, 'Procedural vanity remains active and visible');
 
+const savedClockGroup = vanity.clockGroup;
+
 // Safe Resource Cleanup Test
 vanity.dispose(mockScene);
 assert(!mockScene.children.includes(vanityRoot), 'vanity.dispose() removes vanity root from Scene');
+assert(!mockScene.children.includes(savedClockGroup), 'vanity.dispose() removes clockGroup from Scene');
 assert(vanity.disposables.length === 0, 'vanity.dispose() clears disposables array');
 assert(vanity.reflection.renderTarget === null, 'vanity.dispose() disposes WebGLRenderTarget');
 assert(mockSharedMarbleTexture.disposed === false, 'vanity.dispose() NEVER disposes external shared marble texture');

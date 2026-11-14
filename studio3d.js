@@ -1683,9 +1683,12 @@
       backArc.position.set(0, straightH, -frameDepth / 2 - 0.004);
       mirrorGroup.add(backArc);
 
-      // I. Classic Parisian Horlogerie Wall Clock Mounted Above the Grooming Mirror
-      const clockGroup = this.buildClassicWallClock(straightH, frameOuterR, brassMat, polishedGoldMat);
-      mirrorGroup.add(clockGroup);
+      // I. Classic Parisian Horlogerie Wall Clock Mounted at Height Between Wardrobe and Mirror
+      const clockGroup = this.buildClassicWallClock(brassMat, polishedGoldMat);
+      clockGroup.position.set(-0.075, 2.35, -2.95);
+      clockGroup.rotation.set(0, 0, 0);
+      this.scene.add(clockGroup);
+      this.clockGroup = clockGroup;
 
       // Warm continuous radiance light from the mirror ring
       const mirrorGlowLight = new THREE.PointLight(0xFFE8BE, 1.4, 3.2);
@@ -1927,13 +1930,18 @@
     }
 
     /**
-     * Builds an authentic classic Parisian horlogerie wall clock mounted directly above the grooming mirror.
+     * Builds an authentic classic Parisian horlogerie wall clock mounted at elevated height between the wardrobe and mirror.
      */
-    buildClassicWallClock(straightH, frameOuterR, brassMat, polishedGoldMat) {
+    buildClassicWallClock(arg1, arg2, arg3, arg4) {
+      let brassMat = arg1;
+      let polishedGoldMat = arg2;
+      if (typeof arg1 === 'number') {
+        brassMat = arg3;
+        polishedGoldMat = arg4;
+      }
       const clockGroup = new THREE.Group();
       clockGroup.name = 'studio_classic_wall_clock';
-      const clockCenterY = straightH + frameOuterR + 0.34;
-      clockGroup.position.set(0, clockCenterY, -0.015);
+      clockGroup.position.set(0, 0, 0);
 
       const proceduralClockGroup = new THREE.Group();
       proceduralClockGroup.name = 'studio_procedural_clock';

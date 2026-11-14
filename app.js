@@ -1778,6 +1778,7 @@
   function wardrobeEquipById(itemId) {
     const item = WARDROBE_ITEMS.find(i => i.id === itemId);
     if (!item) return;
+    _wSelectedGarment = item;
     wardrobeEquipToMannequin(item);
   }
 

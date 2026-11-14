@@ -1251,6 +1251,14 @@
           const pScale = 1.25;
           wardrobeInstance.group.scale.set(pScale, pScale, pScale);
           wardrobeGroup.add(wardrobeInstance.group);
+
+          // Register individual hanging clothes and shoes for direct 3D tap-to-equip interactions
+          if (wardrobeInstance.garmentGroup) {
+            wardrobeInstance.garmentGroup.children.forEach(c => this.interactiveObjects.push(c));
+          }
+          if (wardrobeInstance.trouserGroup) {
+            wardrobeInstance.trouserGroup.children.forEach(c => this.interactiveObjects.push(c));
+          }
         } catch (e) {
           console.warn('Initial wardrobe placeholder warning:', e);
         }
@@ -3127,10 +3135,22 @@
       if (this.cameraController && typeof this.cameraController.raycastClick === 'function') {
         this.cameraController.raycastClick(clientX, clientY, this.canvas, this.interactiveObjects, (type, userData) => {
           if (type === 'wardrobe_garment') {
+            const cat = userData?.category || 'top';
+            const gId = userData?.garmentId || 'navy_shirt';
+            this.equipGarment(cat, gId);
+            this.setCameraState('AVATAR_FULL_BODY');
+            if (window.app && typeof window.app.showToast === 'function') {
+              window.app.showToast(`✦ ${userData?.name || 'Garment'} equipped on your mannequin! ♡`);
+            }
+            const sparkles = document.getElementById('serenSparkles');
+            if (sparkles) {
+              sparkles.classList.add('active');
+              setTimeout(() => { sparkles.classList.remove('active'); }, 1400);
+            }
             if (window.app && typeof window.app.start3DGarmentDrag === 'function') {
               window.app.start3DGarmentDrag(userData, clientX, clientY);
-              return;
             }
+            return;
           }
           if (typeof this.onObjectClick === 'function') {
             this.onObjectClick(type, userData);
@@ -3172,10 +3192,22 @@
         if (chosenObj && chosenObj.userData.interactiveType) {
           const type = chosenObj.userData.interactiveType;
           if (type === 'wardrobe_garment') {
+            const cat = chosenObj.userData.category || 'top';
+            const gId = chosenObj.userData.garmentId || 'navy_shirt';
+            this.equipGarment(cat, gId);
+            this.setCameraState('AVATAR_FULL_BODY');
+            if (window.app && typeof window.app.showToast === 'function') {
+              window.app.showToast(`✦ ${chosenObj.userData.name || 'Garment'} equipped on your mannequin! ♡`);
+            }
+            const sparkles = document.getElementById('serenSparkles');
+            if (sparkles) {
+              sparkles.classList.add('active');
+              setTimeout(() => { sparkles.classList.remove('active'); }, 1400);
+            }
             if (window.app && typeof window.app.start3DGarmentDrag === 'function') {
               window.app.start3DGarmentDrag(chosenObj.userData, clientX, clientY);
-              return;
             }
+            return;
           }
           if (typeof this.onObjectClick === 'function') {
             this.onObjectClick(type, chosenObj.userData);

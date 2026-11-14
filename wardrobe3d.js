@@ -552,17 +552,17 @@
       // 6 Neatly Hung Shirts & Tops (balanced, less dominant)
       const garmentSpecs = [
         // 1. Crisp White Button-down Shirt
-        { x: -0.64, mat: this.materials.poplinWhite, len: 0.52, type: 'shirt', collar: 'spread' },
+        { x: -0.64, mat: this.materials.poplinWhite, len: 0.52, type: 'shirt', collar: 'spread', name: 'White linen shirt', garmentId: 'white_linen_shirt' },
         // 2. Off-white Draped Silk Blouse
-        { x: -0.36, mat: this.materials.silkCream, len: 0.48, type: 'blouse', collar: 'band' },
-        // 3. Subtle Pinstripe Shirt
-        { x: -0.08, mat: this.materials.shirtPinstripe, len: 0.50, type: 'shirt', collar: 'spread' },
-        // 4. Crisp White Poplin Dress Shirt
-        { x: 0.20, mat: this.materials.poplinWhite, len: 0.51, type: 'shirt', collar: 'classic' },
-        // 5. Light Beige Linen Overshirt
-        { x: 0.48, mat: this.materials.linenBeige, len: 0.54, type: 'shirt', collar: 'spread' },
-        // 6. Beige Draped Fine-Knit Cardigan
-        { x: 0.72, mat: this.materials.cardiganCamel, len: 0.52, type: 'cardigan', collar: 'shawl' }
+        { x: -0.36, mat: this.materials.silkCream, len: 0.48, type: 'blouse', collar: 'band', name: 'Cream kurta', garmentId: 'cream_kurta' },
+        // 3. Subtle Pinstripe / Navy Shirt
+        { x: -0.08, mat: this.materials.shirtPinstripe, len: 0.50, type: 'shirt', collar: 'spread', name: 'Navy shirt', garmentId: 'navy_shirt' },
+        // 4. Crisp Terracotta Tee
+        { x: 0.20, mat: this.materials.poplinWhite, len: 0.51, type: 'shirt', collar: 'classic', name: 'Terracotta tee', garmentId: 'terracotta_tee' },
+        // 5. Light Beige Linen / Indigo Kurti
+        { x: 0.48, mat: this.materials.linenBeige, len: 0.54, type: 'shirt', collar: 'spread', name: 'Indigo kurti', garmentId: 'indigo_kurti' },
+        // 6. Beige Draped Fine-Knit / Tailored Blazer
+        { x: 0.72, mat: this.materials.cardiganCamel, len: 0.52, type: 'blazer', collar: 'lapel', name: 'Tailored blazer', garmentId: 'tailored_blazer' }
       ];
 
       garmentSpecs.forEach((spec, index) => {
@@ -580,6 +580,12 @@
     createVolumetricGarment(spec, index) {
       const g = new THREE.Group();
       g.name = `Garment_${index}_${spec.type}`;
+      g.userData = {
+        interactiveType: 'wardrobe_garment',
+        category: 'top',
+        garmentId: spec.garmentId || (spec.type === 'blazer' ? 'tailored_blazer' : (spec.type === 'cardigan' ? 'cream_kurta' : 'white_linen_shirt')),
+        name: spec.name || 'Hanging Shirt'
+      };
 
       // 1. Natural Oak Wishbone Hanger
       const hangerBar = new THREE.Mesh(
@@ -709,18 +715,18 @@
 
       // 6 Hanging Trousers
       const trouserSpecs = [
-        // 1. Navy Cotton Chinos
-        { x: -0.68, mat: this.materials.trouserNavy, len: 0.48 },
-        // 2. Khaki Casual Trousers
-        { x: -0.40, mat: this.materials.trouserKhaki, len: 0.46 },
-        // 3. Charcoal Wool Dress Pants
-        { x: -0.12, mat: this.materials.trouserCharcoal, len: 0.50 },
-        // 4. Olive Slim Chinos
-        { x: 0.16, mat: this.materials.trouserOlive, len: 0.47 },
-        // 5. Tan Tailored Trousers
-        { x: 0.44, mat: this.materials.trouserTan, len: 0.46 },
-        // 6. Classic Denim
-        { x: 0.70, mat: this.materials.trouserDenim, len: 0.49 }
+        // 1. Beige Cotton Chinos
+        { x: -0.68, mat: this.materials.trouserNavy, len: 0.48, name: 'Beige chinos', garmentId: 'beige_chinos' },
+        // 2. Dark Denim
+        { x: -0.40, mat: this.materials.trouserKhaki, len: 0.46, name: 'Dark denim', garmentId: 'dark_denim' },
+        // 3. Dark Skirt
+        { x: -0.12, mat: this.materials.trouserCharcoal, len: 0.50, name: 'Dark skirt', garmentId: 'dark_skirt' },
+        // 4. Cream Palazzo
+        { x: 0.16, mat: this.materials.trouserOlive, len: 0.47, name: 'Cream palazzo', garmentId: 'cream_palazzo' },
+        // 5. Tan Tailored Chinos
+        { x: 0.44, mat: this.materials.trouserTan, len: 0.46, name: 'Beige chinos', garmentId: 'beige_chinos' },
+        // 6. Classic Dark Denim
+        { x: 0.70, mat: this.materials.trouserDenim, len: 0.49, name: 'Dark denim', garmentId: 'dark_denim' }
       ];
 
       trouserSpecs.forEach((spec, index) => {
@@ -738,6 +744,12 @@
     createHangingTrouser(spec, index) {
       const g = new THREE.Group();
       g.name = `Trouser_${index}`;
+      g.userData = {
+        interactiveType: 'wardrobe_garment',
+        category: 'bottom',
+        garmentId: spec.garmentId || 'beige_chinos',
+        name: spec.name || 'Hanging Trousers'
+      };
 
       // 1. Oak Clip-Style Hanger Bar
       const hangerBar = new THREE.Mesh(
@@ -838,12 +850,12 @@
 
       // 6 Neatly Arranged Footwear Pairs: Shoes, Sneakers & Sandals
       const footwearConfigs = [
-        { x: -0.75, type: 'sneaker', mat: this.materials.leatherWhite, name: 'Minimalist White Platform Sneakers' },
-        { x: -0.45, type: 'loafer', mat: this.materials.leatherLoafer, name: 'Cream Tailored Loafers' },
-        { x: -0.15, type: 'sandal', mat: this.materials.leatherTan, name: 'Tan Leather Slide Sandals' },
-        { x: 0.15, type: 'sandal', mat: this.materials.trouserOlive, name: 'Olive Minimalist Cross-Strap Sandals' },
-        { x: 0.45, type: 'sneaker', mat: this.materials.leatherWhite, name: 'White Court Trainers' },
-        { x: 0.75, type: 'heel', mat: this.materials.leatherBeige, name: 'Beige Low-Block Leather Heels' }
+        { x: -0.75, type: 'sneaker', mat: this.materials.leatherWhite, name: 'White sneakers', garmentId: 'white_sneakers' },
+        { x: -0.45, type: 'loafer', mat: this.materials.leatherLoafer, name: 'Tan loafers', garmentId: 'tan_loafers' },
+        { x: -0.15, type: 'sandal', mat: this.materials.leatherTan, name: 'Brown sandals', garmentId: 'brown_sandals' },
+        { x: 0.15, type: 'sandal', mat: this.materials.trouserOlive, name: 'Brown sandals', garmentId: 'brown_sandals' },
+        { x: 0.45, type: 'sneaker', mat: this.materials.leatherWhite, name: 'Black trainers', garmentId: 'black_trainers' },
+        { x: 0.75, type: 'heel', mat: this.materials.leatherBeige, name: 'White sneakers', garmentId: 'white_sneakers' }
       ];
 
       footwearConfigs.forEach((fc) => {
@@ -861,6 +873,12 @@
     createFootwearPair(config) {
       const pair = new THREE.Group();
       pair.name = config.name;
+      pair.userData = {
+        interactiveType: 'wardrobe_garment',
+        category: 'shoes',
+        garmentId: config.garmentId || 'white_sneakers',
+        name: config.name || 'Footwear'
+      };
 
       const shoeSpacing = 0.082;
       [-shoeSpacing / 2, shoeSpacing / 2].forEach((xOffset) => {

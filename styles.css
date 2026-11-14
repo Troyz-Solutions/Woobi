@@ -208,8 +208,14 @@ body.theme-dark.high-contrast,
 #screen-ai-stylist,
 #screen-custom-builder,
 #screen-swap-item,
-#screen-outfit-details {
-  padding-bottom: calc(36px + max(env(safe-area-inset-bottom, 0px), 18px));
+#screen-outfit-details,
+#screen-appearance-settings,
+#screen-performance-settings,
+#screen-reminders,
+#screen-account-privacy,
+#screen-help-support,
+#screen-delete-account {
+  padding-bottom: calc(48px + max(env(safe-area-inset-bottom, 0px), 24px));
 }
 
 .phone-screen.active {
@@ -16101,9 +16107,10 @@ body.theme-dark .woobi-silk-bg,
 }
 
 .settings-section-title {
-  font-size: 0.8rem;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-sub);
   margin-bottom: 12px;
@@ -16126,6 +16133,7 @@ body.theme-dark .woobi-silk-bg,
 }
 
 .settings-field-label {
+  font-family: var(--font-sans);
   font-size: 0.76rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -16178,6 +16186,7 @@ body.theme-dark .woobi-silk-bg,
 }
 
 .settings-toggle-label {
+  font-family: var(--font-sans);
   font-size: 0.86rem;
   font-weight: 600;
   color: var(--text-main);
@@ -16186,6 +16195,7 @@ body.theme-dark .woobi-silk-bg,
 }
 
 .settings-toggle-description {
+  font-family: var(--font-sans);
   font-size: 0.74rem;
   color: var(--text-muted);
   display: block;
@@ -16202,11 +16212,24 @@ body.theme-dark .woobi-silk-bg,
 }
 
 .cat-pill-modern {
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 9999px;
   background: #FFFFFF;
   border: 1px solid var(--bg-border);
   color: var(--text-sub);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
   font-family: var(--font-sans);
   font-size: 0.8rem;
   font-weight: 600;
@@ -16284,7 +16307,7 @@ body.theme-dark .woobi-silk-bg,
 /* Secondary Actions */
 .btn-secondary-modern {
   width: 100%;
-  padding: 11px 16px;
+  padding: 12px 18px;
   background: #FFFFFF;
   color: var(--text-sub);
   border: 1px solid var(--bg-border);
@@ -16297,7 +16320,12 @@ body.theme-dark .woobi-silk-bg,
   align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-top: 14px;
+  margin-bottom: 36px;
+  position: relative;
+  z-index: 2;
   transition: all var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .btn-secondary-modern:hover {

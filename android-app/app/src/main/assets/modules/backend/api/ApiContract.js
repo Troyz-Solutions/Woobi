@@ -37,6 +37,10 @@ export const API_ROUTES = {
   STREAK_STATUS: '/api/streak',
   STREAK_RECORD: '/api/streak/record',
 
+  // Daily AI Recommendations
+  RECOMMENDATIONS_TODAY: '/api/recommendations/today',
+  RECOMMENDATIONS_HISTORY: '/api/recommendations/history',
+
   // Storage & Media Uploads
   STORAGE_UPLOAD: '/api/storage/upload',
   STORAGE_FILE: '/api/storage/files/:filename'

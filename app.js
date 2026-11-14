@@ -390,6 +390,11 @@
     } else if (screenId === 'custom-builder') {
       renderBuilderGrid();
       updateBuilderTray();
+    } else if (screenId === 'today-recommendation') {
+      if (!_activeDailyRecommendation) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        openDailyRecommendation(todayStr);
+      }
     } else if (screenId === 'today' || screenId === 'virtual-studio') {
       initVirtualStudio();
     } else if (screenId === 'weekly-planning') {
@@ -2557,7 +2562,7 @@
     }
     let effectiveTheme = theme;
     if (theme === 'system') {
-      effectiveTheme = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      effectiveTheme = 'light';
     }
     if (typeof document !== 'undefined') {
       document.body.classList.remove('theme-light', 'theme-dark');
@@ -3327,6 +3332,597 @@
       serenToggleWardrobe(false);
     }, 450);
   }
+
+  // =========================================================================
+  // TODAY'S OUTFIT RECOMMENDATION (AI STYLIST) & 3D STUDIO TRY-ON
+  // =========================================================================
+  let _activeDailyRecommendation = null;
+  let _selectedRecommendationDate = null;
+  let _recommendationEngineInstance = null;
+
+  function getRecommendationEngine() {
+    if (_recommendationEngineInstance) return _recommendationEngineInstance;
+    if (typeof window !== 'undefined' && window.WoobiRecommendations && typeof window.WoobiRecommendations.createRecommendationEngine === 'function') {
+      _recommendationEngineInstance = window.WoobiRecommendations.createRecommendationEngine();
+      return _recommendationEngineInstance;
+    }
+    if (typeof window !== 'undefined' && window.WoobiStudioFeatures && typeof window.WoobiStudioFeatures.createRecommendationEngine === 'function') {
+      _recommendationEngineInstance = window.WoobiStudioFeatures.createRecommendationEngine();
+      return _recommendationEngineInstance;
+    }
+    return null;
+  }
+
+  function getStoredRecommendationHistory() {
+    try {
+      const raw = localStorage.getItem('woobi_recommendation_history');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [];
+  }
+
+  function saveStoredRecommendationHistory(rec) {
+    if (!rec || !rec.id) return;
+    try {
+      const history = getStoredRecommendationHistory();
+      history.push({
+        id: rec.id,
+        date: rec.date,
+        top: rec.top?.id || rec.top,
+        bottom: rec.bottom?.id || rec.bottom,
+        timestamp: Date.now()
+      });
+      if (history.length > 30) history.shift();
+      localStorage.setItem('woobi_recommendation_history', JSON.stringify(history));
+    } catch (e) {}
+  }
+
+  function openDailyRecommendation(dateStr) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    _selectedRecommendationDate = dateStr || _selectedRecommendationDate || todayStr;
+
+    // 1. Gather active wardrobe items
+    const wardrobePool = (Array.isArray(state.wardrobe) && state.wardrobe.length > 0)
+      ? state.wardrobe
+      : WARDROBE_ITEMS;
+
+    // 2. Generate recommendation
+    const engine = getRecommendationEngine();
+    const history = getStoredRecommendationHistory();
+
+    if (engine && typeof engine.generateDailyRecommendation === 'function') {
+      _activeDailyRecommendation = engine.generateDailyRecommendation(wardrobePool, {
+        dateStr: _selectedRecommendationDate,
+        history
+      });
+    } else {
+      _activeDailyRecommendation = generateFallbackDailyRecommendation(wardrobePool, _selectedRecommendationDate, history);
+    }
+
+    // 3. Update date headline
+    const dateEl = document.getElementById('recTodayDate');
+    if (dateEl && _activeDailyRecommendation) {
+      dateEl.textContent = _activeDailyRecommendation.formattedDate || _selectedRecommendationDate;
+    }
+
+    // 4. Render day switcher chips
+    renderRecommendationDayChips(_selectedRecommendationDate);
+
+    // 5. Render recommendation card
+    renderDailyRecommendationCard(_activeDailyRecommendation);
+
+    // 6. Transition to dedicated recommendation screen
+    goToScreen('today-recommendation');
+  }
+
+  function exitDailyRecommendation() {
+    goToScreen('today');
+  }
+
+  function selectRecommendationDate(dateStr) {
+    openDailyRecommendation(dateStr);
+  }
+
+  function renderRecommendationDayChips(activeDateStr) {
+    const container = document.getElementById('recDayChips');
+    if (!container) return;
+
+    const baseDate = new Date();
+    const chips = [];
+    const offsets = [-2, -1, 0, 1, 2, 3, 4];
+
+    offsets.forEach(offset => {
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + offset);
+      const iso = d.toISOString().slice(0, 10);
+      const isSelected = iso === activeDateStr;
+
+      let label = '';
+      if (offset === 0) label = 'Today';
+      else if (offset === -1) label = 'Yesterday';
+      else if (offset === 1) label = 'Tomorrow';
+      else {
+        const dayShort = d.toLocaleDateString('en-US', { weekday: 'short' });
+        const dateShort = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        label = `${dayShort}, ${dateShort}`;
+      }
+
+      chips.push(`
+        <button type="button" class="rec-day-chip ${isSelected ? 'active' : ''}"
+          onclick="app.selectRecommendationDate('${iso}')"
+          role="tab" aria-selected="${isSelected}">
+          <span class="rec-chip-dot"></span>
+          <span class="rec-chip-label">${label}</span>
+        </button>
+      `);
+    });
+
+    container.innerHTML = chips.join('');
+  }
+
+  function renderDailyRecommendationCard(rec) {
+    const container = document.getElementById('recCardContainer');
+    if (!container) return;
+
+    if (!rec || !rec.isAvailable) {
+      container.innerHTML = `
+        <div class="rec-empty-card">
+          <div class="rec-empty-icon">✨</div>
+          <h3 class="rec-empty-title">More Wardrobe Items Needed</h3>
+          <p class="rec-empty-text">
+            ${rec?.message || 'Add at least one top and one bottom to your digital wardrobe so your AI stylist can generate your daily outfit.'}
+          </p>
+          <button type="button" class="btn-primary" onclick="app.openCameraModal()">
+            + Add Clothes to Wardrobe
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    const top = rec.top;
+    const bottom = rec.bottom;
+    const shoes = rec.shoes;
+    const accessory = rec.accessory;
+
+    const topPhoto = top.photo || 'assets/navy_shirt.jpg';
+    const bottomPhoto = bottom.photo || 'assets/beige_chinos.jpg';
+    const shoePhoto = shoes ? (shoes.photo || 'assets/white_sneakers.jpg') : 'assets/white_sneakers.jpg';
+    const accPhoto = accessory ? (accessory.photo || 'assets/leather_watch.jpg') : 'assets/leather_watch.jpg';
+
+    container.innerHTML = `
+      <div class="rec-fashion-card">
+        <!-- Top Banner: Theme & Harmony Score -->
+        <div class="rec-card-top-bar">
+          <div class="rec-theme-pill">
+            <span class="rec-theme-text">${rec.title || "Today's Curated Look"}</span>
+          </div>
+          <div class="rec-score-pill">
+            <span class="rec-score-value">${rec.harmonyScore || 96}%</span>
+            <span class="rec-score-sub">Synergy</span>
+          </div>
+        </div>
+
+        <!-- Outfit Collage Preview Grid -->
+        <div class="rec-preview-grid">
+          <div class="rec-preview-slot rec-slot-top" title="${top.name}">
+            <img src="${topPhoto}" alt="${top.name}" onerror="this.src='assets/navy_shirt.jpg'" />
+            <div class="rec-slot-badge">TOPWEAR</div>
+            <div class="rec-slot-name">${top.name}</div>
+          </div>
+          <div class="rec-preview-slot rec-slot-bottom" title="${bottom.name}">
+            <img src="${bottomPhoto}" alt="${bottom.name}" onerror="this.src='assets/beige_chinos.jpg'" />
+            <div class="rec-slot-badge">BOTTOMWEAR</div>
+            <div class="rec-slot-name">${bottom.name}</div>
+          </div>
+          ${shoes ? `
+          <div class="rec-preview-slot rec-slot-shoes" title="${shoes.name}">
+            <img src="${shoePhoto}" alt="${shoes.name}" onerror="this.src='assets/white_sneakers.jpg'" />
+            <div class="rec-slot-badge">FOOTWEAR</div>
+            <div class="rec-slot-name">${shoes.name}</div>
+          </div>` : ''}
+          ${accessory ? `
+          <div class="rec-preview-slot rec-slot-acc" title="${accessory.name}">
+            <img src="${accPhoto}" alt="${accessory.name}" onerror="this.src='assets/leather_watch.jpg'" />
+            <div class="rec-slot-badge">ACCESSORY</div>
+            <div class="rec-slot-name">${accessory.name}</div>
+          </div>` : ''}
+        </div>
+
+        <!-- Wardrobe Item Breakdown Rows with Change Option -->
+        <div class="rec-garments-list">
+          <div class="rec-list-header">
+            <span>CLOTHING BREAKDOWN</span>
+            <span class="rec-list-count">${(shoes ? 3 : 2) + (accessory ? 1 : 0)} Pieces</span>
+          </div>
+
+          <div class="rec-garment-row">
+            <div class="rec-row-thumb">
+              <img src="${topPhoto}" alt="${top.name}" onerror="this.src='assets/navy_shirt.jpg'" />
+            </div>
+            <div class="rec-row-details">
+              <div class="rec-row-headline">
+                <span class="rec-row-name">${top.name}</span>
+                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('top')" aria-label="Change Topwear">Change</button>
+              </div>
+              <span class="rec-row-category">${top.subCategory || top.category || 'Tops'} · Fit: ${top.fit || 'perfect'}</span>
+            </div>
+          </div>
+
+          <div class="rec-garment-row">
+            <div class="rec-row-thumb">
+              <img src="${bottomPhoto}" alt="${bottom.name}" onerror="this.src='assets/beige_chinos.jpg'" />
+            </div>
+            <div class="rec-row-details">
+              <div class="rec-row-headline">
+                <span class="rec-row-name">${bottom.name}</span>
+                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('bottom')" aria-label="Change Bottomwear">Change</button>
+              </div>
+              <span class="rec-row-category">${bottom.subCategory || bottom.category || 'Bottoms'} · Fit: ${bottom.fit || 'perfect'}</span>
+            </div>
+          </div>
+
+          ${shoes ? `
+          <div class="rec-garment-row">
+            <div class="rec-row-thumb">
+              <img src="${shoePhoto}" alt="${shoes.name}" onerror="this.src='assets/white_sneakers.jpg'" />
+            </div>
+            <div class="rec-row-details">
+              <div class="rec-row-headline">
+                <span class="rec-row-name">${shoes.name}</span>
+                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('shoes')" aria-label="Change Footwear">Change</button>
+              </div>
+              <span class="rec-row-category">${shoes.subCategory || shoes.category || 'Footwear'} · Coordinated</span>
+            </div>
+          </div>` : ''}
+
+          ${accessory ? `
+          <div class="rec-garment-row">
+            <div class="rec-row-thumb">
+              <img src="${accPhoto}" alt="${accessory.name}" onerror="this.src='assets/leather_watch.jpg'" />
+            </div>
+            <div class="rec-row-details">
+              <div class="rec-row-headline">
+                <span class="rec-row-name">${accessory.name}</span>
+                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('accessory')" aria-label="Change Accessory">Change</button>
+              </div>
+              <span class="rec-row-category">${accessory.subCategory || accessory.category || 'Accessories'} · Accent</span>
+            </div>
+          </div>` : ''}
+        </div>
+
+        <!-- Action Section: Large TRY ON Button -->
+        <button type="button" class="rec-tryon-action-btn" id="recTryOnBtn" onclick="app.tryOnRecommendedOutfit()" aria-label="Try On Outfit in 3D Studio">
+          <span class="rec-tryon-btn-glow"></span>
+          <span class="rec-tryon-btn-icon">✨</span>
+          <span class="rec-tryon-btn-label">TRY ON</span>
+          <span class="rec-tryon-btn-arrow">→</span>
+        </button>
+      </div>
+    `;
+  }
+
+  // =========================================================================
+  // GARMENT CHANGE / SWAP MODAL (USER'S DIGITAL WARDROBE)
+  // =========================================================================
+  let _activeChangeSlot = 'top';
+
+  function openChangeGarmentModal(slot) {
+    _activeChangeSlot = slot || 'top';
+    const modal = document.getElementById('recChangeGarmentModal');
+    const titleEl = document.getElementById('recChangeModalTitle');
+    const subEl = document.getElementById('recChangeModalSub');
+    const gridEl = document.getElementById('recChangeGrid');
+    if (!modal || !gridEl) return;
+
+    let slotTitle = 'Topwear';
+    if (slot === 'bottom') slotTitle = 'Trousers & Bottoms';
+    else if (slot === 'shoes') slotTitle = 'Footwear';
+    else if (slot === 'accessory') slotTitle = 'Accessories';
+
+    if (titleEl) titleEl.textContent = `Change ${slotTitle}`;
+    if (subEl) subEl.textContent = `Select from your uploaded wardrobe`;
+
+    // Filter user's wardrobe items for this slot
+    const pool = (Array.isArray(state.wardrobe) && state.wardrobe.length > 0)
+      ? state.wardrobe
+      : WARDROBE_ITEMS;
+
+    let filtered = [];
+    if (slot === 'top') {
+      filtered = pool.filter(i => (i.category || '').toLowerCase() === 'tops' || isShirt(i));
+    } else if (slot === 'bottom') {
+      filtered = pool.filter(i => (i.category || '').toLowerCase() === 'bottoms' || isPant(i));
+    } else if (slot === 'shoes') {
+      filtered = pool.filter(i => (i.category || '').toLowerCase() === 'shoes' || isShoe(i));
+    } else if (slot === 'accessory') {
+      filtered = pool.filter(i => (i.category || '').toLowerCase() === 'accessories' || isAccessory(i));
+    }
+
+    // Determine currently selected item ID
+    const currentItemId = _activeDailyRecommendation
+      ? (_activeDailyRecommendation[slot]?.id || null)
+      : null;
+
+    if (filtered.length === 0) {
+      gridEl.innerHTML = `
+        <div class="rec-change-empty">
+          <p class="rec-change-empty-text">No other items found in your wardrobe for this category.</p>
+          <button type="button" class="btn-primary" onclick="app.closeChangeGarmentModal(); app.openCameraModal();">
+            + Upload New Clothes
+          </button>
+        </div>
+      `;
+    } else {
+      gridEl.innerHTML = filtered.map(item => {
+        const isCurrent = item.id === currentItemId;
+        const photo = item.photo || 'assets/navy_shirt.jpg';
+        return `
+          <div class="rec-change-card ${isCurrent ? 'selected' : ''}" onclick="app.selectReplacementGarment('${item.id}')" role="button" tabindex="0">
+            <div class="rec-change-img-wrap">
+              <img src="${photo}" alt="${item.name}" onerror="this.src='assets/navy_shirt.jpg'" />
+              ${isCurrent ? '<span class="rec-change-active-tag">Current</span>' : ''}
+            </div>
+            <div class="rec-change-card-info">
+              <span class="rec-change-card-name">${item.name}</span>
+              <span class="rec-change-card-sub">${item.subCategory || item.category || ''}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeChangeGarmentModal() {
+    const modal = document.getElementById('recChangeGarmentModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function selectReplacementGarment(itemId) {
+    if (!_activeDailyRecommendation) return;
+
+    const pool = (Array.isArray(state.wardrobe) && state.wardrobe.length > 0)
+      ? state.wardrobe
+      : WARDROBE_ITEMS;
+
+    const chosen = pool.find(i => i.id === itemId);
+    if (!chosen) return;
+
+    const slot = _activeChangeSlot || 'top';
+    _activeDailyRecommendation[slot] = chosen;
+
+    // Helper mappings for 3D Studio
+    const mapToMannequinTop = (item) => {
+      const name = ((item.name || '') + ' ' + (item.subCategory || '')).toLowerCase();
+      if (item.modelId) return item.modelId;
+      if (['blazer', 'suit'].some(k => name.includes(k))) return 'blazer';
+      if (['cardigan', 'knit'].some(k => name.includes(k))) return 'cardigan';
+      if (['striped', 'sweater', 'breton'].some(k => name.includes(k))) return 'striped_sweater';
+      if (['tank', 'crop'].some(k => name.includes(k))) return 'tank';
+      if (['navy', 'shirt', 'oxford', 'poplin', 'linen', 'kurta', 'kurti', 'top', 'tee'].some(k => name.includes(k))) return 'navy_shirt';
+      return 'navy_shirt';
+    };
+
+    const mapToMannequinBottom = (item) => {
+      const name = ((item.name || '') + ' ' + (item.subCategory || '')).toLowerCase();
+      if (item.modelId) return item.modelId;
+      if (['denim', 'jeans', 'skirt', 'dark'].some(k => name.includes(k))) return 'denim';
+      if (['linen', 'palazzo'].some(k => name.includes(k))) return 'wide_linen';
+      if (['taupe', 'chinos', 'trouser', 'pant', 'beige'].some(k => name.includes(k))) return 'taupe_wide';
+      return 'taupe_wide';
+    };
+
+    const mapToMannequinShoes = (item) => {
+      if (!item) return 'sneakers';
+      const name = ((item.name || '') + ' ' + (item.subCategory || '')).toLowerCase();
+      if (item.modelId) return item.modelId;
+      if (['loafer', 'dress', 'formal', 'leather'].some(k => name.includes(k))) return 'loafers';
+      if (['sandal', 'slide', 'open'].some(k => name.includes(k))) return 'sandals';
+      if (['sneaker', 'trainer', 'runner', 'sport'].some(k => name.includes(k))) return 'sneakers';
+      return 'sneakers';
+    };
+
+    // Update 3D Mannequin mapping
+    if (!_activeDailyRecommendation.mannequinOutfit) {
+      _activeDailyRecommendation.mannequinOutfit = {};
+    }
+    if (slot === 'top') {
+      _activeDailyRecommendation.mannequinOutfit.top = mapToMannequinTop(chosen);
+    } else if (slot === 'bottom') {
+      _activeDailyRecommendation.mannequinOutfit.bottom = mapToMannequinBottom(chosen);
+    } else if (slot === 'shoes') {
+      _activeDailyRecommendation.mannequinOutfit.shoes = mapToMannequinShoes(chosen);
+    }
+
+    // Dynamic clean rationale without clashing terms and without ✦
+    const topName = _activeDailyRecommendation.top?.name || 'top';
+    const bottomName = _activeDailyRecommendation.bottom?.name || 'bottom';
+    const shoeName = _activeDailyRecommendation.shoes ? _activeDailyRecommendation.shoes.name : 'footwear';
+    const accessoryText = _activeDailyRecommendation.accessory ? ` and accented with your ${_activeDailyRecommendation.accessory.name}` : '';
+
+    const lowerBot = bottomName.toLowerCase();
+    const lowerTop = topName.toLowerCase();
+
+    let aesthetic = 'clean everyday';
+    if (lowerBot.includes('denim') || lowerBot.includes('jean')) {
+      aesthetic = 'smart denim & ease';
+    } else if (lowerTop.includes('blazer') || lowerBot.includes('trouser')) {
+      aesthetic = 'structured modern tailoring';
+    } else if (lowerTop.includes('kurta') || lowerTop.includes('kurti')) {
+      aesthetic = 'refined heritage smart-casual';
+    } else if (lowerBot.includes('chino') || lowerTop.includes('shirt')) {
+      aesthetic = 'refined smart-casual';
+    } else if (lowerBot.includes('skirt')) {
+      aesthetic = 'fluid chic & balanced';
+    } else if (lowerTop.includes('sweater') || lowerTop.includes('cardigan')) {
+      aesthetic = 'cozy minimalist';
+    }
+
+    _activeDailyRecommendation.explanation = `Paired your ${topName} with the ${bottomName} for a ${aesthetic} aesthetic. Harmonized tonal contrast highlights clean tailoring, grounded with ${shoeName}${accessoryText}. Selected exclusively from your active wardrobe.`;
+
+    // Close modal & re-render
+    closeChangeGarmentModal();
+    renderDailyRecommendationCard(_activeDailyRecommendation);
+    showToast(`✨ Changed ${slot} to "${chosen.name}"`);
+  }
+
+  function tryOnRecommendedOutfit() {
+    const rec = _activeDailyRecommendation;
+    if (!rec || !rec.isAvailable) {
+      showToast('⚠️ No active recommendation to try on');
+      return;
+    }
+
+    // 1. Record recommendation in history so future days don't unnecessarily repeat
+    saveStoredRecommendationHistory(rec);
+
+    // 2. Map to 3D Mannequin categories
+    const topModelId = rec.mannequinOutfit?.top || 'navy_shirt';
+    const bottomModelId = rec.mannequinOutfit?.bottom || 'taupe_wide';
+    const shoesModelId = rec.mannequinOutfit?.shoes || 'sneakers';
+
+    // 3. Switch to 3D Studio screen
+    goToScreen('today');
+
+    // 4. Equip garments on 3D mannequin
+    const applyToMannequin = () => {
+      if (window.Studio3D && typeof window.Studio3D.equipGarment === 'function') {
+        try {
+          window.Studio3D.equipGarment('top', topModelId);
+          window.Studio3D.equipGarment('bottom', bottomModelId);
+          window.Studio3D.equipGarment('shoes', shoesModelId);
+          if (typeof window.Studio3D.setCameraState === 'function') {
+            window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+          }
+        } catch (err) {
+          console.warn('3D Studio equip warning:', err);
+        }
+      }
+    };
+
+    applyToMannequin();
+    setTimeout(applyToMannequin, 150);
+
+    // 5. Sync 2D outfit state & thumbnails
+    state.selectedTop = rec.top;
+    state.selectedBottom = rec.bottom;
+    state.selectedShoes = rec.shoes;
+    state.selectedAccessory = rec.accessory;
+    state.curatedOutfit = {
+      top: rec.top,
+      bottom: rec.bottom,
+      shoe: rec.shoes,
+      accessory: rec.accessory
+    };
+
+    const reviewThumb = document.getElementById('serenReviewThumb');
+    if (reviewThumb && rec.top?.photo) {
+      reviewThumb.src = rec.top.photo;
+    }
+
+    // 6. Provide clear confirmation feedback
+    showToast(`✨ Outfit "${rec.top.name} & ${rec.bottom.name}" applied to 3D mannequin!`);
+  }
+
+  function generateFallbackDailyRecommendation(wardrobeItems, dateStr, history) {
+    const isTop = (i) => (i.category || '').toLowerCase() === 'tops' || isShirt(i);
+    const isBot = (i) => (i.category || '').toLowerCase() === 'bottoms' || isPant(i);
+    const isSho = (i) => (i.category || '').toLowerCase() === 'shoes' || isShoe(i);
+    const isAcc = (i) => (i.category || '').toLowerCase() === 'accessories' || isAccessory(i);
+
+    let tops = wardrobeItems.filter(i => isTop(i) && i.condition !== 'dirty');
+    if (tops.length === 0) tops = wardrobeItems.filter(isTop);
+
+    let bottoms = wardrobeItems.filter(i => isBot(i) && i.condition !== 'dirty');
+    if (bottoms.length === 0) bottoms = wardrobeItems.filter(isBot);
+
+    let shoes = wardrobeItems.filter(i => isSho(i) && i.condition !== 'dirty');
+    if (shoes.length === 0) shoes = wardrobeItems.filter(isSho);
+
+    const accessories = wardrobeItems.filter(isAcc);
+
+    if (tops.length === 0 || bottoms.length === 0) {
+      return { isAvailable: false, message: 'Need at least one top and one bottom.' };
+    }
+
+    let seed = 0;
+    for (let i = 0; i < dateStr.length; i++) seed = ((seed << 5) - seed) + dateStr.charCodeAt(i);
+    seed = Math.abs(seed);
+
+    const d = new Date(dateStr + 'T12:00:00');
+    const dayOfWeek = isNaN(d.getDay()) ? 1 : d.getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const titles = [
+      'Effortless Minimalist Comfort',
+      'Modern Structured Executive',
+      'Clean Everyday Smart-Casual',
+      'Refined Contemporary Chic',
+      'Modern Monochrome & Warm Tones',
+      'Relaxed Friday Tailoring',
+      'Urban Leisure & Weekend Street'
+    ];
+
+    const chosenTop = tops[seed % tops.length];
+    const chosenBottom = bottoms[(seed + 1) % bottoms.length];
+    const chosenShoe = shoes.length > 0 ? shoes[(seed + 2) % shoes.length] : null;
+    const chosenAcc = accessories.length > 0 ? accessories[(seed + 3) % accessories.length] : null;
+
+    return {
+      isAvailable: true,
+      id: `rec_${dateStr}_${chosenTop.id}_${chosenBottom.id}`,
+      date: dateStr,
+      dayName: dayNames[dayOfWeek],
+      formattedDate: d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' }),
+      title: titles[dayOfWeek],
+      vibe: 'Balanced & Coordinated',
+      explanation: `Paired your ${chosenTop.name} with the ${chosenBottom.name} for a harmonious everyday silhouette. Selected exclusively from your active wardrobe.`,
+      harmonyScore: 94 + (seed % 6),
+      top: chosenTop,
+      bottom: chosenBottom,
+      shoes: chosenShoe,
+      accessory: chosenAcc,
+      mannequinOutfit: {
+        top: chosenTop.name.toLowerCase().includes('blazer') ? 'blazer' : (chosenTop.name.toLowerCase().includes('cardigan') ? 'cardigan' : 'navy_shirt'),
+        bottom: chosenBottom.name.toLowerCase().includes('denim') ? 'denim' : 'taupe_wide',
+        shoes: chosenShoe && chosenShoe.name.toLowerCase().includes('loafer') ? 'loafers' : 'sneakers'
+      }
+    };
+  }
+
+  function serenWearGarment(cat, garmentId, is3D) {
+    if (is3D && window.Studio3D) {
+      let engineCat = 'top';
+      if (cat === 'bottoms' || cat === 'bottom') engineCat = 'bottom';
+      else if (cat === 'shoes' || cat === 'shoe') engineCat = 'shoes';
+      else engineCat = 'top';
+
+      const mappedId = garmentId === 'wide_linen' ? 'taupe_wide' : garmentId;
+      window.Studio3D.equipGarment(engineCat, mappedId);
+      window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+
+      const itemRecord = SEREN_GARMENTS.find(g => g.id === garmentId);
+      const displayName = itemRecord ? itemRecord.name : garmentId.replace('_', ' ');
+      showToast(`Equipped: ${displayName} ♡`);
+
+      const thumb = document.getElementById('serenReviewThumb');
+      if (thumb) {
+        if (garmentId === 'cardigan') thumb.src = 'assets/style_casual.jpg';
+        else if (garmentId === 'blazer') thumb.src = 'assets/smart_blazer.jpg';
+        else if (garmentId === 'navy_shirt') thumb.src = 'assets/navy_shirt.jpg';
+        else if (garmentId === 'striped_sweater') thumb.src = 'assets/style_casual.jpg';
+        else if (garmentId === 'tank') thumb.src = 'assets/welcome_hero.jpg';
+      }
+    } else {
+      showToast(`2D item selected. Previewing in wardrobe catalog.`);
+    }
+
+    setTimeout(() => {
+      serenToggleWardrobe(false);
+    }, 450);
+  }
+
 
   // =========================================================================
   // 3D STUDIO WARDROBE DIRECT DRAG-TO-MANNEQUIN INTERACTION
@@ -6664,7 +7260,8 @@
       if (sm && sm.appearance) {
         const cur = sm.appearance.getAppearance();
         if (cur) {
-          if (cur.appTheme) setAppTheme(cur.appTheme);
+          const themeToSet = (cur.appTheme === 'dark' || cur.appTheme === 'system') ? 'light' : (cur.appTheme || 'light');
+          setAppTheme(themeToSet);
           if (cur.studioTheme) setStudioTheme(cur.studioTheme);
           if (cur.highContrast && typeof toggleHighContrast === 'function') {
             toggleHighContrast(cur.highContrast);
@@ -6796,6 +7393,14 @@
     serenFilterCat,
     serenToggleWardrobe,
     serenToggleDailyLooks,
+    openDailyRecommendation,
+    exitDailyRecommendation,
+    selectRecommendationDate,
+    renderDailyRecommendationCard,
+    tryOnRecommendedOutfit,
+    openChangeGarmentModal,
+    closeChangeGarmentModal,
+    selectReplacementGarment,
     serenWearGarment,
     serenOpenStylingReview,
     serenOpenReview: serenOpenStylingReview,

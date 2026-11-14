@@ -7,7 +7,9 @@ import {
   GARMENT_CATEGORIES,
   GARMENT_CATALOG,
   DEFAULT_OUTFIT,
-  getGarmentRecord
+  getGarmentRecord,
+  DYNAMIC_GARMENT_REGISTRY,
+  registerDynamicGarment
 } from './GarmentCatalog.js';
 import { TryOnContract, TRY_ON_EVENTS } from './TryOnContract.js';
 import { VirtualTryOn, createVirtualTryOn } from './VirtualTryOn.js';
@@ -17,6 +19,8 @@ export {
   GARMENT_CATALOG,
   DEFAULT_OUTFIT,
   getGarmentRecord,
+  DYNAMIC_GARMENT_REGISTRY,
+  registerDynamicGarment,
   TryOnContract,
   TRY_ON_EVENTS,
   VirtualTryOn,
@@ -29,6 +33,8 @@ if (typeof window !== 'undefined') {
     GARMENT_CATALOG,
     DEFAULT_OUTFIT,
     getGarmentRecord,
+    DYNAMIC_GARMENT_REGISTRY,
+    registerDynamicGarment,
     TryOnContract,
     TRY_ON_EVENTS,
     VirtualTryOn,

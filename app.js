@@ -1714,6 +1714,16 @@
     };
     const garmentId = idMap[item.name] || item.id || 'navy_shirt';
 
+    if (window.WoobiTryOn && typeof window.WoobiTryOn.registerDynamicGarment === 'function') {
+      window.WoobiTryOn.registerDynamicGarment({
+        id: garmentId,
+        name: item.name,
+        category: engineCat,
+        photo: item.photo,
+        color: item.color
+      });
+    }
+
     // Transfer seamlessly to Studio Screen if not already on it
     if (state.currentScreen !== 'today') {
       goToScreen('today');
@@ -1722,9 +1732,15 @@
     const studio = window.Studio3D || window.studio3d;
     if (studio && typeof studio.equipGarment === 'function') {
       try {
-        studio.equipGarment(engineCat, garmentId);
+        studio.equipGarment(engineCat, garmentId, {
+          item: item,
+          garment: item,
+          name: item.name,
+          photo: item.photo,
+          color: item.color
+        });
         if (typeof studio.setCameraState === 'function') {
-          studio.setCameraState('AVATAR_FULL_BODY');
+          studio.setCameraState('STUDIO_OVERVIEW');
         }
       } catch (err) {
         console.warn('Could not equip garment:', err);
@@ -1738,6 +1754,15 @@
     }
 
     showToast(`✦ ${item.name} fitted on your studio mannequin! ♡`);
+
+    // Smoothly dismiss wardrobe sheet so the newly styled mannequin is immediately visible center-stage
+    setTimeout(function() {
+      serenToggleWardrobe(false);
+      const studio = window.Studio3D || window.studio3d;
+      if (studio && typeof studio.setCameraState === 'function') {
+        studio.setCameraState('STUDIO_OVERVIEW');
+      }
+    }, 350);
   }
 
   function filterWardrobeCategory(cat, btn) {
@@ -3345,6 +3370,7 @@
       setStudioCamera('STUDIO_OVERVIEW');
     } else {
       sheet.classList.add('hidden');
+      setStudioCamera('STUDIO_OVERVIEW');
     }
   }
 
@@ -3371,7 +3397,7 @@
 
       const mappedId = garmentId === 'wide_linen' ? 'taupe_wide' : garmentId;
       window.Studio3D.equipGarment(engineCat, mappedId);
-      window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+      window.Studio3D.setCameraState('STUDIO_OVERVIEW');
 
       const itemRecord = SEREN_GARMENTS.find(g => g.id === garmentId);
       const displayName = itemRecord ? itemRecord.name : garmentId.replace('_', ' ');
@@ -3855,7 +3881,7 @@
           window.Studio3D.equipGarment('bottom', bottomModelId);
           window.Studio3D.equipGarment('shoes', shoesModelId);
           if (typeof window.Studio3D.setCameraState === 'function') {
-            window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+            window.Studio3D.setCameraState('STUDIO_OVERVIEW');
           }
         } catch (err) {
           console.warn('3D Studio equip warning:', err);
@@ -3961,7 +3987,7 @@
 
       const mappedId = garmentId === 'wide_linen' ? 'taupe_wide' : garmentId;
       window.Studio3D.equipGarment(engineCat, mappedId);
-      window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+      window.Studio3D.setCameraState('STUDIO_OVERVIEW');
 
       const itemRecord = SEREN_GARMENTS.find(g => g.id === garmentId);
       const displayName = itemRecord ? itemRecord.name : garmentId.replace('_', ' ');
@@ -4069,7 +4095,7 @@
     if (window.Studio3D && typeof window.Studio3D.equipGarment === 'function') {
       try {
         window.Studio3D.equipGarment(engineCat, modelId);
-        window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+        window.Studio3D.setCameraState('STUDIO_OVERVIEW');
       } catch (err) {
         console.warn('Studio3D equip error:', err);
       }
@@ -4123,7 +4149,7 @@
 
       window.Studio3D.equipGarment('top', review.altTop || 'blazer');
       window.Studio3D.equipGarment('shoes', review.altShoe || 'loafers');
-      window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+      window.Studio3D.setCameraState('STUDIO_OVERVIEW');
 
       showToast('Complementary styling suggestion applied! ✨');
     }

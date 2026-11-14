@@ -7,7 +7,8 @@ import {
   GARMENT_CATEGORIES,
   GARMENT_CATALOG,
   DEFAULT_OUTFIT,
-  getGarmentRecord
+  getGarmentRecord,
+  registerDynamicGarment
 } from './GarmentCatalog.js';
 import { TRY_ON_EVENTS } from './TryOnContract.js';
 
@@ -106,20 +107,31 @@ export class VirtualTryOn {
     } else {
       // Single argument passed as garmentId
       const rec = getGarmentRecord(categoryOrId);
-      if (!rec) {
+      if (!rec && !options.item && !options.garment && !options.photo) {
         const error = new Error(`Unknown garment ID: ${categoryOrId}`);
         this.emit(TRY_ON_EVENTS.ERROR, { error, input: categoryOrId });
         return { success: false, error: error.message };
       }
-      category = rec.category;
-      garmentId = rec.id;
+      category = rec ? rec.category : (options.category || GARMENT_CATEGORIES.TOP);
+      garmentId = rec ? rec.id : categoryOrId;
     }
 
-    const record = getGarmentRecord(garmentId);
+    let record = getGarmentRecord(garmentId);
     if (!record) {
-      const error = new Error(`Garment not found in catalog: [${garmentId}]`);
-      this.emit(TRY_ON_EVENTS.ERROR, { error, category, garmentId });
-      return { success: false, error: error.message };
+      if (options.item || options.garment || options.photo || options.name || options.color) {
+        const itemData = options.item || options.garment || {
+          id: garmentId,
+          category,
+          name: options.name || garmentId,
+          photo: options.photo || null,
+          color: options.color
+        };
+        record = registerDynamicGarment(itemData);
+      } else {
+        const error = new Error(`Garment not found in catalog: [${garmentId}]`);
+        this.emit(TRY_ON_EVENTS.ERROR, { error, category, garmentId });
+        return { success: false, error: error.message };
+      }
     }
 
     const previousId = this.equippedOutfit[category];
@@ -296,6 +308,7 @@ export class VirtualTryOn {
     if (gltfModel && typeof gltfModel.traverse === 'function') {
       gltfModel.traverse((child) => {
         if (!child.isMesh) return;
+        child.frustumCulled = false;
         const name = child.name || '';
         let isMatch = false;
 
@@ -322,19 +335,33 @@ export class VirtualTryOn {
               mat = cloned;
             }
 
-            if (garmentRecord.color !== undefined) {
-              const isLightTone = (typeof garmentRecord.color === 'number' && garmentRecord.color > 0xA0A0A0) ||
-                                  (garmentRecord.id && (
-                                    garmentRecord.id.includes('white') ||
-                                    garmentRecord.id.includes('cream') ||
-                                    garmentRecord.id.includes('beige') ||
-                                    garmentRecord.id.includes('linen')
-                                  ));
-              if (isLightTone) {
+            if (garmentRecord.photo && typeof window !== 'undefined' && window.THREE && window.THREE.TextureLoader) {
+              try {
+                const texLoader = new window.THREE.TextureLoader();
+                texLoader.load(garmentRecord.photo, (texture) => {
+                  texture.wrapS = window.THREE.RepeatWrapping;
+                  texture.wrapT = window.THREE.RepeatWrapping;
+                  mat.map = texture;
+                  mat.color.setHex(0xFFFFFF);
+                  mat.needsUpdate = true;
+                }, undefined, () => {
+                  mat.map = null;
+                  if (garmentRecord.color !== undefined) {
+                    if (typeof mat.color?.setHex === 'function') mat.color.setHex(garmentRecord.color);
+                    else mat.color = garmentRecord.color;
+                  }
+                  mat.needsUpdate = true;
+                });
+              } catch (_) {
                 mat.map = null;
-              } else {
-                mat.map = mat._origMap || null;
+                if (garmentRecord.color !== undefined) {
+                  if (typeof mat.color?.setHex === 'function') mat.color.setHex(garmentRecord.color);
+                  else mat.color = garmentRecord.color;
+                }
               }
+            } else if (garmentRecord.color !== undefined) {
+              // Unbind pre-baked suit texture so garment color renders cleanly and purely
+              mat.map = null;
               if (typeof mat.color?.setHex === 'function') {
                 mat.color.setHex(garmentRecord.color);
               } else {

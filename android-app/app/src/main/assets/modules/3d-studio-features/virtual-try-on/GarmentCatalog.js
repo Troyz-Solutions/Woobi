@@ -296,15 +296,77 @@ export const DEFAULT_OUTFIT = {
   shoes: 'sneakers'
 };
 
+export const DYNAMIC_GARMENT_REGISTRY = new Map();
+
+/**
+ * Registers an uploaded or custom user garment dynamically for 3D Virtual Try-On
+ */
+export function registerDynamicGarment(garmentData) {
+  if (!garmentData) return null;
+  const id = garmentData.id || `custom_item_${Date.now()}`;
+  const rawCat = (garmentData.category || '').toLowerCase();
+  let category = GARMENT_CATEGORIES.TOP;
+  if (rawCat.includes('bottom') || rawCat.includes('pant') || rawCat.includes('trouser') || rawCat.includes('jean') || rawCat.includes('skirt') || rawCat.includes('palazzo') || rawCat.includes('chino')) {
+    category = GARMENT_CATEGORIES.BOTTOM;
+  } else if (rawCat.includes('shoe') || rawCat.includes('sneaker') || rawCat.includes('loafer') || rawCat.includes('sandal') || rawCat.includes('trainer') || rawCat.includes('footwear')) {
+    category = GARMENT_CATEGORIES.SHOES;
+  } else if (rawCat.includes('access') || rawCat.includes('watch') || rawCat.includes('bag') || rawCat.includes('jewelry') || rawCat.includes('hat')) {
+    category = GARMENT_CATEGORIES.ACCESSORY;
+  }
+
+  let color = garmentData.color;
+  if (typeof color === 'string') {
+    if (color.startsWith('#')) color = parseInt(color.slice(1), 16);
+    else if (color.startsWith('0x')) color = parseInt(color, 16);
+  }
+  if (color === undefined || isNaN(color)) {
+    const n = (garmentData.name || '').toLowerCase();
+    if (n.includes('navy') || n.includes('blue')) color = 0x243242;
+    else if (n.includes('denim')) color = 0x2A3645;
+    else if (n.includes('maroon') || n.includes('burgundy') || n.includes('red')) color = 0x6E1D2D;
+    else if (n.includes('beige') || n.includes('camel') || n.includes('tan') || n.includes('khaki')) color = 0xC2B299;
+    else if (n.includes('cream') || n.includes('white') || n.includes('ivory')) color = 0xF5F2EB;
+    else if (n.includes('black') || n.includes('dark')) color = 0x222428;
+    else if (n.includes('green') || n.includes('olive')) color = 0x3E4B3E;
+    else if (n.includes('pink') || n.includes('rose')) color = 0xD4A5A5;
+    else if (n.includes('yellow') || n.includes('gold')) color = 0xD4AF37;
+    else if (n.includes('grey') || n.includes('gray')) color = 0x7E8287;
+    else {
+      if (category === GARMENT_CATEGORIES.TOP) color = 0x243242;
+      else if (category === GARMENT_CATEGORIES.BOTTOM) color = 0x2A3645;
+      else if (category === GARMENT_CATEGORIES.SHOES) color = 0xF7F6F2;
+      else color = 0xD4AF37;
+    }
+  }
+
+  const record = {
+    id,
+    name: garmentData.name || 'Custom Garment',
+    category,
+    color,
+    photo: garmentData.photo || garmentData.textureUrl || null,
+    textureUrl: garmentData.photo || garmentData.textureUrl || null,
+    roughness: garmentData.roughness !== undefined ? garmentData.roughness : 0.65,
+    metalness: garmentData.metalness !== undefined ? garmentData.metalness : 0.04,
+    layer: garmentData.layer || 1,
+    isUploaded: true
+  };
+
+  DYNAMIC_GARMENT_REGISTRY.set(id, record);
+  return record;
+}
+
 export function getGarmentRecord(garmentId) {
   if (!garmentId) return null;
   const raw = String(garmentId).trim();
+  if (DYNAMIC_GARMENT_REGISTRY.has(raw)) return DYNAMIC_GARMENT_REGISTRY.get(raw);
   const normalizedId = raw === 'wide_linen' ? 'taupe_wide' : raw;
   if (GARMENT_CATALOG[normalizedId]) return GARMENT_CATALOG[normalizedId];
 
   const lower = normalizedId.toLowerCase().replace(/[\s-]+/g, '_');
   if (lower === 'wide_linen') return GARMENT_CATALOG['taupe_wide'];
   if (GARMENT_CATALOG[lower]) return GARMENT_CATALOG[lower];
+  if (DYNAMIC_GARMENT_REGISTRY.has(lower)) return DYNAMIC_GARMENT_REGISTRY.get(lower);
 
   const ALIAS_MAP = {
     'wide_linen': 'taupe_wide',

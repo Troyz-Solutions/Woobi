@@ -3,7 +3,7 @@
  * LightingController.js - High-level Controller for Atmospheric Presets & Illumination Controls
  */
 
-import { LIGHTING_PRESETS, DEFAULT_LIGHTING_PRESET } from './LightingPresets.js';
+import { LIGHTING_PRESETS, LIGHTING_ALIASES, DEFAULT_LIGHTING_PRESET } from './LightingPresets.js';
 
 export class LightingController {
   constructor(studioLighting) {
@@ -12,11 +12,12 @@ export class LightingController {
   }
 
   applyPreset(presetName) {
-    if (!LIGHTING_PRESETS[presetName]) {
+    const preset = LIGHTING_PRESETS[presetName] || (LIGHTING_ALIASES && LIGHTING_ALIASES[presetName]);
+    if (!preset) {
       console.warn(`LightingController: Unknown preset '${presetName}', ignoring.`);
       return false;
     }
-    this.activePreset = presetName;
+    this.activePreset = preset.name || presetName;
     if (this.lighting) {
       this.lighting.applyPreset(presetName);
     }

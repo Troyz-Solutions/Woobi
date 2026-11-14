@@ -337,9 +337,28 @@
       // Fail-safe veil dismissal ensures studio is revealed smoothly even if network is throttled
       this._veilFallbackTimer = setTimeout(() => {
         this.dismissLoadingVeil();
-      }, 3000);
+      }, 1800);
 
       console.log('Studio3D: Sérén Studio Production V4 Initialized with Stylized Avatar & Atmospheric Dressing Room.');
+    }
+
+    /**
+     * Internal readiness coordinator that dissolves veil only when both avatar and wardrobe are loaded
+     */
+    _markReady(component) {
+      if (!this._studioReadiness) {
+        this._studioReadiness = { avatar: false, wardrobe: false };
+      }
+      if (component) this._studioReadiness[component] = true;
+      if (this._studioReadiness.avatar && this._studioReadiness.wardrobe) {
+        if (this.renderer && this.scene && this.camera && typeof this.renderer.compile === 'function') {
+          try {
+            this.renderer.compile(this.scene, this.camera);
+            this.renderer.render(this.scene, this.camera);
+          } catch (e) {}
+        }
+        this.dismissLoadingVeil();
+      }
     }
 
     /**
@@ -829,22 +848,22 @@
         this.lightingModel = window.WoobiLighting.createStudioLighting(this.scene, 'luxury-warm', THREE);
         this.lightingController = new window.WoobiLighting.LightingController(this.lightingModel);
         // Calibrate lighting intensity multiplier to soften harsh highlights and prevent washed-out appearance
-        this.lightingController.setIntensityMultiplier(0.78);
+        this.lightingController.setIntensityMultiplier(0.92);
         if (this.lightingModel.ambientLight) {
           this.lightingModel.ambientLight.color.setHex(0xEAD8C2);
-          this.lightingModel.ambientLight.intensity = 0.32;
+          this.lightingModel.ambientLight.intensity = 0.58;
         }
         if (this.lightingModel.fillLight) {
           this.lightingModel.fillLight.color.setHex(0xE8D5C0);
-          this.lightingModel.fillLight.intensity = 0.22;
+          this.lightingModel.fillLight.intensity = 0.42;
         }
         if (this.lightingModel.keySunlight) {
           this.lightingModel.keySunlight.color.setHex(0xFFEED4);
-          this.lightingModel.keySunlight.intensity = 0.88;
+          this.lightingModel.keySunlight.intensity = 0.95;
         }
         if (this.lightingModel.rimLight) {
           this.lightingModel.rimLight.color.setHex(0xF5D6A8);
-          this.lightingModel.rimLight.intensity = 0.65;
+          this.lightingModel.rimLight.intensity = 0.70;
         }
         if (this.lightingModel.vanitySpot) {
           this.lightingModel.vanitySpot.intensity = 0.38;
@@ -897,7 +916,7 @@
       }
 
       // Warm, serene ambient illumination (calibrated to provide clear chiaroscuro and depth)
-      const ambientLight = new THREE.AmbientLight(0xEAD8C2, 0.32);
+      const ambientLight = new THREE.AmbientLight(0xEAD8C2, 0.58);
       this.scene.add(ambientLight);
 
       // Primary Key Sunlight (Diagonal morning sunlight streaming from upper right)
@@ -1313,11 +1332,15 @@
 
           wardrobeGroup.add(model);
           this.wardrobeGLB = model;
+          this._markReady('wardrobe');
           console.log('Studio3D: PR #42 3D Wardrobe successfully loaded with Draco & Beige Aesthetic.');
         };
 
         const tryLoadNext = (idx) => {
-          if (idx >= wardrobePaths.length) return;
+          if (idx >= wardrobePaths.length) {
+            this._markReady('wardrobe');
+            return;
+          }
           gltfLoader.load(
             wardrobePaths[idx],
             onWardrobeLoad,
@@ -2750,10 +2773,7 @@
             if (typeof this.updateBodyMeshScale === 'function') {
               this.updateBodyMeshScale();
             }
-            if (this.renderer && this.scene && this.camera && typeof this.renderer.compile === 'function') {
-              try { this.renderer.compile(this.scene, this.camera); } catch (e) {}
-            }
-            this.dismissLoadingVeil();
+            this._markReady('avatar');
           },
           (err) => {
             console.log('Studio3D: Using high-definition sculpted avatar.');
@@ -2763,16 +2783,14 @@
             if (typeof this.updateBodyMeshScale === 'function') {
               this.updateBodyMeshScale();
             }
-            if (this.renderer && this.scene && this.camera && typeof this.renderer.compile === 'function') {
-              try { this.renderer.compile(this.scene, this.camera); } catch (e) {}
-            }
-            this.dismissLoadingVeil();
+            this._markReady('avatar');
           }
         );
         return;
       }
 
       if (typeof THREE.GLTFLoader === 'undefined') {
+        this._markReady('avatar');
         return;
       }
 
@@ -2783,16 +2801,19 @@
         loader.setMeshoptDecoder(window.MeshoptDecoder);
       }
       const modelUrls = [
+        'woobi_female_mannequin.glb',
+        'Woobi_Female_Mannequin_Fixed.glb',
+        '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
+        'seren_avatar.glb',
         'assets/models/avatar_female.glb',
-        'female_mannequin.glb',
-        'Woobi_Female_Mannequin_Fixed.glb?v=human_v2',
-        'woobi_female_mannequin.glb?v=human_v2',
-        '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb?v=human_v2',
-        'seren_avatar.glb'
+        'female_mannequin.glb'
       ];
 
       const tryLoad = (index) => {
-        if (index >= modelUrls.length) return;
+        if (index >= modelUrls.length) {
+          this._markReady('avatar');
+          return;
+        }
         const url = modelUrls[index];
 
         loader.load(
@@ -2819,16 +2840,18 @@
                   child.material.metalness = 0.0;
                 }
 
-                // Configure skin, hair, and clothing materials to match visual reference (pink athletic zip jacket, black leggings, white sneakers)
+                // Preserve full vibrant contrast of embedded textures; only assign procedural tones when untextured
                 if (child.material && child.material.map) {
-                  // Keep full vibrant contrast of embedded textures (pink jacket with chest stripe, black leggings, white sneakers)
                   child.material.color = new THREE.Color(0xFFFFFF);
                 } else if (child.name.includes('Hair')) {
                   child.material.color = new THREE.Color(COLOR_PALETTE.honeyOak).multiplyScalar(0.2);
                   child.material.roughness = 0.78;
                   this.hairMaterials.push(child.material);
                 } else if (child.name.includes('Head') || child.name.includes('Body')) {
-                  this.skinMaterials.push(child.material);
+                  if (!child.material.map) {
+                    child.material.color = new THREE.Color(0xF3D5C6);
+                    this.skinMaterials.push(child.material);
+                  }
                   child.material.roughness = 0.82;
                 } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
                   child.material.color = new THREE.Color(COLOR_PALETTE.jacketPink);
@@ -2862,10 +2885,11 @@
             this.activeAvatarType = 'glb';
             this.buildAnatomicalFeatures(this.avatarConfig.gender || 'female');
             this.updateBodyMeshScale();
+            this._markReady('avatar');
           },
           undefined,
           (err) => {
-            console.log(`Studio3D: Model ${url} not found or blocked, using high-definition sculpted avatar.`);
+            console.log(`Studio3D: Model ${url} not found or blocked, trying next candidate...`);
             tryLoad(index + 1);
           }
         );
@@ -3426,13 +3450,21 @@
           child.castShadow = true;
           child.receiveShadow = true;
           if (child.material) {
+            // Clone material if not already cloned to isolate undergarment styling from body/clothing
             if (Array.isArray(child.material)) {
-              child.material.forEach((mat) => {
-                mat.color.copy(fabricColor);
-                mat.roughness = 0.78;
-                mat.metalness = 0.0;
+              child.material = child.material.map((mat) => {
+                const cloned = mat.isClonedUnderwear ? mat : mat.clone();
+                cloned.isClonedUnderwear = true;
+                cloned.color.copy(fabricColor);
+                cloned.roughness = 0.78;
+                cloned.metalness = 0.0;
+                return cloned;
               });
             } else {
+              if (!child.material.isClonedUnderwear) {
+                child.material = child.material.clone();
+                child.material.isClonedUnderwear = true;
+              }
               child.material.color.copy(fabricColor);
               child.material.roughness = 0.78;
               child.material.metalness = 0.0;
@@ -3493,6 +3525,8 @@
 
       this.gltfAvatarGroup.traverse((child) => {
         if (!child.isMesh || !child.geometry || !child.geometry.attributes || !child.geometry.attributes.position) return;
+        // Skip skinned meshes to preserve bind-pose vertex normals and avoid inverted black silhouettes
+        if (child.isSkinnedMesh) return;
         const geom = child.geometry;
         const posAttr = geom.attributes.position;
         if (!geom.userData.basePositions) {
@@ -3522,7 +3556,9 @@
           }
         }
         posAttr.needsUpdate = true;
-        geom.computeVertexNormals();
+        if (!child.isSkinnedMesh) {
+          geom.computeVertexNormals();
+        }
       });
     }
 
@@ -3577,7 +3613,9 @@
             const posAttr = child.geometry.attributes.position;
             posAttr.array.set(child.geometry.userData.basePositions);
             posAttr.needsUpdate = true;
-            child.geometry.computeVertexNormals();
+            if (!child.isSkinnedMesh) {
+              child.geometry.computeVertexNormals();
+            }
           }
         });
       }
@@ -3605,19 +3643,20 @@
       const loader = new THREE.GLTFLoader();
       const urls = isMale
         ? [
+            'woobi_male_mannequin.glb',
+            '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb',
+            '3D - Mannequin By Astra/male/Woobi_Male_Mannequin.glb',
             'assets/models/avatar_male.glb',
-            'male_mannequin.glb',
-            'woobi_male_mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/male/Woobi_Male_Mannequin.glb?v=human_v2'
+            'male_mannequin.glb'
           ]
         : [
+            'woobi_female_mannequin.glb',
+            'Woobi_Female_Mannequin_Fixed.glb',
+            '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
+            '3D - Mannequin By Astra/female/Woobi_Female_Mannequin.glb',
+            'seren_avatar.glb',
             'assets/models/avatar_female.glb',
-            'female_mannequin.glb',
-            'Woobi_Female_Mannequin_Fixed.glb?v=human_v2',
-            'woobi_female_mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/female/Woobi_Female_Mannequin.glb?v=human_v2'
+            'female_mannequin.glb'
           ];
 
       const tryLoad = (idx) => {

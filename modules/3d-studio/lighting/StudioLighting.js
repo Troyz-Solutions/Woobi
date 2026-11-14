@@ -3,7 +3,7 @@
  * StudioLighting.js - Studio Illumination, Sunlight Shadow Cascades, and Shared Fixtures
  */
 
-import { LIGHTING_PRESETS, DEFAULT_LIGHTING_PRESET } from './LightingPresets.js';
+import { LIGHTING_PRESETS, LIGHTING_ALIASES, DEFAULT_LIGHTING_PRESET } from './LightingPresets.js';
 
 export class StudioLighting {
   constructor(THREE = window.THREE) {
@@ -104,7 +104,7 @@ export class StudioLighting {
 
   applyPreset(presetName) {
     if (!this.THREE || this.isDisposed) return;
-    const preset = LIGHTING_PRESETS[presetName];
+    const preset = LIGHTING_PRESETS[presetName] || (LIGHTING_ALIASES && LIGHTING_ALIASES[presetName]);
     if (!preset) return;
 
     this.currentPreset = preset.name;

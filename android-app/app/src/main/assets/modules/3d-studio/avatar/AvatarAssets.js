@@ -4,24 +4,26 @@
  */
 
 export const FEMALE_AVATAR_PATHS = [
-  'assets/models/avatar_female.glb',
-  'female_mannequin.glb',
   'woobi_female_mannequin.glb',
-  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb'
+  'Woobi_Female_Mannequin_Fixed.glb',
+  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
+  'assets/models/avatar_female.glb',
+  'female_mannequin.glb'
 ];
 
 export const MALE_AVATAR_PATHS = [
-  'assets/models/avatar_male.glb',
-  'male_mannequin.glb',
   'woobi_male_mannequin.glb',
-  '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb'
+  '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb',
+  'assets/models/avatar_male.glb',
+  'male_mannequin.glb'
 ];
 
 export const AVATAR_ASSET_PATHS = [
   'seren_avatar.glb',
+  'woobi_female_mannequin.glb',
+  'Woobi_Female_Mannequin_Fixed.glb',
   'assets/models/avatar_female.glb',
   'assets/models/avatar_male.glb',
-  'Woobi_Female_Mannequin_Fixed.glb',
   '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
   'https://readyplayerme.github.io/visage/female.glb'
 ];
@@ -157,7 +159,8 @@ export class AvatarAssets {
                   // Natural soft matte finish for skin and clothing
                   child.material.roughness = 0.85;
                   child.material.metalness = 0.0;
-                  if (this.materials && (child.name.includes('Body') || child.name.includes('Head'))) {
+                  // If mesh already has baked texture map, do not override with flat skin tones
+                  if (this.materials && !child.material.map && (child.name.includes('Body') || child.name.includes('Head'))) {
                     this.materials.registerSkinMaterial(child.material);
                   }
                 }

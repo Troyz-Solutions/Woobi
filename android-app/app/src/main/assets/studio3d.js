@@ -1935,6 +1935,10 @@
       const clockCenterY = straightH + frameOuterR + 0.34;
       clockGroup.position.set(0, clockCenterY, -0.015);
 
+      const proceduralClockGroup = new THREE.Group();
+      proceduralClockGroup.name = 'studio_procedural_clock';
+      clockGroup.add(proceduralClockGroup);
+
       const clockR = 0.22; // 44cm diameter classic station wall clock
 
       // 1. Deep Antique Dark Walnut Wooden Outer Casing
@@ -1944,20 +1948,20 @@
       casing.rotation.x = Math.PI / 2;
       casing.position.set(0, 0, -0.012);
       casing.castShadow = true;
-      clockGroup.add(casing);
+      proceduralClockGroup.add(casing);
 
       // 2. Stepped Beveled Champagne Brass Outer Bezel Ring
       const outerBezelGeo = new THREE.TorusGeometry(clockR + 0.008, 0.014, 16, 64);
       const outerBezel = new THREE.Mesh(outerBezelGeo, brassMat);
       outerBezel.position.set(0, 0, 0.006);
       outerBezel.castShadow = true;
-      clockGroup.add(outerBezel);
+      proceduralClockGroup.add(outerBezel);
 
       // 3. Inner Polished Gilded Bezel Ring
       const innerBezelGeo = new THREE.TorusGeometry(clockR - 0.016, 0.008, 16, 64);
       const innerBezel = new THREE.Mesh(innerBezelGeo, polishedGoldMat);
       innerBezel.position.set(0, 0, 0.012);
-      clockGroup.add(innerBezel);
+      proceduralClockGroup.add(innerBezel);
 
       // 4. Dial Face (Antique Parchment Ivory with Roman Numerals & Railway Ticks)
       const clockDialTexture = this.createStudioClockDialTexture();
@@ -1971,14 +1975,14 @@
       const dial = new THREE.Mesh(dialGeo, dialMat);
       dial.position.set(0, 0, 0.014);
       dial.receiveShadow = true;
-      clockGroup.add(dial);
+      proceduralClockGroup.add(dial);
 
       // 5. Central Brass Pinion Hub
       const pinionGeo = new THREE.CylinderGeometry(0.010, 0.010, 0.014, 20);
       const pinion = new THREE.Mesh(pinionGeo, polishedGoldMat);
       pinion.rotation.x = Math.PI / 2;
       pinion.position.set(0, 0, 0.026);
-      clockGroup.add(pinion);
+      proceduralClockGroup.add(pinion);
 
       // 6. Classical Breguet Blued-Steel Hour & Minute Hands
       const steelMat = new THREE.MeshStandardMaterial({
@@ -2004,7 +2008,7 @@
       const hourPointer = new THREE.Mesh(hourPointerGeo, steelMat);
       hourPointer.position.set(0, 0.088, 0);
       hourHandGroup.add(hourPointer);
-      clockGroup.add(hourHandGroup);
+      proceduralClockGroup.add(hourHandGroup);
 
       // Minute Hand
       const minuteHandGroup = new THREE.Group();
@@ -2023,7 +2027,7 @@
       const minPointer = new THREE.Mesh(minPointerGeo, steelMat);
       minPointer.position.set(0, 0.136, 0);
       minuteHandGroup.add(minPointer);
-      clockGroup.add(minuteHandGroup);
+      proceduralClockGroup.add(minuteHandGroup);
 
       // Slender Golden Second Hand with Counterweight
       const secondHandGroup = new THREE.Group();
@@ -2035,7 +2039,7 @@
       const secDisc = new THREE.Mesh(new THREE.CircleGeometry(0.008, 16), polishedGoldMat);
       secDisc.position.set(0, -0.025, 0);
       secondHandGroup.add(secDisc);
-      clockGroup.add(secondHandGroup);
+      proceduralClockGroup.add(secondHandGroup);
 
       // 7. Protective Convex Glossy Crystal Glass Lens
       const lensMat = new THREE.MeshStandardMaterial({
@@ -2047,21 +2051,21 @@
       });
       const lens = new THREE.Mesh(new THREE.CircleGeometry(clockR - 0.014, 48), lensMat);
       lens.position.set(0, 0, 0.032);
-      clockGroup.add(lens);
+      proceduralClockGroup.add(lens);
 
       // 8. Classical Forged Brass Wall Hanging Loop & Wall Anchor Rosette
       const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.024, 0.022), brassMat);
       hangerBase.position.set(0, clockR + 0.022, 0.004);
-      clockGroup.add(hangerBase);
+      proceduralClockGroup.add(hangerBase);
 
       const hangerRing = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.006, 16, 32), polishedGoldMat);
       hangerRing.position.set(0, clockR + 0.056, 0.004);
-      clockGroup.add(hangerRing);
+      proceduralClockGroup.add(hangerRing);
 
       const rosette = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.010, 24), brassMat);
       rosette.rotation.x = Math.PI / 2;
       rosette.position.set(0, clockR + 0.086, -0.006);
-      clockGroup.add(rosette);
+      proceduralClockGroup.add(rosette);
 
       this.studioClockHands = {
         hourHand: hourHandGroup,
@@ -2070,6 +2074,66 @@
       };
 
       this.updateStudioClock();
+
+      // Asynchronously load the authentic user-provided 3D Clock model
+      if (typeof THREE.GLTFLoader !== 'undefined') {
+        const gltfLoader = new THREE.GLTFLoader();
+        const clockPaths = [
+          'Clock/clock.glb',
+          'clock.glb',
+          'assets/clock.glb',
+          'android-app/app/src/main/assets/Clock/clock.glb',
+          'android-app/app/src/main/assets/clock.glb'
+        ];
+        const tryLoadClock = (idx) => {
+          if (idx >= clockPaths.length) return;
+          gltfLoader.load(clockPaths[idx], (gltf) => {
+            const clockGLB = gltf.scene;
+            clockGLB.name = 'studio_clock_glb';
+            const scaleFactor = 0.46 / 34.137;
+            clockGLB.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            clockGLB.position.set(0, 0, 0.010);
+
+            let glbHour = null;
+            let glbMinute = null;
+            let glbSecond = null;
+
+            clockGLB.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                const name = (child.name || '').toLowerCase();
+                if (name === 'hour_hand' || name.includes('hour_hand')) {
+                  glbHour = child;
+                } else if (name === 'minute_hand' || name.includes('minute_hand')) {
+                  glbMinute = child;
+                } else if (name === 'second_hand' || name.includes('second_hand')) {
+                  glbSecond = child;
+                } else if (name.includes('glass')) {
+                  if (child.material) {
+                    child.material.transparent = true;
+                    child.material.opacity = 0.22;
+                    child.material.roughness = 0.08;
+                  }
+                }
+              }
+            });
+
+            if (glbHour || glbMinute || glbSecond) {
+              this.studioClockHands = {
+                hourHand: glbHour || hourHandGroup,
+                minuteHand: glbMinute || minuteHandGroup,
+                secondHand: glbSecond || secondHandGroup
+              };
+              proceduralClockGroup.visible = false;
+              this.updateStudioClock();
+            }
+
+            clockGroup.add(clockGLB);
+          }, undefined, () => tryLoadClock(idx + 1));
+        };
+        tryLoadClock(0);
+      }
 
       return clockGroup;
     }

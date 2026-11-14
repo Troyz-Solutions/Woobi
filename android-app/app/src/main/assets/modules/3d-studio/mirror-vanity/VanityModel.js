@@ -33,6 +33,8 @@ export class VanityModel {
     this.lighting = new VanityLighting();
     this.reflection = new MirrorReflection();
     this.isGLBLoaded = false;
+    this.isClockGLBLoaded = false;
+    this.clockHands = null;
   }
 
   /**
@@ -595,6 +597,10 @@ export class VanityModel {
     const clockCenterY = straightH + frameOuterR + 0.34;
     clockGroup.position.set(0, clockCenterY, -0.015);
 
+    const proceduralClockGroup = new THREE.Group();
+    proceduralClockGroup.name = 'procedural_clock_group';
+    clockGroup.add(proceduralClockGroup);
+
     const clockR = 0.22; // 44cm diameter classic station wall clock
 
     // 1. Deep Antique Dark Walnut Wooden Outer Casing
@@ -604,7 +610,7 @@ export class VanityModel {
     casing.rotation.x = Math.PI / 2;
     casing.position.set(0, 0, -0.012);
     casing.castShadow = true;
-    clockGroup.add(casing);
+    proceduralClockGroup.add(casing);
     this.disposables.push(casingGeo, casingMat);
 
     // 2. Stepped Beveled Champagne Brass Outer Bezel Ring
@@ -612,14 +618,14 @@ export class VanityModel {
     const outerBezel = new THREE.Mesh(outerBezelGeo, brassMat);
     outerBezel.position.set(0, 0, 0.006);
     outerBezel.castShadow = true;
-    clockGroup.add(outerBezel);
+    proceduralClockGroup.add(outerBezel);
     this.disposables.push(outerBezelGeo);
 
     // 3. Inner Polished Gilded Bezel Ring
     const innerBezelGeo = new THREE.TorusGeometry(clockR - 0.016, 0.008, 16, 64);
     const innerBezel = new THREE.Mesh(innerBezelGeo, polishedGoldMat);
     innerBezel.position.set(0, 0, 0.012);
-    clockGroup.add(innerBezel);
+    proceduralClockGroup.add(innerBezel);
     this.disposables.push(innerBezelGeo);
 
     // 4. Dial Face (Antique Parchment Ivory with Roman Numerals & Railway Ticks)
@@ -634,7 +640,7 @@ export class VanityModel {
     const dial = new THREE.Mesh(dialGeo, dialMat);
     dial.position.set(0, 0, 0.014);
     dial.receiveShadow = true;
-    clockGroup.add(dial);
+    proceduralClockGroup.add(dial);
     this.disposables.push(dialGeo, dialMat);
     if (clockDialTexture) this.disposables.push(clockDialTexture);
 
@@ -643,7 +649,7 @@ export class VanityModel {
     const pinion = new THREE.Mesh(pinionGeo, polishedGoldMat);
     pinion.rotation.x = Math.PI / 2;
     pinion.position.set(0, 0, 0.026);
-    clockGroup.add(pinion);
+    proceduralClockGroup.add(pinion);
     this.disposables.push(pinionGeo);
 
     // 6. Classical Breguet Blued-Steel Hour & Minute Hands
@@ -673,7 +679,7 @@ export class VanityModel {
     const hourPointer = new THREE.Mesh(hourPointerGeo, steelMat);
     hourPointer.position.set(0, 0.088, 0);
     hourHandGroup.add(hourPointer);
-    clockGroup.add(hourHandGroup);
+    proceduralClockGroup.add(hourHandGroup);
     this.disposables.push(hourShaftGeo, hourMoonGeo, hourPointerGeo);
 
     // Minute Hand
@@ -695,7 +701,7 @@ export class VanityModel {
     const minPointer = new THREE.Mesh(minPointerGeo, steelMat);
     minPointer.position.set(0, 0.136, 0);
     minuteHandGroup.add(minPointer);
-    clockGroup.add(minuteHandGroup);
+    proceduralClockGroup.add(minuteHandGroup);
     this.disposables.push(minShaftGeo, minMoonGeo, minPointerGeo);
 
     // Slender Golden Second Hand with Counterweight
@@ -710,7 +716,7 @@ export class VanityModel {
     const secDisc = new THREE.Mesh(secDiscGeo, polishedGoldMat);
     secDisc.position.set(0, -0.025, 0);
     secondHandGroup.add(secDisc);
-    clockGroup.add(secondHandGroup);
+    proceduralClockGroup.add(secondHandGroup);
     this.disposables.push(secShaftGeo, secDiscGeo);
 
     // 7. Protective Convex Glossy Crystal Glass Lens
@@ -724,25 +730,25 @@ export class VanityModel {
     });
     const lens = new THREE.Mesh(lensGeo, lensMat);
     lens.position.set(0, 0, 0.032);
-    clockGroup.add(lens);
+    proceduralClockGroup.add(lens);
     this.disposables.push(lensGeo, lensMat);
 
     // 8. Classical Forged Brass Wall Hanging Loop & Wall Anchor Rosette
     const hangerBaseGeo = new THREE.BoxGeometry(0.038, 0.024, 0.022);
     const hangerBase = new THREE.Mesh(hangerBaseGeo, brassMat);
     hangerBase.position.set(0, clockR + 0.022, 0.004);
-    clockGroup.add(hangerBase);
+    proceduralClockGroup.add(hangerBase);
 
     const hangerRingGeo = new THREE.TorusGeometry(0.036, 0.006, 16, 32);
     const hangerRing = new THREE.Mesh(hangerRingGeo, polishedGoldMat);
     hangerRing.position.set(0, clockR + 0.056, 0.004);
-    clockGroup.add(hangerRing);
+    proceduralClockGroup.add(hangerRing);
 
     const rosetteGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.010, 24);
     const rosette = new THREE.Mesh(rosetteGeo, brassMat);
     rosette.rotation.x = Math.PI / 2;
     rosette.position.set(0, clockR + 0.086, -0.006);
-    clockGroup.add(rosette);
+    proceduralClockGroup.add(rosette);
     this.disposables.push(hangerBaseGeo, hangerRingGeo, rosetteGeo);
 
     this.clockHands = {
@@ -753,6 +759,59 @@ export class VanityModel {
 
     // Initialize to current time immediately
     this.updateClock();
+
+    // Asynchronously load the authentic user-provided 3D Clock model
+    VanityAssets.loadClockGLB(
+      THREE,
+      (clockGLB) => {
+        clockGLB.name = 'clock_glb_model';
+        const scaleFactor = 0.46 / 34.137;
+        clockGLB.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        clockGLB.position.set(0, 0, 0.010);
+
+        let glbHourHand = null;
+        let glbMinuteHand = null;
+        let glbSecondHand = null;
+
+        clockGLB.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            const name = (child.name || '').toLowerCase();
+            if (name === 'hour_hand' || name.includes('hour_hand')) {
+              glbHourHand = child;
+            } else if (name === 'minute_hand' || name.includes('minute_hand')) {
+              glbMinuteHand = child;
+            } else if (name === 'second_hand' || name.includes('second_hand')) {
+              glbSecondHand = child;
+            } else if (name.includes('glass')) {
+              if (child.material) {
+                child.material.transparent = true;
+                child.material.opacity = 0.22;
+                child.material.roughness = 0.08;
+              }
+            }
+          }
+        });
+
+        if (glbHourHand || glbMinuteHand || glbSecondHand) {
+          this.clockHands = {
+            hourHand: glbHourHand || hourHandGroup,
+            minuteHand: glbMinuteHand || minuteHandGroup,
+            secondHand: glbSecondHand || secondHandGroup
+          };
+          this.isClockGLBLoaded = true;
+          proceduralClockGroup.visible = false;
+          this.updateClock();
+        }
+
+        clockGroup.add(clockGLB);
+      },
+      () => {
+        this.isClockGLBLoaded = false;
+        proceduralClockGroup.visible = true;
+      }
+    );
 
     return clockGroup;
   }
@@ -897,6 +956,7 @@ export class VanityModel {
   getVanityState() {
     return {
       isGLBLoaded: this.isGLBLoaded,
+      isClockGLBLoaded: this.isClockGLBLoaded,
       isLightsEnabled: this.lighting.isEnabled,
       hasMirrorReflection: !!this.reflection.renderTarget
     };
@@ -909,6 +969,7 @@ export class VanityModel {
     this.lighting.dispose(this.mirrorGroup);
     this.reflection.dispose();
     this.clockHands = null;
+    this.isClockGLBLoaded = false;
 
     this.disposables.forEach(d => {
       if (d && typeof d.dispose === 'function') {

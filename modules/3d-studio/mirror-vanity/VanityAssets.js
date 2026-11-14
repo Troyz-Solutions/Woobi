@@ -12,6 +12,14 @@ export const VANITY_ASSET_PATHS = [
   '3D - Vanity/seren_vanity.glb'
 ];
 
+export const CLOCK_ASSET_PATHS = [
+  'Clock/clock.glb',
+  'clock.glb',
+  'assets/clock.glb',
+  'android-app/app/src/main/assets/Clock/clock.glb',
+  'android-app/app/src/main/assets/clock.glb'
+];
+
 export class VanityAssets {
   /**
    * Loads authentic GLB vanity model.
@@ -39,6 +47,47 @@ export class VanityAssets {
           const model = gltf.scene;
           model.position.set(0, 0, 0);
 
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          if (typeof onLoaded === 'function') onLoaded(model);
+        },
+        undefined,
+        () => tryLoad(idx + 1)
+      );
+    };
+
+    tryLoad(0);
+  }
+
+  /**
+   * Loads authentic 3D classic wall clock model provided in the Clock package.
+   * @param {Object} THREE Three.js global instance
+   * @param {Function} onLoaded Callback when model is loaded
+   * @param {Function} onError Callback if all asset paths fail
+   */
+  static loadClockGLB(THREE, onLoaded, onError) {
+    if (!THREE || typeof THREE.GLTFLoader === 'undefined') {
+      if (typeof onError === 'function') onError(new Error('GLTFLoader not available'));
+      return;
+    }
+
+    const gltfLoader = new THREE.GLTFLoader();
+
+    const tryLoad = (idx) => {
+      if (idx >= CLOCK_ASSET_PATHS.length) {
+        if (typeof onError === 'function') onError(new Error('All clock GLB paths failed'));
+        return;
+      }
+
+      gltfLoader.load(
+        CLOCK_ASSET_PATHS[idx],
+        (gltf) => {
+          const model = gltf.scene;
           model.traverse((child) => {
             if (child.isMesh) {
               child.castShadow = true;

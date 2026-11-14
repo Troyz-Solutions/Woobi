@@ -30,8 +30,8 @@
         fovPortrait: 56
       },
       WARDROBE_CLOSEUP: {
-        position: new THREE.Vector3(-0.75, 1.35, -0.90),
-        target: new THREE.Vector3(-0.75, 1.30, -2.85),
+        position: new THREE.Vector3(-1.30, 1.35, -0.90),
+        target: new THREE.Vector3(-1.30, 1.30, -2.85),
         fovLandscape: 38,
         fovPortrait: 54
       },
@@ -1160,9 +1160,9 @@
     buildWardrobeFurniture() {
       const wardrobeGroup = new THREE.Group();
       wardrobeGroup.name = 'woobi_wardrobe_root';
-      // Moved to the right, near the center behind the main stage
-      wardrobeGroup.position.set(-0.75, 0, -2.85);
-      wardrobeGroup.rotation.y = 0.16;
+      // Positioned to the left of the screen / left of mannequin with angled perspective
+      wardrobeGroup.position.set(-1.30, 0, -2.85);
+      wardrobeGroup.rotation.y = 0.28;
       this.wardrobeGroup = wardrobeGroup;
 
       const height = 3.65;

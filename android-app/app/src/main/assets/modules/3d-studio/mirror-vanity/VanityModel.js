@@ -20,7 +20,7 @@ export const VANITY_CONFIG = {
   stoolPosition: { x: 0.12, y: 0, z: 0.42 },
   stoolRadius: 0.25,
   stoolHeight: 0.40,
-  clockPosition: { x: 0.35, y: 2.72, z: -2.95 }
+  clockPosition: { x: 0.35, y: 3.00, z: -2.95 }
 };
 
 export class VanityModel {
@@ -386,7 +386,7 @@ export class VanityModel {
 
     // I. Classic Parisian Horlogerie Wall Clock Mounted at Elevated Height Between Wardrobe and Mirror (Matching User Target)
     this.clockGroup = this.buildClassicWallClock(THREE, brassMat, polishedGoldMat);
-    const clockPos = this.config.clockPosition || { x: 0.35, y: 2.72, z: -2.95 };
+    const clockPos = this.config.clockPosition || { x: 0.35, y: 3.00, z: -2.95 };
     this.clockGroup.position.set(clockPos.x, clockPos.y, clockPos.z);
     this.clockGroup.rotation.set(0, 0, 0);
     scene.add(this.clockGroup);
@@ -775,7 +775,7 @@ export class VanityModel {
       THREE,
       (clockGLB) => {
         clockGLB.name = 'clock_glb_model';
-        const scaleFactor = 0.46 / 34.137;
+        const scaleFactor = 0.60 / 34.137;
         clockGLB.scale.set(scaleFactor, scaleFactor, scaleFactor);
         clockGLB.position.set(0, 0, 0.010);
 
@@ -787,6 +787,21 @@ export class VanityModel {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+            if (child.material) {
+              if (child.material.map) {
+                child.material.map.anisotropy = 16;
+                child.material.map.generateMipmaps = true;
+                if (THREE.LinearMipmapLinearFilter) child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+                if (THREE.LinearFilter) child.material.map.magFilter = THREE.LinearFilter;
+                child.material.map.needsUpdate = true;
+              }
+              if (child.material.bumpMap) {
+                child.material.bumpMap.anisotropy = 16;
+              }
+              if (child.material.color) {
+                child.material.color.setHex(0xFFFFFF);
+              }
+            }
             const name = (child.name || '').toLowerCase();
             if (name === 'hour_hand' || name.includes('hour_hand')) {
               glbHourHand = child;
@@ -795,11 +810,8 @@ export class VanityModel {
             } else if (name === 'second_hand' || name.includes('second_hand')) {
               glbSecondHand = child;
             } else if (name.includes('glass')) {
-              if (child.material) {
-                child.material.transparent = true;
-                child.material.opacity = 0.22;
-                child.material.roughness = 0.08;
-              }
+              // Hide cloudy glass mesh so the 4K dial face and hands are 100% crystal clear
+              child.visible = false;
             }
           }
         });
@@ -835,17 +847,17 @@ export class VanityModel {
     }
     try {
       const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
+      canvas.width = 1024;
+      canvas.height = 1024;
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
 
-      const cx = 256;
-      const cy = 256;
-      const r = 246;
+      const cx = 512;
+      const cy = 512;
+      const r = 492;
 
       // Antique Warm Ivory Enamel Face with subtle aged parchment radial gradient
-      const grad = ctx.createRadialGradient(cx, cy, 30, cx, cy, r);
+      const grad = ctx.createRadialGradient(cx, cy, 60, cx, cy, r);
       grad.addColorStop(0.0, '#FFFDF8');
       grad.addColorStop(0.70, '#F7F3E8');
       grad.addColorStop(1.0, '#ECE4D4');
@@ -856,31 +868,31 @@ export class VanityModel {
 
       // Outer and Inner Concentric Chapter Rings
       ctx.strokeStyle = '#28221B';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.arc(cx, cy, 236, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 472, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 3.2;
       ctx.beginPath();
-      ctx.arc(cx, cy, 214, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 428, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = 2.4;
       ctx.strokeStyle = '#7D6955';
       ctx.beginPath();
-      ctx.arc(cx, cy, 142, 0, Math.PI * 2);
+      ctx.arc(cx, cy, 284, 0, Math.PI * 2);
       ctx.stroke();
 
       // 60-Minute Railroad Track Ticks
       for (let m = 0; m < 60; m++) {
         const angle = (m * Math.PI) / 30;
         const isHour = (m % 5 === 0);
-        const innerDist = isHour ? 214 : 224;
-        const outerDist = 236;
+        const innerDist = isHour ? 428 : 448;
+        const outerDist = 472;
 
         ctx.strokeStyle = isHour ? '#1C1916' : '#6A5C4F';
-        ctx.lineWidth = isHour ? 3.5 : 1.5;
+        ctx.lineWidth = isHour ? 7 : 3;
 
         ctx.beginPath();
         ctx.moveTo(cx + Math.sin(angle) * innerDist, cy - Math.cos(angle) * innerDist);
@@ -890,7 +902,7 @@ export class VanityModel {
         if (isHour) {
           ctx.fillStyle = '#C89D52';
           ctx.beginPath();
-          ctx.arc(cx + Math.sin(angle) * 206, cy - Math.cos(angle) * 206, 2.5, 0, Math.PI * 2);
+          ctx.arc(cx + Math.sin(angle) * 412, cy - Math.cos(angle) * 412, 5, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -900,11 +912,11 @@ export class VanityModel {
       ctx.fillStyle = '#1C1916';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.font = 'bold 36px "Cinzel", "Playfair Display", "Times New Roman", Georgia, serif';
+      ctx.font = 'bold 72px "Cinzel", "Playfair Display", "Times New Roman", Georgia, serif';
 
       for (let h = 0; h < 12; h++) {
         const angle = (h * Math.PI) / 6;
-        const textDist = 176;
+        const textDist = 352;
         const tx = cx + Math.sin(angle) * textDist;
         const ty = cy - Math.cos(angle) * textDist;
         ctx.fillText(romanNumerals[h], tx, ty);
@@ -912,24 +924,29 @@ export class VanityModel {
 
       // Vintage Horology Inscription
       ctx.fillStyle = '#42382E';
-      ctx.font = '600 15px "Cinzel", "Times New Roman", Georgia, serif';
-      ctx.fillText('S É R È N', cx, cy - 64);
+      ctx.font = '600 30px "Cinzel", "Times New Roman", Georgia, serif';
+      ctx.fillText('S É R È N', cx, cy - 128);
 
       ctx.fillStyle = '#7A6B5C';
-      ctx.font = 'italic 500 11px "Times New Roman", Georgia, serif';
-      ctx.fillText('Horlogerie d\'Atelier', cx, cy - 48);
+      ctx.font = 'italic 500 22px "Times New Roman", Georgia, serif';
+      ctx.fillText('Horlogerie d\'Atelier', cx, cy - 96);
 
       ctx.fillStyle = '#8C7C6D';
-      ctx.font = '500 10px "Times New Roman", Georgia, serif';
-      ctx.fillText('PARIS • 1889', cx, cy + 54);
+      ctx.font = '500 20px "Times New Roman", Georgia, serif';
+      ctx.fillText('PARIS • 1889', cx, cy + 108);
 
       ctx.fillStyle = '#C89D52';
-      ctx.font = '14px serif';
-      ctx.fillText('✦', cx, cy + 70);
+      ctx.font = '28px serif';
+      ctx.fillText('✦', cx, cy + 140);
 
       if (THREE && typeof THREE.CanvasTexture !== 'undefined') {
         const tex = new THREE.CanvasTexture(canvas);
+        tex.anisotropy = 16;
+        tex.generateMipmaps = true;
+        if (THREE.LinearMipmapLinearFilter) tex.minFilter = THREE.LinearMipmapLinearFilter;
+        if (THREE.LinearFilter) tex.magFilter = THREE.LinearFilter;
         if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+        tex.needsUpdate = true;
         return tex;
       }
     } catch (e) {

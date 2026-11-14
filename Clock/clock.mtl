@@ -2,31 +2,31 @@
 # File Created: 31.10.2026 07:58:37
 
 newmtl clock
-	Ns 10.0000
+	Ns 32.0000
 	Ni 1.5000
 	d 1.0000
 	Tr 0.0000
 	Tf 1.0000 1.0000 1.0000 
 	illum 2
-	Ka 0.5880 0.5880 0.5880
-	Kd 0.5880 0.5880 0.5880
-	Ks 0.0000 0.0000 0.0000
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.2000 0.2000 0.2000
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/clock_Albedo.png
 	map_Kd textures/clock_Albedo.png
-	map_bump textures/clock_Roughness.png
-	bump textures/clock_Roughness.png
+	map_bump textures/clock_Normal.png
+	bump textures/clock_Normal.png
 
 newmtl glass
-	Ns 10.0000
-	Ni 1.5000
-	d 1.0000
-	Tr 0.0000
+	Ns 90.0000
+	Ni 1.5200
+	d 0.1200
+	Tr 0.8800
 	Tf 1.0000 1.0000 1.0000 
 	illum 2
-	Ka 0.5880 0.5880 0.5880
-	Kd 0.5880 0.5880 0.5880
-	Ks 0.0000 0.0000 0.0000
+	Ka 1.0000 1.0000 1.0000
+	Kd 1.0000 1.0000 1.0000
+	Ks 0.8000 0.8000 0.8000
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures/glass_Albedo.png
 	map_Kd textures/glass_Albedo.png

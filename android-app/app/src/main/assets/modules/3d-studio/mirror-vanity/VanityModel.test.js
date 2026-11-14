@@ -160,7 +160,7 @@ const vanityRoot = vanity.build(mockScene, { calacatta: mockSharedMarbleTexture,
 assert(mockScene.children.includes(vanityRoot), 'vanity.build() mounts root group onto the Scene');
 assert(vanity.clockGroup !== null, 'vanity initializes clockGroup');
 assert(mockScene.children.includes(vanity.clockGroup), 'vanity.build() mounts clockGroup onto Scene between wardrobe and mirror');
-assert(vanity.clockGroup.position.y === 2.72, 'Clock is mounted at elevated wall height (y=2.72m)');
+assert(vanity.clockGroup.position.y === 3.00, 'Clock is mounted at elevated wall height (y=3.00m)');
 assert(vanity.clockGroup.position.x === 0.35, 'Clock is positioned between wardrobe and mirror matching user specification (x=0.35m)');
 assert(vanity.interactiveObjects.length > 0, 'vanity registers raycast hitBox in interactiveObjects');
 assert(vanity.interactiveObjects[0].userData.interactiveType === 'vanity', 'hitBox has correct interactiveType');

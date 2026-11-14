@@ -1856,6 +1856,7 @@
               if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
+                child.frustumCulled = false;
 
                 const name = (child.name || '').toLowerCase();
 
@@ -2768,6 +2769,14 @@
             console.log('Studio3D: Rigged 3D avatar loaded successfully from', url);
             this.gltfAvatarGroup = this.avatarModel.gltfAvatarGroup;
             this.activeAvatarType = this.avatarModel.activeAvatarType;
+            if (this.gltfAvatarGroup) {
+              this.gltfAvatarGroup.traverse((c) => {
+                if (c.isMesh) c.frustumCulled = false;
+              });
+            }
+            if (this.features && typeof this.features.setAvatarModel === 'function') {
+              this.features.setAvatarModel(this.avatarModel);
+            }
             if (this.sculptedAvatarGroup) {
               this.sculptedAvatarGroup.visible = false;
               this.sculptedAvatarGroup.traverse((c) => { c.visible = false; });
@@ -2835,6 +2844,7 @@
               if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
+                child.frustumCulled = false;
 
                 if (child.material && !child.material._isIsolated) {
                   if (Array.isArray(child.material)) {
@@ -3726,6 +3736,7 @@
               if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
+                child.frustumCulled = false;
                 if (child.material && !child.material._isIsolated) {
                   if (Array.isArray(child.material)) {
                     child.material = child.material.map(m => m.clone());
@@ -3851,6 +3862,12 @@
     equipGarment(category, id) {
       this.activeGarments = this.activeGarments || {};
       this.activeGarments[category] = id;
+      if (!this.features) {
+        this.initStudioFeatures();
+      }
+      if (this.features && this.avatarModel && (!this.features.avatarModel || this.features.avatarModel !== this.avatarModel)) {
+        this.features.setAvatarModel(this.avatarModel);
+      }
       if (this.features && this.features.tryOn && typeof this.features.tryOn.equipGarment === 'function') {
         return this.features.tryOn.equipGarment(category, id);
       }

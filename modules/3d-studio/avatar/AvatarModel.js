@@ -198,7 +198,10 @@ export class AvatarModel {
     // 4. Attach and show target model
     if (targetModel) {
       targetModel.visible = true;
-      targetModel.traverse((c) => { c.visible = true; });
+      targetModel.traverse((c) => {
+        c.visible = true;
+        if (c.isMesh) c.frustumCulled = false;
+      });
       if (!this.avatarRoot.children.includes(targetModel)) {
         this.avatarRoot.add(targetModel);
       }

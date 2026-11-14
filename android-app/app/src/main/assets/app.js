@@ -1738,6 +1738,15 @@
     }
 
     showToast(`✦ ${item.name} fitted on your studio mannequin! ♡`);
+
+    // Smoothly dismiss wardrobe sheet so the newly styled mannequin is immediately visible center-stage
+    setTimeout(function() {
+      serenToggleWardrobe(false);
+      const studio = window.Studio3D || window.studio3d;
+      if (studio && typeof studio.setCameraState === 'function') {
+        studio.setCameraState('AVATAR_FULL_BODY');
+      }
+    }, 350);
   }
 
   function filterWardrobeCategory(cat, btn) {
@@ -3342,9 +3351,10 @@
       sheet.classList.remove('hidden');
       renderWardrobeGrid();
       updateWardrobeCounts();
-      setStudioCamera('STUDIO_OVERVIEW');
+      setStudioCamera('AVATAR_FULL_BODY');
     } else {
       sheet.classList.add('hidden');
+      setStudioCamera('AVATAR_FULL_BODY');
     }
   }
 

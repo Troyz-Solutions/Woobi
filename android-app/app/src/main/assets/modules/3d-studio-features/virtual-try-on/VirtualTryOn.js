@@ -296,6 +296,7 @@ export class VirtualTryOn {
     if (gltfModel && typeof gltfModel.traverse === 'function') {
       gltfModel.traverse((child) => {
         if (!child.isMesh) return;
+        child.frustumCulled = false;
         const name = child.name || '';
         let isMatch = false;
 
@@ -323,18 +324,8 @@ export class VirtualTryOn {
             }
 
             if (garmentRecord.color !== undefined) {
-              const isLightTone = (typeof garmentRecord.color === 'number' && garmentRecord.color > 0xA0A0A0) ||
-                                  (garmentRecord.id && (
-                                    garmentRecord.id.includes('white') ||
-                                    garmentRecord.id.includes('cream') ||
-                                    garmentRecord.id.includes('beige') ||
-                                    garmentRecord.id.includes('linen')
-                                  ));
-              if (isLightTone) {
-                mat.map = null;
-              } else {
-                mat.map = mat._origMap || null;
-              }
+              // Always unbind pre-baked suit texture so garment color renders cleanly and purely
+              mat.map = null;
               if (typeof mat.color?.setHex === 'function') {
                 mat.color.setHex(garmentRecord.color);
               } else {

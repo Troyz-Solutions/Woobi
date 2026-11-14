@@ -136,6 +136,7 @@ export class AvatarAssets {
             if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
+              child.frustumCulled = false;
 
               // Clone material per mesh so top, bottom, and shoes slots can be styled independently
               if (child.material && !child.material._isIsolated) {

@@ -783,7 +783,15 @@ export class VanityModel {
       THREE,
       (clockGLB) => {
         clockGLB.name = 'clock_glb_model';
-        const scaleFactor = 0.65 / 34.137;
+        let scaleFactor = 1.0;
+        if (typeof THREE.Box3 !== 'undefined') {
+          const box = new THREE.Box3().setFromObject(clockGLB);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y);
+          if (maxDim > 2.0) {
+            scaleFactor = 0.65 / maxDim;
+          }
+        }
         clockGLB.scale.set(scaleFactor, scaleFactor, scaleFactor);
         clockGLB.position.set(0, 0, 0.010);
 

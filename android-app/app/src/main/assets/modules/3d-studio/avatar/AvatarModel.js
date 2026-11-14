@@ -152,16 +152,26 @@ export class AvatarModel {
 
     if (!this.avatarRoot) return null;
 
-    // 1. Completely detach and hide sculpted procedural avatar to prevent any static overlap
-    if (this.sculptedAvatarGroup) {
+    const targetModel = this.genderModels[targetGender];
+
+    // 1. Completely detach and hide sculpted procedural avatar when genuine GLB model exists
+    if (targetModel && this.sculptedAvatarGroup) {
       this.sculptedAvatarGroup.visible = false;
-      this.sculptedAvatarGroup.traverse((c) => { c.visible = false; });
+      if (typeof this.sculptedAvatarGroup.traverse === 'function') {
+        this.sculptedAvatarGroup.traverse((c) => { c.visible = false; });
+      }
       if (this.avatarRoot.children.includes(this.sculptedAvatarGroup)) {
         this.avatarRoot.remove(this.sculptedAvatarGroup);
       }
+    } else if (!targetModel && this.sculptedAvatarGroup) {
+      this.sculptedAvatarGroup.visible = true;
+      if (typeof this.sculptedAvatarGroup.traverse === 'function') {
+        this.sculptedAvatarGroup.traverse((c) => { c.visible = true; });
+      }
+      if (!this.avatarRoot.children.includes(this.sculptedAvatarGroup)) {
+        this.avatarRoot.add(this.sculptedAvatarGroup);
+      }
     }
-
-    const targetModel = this.genderModels[targetGender];
 
     // 2. Detach and hide ALL other gender models
     Object.entries(this.genderModels).forEach(([g, model]) => {
@@ -182,9 +192,12 @@ export class AvatarModel {
     const childrenToRemove = [];
     this.avatarRoot.children.forEach((child) => {
       if (child.name !== 'AvatarFootContactShadow_Left' &&
-          child.name !== 'AvatarFootContactShadow_Right' &&
-          child !== targetModel) {
-        childrenToRemove.push(child);
+          child.name !== 'AvatarFootContactShadow_Right') {
+        if (targetModel) {
+          if (child !== targetModel) childrenToRemove.push(child);
+        } else {
+          if (child !== this.sculptedAvatarGroup) childrenToRemove.push(child);
+        }
       }
     });
     childrenToRemove.forEach((child) => {
@@ -235,11 +248,12 @@ export class AvatarModel {
       return model;
     }
 
-    // Hide active model while loading new one to prevent static ghosting
+    // Hide other loaded models while loading new one to prevent static ghosting, but keep sculpted fallback visible
     if (this.avatarRoot) {
       this.avatarRoot.children.forEach((child) => {
         if (child.name !== 'AvatarFootContactShadow_Left' &&
-            child.name !== 'AvatarFootContactShadow_Right') {
+            child.name !== 'AvatarFootContactShadow_Right' &&
+            child !== this.sculptedAvatarGroup) {
           child.visible = false;
           if (child.userData?.mixer) child.userData.mixer.stopAllAction();
         }

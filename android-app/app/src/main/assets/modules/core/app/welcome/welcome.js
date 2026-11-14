@@ -204,7 +204,7 @@
   }
   if (!standalone && !android && !matchMedia('(max-width: 700px)').matches) return;
   // The standalone preview stays replayable; normal app loads are first-run only.
-  if (!standalone && hasSeenWelcome()) return;
+  if (!standalone && (hasSeenWelcome() || new URLSearchParams(location.search).has('screen'))) return;
 
   let releaseEntrance;
   let entranceFinished = false;

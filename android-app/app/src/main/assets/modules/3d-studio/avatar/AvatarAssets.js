@@ -5,15 +5,17 @@
 
 export const FEMALE_AVATAR_PATHS = [
   'assets/models/avatar_female.glb',
-  'female_mannequin.glb',
+  'Woobi_Female_Mannequin_Fixed.glb',
   'woobi_female_mannequin.glb',
+  'seren_avatar.glb',
+  'female_mannequin.glb',
   '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb'
 ];
 
 export const MALE_AVATAR_PATHS = [
   'assets/models/avatar_male.glb',
-  'male_mannequin.glb',
   'woobi_male_mannequin.glb',
+  'male_mannequin.glb',
   '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb'
 ];
 
@@ -22,8 +24,8 @@ export const AVATAR_ASSET_PATHS = [
   'assets/models/avatar_female.glb',
   'assets/models/avatar_male.glb',
   'Woobi_Female_Mannequin_Fixed.glb',
-  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
-  'https://readyplayerme.github.io/visage/female.glb'
+  'woobi_female_mannequin.glb',
+  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb'
 ];
 
 export const MANNEQUIN_ASSET_PATHS = {
@@ -51,11 +53,17 @@ export class AvatarAssets {
     this.isDisposed = false;
   }
 
-  loadRiggedModel(onSuccess, onError, assetPaths = AVATAR_ASSET_PATHS) {
+  async loadRiggedModel(onSuccess, onError, assetPaths = AVATAR_ASSET_PATHS) {
     const THREE = this.THREE;
     if (!THREE || typeof THREE.GLTFLoader === 'undefined') {
       if (onError) onError(new Error('GLTFLoader not available'));
       return;
+    }
+
+    if (typeof window !== 'undefined' && window.MeshoptDecoder && window.MeshoptDecoder.ready) {
+      try {
+        await window.MeshoptDecoder.ready;
+      } catch (e) {}
     }
 
     this.isLoading = true;
@@ -76,7 +84,8 @@ export class AvatarAssets {
       }
 
       const url = urls[index];
-      loader.load(
+      try {
+        loader.load(
         url,
         (gltf) => {
           if (this.isDisposed) {
@@ -146,20 +155,16 @@ export class AvatarAssets {
                 if ('clearcoatRoughness' in child.material) child.material.clearcoatRoughness = 1;
               }
 
-              // Check if model has pre-baked texture maps (such as female_mannequin or male_mannequin)
+              // Check if model has pre-baked texture maps (such as female_mannequin or avatar_female)
               if (child.material && child.material.map) {
                 child.material.color = new THREE.Color(0xFFFFFF);
                 if (child.name.includes('Hair') || child.name.includes('Eyeleashes') || child.name.includes('Eyelashes')) {
                   child.material.roughness = 0.78;
                   child.material.metalness = 0.02;
-                  if (this.materials) this.materials.registerHairMaterial(child.material);
                 } else {
                   // Natural soft matte finish for skin and clothing
                   child.material.roughness = 0.85;
                   child.material.metalness = 0.0;
-                  if (this.materials && (child.name.includes('Body') || child.name.includes('Head'))) {
-                    this.materials.registerSkinMaterial(child.material);
-                  }
                 }
                 child.material.needsUpdate = true;
               } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
@@ -254,6 +259,11 @@ export class AvatarAssets {
           tryLoad(index + 1);
         }
       );
+      } catch (err) {
+        if (this.isDisposed) return;
+        console.warn(`AvatarAssets: Model ${url} threw during load, trying next candidate...`, err);
+        tryLoad(index + 1);
+      }
     };
 
     tryLoad(0);

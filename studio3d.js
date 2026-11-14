@@ -2783,102 +2783,112 @@
         return;
       }
 
-      const loader = new THREE.GLTFLoader();
-      if (typeof MeshoptDecoder !== 'undefined') {
-        loader.setMeshoptDecoder(MeshoptDecoder);
-      } else if (typeof window !== 'undefined' && window.MeshoptDecoder) {
-        loader.setMeshoptDecoder(window.MeshoptDecoder);
-      }
-      const modelUrls = [
-        'assets/models/avatar_female.glb',
-        'female_mannequin.glb',
-        'Woobi_Female_Mannequin_Fixed.glb?v=human_v2',
-        'woobi_female_mannequin.glb?v=human_v2',
-        '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb?v=human_v2',
-        'seren_avatar.glb'
-      ];
+      const proceedWithLoader = () => {
+        const loader = new THREE.GLTFLoader();
+        if (typeof MeshoptDecoder !== 'undefined') {
+          loader.setMeshoptDecoder(MeshoptDecoder);
+        } else if (typeof window !== 'undefined' && window.MeshoptDecoder) {
+          loader.setMeshoptDecoder(window.MeshoptDecoder);
+        }
+        const modelUrls = [
+          'assets/models/avatar_female.glb',
+          'Woobi_Female_Mannequin_Fixed.glb',
+          'woobi_female_mannequin.glb',
+          'seren_avatar.glb'
+        ];
 
-      const tryLoad = (index) => {
-        if (index >= modelUrls.length) return;
-        const url = modelUrls[index];
+        const tryLoad = (index) => {
+          if (index >= modelUrls.length) return;
+          const url = modelUrls[index];
 
-        loader.load(
-          url,
-          (gltf) => {
-            console.log('Studio3D: Rigged 3D avatar loaded successfully from', url);
-            const model = gltf.scene;
+          try {
+            loader.load(
+              url,
+              (gltf) => {
+                console.log('Studio3D: Rigged 3D avatar loaded successfully from', url);
+                const model = gltf.scene;
 
-            // Scale & position model correctly onto the elevated stage dais (avatarRoot provides the 0.080m dais elevation)
-            model.scale.set(0.96, 0.96, 0.96);
-            model.position.set(0, 0, 0);
+                // Scale & position model correctly onto the elevated stage dais (avatarRoot provides the 0.080m dais elevation)
+                model.scale.set(0.96, 0.96, 0.96);
+                model.position.set(0, 0, 0);
 
-            // Traverse and apply luxury reference styling
-            model.traverse((child) => {
-              if (child.isMesh) {
-                child.castShadow = true;
-                child.receiveShadow = true;
+                // Traverse and apply luxury reference styling
+                model.traverse((child) => {
+                  if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
 
-                if (child.material) {
-                  child.material.roughnessMap = null;
-                  child.material.metalnessMap = null;
-                  if ('clearcoat' in child.material) child.material.clearcoat = 0;
-                  child.material.roughness = 0.85;
-                  child.material.metalness = 0.0;
-                }
+                    if (child.material) {
+                      child.material.roughnessMap = null;
+                      child.material.metalnessMap = null;
+                      if ('clearcoat' in child.material) child.material.clearcoat = 0;
+                      child.material.roughness = 0.85;
+                      child.material.metalness = 0.0;
+                    }
 
-                // Configure skin, hair, and clothing materials to match visual reference (pink athletic zip jacket, black leggings, white sneakers)
-                if (child.material && child.material.map) {
-                  // Keep full vibrant contrast of embedded textures (pink jacket with chest stripe, black leggings, white sneakers)
-                  child.material.color = new THREE.Color(0xFFFFFF);
-                } else if (child.name.includes('Hair')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.honeyOak).multiplyScalar(0.2);
-                  child.material.roughness = 0.78;
-                  this.hairMaterials.push(child.material);
-                } else if (child.name.includes('Head') || child.name.includes('Body')) {
-                  this.skinMaterials.push(child.material);
-                  child.material.roughness = 0.82;
-                } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.jacketPink);
-                  child.material.roughness = 0.85;
-                } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.leggingsBlack);
-                  child.material.roughness = 0.88;
-                } else if (child.name.includes('Footwear') || child.name.includes('Shoes')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.sneakersWhite);
-                  child.material.roughness = 0.72;
-                }
+                    // Configure skin, hair, and clothing materials to match visual reference (pink athletic zip jacket, black leggings, white sneakers)
+                    if (child.material && child.material.map) {
+                      child.material.color = new THREE.Color(0xFFFFFF);
+                    } else if (child.name.includes('Hair')) {
+                      child.material.color = new THREE.Color(COLOR_PALETTE.honeyOak).multiplyScalar(0.2);
+                      child.material.roughness = 0.78;
+                      this.hairMaterials.push(child.material);
+                    } else if (child.name.includes('Head') || child.name.includes('Body')) {
+                      this.skinMaterials.push(child.material);
+                      child.material.roughness = 0.82;
+                    } else if (child.name.includes('Top') || child.name.includes('Shirt') || child.name.includes('Zipper')) {
+                      child.material.color = new THREE.Color(COLOR_PALETTE.jacketPink);
+                      child.material.roughness = 0.85;
+                    } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
+                      child.material.color = new THREE.Color(COLOR_PALETTE.leggingsBlack);
+                      child.material.roughness = 0.88;
+                    } else if (child.name.includes('Footwear') || child.name.includes('Sneakers') || child.name.includes('Shoes')) {
+                      child.material.color = new THREE.Color(COLOR_PALETTE.sneakersWhite);
+                      child.material.roughness = 0.72;
+                    }
 
-                if (child.geometry && child.geometry.attributes && child.geometry.attributes.position) {
-                  if (!child.geometry.userData.basePositions) {
-                    child.geometry.userData.basePositions = new Float32Array(child.geometry.attributes.position.array);
+                    if (child.geometry && child.geometry.attributes && child.geometry.attributes.position) {
+                      if (!child.geometry.userData.basePositions) {
+                        child.geometry.userData.basePositions = new Float32Array(child.geometry.attributes.position.array);
+                      }
+                    }
+                  }
+                });
+
+                // Smoothly replace sculpted fallback with the rigged model
+                this.gltfAvatarGroup = model;
+                this.avatarRoot.add(this.gltfAvatarGroup);
+                if (this.sculptedAvatarGroup) {
+                  this.sculptedAvatarGroup.visible = false;
+                  this.sculptedAvatarGroup.traverse((c) => { c.visible = false; });
+                  if (this.avatarRoot && this.avatarRoot.children.includes(this.sculptedAvatarGroup)) {
+                    this.avatarRoot.remove(this.sculptedAvatarGroup);
                   }
                 }
+                this.activeAvatarType = 'glb';
+                this.buildAnatomicalFeatures(this.avatarConfig.gender || 'female');
+                this.updateBodyMeshScale();
+              },
+              undefined,
+              (err) => {
+                console.log(`Studio3D: Model ${url} not found or blocked, using high-definition sculpted avatar.`);
+                tryLoad(index + 1);
               }
-            });
-
-            // Smoothly replace sculpted fallback with the rigged model
-            this.gltfAvatarGroup = model;
-            this.avatarRoot.add(this.gltfAvatarGroup);
-            if (this.sculptedAvatarGroup) {
-              this.sculptedAvatarGroup.visible = false;
-              this.sculptedAvatarGroup.traverse((c) => { c.visible = false; });
-              if (this.avatarRoot && this.avatarRoot.children.includes(this.sculptedAvatarGroup)) {
-                this.avatarRoot.remove(this.sculptedAvatarGroup);
-              }
-            }
-            this.activeAvatarType = 'glb';
-            this.buildAnatomicalFeatures(this.avatarConfig.gender || 'female');
-            this.updateBodyMeshScale();
-          },
-          undefined,
-          (err) => {
-            console.log(`Studio3D: Model ${url} not found or blocked, using high-definition sculpted avatar.`);
+            );
+          } catch (e) {
+            console.log(`Studio3D: Model ${url} threw during load, trying next candidate.`, e);
             tryLoad(index + 1);
           }
-        );
+        };
+
+        tryLoad(0);
       };
 
-      tryLoad(0);
+      if (typeof window !== 'undefined' && window.MeshoptDecoder && window.MeshoptDecoder.ready) {
+        window.MeshoptDecoder.ready.then(proceedWithLoader).catch(proceedWithLoader);
+      } else {
+        proceedWithLoader();
+      }
     }
 
     /**
@@ -3603,34 +3613,58 @@
      * Loads Astra Mannequin (Female or Male)
      */
     loadMannequin(gender = 'female') {
-      if (typeof THREE.GLTFLoader === 'undefined') return;
-
       const isMale = (gender === 'male' || gender === 'masculine');
       const targetGender = isMale ? 'male' : 'female';
       this.avatarConfig.gender = targetGender;
 
+      if (this.avatarModel && typeof this.avatarModel.setMannequinGender === 'function') {
+        return this.avatarModel.setMannequinGender(targetGender, (model) => {
+          if (model) {
+            this.gltfAvatarGroup = this.avatarModel.gltfAvatarGroup || model;
+            this.activeAvatarType = this.avatarModel.activeAvatarType || 'glb';
+            if (this.sculptedAvatarGroup) {
+              this.sculptedAvatarGroup.visible = false;
+              if (this.avatarRoot && this.avatarRoot.children.includes(this.sculptedAvatarGroup)) {
+                this.avatarRoot.remove(this.sculptedAvatarGroup);
+              }
+            }
+            this.buildAnatomicalFeatures(targetGender);
+            this.updateBodyMeshScale();
+            this.savePreferences();
+          }
+        });
+      }
+
+      if (typeof THREE.GLTFLoader === 'undefined') return;
+
       const loader = new THREE.GLTFLoader();
+      if (typeof MeshoptDecoder !== 'undefined') {
+        loader.setMeshoptDecoder(MeshoptDecoder);
+      } else if (typeof window !== 'undefined' && window.MeshoptDecoder) {
+        loader.setMeshoptDecoder(window.MeshoptDecoder);
+      }
+
       const urls = isMale
         ? [
             'assets/models/avatar_male.glb',
+            'woobi_male_mannequin.glb',
             'male_mannequin.glb',
-            'woobi_male_mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/male/Woobi_Male_Mannequin.glb?v=human_v2'
+            '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb'
           ]
         : [
             'assets/models/avatar_female.glb',
+            'Woobi_Female_Mannequin_Fixed.glb',
+            'woobi_female_mannequin.glb',
+            'seren_avatar.glb',
             'female_mannequin.glb',
-            'Woobi_Female_Mannequin_Fixed.glb?v=human_v2',
-            'woobi_female_mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb?v=human_v2',
-            '3D - Mannequin By Astra/female/Woobi_Female_Mannequin.glb?v=human_v2'
+            '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb'
           ];
 
       const tryLoad = (idx) => {
         if (idx >= urls.length) return;
         const url = urls[idx];
-        loader.load(
+        try {
+          loader.load(
           url,
           (gltf) => {
             console.log(`Studio3D: Astra ${targetGender} mannequin loaded successfully from`, url);
@@ -3681,6 +3715,9 @@
           undefined,
           () => tryLoad(idx + 1)
         );
+        } catch (e) {
+          tryLoad(idx + 1);
+        }
       };
 
       tryLoad(0);

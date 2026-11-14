@@ -1486,11 +1486,11 @@
         const meta = getItemCategoryMeta(item);
 
         box.innerHTML = `
-          <div class="w-img-wrap" onclick="app.openConditionModal('${item.id}')">
+          <div class="w-img-wrap" onclick="app.wardrobeOpenZoom('${item.id}')">
             <img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='assets/navy_shirt.jpg'">
             <span class="w-item-cat-badge">${meta.icon} ${meta.label}</span>
           </div>
-          <div class="w-meta" onclick="app.openConditionModal('${item.id}')">
+          <div class="w-meta" onclick="app.wardrobeOpenZoom('${item.id}')">
             <div class="w-name" title="${item.name}">${item.name}</div>
             <div class="w-sub-badges">
               ${statusBadge}
@@ -1675,7 +1675,20 @@
   }
 
   function wardrobeEquipToMannequin(item) {
-    const catMap = { Tops: 'top', Bottoms: 'bottom', Shoes: 'shoes', Accessories: 'top' };
+    const catMap = {
+      Tops: 'top',
+      Shirts: 'top',
+      Shirt: 'top',
+      Top: 'top',
+      Bottoms: 'bottom',
+      Pants: 'bottom',
+      Trousers: 'bottom',
+      Bottom: 'bottom',
+      Shoes: 'shoes',
+      Footwear: 'shoes',
+      Sandals: 'shoes',
+      Accessories: 'top'
+    };
     const engineCat = catMap[item.category] || 'top';
 
     const idMap = {
@@ -3273,18 +3286,11 @@
   }
 
   function serenToggleWardrobe(forceOpen) {
-    const sheet = document.getElementById('serenWardrobeSheet');
-    if (!sheet) return;
-
-    if (forceOpen === undefined) {
-      sheet.classList.toggle('hidden');
-    } else if (forceOpen) {
-      sheet.classList.remove('hidden');
-    } else {
-      sheet.classList.add('hidden');
+    if (forceOpen === false) {
+      goToScreen('today');
+      return;
     }
-    // Always keep Studio Overview active so the mannequin remains center-stage
-    setStudioCamera('STUDIO_OVERVIEW');
+    goToScreen('wardrobe');
   }
 
   function serenToggleDailyLooks(forceOpen) {

@@ -788,7 +788,7 @@
           <div class="seren-bottom-bar-wrap">
             <nav class="seren-bottom-bar" aria-label="Studio navigation">
               <!-- Tab 1: Wardrobe (Clothes Hanger Icon) -->
-              <button type="button" class="seren-bar-tab" id="serenTabWardrobe" onclick="app.serenToggleWardrobe()">
+              <button type="button" class="seren-bar-tab" id="serenTabWardrobe" onclick="app.goToScreen('wardrobe')" title="Wardrobe" aria-label="Wardrobe">
                 <div class="seren-tab-icon" aria-hidden="true">
                   <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3a2.2 2.2 0 0 0-2 2.2c0 .9.6 1.7 1.5 2V8.5L3.8 15.2a1.8 1.8 0 0 0 1.2 3h14a1.8 1.8 0 0 0 1.2-3L12.5 8.5V7.2c.9-.3 1.5-1.1 1.5-2A2.2 2.2 0 0 0 12 3z" />
@@ -842,36 +842,6 @@
                 <span class="seren-tab-dot"></span>
               </button>
             </nav>
-          </div>
-
-          <!-- Sliding Wardrobe Sheet (Step 2 of Reference D) -->
-          <div class="seren-wardrobe-sheet hidden" id="serenWardrobeSheet">
-            <div class="seren-sheet-backdrop" onclick="app.serenToggleWardrobe(false)"></div>
-            <div class="seren-sheet-card">
-              <div class="seren-sheet-header">
-                <button class="seren-sheet-back" onclick="app.serenToggleWardrobe(false)">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <path d="m15 18-6-6 6-6" />
-                  </svg>
-                </button>
-                <h3 class="seren-sheet-title">Wardrobe</h3>
-                <div class="seren-sheet-space"></div>
-              </div>
-
-              <!-- Category Filter Tabs -->
-              <div class="seren-cat-tabs" id="serenCatTabs">
-                <button class="seren-cat-tab active" onclick="app.serenFilterCat('all', this)">All</button>
-                <button class="seren-cat-tab" onclick="app.serenFilterCat('tops', this)">Tops</button>
-                <button class="seren-cat-tab" onclick="app.serenFilterCat('bottoms', this)">Bottoms</button>
-                <button class="seren-cat-tab" onclick="app.serenFilterCat('outerwear', this)">Outerwear</button>
-                <button class="seren-cat-tab" onclick="app.serenFilterCat('shoes', this)">Shoes</button>
-              </div>
-
-              <!-- Garment Grid (Dynamic & Database Linked) -->
-              <div class="seren-garment-grid" id="serenGarmentGrid">
-                <!-- Populated dynamically by app.js -->
-              </div>
-            </div>
           </div>
 
           <!-- Sliding Vanity & Avatar Customization Sheet -->
@@ -1947,13 +1917,13 @@
               </div>
             </div>
             <!-- Interactive Drag Handle that directly launches drag to mannequin -->
+            <button class="w-zoomed-quick-equip" onclick="app.wardrobeQuickEquip()">
+              ✨ Try On in 3D Studio
+            </button>
             <button class="w-zoomed-drag-action" id="wTryDragBtn"
               ontouchstart="app.wardrobeStartDrag(event)"
               onmousedown="app.wardrobeStartDrag(event)">
               <span class="w-spark-icon">✦</span> Drag onto Mannequin
-            </button>
-            <button class="w-zoomed-quick-equip" onclick="app.wardrobeQuickEquip()">
-              Direct Equip to Studio
             </button>
           </div>
 
@@ -1972,9 +1942,14 @@
           </div>
 
           <div class="screen-body-padded" style="padding-top: 16px; padding-bottom: 90px;">
-            <!-- Premium Header -->
-            <div class="wardrobe-header-row" style="align-items: center; margin-bottom: 16px;">
-              <div>
+            <!-- Premium Header with Direct Back Navigation to Studio -->
+            <div class="wardrobe-header-row" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+              <button class="nav-back-arrow" onclick="app.goToScreen('today')" title="Back to 3D Studio" aria-label="Back to 3D Studio" style="margin-right: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+              <div style="flex: 1;">
                 <h1 class="screen-headline-serif" style="font-size: 1.75rem; margin-bottom: 2px;">Your Wardrobe</h1>
                 <span class="wardrobe-items-count" id="wardrobeCountLabel" style="color: var(--text-muted); font-weight: 500; font-size: 0.85rem;">Curated collection</span>
               </div>

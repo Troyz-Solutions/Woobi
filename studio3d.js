@@ -2303,10 +2303,6 @@
           tex.needsUpdate = true;
           return tex;
         }
-          if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
-          tex.needsUpdate = true;
-          return tex;
-        }
       } catch (e) {
         console.warn('Studio3D: Canvas clock texture fallback active:', e);
       }

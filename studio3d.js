@@ -335,9 +335,9 @@
       this.animate();
 
       // Fail-safe veil dismissal ensures studio is revealed smoothly even if network is throttled
-      setTimeout(() => {
+      this._veilFallbackTimer = setTimeout(() => {
         this.dismissLoadingVeil();
-      }, 750);
+      }, 3000);
 
       console.log('Studio3D: Sérén Studio Production V4 Initialized with Stylized Avatar & Atmospheric Dressing Room.');
     }
@@ -346,13 +346,21 @@
      * Smoothly dissolves the atelier opening veil curtain with luxury cross-fade
      */
     dismissLoadingVeil() {
+      if (this._veilDismissed) return;
+      this._veilDismissed = true;
+      if (this._veilFallbackTimer) {
+        clearTimeout(this._veilFallbackTimer);
+        this._veilFallbackTimer = null;
+      }
       if (typeof document === 'undefined') return;
       const veil = document.getElementById('atelierStudioVeil');
       if (veil && !veil.classList.contains('veil-hidden')) {
-        veil.classList.add('veil-hidden');
-        setTimeout(() => {
-          veil.style.display = 'none';
-        }, 550);
+        requestAnimationFrame(() => {
+          veil.classList.add('veil-hidden');
+          setTimeout(() => {
+            veil.style.display = 'none';
+          }, 450);
+        });
       }
     }
 
@@ -375,16 +383,11 @@
         fCtx.fillRect(0, y, 512, 2.5);
       }
 
-      // Micro-porous travertine voids & mineral grain noise
-      const fImg = fCtx.getImageData(0, 0, 512, 512);
-      const fd = fImg.data;
-      for (let i = 0; i < fd.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 14;
-        fd[i] = Math.min(255, Math.max(0, fd[i] + noise));
-        fd[i + 1] = Math.min(255, Math.max(0, fd[i + 1] + noise * 0.90));
-        fd[i + 2] = Math.min(255, Math.max(0, fd[i + 2] + noise * 0.72));
+      // Micro-porous travertine voids & mineral grain noise using fast hardware canvas fill
+      fCtx.fillStyle = 'rgba(180, 155, 125, 0.08)';
+      for (let n = 0; n < 30; n++) {
+        fCtx.fillRect(Math.random() * 512, Math.random() * 512, 10 + Math.random() * 15, 1.5);
       }
-      fCtx.putImageData(fImg, 0, 0);
 
       // Delicate warm travertine mineral veining with warm taupe and espresso micro-accents
       const drawVein = (ctx, points, color, width) => {
@@ -597,16 +600,11 @@
         oCtx.stroke();
       }
 
-      // Natural timber pores & medullary flecks
-      const oImg = oCtx.getImageData(0, 0, 512, 1024);
-      const od = oImg.data;
-      for (let i = 0; i < od.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 12;
-        od[i] = Math.min(255, Math.max(0, od[i] + noise));
-        od[i + 1] = Math.min(255, Math.max(0, od[i + 1] + noise * 0.85));
-        od[i + 2] = Math.min(255, Math.max(0, od[i + 2] + noise * 0.65));
+      // Natural timber pores & medullary flecks using fast canvas strokes
+      oCtx.fillStyle = 'rgba(64, 49, 38, 0.05)';
+      for (let n = 0; n < 40; n++) {
+        oCtx.fillRect(Math.random() * 512, Math.random() * 1024, 2 + Math.random() * 4, 1.2);
       }
-      oCtx.putImageData(oImg, 0, 0);
 
       this.textures.oak = new THREE.CanvasTexture(oakCanvas);
       this.textures.oak.wrapS = THREE.RepeatWrapping;
@@ -673,31 +671,11 @@
         pCtx.restore();
       }
 
-      // Fine artisan lime pigment micro-grain (subtle organic tooth without harsh contrast)
-      const pImg = pCtx.getImageData(0, 0, 1024, 512);
-      const pd = pImg.data;
-      for (let i = 0; i < pd.length; i += 4) {
-        const noise = (Math.random() - 0.5) * 8.0;
-        pd[i] = Math.min(255, Math.max(0, pd[i] + noise));
-        pd[i + 1] = Math.min(255, Math.max(0, pd[i + 1] + noise * 0.92));
-        pd[i + 2] = Math.min(255, Math.max(0, pd[i + 2] + noise * 0.82));
+      // Fine artisan lime pigment micro-grain using fast canvas stipples
+      pCtx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      for (let n = 0; n < 35; n++) {
+        pCtx.fillRect(Math.random() * 1024, Math.random() * 512, 4 + Math.random() * 8, 2);
       }
-
-      // Seamless horizontal edge blend across 48px boundary to guarantee zero visible tiling seam
-      const seamWidth = 48;
-      for (let y = 0; y < 512; y++) {
-        for (let x = 0; x < seamWidth; x++) {
-          const leftIdx = (y * 1024 + x) * 4;
-          const rightIdx = (y * 1024 + (1024 - seamWidth + x)) * 4;
-          const blendFactor = x / seamWidth;
-          for (let c = 0; c < 3; c++) {
-            const avg = pd[leftIdx + c] * (1 - blendFactor) + pd[rightIdx + c] * blendFactor;
-            pd[leftIdx + c] = avg;
-            pd[rightIdx + c] = avg;
-          }
-        }
-      }
-      pCtx.putImageData(pImg, 0, 0);
 
       this.textures.sandPlaster = new THREE.CanvasTexture(plasterCanvas);
       this.textures.sandPlaster.wrapS = THREE.RepeatWrapping;
@@ -713,32 +691,10 @@
       wbCtx.fillStyle = '#808080';
       wbCtx.fillRect(0, 0, 512, 256);
 
-      const wbImg = wbCtx.getImageData(0, 0, 512, 256);
-      const wbd = wbImg.data;
-      for (let i = 0; i < wbd.length; i += 4) {
-        const bNoise = (Math.random() - 0.5) * 12.0;
-        const val = Math.min(255, Math.max(0, 128 + bNoise));
-        wbd[i] = val;
-        wbd[i + 1] = val;
-        wbd[i + 2] = val;
+      wbCtx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+      for (let n = 0; n < 30; n++) {
+        wbCtx.fillRect(Math.random() * 512, Math.random() * 256, 3 + Math.random() * 6, 2);
       }
-
-      // Seamless edge blend for bump map
-      for (let y = 0; y < 256; y++) {
-        for (let x = 0; x < 24; x++) {
-          const leftIdx = (y * 512 + x) * 4;
-          const rightIdx = (y * 512 + (512 - 24 + x)) * 4;
-          const blendFactor = x / 24;
-          const avg = wbd[leftIdx] * (1 - blendFactor) + wbd[rightIdx] * blendFactor;
-          wbd[leftIdx] = avg;
-          wbd[leftIdx + 1] = avg;
-          wbd[leftIdx + 2] = avg;
-          wbd[rightIdx] = avg;
-          wbd[rightIdx + 1] = avg;
-          wbd[rightIdx + 2] = avg;
-        }
-      }
-      wbCtx.putImageData(wbImg, 0, 0);
 
       this.textures.wallBump = new THREE.CanvasTexture(wallBumpCanvas);
       this.textures.wallBump.wrapS = THREE.RepeatWrapping;

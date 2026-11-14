@@ -1550,51 +1550,7 @@
         mirrorGroup.add(sideHalo);
       });
 
-      // D. Parisian Sunburst Arch Crown Filigree (Architectural Ornate Detailing)
-      const sunburstHub = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.010, 32), brassMat);
-      sunburstHub.rotation.x = Math.PI / 2;
-      sunburstHub.position.set(0, straightH, 0.006);
-      mirrorGroup.add(sunburstHub);
-
-      // Concentric Inner Arch Rib
-      const innerArch = new THREE.Mesh(new THREE.TorusGeometry(archR * 0.52, 0.005, 16, 48, Math.PI), brassMat);
-      innerArch.position.set(0, straightH, 0.006);
-      mirrorGroup.add(innerArch);
-
-      // Radiating Sunburst Spokes
-      const spokeLen = archR - 0.042;
-      const spokeGeo = new THREE.CylinderGeometry(0.004, 0.004, spokeLen, 12);
-      [Math.PI / 6, Math.PI / 3, Math.PI / 2, (2 * Math.PI) / 3, (5 * Math.PI) / 6].forEach(ang => {
-        const spoke = new THREE.Mesh(spokeGeo, brassMat);
-        spoke.position.set(Math.cos(ang) * (0.042 + spokeLen / 2), straightH + Math.sin(ang) * (0.042 + spokeLen / 2), 0.006);
-        spoke.rotation.z = ang - Math.PI / 2;
-        mirrorGroup.add(spoke);
-      });
-
-      // Apex Architectural Finial Crest Medallion
-      const finialBase = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.035, 0.022), brassMat);
-      finialBase.position.set(0, straightH + archR + 0.022, 0.005);
-      mirrorGroup.add(finialBase);
-
-      const finialBall = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 16), brassMat);
-      finialBall.position.set(0, straightH + archR + 0.048, 0.005);
-      mirrorGroup.add(finialBall);
-
-      // E. French Atelier Crittall Windowpane Mullion Grid
-      const transom = new THREE.Mesh(new THREE.BoxGeometry(archR * 2 + 0.01, 0.014, 0.012), brassMat);
-      transom.position.set(0, straightH, 0.006);
-      mirrorGroup.add(transom);
-
-      const midBar = new THREE.Mesh(new THREE.BoxGeometry(archR * 2, 0.008, 0.008), brassMat);
-      midBar.position.set(0, straightH * 0.50, 0.006);
-      mirrorGroup.add(midBar);
-
-      const vertMullionGeo = new THREE.BoxGeometry(0.008, straightH, 0.008);
-      [-archR * 0.48, archR * 0.48].forEach(vx => {
-        const vertMullion = new THREE.Mesh(vertMullionGeo, brassMat);
-        vertMullion.position.set(vx, straightH / 2, 0.006);
-        mirrorGroup.add(vertMullion);
-      });
+      // D. Clean, Unobstructed Grand Arched Mirror Surface per user request (no internal mullion grids, filigree or glass design)
 
       // F. Tabletop Solid Brass Mounting Brackets with Knurled Thumbscrews
       const bracketGeo = new THREE.BoxGeometry(0.038, 0.048, 0.038);
@@ -1608,32 +1564,6 @@
         thumbscrew.rotation.z = Math.PI / 2;
         thumbscrew.position.set(bx + (bx > 0 ? 0.018 : -0.018), 0.024, 0.012);
         mirrorGroup.add(thumbscrew);
-      });
-
-      // G. Dual Flanking Architectural Wall Sconces
-      const sconceGlassMat = new THREE.MeshStandardMaterial({
-        color: 0xFFF8EE,
-        emissive: 0xFFDE9E,
-        emissiveIntensity: 0.85,
-        roughness: 0.20
-      });
-      const sconceTubeGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.28, 24);
-      const sconceCapGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.022, 24);
-
-      [-archR - 0.16, archR + 0.16].forEach(sx => {
-        const sconceTube = new THREE.Mesh(sconceTubeGeo, sconceGlassMat);
-        sconceTube.position.set(sx, straightH * 0.65, 0.06);
-        mirrorGroup.add(sconceTube);
-
-        [straightH * 0.65 + 0.14, straightH * 0.65 - 0.14].forEach(cy => {
-          const cap = new THREE.Mesh(sconceCapGeo, brassMat);
-          cap.position.set(sx, cy, 0.06);
-          mirrorGroup.add(cap);
-        });
-
-        const sconceLight = new THREE.PointLight(0xFFE4BC, 1.2, 3.2);
-        sconceLight.position.set(sx, straightH * 0.65, 0.14);
-        mirrorGroup.add(sconceLight);
       });
 
       // H. Protective Walnut Backing Panel
@@ -1854,20 +1784,9 @@
                     child.material.metalness = 0.04;
                     child.material.needsUpdate = true;
                   }
-                } else if (name.includes('bench_seat') || name.includes('stool_top')) {
-                  // Soft cream bouclé upholstered ottoman
-                  child.material = new THREE.MeshStandardMaterial({
-                    color: 0xF7F4EE,
-                    roughness: 0.82,
-                    metalness: 0.02
-                  });
-                } else if (name.includes('bench_base') || name.includes('stool_brass')) {
-                  // Polished champagne brass plinth base ring
-                  child.material = new THREE.MeshStandardMaterial({
-                    color: 0xD4B886,
-                    metalness: 0.88,
-                    roughness: 0.22
-                  });
+                } else if (name.includes('bench') || name.includes('stool') || name.includes('cushion') || name.includes('ottoman')) {
+                  // Cushion/stool removed per user request: "remove the cussion benath the table"
+                  child.visible = false;
                 } else if (name.includes('glass') || name.includes('perfume_glass')) {
                   // Crystal clear perfume and floral vase glass
                   child.material = new THREE.MeshStandardMaterial({
@@ -1886,7 +1805,6 @@
             perfumeGroup.visible = false;
             brushHolder.visible = false;
             vaseGroup.visible = false;
-            stoolGroup.visible = false;
             vanityGroup.add(model);
             console.log('Studio3D: High-Fidelity 3D Dressing Vanity & Arched Illuminated Mirror GLB loaded successfully.');
           }, undefined, () => tryLoadGLB(idx + 1));
@@ -2471,6 +2389,15 @@
           if (this.vanityModel.lowerMirrorGlassMesh && this.vanityModel.reflection.bindMirrorMesh) {
             this.vanityModel.reflection.bindMirrorMesh(this.vanityModel.lowerMirrorGlassMesh, THREE);
           }
+          return;
+        }
+
+        const activeMesh = this.mirrorGlassMesh;
+        if (typeof window !== 'undefined' && window.WoobiVanity && window.WoobiVanity.MirrorReflection && activeMesh) {
+          this.standaloneReflection = new window.WoobiVanity.MirrorReflection({ resolution: 1024 });
+          this.standaloneReflection.init(THREE, this.scene, activeMesh);
+          this.mirrorRenderTarget = this.standaloneReflection.renderTarget;
+          this.mirrorCamera = this.standaloneReflection.mirrorCamera;
           return;
         }
 
@@ -3486,10 +3413,12 @@
         this.camera.updateProjectionMatrix();
       }
 
-      // 6. Real-time Mirror Rendering (Render from optical planar reflection perspective)
+      // 6. Real-time Optical Planar Mirror Rendering (True Physical Reflector)
       const activeMirrorMesh = (this.vanityModel && this.vanityModel.mirrorGlassMesh) ? this.vanityModel.mirrorGlassMesh : this.mirrorGlassMesh;
       if (this.vanityModel && this.vanityModel.reflection) {
-        this.vanityModel.reflection.update(this.renderer, this.scene);
+        this.vanityModel.reflection.update(this.renderer, this.scene, this.camera);
+      } else if (this.standaloneReflection) {
+        this.standaloneReflection.update(this.renderer, this.scene, this.camera);
       } else if (this.mirrorRenderTarget && this.mirrorCamera && activeMirrorMesh) {
         activeMirrorMesh.visible = false;
         if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = false;
@@ -3531,6 +3460,10 @@
       }
       if (this.vanityModel) {
         this.vanityModel.dispose(this.scene);
+      }
+      if (this.standaloneReflection) {
+        this.standaloneReflection.dispose();
+        this.standaloneReflection = null;
       }
       if (this.avatarModel) {
         this.avatarModel.dispose(this.scene);

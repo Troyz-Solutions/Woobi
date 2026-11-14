@@ -229,62 +229,7 @@ export class VanityModel {
     });
     this.disposables.push(frameArcGeo, frameSideGeo, frameBottomGeo, haloArcGeo, haloSideGeo);
 
-    // D. Parisian Sunburst Arch Crown Filigree (Architectural Ornate Detailing)
-    const sunburstHubGeo = new THREE.CylinderGeometry(0.042, 0.042, 0.010, 32);
-    const sunburstHub = new THREE.Mesh(sunburstHubGeo, brassMat);
-    sunburstHub.rotation.x = Math.PI / 2;
-    sunburstHub.position.set(0, straightH, 0.006);
-    this.mirrorGroup.add(sunburstHub);
-
-    // Concentric Inner Arch Rib
-    const innerArchGeo = new THREE.TorusGeometry(archR * 0.52, 0.005, 16, 48, Math.PI);
-    const innerArch = new THREE.Mesh(innerArchGeo, brassMat);
-    innerArch.position.set(0, straightH, 0.006);
-    this.mirrorGroup.add(innerArch);
-
-    // Radiating Sunburst Spokes
-    const spokeLen = archR - 0.042;
-    const spokeGeo = new THREE.CylinderGeometry(0.004, 0.004, spokeLen, 12);
-    [Math.PI / 6, Math.PI / 3, Math.PI / 2, (2 * Math.PI) / 3, (5 * Math.PI) / 6].forEach(ang => {
-      const spoke = new THREE.Mesh(spokeGeo, brassMat);
-      spoke.position.set(Math.cos(ang) * (0.042 + spokeLen / 2), straightH + Math.sin(ang) * (0.042 + spokeLen / 2), 0.006);
-      spoke.rotation.z = ang - Math.PI / 2;
-      this.mirrorGroup.add(spoke);
-    });
-
-    // Apex Architectural Finial Crest Medallion
-    const finialBaseGeo = new THREE.BoxGeometry(0.065, 0.035, 0.022);
-    const finialBase = new THREE.Mesh(finialBaseGeo, brassMat);
-    finialBase.position.set(0, straightH + archR + 0.022, 0.005);
-    this.mirrorGroup.add(finialBase);
-
-    const finialBallGeo = new THREE.SphereGeometry(0.018, 16, 16);
-    const finialBall = new THREE.Mesh(finialBallGeo, brassMat);
-    finialBall.position.set(0, straightH + archR + 0.048, 0.005);
-    this.mirrorGroup.add(finialBall);
-    this.disposables.push(sunburstHubGeo, innerArchGeo, spokeGeo, finialBaseGeo, finialBallGeo);
-
-    // E. French Atelier Crittall Windowpane Mullion Grid
-    // Horizontal Transom Bar separating Crown from Lower Mirror
-    const transomGeo = new THREE.BoxGeometry(archR * 2 + 0.01, 0.014, 0.012);
-    const transom = new THREE.Mesh(transomGeo, brassMat);
-    transom.position.set(0, straightH, 0.006);
-    this.mirrorGroup.add(transom);
-
-    // Mid-Height Horizontal Mullion Bar
-    const midBarGeo = new THREE.BoxGeometry(archR * 2, 0.008, 0.008);
-    const midBar = new THREE.Mesh(midBarGeo, brassMat);
-    midBar.position.set(0, straightH * 0.50, 0.006);
-    this.mirrorGroup.add(midBar);
-
-    // Two Slender Vertical Transom Mullion Bars (Creating classic French triptych panes)
-    const vertMullionGeo = new THREE.BoxGeometry(0.008, straightH, 0.008);
-    [-archR * 0.48, archR * 0.48].forEach(vx => {
-      const vertMullion = new THREE.Mesh(vertMullionGeo, brassMat);
-      vertMullion.position.set(vx, straightH / 2, 0.006);
-      this.mirrorGroup.add(vertMullion);
-    });
-    this.disposables.push(transomGeo, midBarGeo, vertMullionGeo);
+    // D. Clean, Unobstructed Grand Arched Mirror Surface per user request (no internal mullion grids, filigree or glass design)
 
     // F. Tabletop Solid Brass Mounting Brackets with Knurled Thumbscrews
     const bracketGeo = new THREE.BoxGeometry(0.038, 0.048, 0.038);
@@ -300,35 +245,6 @@ export class VanityModel {
       this.mirrorGroup.add(thumbscrew);
     });
     this.disposables.push(bracketGeo, thumbscrewGeo);
-
-    // G. Dual Flanking Architectural Wall Sconces (Warm Vanity Illumination)
-    const sconceGlassMat = new THREE.MeshStandardMaterial({
-      color: 0xFFF8EE,
-      emissive: 0xFFDE9E,
-      emissiveIntensity: 0.85,
-      roughness: 0.20
-    });
-    const sconceTubeGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.28, 24);
-    const sconceCapGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.022, 24);
-
-    [-archR - 0.16, archR + 0.16].forEach(sx => {
-      const sconceTube = new THREE.Mesh(sconceTubeGeo, sconceGlassMat);
-      sconceTube.position.set(sx, straightH * 0.65, 0.06);
-      this.mirrorGroup.add(sconceTube);
-
-      // Top and bottom brass caps
-      [straightH * 0.65 + 0.14, straightH * 0.65 - 0.14].forEach(cy => {
-        const cap = new THREE.Mesh(sconceCapGeo, brassMat);
-        cap.position.set(sx, cy, 0.06);
-        this.mirrorGroup.add(cap);
-      });
-
-      // Warm Vanity Sconce Point Light
-      const sconceLight = new THREE.PointLight(0xFFE4BC, 1.2, 3.2);
-      sconceLight.position.set(sx, straightH * 0.65, 0.14);
-      this.mirrorGroup.add(sconceLight);
-    });
-    this.disposables.push(sconceGlassMat, sconceTubeGeo, sconceCapGeo);
 
     // H. Protective Walnut Backing Panel
     const mirrorBackMat = VanityMaterials.createMirrorBackMaterial(THREE);
@@ -528,22 +444,9 @@ export class VanityModel {
               child.material = VanityMaterials.createMarbleMaterial(THREE, textures.champagneStone || textures.calacatta, textures.stoneBump);
             } else if (child.name.includes('Vanity_Leg') || child.name.includes('Vanity_Top_Rail') || child.name.includes('Vanity_Tray_Rim') || child.name.includes('Vanity_Drawer_Seam')) {
               child.material = VanityMaterials.createLegsMaterial(THREE);
-            } else if (child.name === 'Stool_Brass_Base_Ring' || child.name.includes('Stool_Brass') || child.name.includes('Stool_Base')) {
-              child.material = VanityMaterials.createBrassMaterial(THREE);
-            } else if (child.name === 'Stool_Top_Padded_Cushion') {
-              child.material = new THREE.MeshStandardMaterial({
-                color: 0xF8F4EE,
-                roughness: 0.80,
-                metalness: 0.02
-              });
-              this.disposables.push(child.material);
-            } else if (child.name === 'Stool_Upholstered_Body') {
-              child.material = new THREE.MeshStandardMaterial({
-                color: 0xEEE6DC,
-                roughness: 0.85,
-                metalness: 0.02
-              });
-              this.disposables.push(child.material);
+            } else if (child.name.toLowerCase().includes('stool') || child.name.toLowerCase().includes('bench') || child.name.toLowerCase().includes('cushion') || child.name.toLowerCase().includes('ottoman')) {
+              // Stool / Cushion removed per user request: "remove the cussion benath the table"
+              child.visible = false;
             }
           }
         });

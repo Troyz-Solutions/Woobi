@@ -394,6 +394,8 @@
       initVirtualStudio();
     } else if (screenId === 'weekly-planning') {
       renderWeeklyCalendar();
+    } else if (screenId === 'profile') {
+      updateProfileScreenData();
     } else if (screenId === 'premium') {
       updateSubscriptionUI();
       switchPlanView('pro');
@@ -2828,6 +2830,31 @@
     goToScreen('profile');
   }
 
+  function updateProfileScreenData() {
+    const wCountEl = document.getElementById('profileStatWardrobe');
+    if (wCountEl && typeof WARDROBE_ITEMS !== 'undefined') {
+      wCountEl.textContent = WARDROBE_ITEMS.length;
+    }
+    const lCountEl = document.getElementById('profileStatLooks');
+    if (lCountEl && typeof LOOKS_DATA !== 'undefined') {
+      lCountEl.textContent = LOOKS_DATA.length;
+    }
+    const sCountEl = document.getElementById('profileStatStreak');
+    if (sCountEl) {
+      let streak = 1;
+      if (state.streak && typeof state.streak.currentStreak === 'number') {
+        streak = state.streak.currentStreak;
+      }
+      sCountEl.textContent = `${streak} ${streak === 1 ? 'Day' : 'Days'}`;
+    }
+    const tierBadge = document.getElementById('profileTierLabel');
+    if (tierBadge) {
+      tierBadge.innerHTML = state.isPremium 
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Woobi Pro`
+        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Free Tier`;
+    }
+  }
+
   function exportWardrobe() {
     exportUserData();
   }
@@ -3164,6 +3191,9 @@
     prepareVirtualStudio().then(() => {
       if (window.Studio3D?.isInitialized && !document.querySelector('.app-welcome[open]')) {
         window.Studio3D.onResize();
+        if (typeof window.Studio3D.dismissLoadingVeil === 'function') {
+          window.Studio3D.dismissLoadingVeil();
+        }
       }
     });
     renderSerenGarments('all');
@@ -6704,6 +6734,7 @@
     switchPlanView,
     scrollPlanCard: switchPlanView,
     saveReminderPreferences,
+    updateProfileScreenData,
     exportWardrobe,
     exportUserData,
     saveProfile,

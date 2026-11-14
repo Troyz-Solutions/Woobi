@@ -618,6 +618,21 @@
             <!-- Real Three.js 3D WebGL Canvas -->
             <canvas id="seren3dCanvas" class="seren-3d-canvas"></canvas>
 
+            <!-- Editorial Atelier Studio Opening Curtain / Smooth Preloader Veil (Hidden/Disabled) -->
+            <div class="atelier-studio-veil" id="atelierStudioVeil" style="display: none !important;" hidden>
+              <div class="atelier-veil-inner">
+                <div class="atelier-veil-crest">
+                  <div class="veil-crest-orbit"></div>
+                  <div class="veil-monogram">W</div>
+                </div>
+                <div class="atelier-veil-brand">WOOBI ATELIER</div>
+                <div class="atelier-veil-caption">Composing 3D Studio & Curation…</div>
+                <div class="atelier-veil-progress-track">
+                  <div class="atelier-veil-progress-bar"></div>
+                </div>
+              </div>
+            </div>
+
             <!-- Three.js / WebGL Fallback Overlay -->
             <div class="seren-3d-fallback" id="seren3dFallback" hidden>
               <div class="seren-3d-fallback__icon">✦</div>
@@ -2163,37 +2178,149 @@
         </section>
 
         <!-- ===================================================================
-             SCREEN 12: PROFILE (SETTINGS LANDING)
+             SCREEN 12: PROFILE (ATELIER PASSPORT & SETTINGS)
              =================================================================== -->
         <section class="phone-screen" id="screen-profile">
-          <div class="screen-body-padded" style="padding-top: 18px; padding-bottom: 24px;">
-            <!-- Modern User Profile Card -->
-            <div class="profile-user-card-modern">
-              <div class="user-avatar-modern">
-                <span>S</span>
-                <span class="user-avatar-badge" title="Active"></span>
-              </div>
-              <div class="user-meta-info-modern">
-                <h2 class="user-name profile-user-name">Suriya</h2>
-                <div class="user-plan-badge-row">
-                  <span class="user-plan-pill">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                    Free tier
-                  </span>
-                  <span class="user-member-since">Member since Jan 2026</span>
+          <div class="screen-body-padded atelier-profile-scroll-body" style="padding-top: 18px; padding-bottom: 100px;">
+            
+            <!-- Atelier Member Passport Card -->
+            <div class="atelier-passport-card">
+              <div class="atelier-passport-top">
+                <div class="passport-avatar-wrap">
+                  <div class="passport-avatar" title="Suriya - Atelier Member">
+                    <span>S</span>
+                  </div>
+                  <span class="passport-status-pip" title="Active in Atelier"></span>
                 </div>
+                <div class="passport-meta">
+                  <div class="passport-name-row">
+                    <h2 class="passport-user-name">Suriya</h2>
+                    <span class="passport-tier-pill" id="profileTierLabel">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                      Free Tier
+                    </span>
+                  </div>
+                  <p class="passport-curation-tag">Curating timeless aesthetics • Chennai</p>
+                  <p class="passport-member-id">Atelier Member #8402 • Joined Jan 2026</p>
+                </div>
+                <button class="btn-passport-upgrade" onclick="app.goToScreen('premium')" title="Manage membership">
+                  <span>Pro</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </button>
               </div>
-              <button class="btn-upgrade-pill" onclick="app.goToScreen('premium')">
-                <span>Pro</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="m9 18 6-6-6-6"/>
-                </svg>
-              </button>
             </div>
 
-            <!-- Group 1: Wardrobe & Styling -->
+            <!-- Live Fashion Snapshot Metrics -->
+            <div class="atelier-snapshot-grid">
+              <div class="atelier-snapshot-tile" onclick="app.goToScreen('wardrobe')" title="View complete wardrobe">
+                <div class="snapshot-icon-wrap snapshot-icon-wardrobe">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+                  </svg>
+                </div>
+                <div class="snapshot-val" id="profileStatWardrobe">18</div>
+                <div class="snapshot-lbl">Wardrobe Items</div>
+                <div class="snapshot-link">Explore ›</div>
+              </div>
+
+              <div class="atelier-snapshot-tile" onclick="app.goToScreen('wear-history')" title="View lookbook & wear history">
+                <div class="snapshot-icon-wrap snapshot-icon-looks">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                </div>
+                <div class="snapshot-val" id="profileStatLooks">12</div>
+                <div class="snapshot-lbl">Curated Looks</div>
+                <div class="snapshot-link">History ›</div>
+              </div>
+
+              <div class="atelier-snapshot-tile" onclick="app.goToScreen('weekly-planning')" title="View outfit streak & calendar">
+                <div class="snapshot-icon-wrap snapshot-icon-streak">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                  </svg>
+                </div>
+                <div class="snapshot-val" id="profileStatStreak">1 Day</div>
+                <div class="snapshot-lbl">Style Streak</div>
+                <div class="snapshot-link">Calendar ›</div>
+              </div>
+            </div>
+
+            <!-- VIP Pro Spotlight Editorial Card -->
+            <div class="atelier-pro-spotlight">
+              <div class="pro-spotlight-inner">
+                <div class="pro-spotlight-brow">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
+                    <path d="M5 19h14"/>
+                  </svg>
+                  <span>ATELIER PRIVÉ & PRO STUDIO</span>
+                </div>
+                <h3 class="pro-spotlight-title">Unlock the complete haute couture experience.</h3>
+                <p class="pro-spotlight-desc">Unlimited 3D wardrobe capacity, AI aesthetic color scoring, 4K studio lighting, and bespoke personal stylist recommendations.</p>
+                <div class="pro-spotlight-perks">
+                  <span class="pro-perk-chip">✦ Unlimited Slots</span>
+                  <span class="pro-perk-chip">✦ Photoreal 3D Mirror</span>
+                  <span class="pro-perk-chip">✦ AI Color Harmonizer</span>
+                </div>
+                <button class="btn-pro-spotlight-cta" onclick="app.goToScreen('premium')">
+                  <span>Explore Woobi Pro Membership</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Style DNA & Sizing Card -->
+            <div class="atelier-dna-card">
+              <div class="dna-card-header">
+                <div class="dna-header-title">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m4.93 4.93 4.24 4.24"/>
+                    <path d="m14.83 9.17 4.24-4.24"/>
+                    <path d="m14.83 14.83 4.24 4.24"/>
+                    <path d="m9.17 14.83-4.24 4.24"/>
+                    <circle cx="12" cy="12" r="4"/>
+                  </svg>
+                  <span>STYLE DNA & FIT PROFILE</span>
+                </div>
+                <button class="btn-dna-edit" onclick="app.goToScreen('style-pref')">Edit Profile ›</button>
+              </div>
+              <div class="dna-tags-flow">
+                <div class="dna-tag-item">
+                  <span class="dna-tag-label">Aesthetic</span>
+                  <span class="dna-tag-val">Quiet Luxury</span>
+                </div>
+                <div class="dna-tag-item">
+                  <span class="dna-tag-label">Silhouette</span>
+                  <span class="dna-tag-val">Relaxed Tailored</span>
+                </div>
+                <div class="dna-tag-item">
+                  <span class="dna-tag-label">Palette</span>
+                  <span class="dna-tag-val">Earth & Warm Neutrals</span>
+                </div>
+              </div>
+              <div class="dna-sizing-strip">
+                <div class="sizing-col"><span>Top</span><strong>M (38-40)</strong></div>
+                <div class="sizing-divider"></div>
+                <div class="sizing-col"><span>Waist</span><strong>32" Reg</strong></div>
+                <div class="sizing-divider"></div>
+                <div class="sizing-col"><span>Footwear</span><strong>EU 42 / US 9</strong></div>
+                <div class="sizing-divider"></div>
+                <div class="sizing-col"><span>Fit</span><strong>True Size</strong></div>
+              </div>
+            </div>
+
+            <!-- Group 1: Wardrobe & Styling Navigation -->
             <div class="settings-group-header">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
@@ -2236,8 +2363,8 @@
                   </svg>
                 </div>
                 <div class="settings-item-text">
-                  <span class="settings-item-title">Weekly planning</span>
-                  <span class="settings-item-subtitle">Organize looks across Monday through Sunday</span>
+                  <span class="settings-item-title">Weekly lookbook planning</span>
+                  <span class="settings-item-subtitle">Organize outfits across Monday through Sunday</span>
                 </div>
                 <div class="settings-item-chevron">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2254,56 +2381,8 @@
                   </svg>
                 </div>
                 <div class="settings-item-text">
-                  <span class="settings-item-title">Wear history</span>
-                  <span class="settings-item-subtitle">Recently worn combinations and frequency</span>
-                </div>
-                <div class="settings-item-chevron">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="m9 18 6-6-6-6"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <!-- Group 2: App & 3D Studio Preferences -->
-            <div class="settings-group-header">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-              <span>App & Studio</span>
-            </div>
-            <div class="settings-card-group">
-              <div class="settings-item-row" onclick="app.goToScreen('appearance-settings')">
-                <div class="settings-icon-box">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
-                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
-                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
-                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
-                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
-                  </svg>
-                </div>
-                <div class="settings-item-text">
-                  <span class="settings-item-title">Appearance & 3D themes</span>
-                  <span class="settings-item-subtitle">App color theme, studio texture & lighting</span>
-                </div>
-                <div class="settings-item-chevron">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="m9 18 6-6-6-6"/>
-                  </svg>
-                </div>
-              </div>
-
-              <div class="settings-item-row" onclick="app.goToScreen('performance-settings')">
-                <div class="settings-icon-box">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                  </svg>
-                </div>
-                <div class="settings-item-text">
-                  <span class="settings-item-title">Performance & graphics</span>
-                  <span class="settings-item-subtitle">Quality presets, soft shadows & battery tuning</span>
+                  <span class="settings-item-title">Wear history & frequency</span>
+                  <span class="settings-item-subtitle">Recently worn combinations and rotation analytics</span>
                 </div>
                 <div class="settings-item-chevron">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2320,8 +2399,8 @@
                   </svg>
                 </div>
                 <div class="settings-item-text">
-                  <span class="settings-item-title">Reminders</span>
-                  <span class="settings-item-subtitle">Daily morning outfit notifications</span>
+                  <span class="settings-item-title">Morning curation reminders</span>
+                  <span class="settings-item-subtitle">Daily styling suggestions and weather alerts</span>
                 </div>
                 <div class="settings-item-chevron">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2331,13 +2410,61 @@
               </div>
             </div>
 
-            <!-- Group 3: Account & Support -->
+            <!-- Group 2: App & 3D Studio Preferences -->
+            <div class="settings-group-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              <span>3D Atelier & Visual Experience</span>
+            </div>
+            <div class="settings-card-group">
+              <div class="settings-item-row" onclick="app.goToScreen('appearance-settings')">
+                <div class="settings-icon-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                  </svg>
+                </div>
+                <div class="settings-item-text">
+                  <span class="settings-item-title">Studio appearance & themes</span>
+                  <span class="settings-item-subtitle">Atelier color palette, floor texture & studio lighting</span>
+                </div>
+                <div class="settings-item-chevron">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="settings-item-row" onclick="app.goToScreen('performance-settings')">
+                <div class="settings-icon-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                  </svg>
+                </div>
+                <div class="settings-item-text">
+                  <span class="settings-item-title">Performance & 3D graphics</span>
+                  <span class="settings-item-subtitle">60 FPS rendering, soft shadows & battery optimization</span>
+                </div>
+                <div class="settings-item-chevron">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Group 3: Account, Support & Archive -->
             <div class="settings-group-header">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
-              <span>Account & Security</span>
+              <span>Atelier Concierge & Security</span>
             </div>
             <div class="settings-card-group">
               <div class="settings-item-row" onclick="app.goToScreen('account-privacy')">
@@ -2347,8 +2474,8 @@
                   </svg>
                 </div>
                 <div class="settings-item-text">
-                  <span class="settings-item-title">Account and privacy</span>
-                  <span class="settings-item-subtitle">Profile details, data export & local privacy</span>
+                  <span class="settings-item-title">Account details & privacy</span>
+                  <span class="settings-item-subtitle">Profile credentials, cloud sync & local biometric storage</span>
                 </div>
                 <div class="settings-item-chevron">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2366,8 +2493,27 @@
                   </svg>
                 </div>
                 <div class="settings-item-text">
-                  <span class="settings-item-title">Help and support</span>
-                  <span class="settings-item-subtitle">Frequently asked questions and contact</span>
+                  <span class="settings-item-title">Atelier concierge & support</span>
+                  <span class="settings-item-subtitle">Frequently asked questions and client care</span>
+                </div>
+                <div class="settings-item-chevron">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="settings-item-row" onclick="if(window.app && app.exportWardrobe){app.exportWardrobe();}else{alert('Wardrobe data archive downloaded.');}" title="Export wardrobe catalogue">
+                <div class="settings-icon-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </div>
+                <div class="settings-item-text">
+                  <span class="settings-item-title">Export wardrobe archive</span>
+                  <span class="settings-item-subtitle">Download your complete digital catalogue as JSON</span>
                 </div>
                 <div class="settings-item-chevron">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2377,10 +2523,16 @@
               </div>
             </div>
 
-            <!-- Version & App Footer -->
-            <div class="settings-footer-info">
-              <div><strong>Woobi Virtual Wardrobe</strong> • Phase 10</div>
-              <div>Version 1.0.0 • Troyz Solutions</div>
+            <!-- Version & Atelier Accreditation Footer -->
+            <div class="atelier-profile-accreditation">
+              <div class="accreditation-crest">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <div class="accreditation-name">WOOBI VIRTUAL ATELIER</div>
+              <div class="accreditation-sub">Phase 10 • Edition 1.0.0 • Troyz Solutions</div>
+              <div class="accreditation-copy">Crafted for Timeless Aesthetics & Intelligent Wardrobe Curation</div>
             </div>
           </div>
 
@@ -3029,10 +3181,6 @@
                 </div>
                 <span class="studio-theme-check" id="theme-check-mediterranean"></span>
                 <span id="checkThemeMediterranean" style="display:none;"></span>
-              </div>
-                </div>
-                <span class="studio-theme-check" id="theme-check-luxury">✓</span>
-                <span id="checkThemeLuxury" style="display:none;">✓</span>
               </div>
 
               <div class="studio-theme-card" onclick="app.setStudioTheme('nordic-minimal')">

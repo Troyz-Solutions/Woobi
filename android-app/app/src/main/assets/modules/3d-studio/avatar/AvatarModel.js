@@ -235,14 +235,10 @@ export class AvatarModel {
       return model;
     }
 
-    // Hide active model while loading new one to prevent static ghosting
+    // Stop animations on active models to prevent posture conflicts, but keep current model visible until target model mounts
     if (this.avatarRoot) {
       this.avatarRoot.children.forEach((child) => {
-        if (child.name !== 'AvatarFootContactShadow_Left' &&
-            child.name !== 'AvatarFootContactShadow_Right') {
-          child.visible = false;
-          if (child.userData?.mixer) child.userData.mixer.stopAllAction();
-        }
+        if (child.userData?.mixer) child.userData.mixer.stopAllAction();
       });
     }
 

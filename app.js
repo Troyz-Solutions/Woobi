@@ -1676,6 +1676,8 @@
   }
 
   function wardrobeEquipToMannequin(item) {
+    if (!item) return;
+
     const catMap = {
       Tops: 'top',
       Shirts: 'top',
@@ -1688,39 +1690,44 @@
       Shoes: 'shoes',
       Footwear: 'shoes',
       Sandals: 'shoes',
-      Accessories: 'top'
+      Accessories: 'accessory'
     };
     const engineCat = catMap[item.category] || 'top';
 
     const idMap = {
       'Navy shirt': 'navy_shirt',
-      'White linen shirt': 'wide_linen',
-      'Cream kurta': 'cardigan',
-      'Maroon top': 'tank',
-      'Tailored blazer': 'blazer',
-      'Terracotta tee': 'tank',
-      'Indigo kurti': 'cardigan',
-      'Beige chinos': 'wide_linen',
+      'White linen shirt': 'white_linen_shirt',
+      'Cream kurta': 'cream_kurta',
+      'Maroon top': 'maroon_top',
+      'Tailored blazer': 'tailored_blazer',
+      'Terracotta tee': 'terracotta_tee',
+      'Indigo kurti': 'indigo_kurti',
+      'Beige chinos': 'beige_chinos',
       'Dark denim': 'dark_denim',
       'Dark skirt': 'dark_skirt',
       'Cream palazzo': 'cream_palazzo',
       'White sneakers': 'white_sneakers',
       'Tan loafers': 'tan_loafers',
       'Black trainers': 'black_trainers',
-      'Brown sandals': 'brown_sandals'
+      'Brown sandals': 'brown_sandals',
+      'Leather watch': 'leather_watch'
     };
-    const garmentId = idMap[item.name] || 'navy_shirt';
+    const garmentId = idMap[item.name] || item.id || 'navy_shirt';
 
-    // Transfer seamlessly to Studio Screen
-    goToScreen('today');
+    // Transfer seamlessly to Studio Screen if not already on it
+    if (state.currentScreen !== 'today') {
+      goToScreen('today');
+    }
 
-    if (window.Studio3D && window.Studio3D.equipGarment) {
+    const studio = window.Studio3D || window.studio3d;
+    if (studio && typeof studio.equipGarment === 'function') {
       try {
-        const mappedId = garmentId === 'wide_linen' ? 'taupe_wide' : garmentId;
-        window.Studio3D.equipGarment(engineCat, mappedId);
-        window.Studio3D.setCameraState('AVATAR_FULL_BODY');
+        studio.equipGarment(engineCat, garmentId);
+        if (typeof studio.setCameraState === 'function') {
+          studio.setCameraState('AVATAR_FULL_BODY');
+        }
       } catch (err) {
-        // Fallback visual
+        console.warn('Could not equip garment:', err);
       }
     }
 

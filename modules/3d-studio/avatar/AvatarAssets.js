@@ -14,8 +14,8 @@ export const MALE_AVATAR_PATHS = [
 ];
 
 export const AVATAR_ASSET_PATHS = [
-  'seren_avatar.glb',
   'assets/models/avatar_female.glb',
+  'seren_avatar.glb',
   'assets/models/avatar_male.glb',
   'woobi_female_mannequin.glb',
   'Woobi_Female_Mannequin_Fixed.glb',
@@ -136,6 +136,17 @@ export class AvatarAssets {
             if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
+
+              // Clone material per mesh so top, bottom, and shoes slots can be styled independently
+              if (child.material && !child.material._isIsolated) {
+                if (Array.isArray(child.material)) {
+                  child.material = child.material.map(m => m.clone());
+                  child.material.forEach(m => { m._isIsolated = true; });
+                } else {
+                  child.material = child.material.clone();
+                  child.material._isIsolated = true;
+                }
+              }
 
               const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
               const hasTextureMap = mats.some(m => m && (m.map?.isTexture || m.map));

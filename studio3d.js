@@ -2828,6 +2828,16 @@
                 child.castShadow = true;
                 child.receiveShadow = true;
 
+                if (child.material && !child.material._isIsolated) {
+                  if (Array.isArray(child.material)) {
+                    child.material = child.material.map(m => m.clone());
+                    child.material.forEach(m => { m._isIsolated = true; });
+                  } else {
+                    child.material = child.material.clone();
+                    child.material._isIsolated = true;
+                  }
+                }
+
                 const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
                 const hasTextureMap = mats.some(m => m && (m.map?.isTexture || m.map));
 
@@ -3684,6 +3694,15 @@
               if (child.isMesh) {
                 child.castShadow = true;
                 child.receiveShadow = true;
+                if (child.material && !child.material._isIsolated) {
+                  if (Array.isArray(child.material)) {
+                    child.material = child.material.map(m => m.clone());
+                    child.material.forEach(m => { m._isIsolated = true; });
+                  } else {
+                    child.material = child.material.clone();
+                    child.material._isIsolated = true;
+                  }
+                }
                 const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
                 mats.forEach((mat) => {
                   if (!mat) return;
@@ -3798,6 +3817,8 @@
      * Equips Garments on Avatar
      */
     equipGarment(category, id) {
+      this.activeGarments = this.activeGarments || {};
+      this.activeGarments[category] = id;
       if (this.features && this.features.tryOn && typeof this.features.tryOn.equipGarment === 'function') {
         return this.features.tryOn.equipGarment(category, id);
       }

@@ -183,8 +183,8 @@ test('AvatarContract.getElevation() must return 0.080m', () => {
   assert.strictEqual(AvatarContract.getElevation(), 0.080);
 });
 
-test('Primary asset path must reference authentic seren_avatar.glb', () => {
-  assert.strictEqual(AVATAR_ASSET_PATHS[0], 'seren_avatar.glb');
+test('Primary asset path must reference authentic avatar model', () => {
+  assert.strictEqual(AVATAR_ASSET_PATHS[0], 'assets/models/avatar_female.glb');
 });
 
 test('Asset paths list must include local and Ready Player Me fallbacks', () => {

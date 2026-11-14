@@ -288,6 +288,70 @@ export class VirtualTryOn {
       default:
         break;
     }
+
+    // 2. Direct PBR Stylization onto Genuine Rigged Mannequin GLB (avatar_female.glb / avatar_male.glb)
+    const gltfModel = this.avatarModel.gltfAvatarGroup ||
+                      (this.avatarModel.assets && this.avatarModel.assets.activeModel) ||
+                      (typeof window !== 'undefined' && window.Studio3D && window.Studio3D.gltfAvatarGroup);
+    if (gltfModel && typeof gltfModel.traverse === 'function') {
+      gltfModel.traverse((child) => {
+        if (!child.isMesh) return;
+        const name = child.name || '';
+        let isMatch = false;
+
+        if (garmentRecord.category === GARMENT_CATEGORIES.TOP) {
+          isMatch = name.includes('Shirt') || name.includes('Sweater') || name.includes('Top') ||
+                    name.includes('Zipper') || name.includes('Collar');
+        } else if (garmentRecord.category === GARMENT_CATEGORIES.BOTTOM) {
+          isMatch = name.includes('Pants') || name.includes('Bottom') || name.includes('Skirt') ||
+                    name.includes('Trousers');
+        } else if (garmentRecord.category === GARMENT_CATEGORIES.SHOES) {
+          isMatch = name.includes('Sneakers') || name.includes('Shoes') || name.includes('Footwear') ||
+                    name.includes('Sole');
+        }
+
+        if (isMatch) {
+          const mats = Array.isArray(child.material) ? child.material : (child.material ? [child.material] : []);
+          mats.forEach((mat) => {
+            if (!mat) return;
+            if (!mat._isClonedGarment) {
+              const cloned = mat.clone();
+              cloned._isClonedGarment = true;
+              cloned._origMap = mat.map;
+              child.material = cloned;
+              mat = cloned;
+            }
+
+            if (garmentRecord.color !== undefined) {
+              const isLightTone = (typeof garmentRecord.color === 'number' && garmentRecord.color > 0xA0A0A0) ||
+                                  (garmentRecord.id && (
+                                    garmentRecord.id.includes('white') ||
+                                    garmentRecord.id.includes('cream') ||
+                                    garmentRecord.id.includes('beige') ||
+                                    garmentRecord.id.includes('linen')
+                                  ));
+              if (isLightTone) {
+                mat.map = null;
+              } else {
+                mat.map = mat._origMap || null;
+              }
+              if (typeof mat.color?.setHex === 'function') {
+                mat.color.setHex(garmentRecord.color);
+              } else {
+                mat.color = garmentRecord.color;
+              }
+            }
+            if (garmentRecord.roughness !== undefined) {
+              mat.roughness = garmentRecord.roughness;
+            }
+            if (garmentRecord.metalness !== undefined) {
+              mat.metalness = garmentRecord.metalness;
+            }
+            mat.needsUpdate = true;
+          });
+        }
+      });
+    }
   }
 
   resetCategoryOnAvatar(category) {

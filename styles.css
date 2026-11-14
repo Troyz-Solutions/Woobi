@@ -8226,6 +8226,7 @@ body.theme-dark.high-contrast,
 }
 
 .atmosphere-dropdown-container {
+  display: none !important;
   position: absolute;
   bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 82px);
   right: 22px;

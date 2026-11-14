@@ -1947,10 +1947,10 @@
       proceduralClockGroup.name = 'studio_procedural_clock';
       clockGroup.add(proceduralClockGroup);
 
-      const clockR = 0.22; // 44cm diameter classic station wall clock
+      const clockR = 0.32; // 64cm diameter classic station wall clock
 
-      // 1. Deep Antique Dark Walnut Wooden Outer Casing
-      const casingGeo = new THREE.CylinderGeometry(clockR + 0.018, clockR + 0.018, 0.042, 48);
+      // 1. Deep Antique Dark Walnut Wooden Outer Casing (High polygon smoothness)
+      const casingGeo = new THREE.CylinderGeometry(clockR + 0.024, clockR + 0.024, 0.046, 96);
       const casingMat = new THREE.MeshStandardMaterial({ color: 0x2A1E14, roughness: 0.65 });
       const casing = new THREE.Mesh(casingGeo, casingMat);
       casing.rotation.x = Math.PI / 2;
@@ -1958,122 +1958,129 @@
       casing.castShadow = true;
       proceduralClockGroup.add(casing);
 
-      // 2. Stepped Beveled Champagne Brass Outer Bezel Ring
-      const outerBezelGeo = new THREE.TorusGeometry(clockR + 0.008, 0.014, 16, 64);
+      // 2. Stepped Beveled Champagne Brass Outer Bezel Ring (96 segments for silky smooth curvature)
+      const outerBezelGeo = new THREE.TorusGeometry(clockR + 0.010, 0.018, 24, 96);
       const outerBezel = new THREE.Mesh(outerBezelGeo, brassMat);
       outerBezel.position.set(0, 0, 0.006);
       outerBezel.castShadow = true;
       proceduralClockGroup.add(outerBezel);
 
       // 3. Inner Polished Gilded Bezel Ring
-      const innerBezelGeo = new THREE.TorusGeometry(clockR - 0.016, 0.008, 16, 64);
+      const innerBezelGeo = new THREE.TorusGeometry(clockR - 0.018, 0.010, 24, 96);
       const innerBezel = new THREE.Mesh(innerBezelGeo, polishedGoldMat);
       innerBezel.position.set(0, 0, 0.012);
       proceduralClockGroup.add(innerBezel);
 
-      // 4. Dial Face (Antique Parchment Ivory with Roman Numerals & Railway Ticks)
+      // 4. Dial Face (Ultra-High-Definition Porcelain Enamel with Bold Roman Numerals & Railway Ticks)
       const clockDialTexture = this.createStudioClockDialTexture();
       const dialMat = new THREE.MeshStandardMaterial({
         map: clockDialTexture,
-        color: clockDialTexture ? 0xFFFFFF : 0xF7F4EB,
-        roughness: 0.32,
+        color: clockDialTexture ? 0xFFFFFF : 0xFAF8F2,
+        roughness: 0.28,
         metalness: 0.02
       });
-      const dialGeo = new THREE.CircleGeometry(clockR - 0.018, 64);
+      const dialGeo = new THREE.CircleGeometry(clockR - 0.020, 96);
       const dial = new THREE.Mesh(dialGeo, dialMat);
       dial.position.set(0, 0, 0.014);
       dial.receiveShadow = true;
       proceduralClockGroup.add(dial);
 
       // 5. Central Brass Pinion Hub
-      const pinionGeo = new THREE.CylinderGeometry(0.010, 0.010, 0.014, 20);
+      const pinionGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.016, 24);
       const pinion = new THREE.Mesh(pinionGeo, polishedGoldMat);
       pinion.rotation.x = Math.PI / 2;
-      pinion.position.set(0, 0, 0.026);
+      pinion.position.set(0, 0, 0.028);
       proceduralClockGroup.add(pinion);
 
-      // 6. Classical Breguet Blued-Steel Hour & Minute Hands
+      // 6. Classical Breguet Blued-Steel Hour & Minute Hands (Bold and Crisp)
       const steelMat = new THREE.MeshStandardMaterial({
-        color: 0x1A1D20, // Antique blued charcoal steel
-        roughness: 0.38,
-        metalness: 0.82
+        color: 0x0A0B0E, // Antique blued charcoal steel
+        roughness: 0.24,
+        metalness: 0.90
       });
 
       // Hour Hand
       const hourHandGroup = new THREE.Group();
       hourHandGroup.position.set(0, 0, 0.020);
-      const hourShaft = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.082, 0.003), steelMat);
-      hourShaft.position.set(0, 0.041, 0);
+      const hourShaft = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.115, 0.004), steelMat);
+      hourShaft.position.set(0, 0.058, 0);
       hourHandGroup.add(hourShaft);
 
-      const hourMoon = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.0025, 8, 20), steelMat);
-      hourMoon.position.set(0, 0.068, 0);
+      const hourMoon = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.004, 12, 24), steelMat);
+      hourMoon.position.set(0, 0.096, 0);
       hourHandGroup.add(hourMoon);
 
       const hourPointerGeo = (typeof THREE.ConeGeometry !== 'undefined')
-        ? new THREE.ConeGeometry(0.0035, 0.016, 8)
-        : new THREE.CylinderGeometry(0.001, 0.0035, 0.016, 8);
+        ? new THREE.ConeGeometry(0.006, 0.024, 12)
+        : new THREE.CylinderGeometry(0.001, 0.006, 0.024, 12);
       const hourPointer = new THREE.Mesh(hourPointerGeo, steelMat);
-      hourPointer.position.set(0, 0.088, 0);
+      hourPointer.position.set(0, 0.126, 0);
       hourHandGroup.add(hourPointer);
       proceduralClockGroup.add(hourHandGroup);
 
       // Minute Hand
       const minuteHandGroup = new THREE.Group();
       minuteHandGroup.position.set(0, 0, 0.024);
-      const minShaft = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.126, 0.003), steelMat);
-      minShaft.position.set(0, 0.063, 0);
+      const minShaft = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.180, 0.004), steelMat);
+      minShaft.position.set(0, 0.090, 0);
       minuteHandGroup.add(minShaft);
 
-      const minMoon = new THREE.Mesh(new THREE.TorusGeometry(0.009, 0.002, 8, 20), steelMat);
-      minMoon.position.set(0, 0.114, 0);
+      const minMoon = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0035, 12, 24), steelMat);
+      minMoon.position.set(0, 0.160, 0);
       minuteHandGroup.add(minMoon);
 
       const minPointerGeo = (typeof THREE.ConeGeometry !== 'undefined')
-        ? new THREE.ConeGeometry(0.0025, 0.022, 8)
-        : new THREE.CylinderGeometry(0.001, 0.0025, 0.022, 8);
+        ? new THREE.ConeGeometry(0.0045, 0.030, 12)
+        : new THREE.CylinderGeometry(0.001, 0.0045, 0.030, 12);
       const minPointer = new THREE.Mesh(minPointerGeo, steelMat);
-      minPointer.position.set(0, 0.136, 0);
+      minPointer.position.set(0, 0.194, 0);
       minuteHandGroup.add(minPointer);
       proceduralClockGroup.add(minuteHandGroup);
 
       // Slender Golden Second Hand with Counterweight
       const secondHandGroup = new THREE.Group();
       secondHandGroup.position.set(0, 0, 0.028);
-      const secShaft = new THREE.Mesh(new THREE.BoxGeometry(0.002, 0.155, 0.002), polishedGoldMat);
-      secShaft.position.set(0, 0.052, 0);
+      const secShaft = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.220, 0.002), polishedGoldMat);
+      secShaft.position.set(0, 0.075, 0);
       secondHandGroup.add(secShaft);
 
-      const secDisc = new THREE.Mesh(new THREE.CircleGeometry(0.008, 16), polishedGoldMat);
-      secDisc.position.set(0, -0.025, 0);
+      const secDisc = new THREE.Mesh(new THREE.CircleGeometry(0.012, 24), polishedGoldMat);
+      secDisc.position.set(0, -0.035, 0);
       secondHandGroup.add(secDisc);
       proceduralClockGroup.add(secondHandGroup);
 
-      // 7. Protective Convex Glossy Crystal Glass Lens
+      // 7. Protective Convex Glossy Crystal Glass Lens (Zero cloudiness to ensure maximum dial contrast)
       const lensMat = new THREE.MeshStandardMaterial({
         color: 0xFFFFFF,
-        roughness: 0.05,
+        roughness: 0.02,
         metalness: 0.10,
         transparent: true,
-        opacity: 0.18
+        opacity: 0.02
       });
-      const lens = new THREE.Mesh(new THREE.CircleGeometry(clockR - 0.014, 48), lensMat);
+      const lens = new THREE.Mesh(new THREE.CircleGeometry(clockR - 0.014, 96), lensMat);
       lens.position.set(0, 0, 0.032);
       proceduralClockGroup.add(lens);
 
       // 8. Classical Forged Brass Wall Hanging Loop & Wall Anchor Rosette
-      const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.024, 0.022), brassMat);
-      hangerBase.position.set(0, clockR + 0.022, 0.004);
+      const hangerBase = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.028, 0.024), brassMat);
+      hangerBase.position.set(0, clockR + 0.026, 0.004);
       proceduralClockGroup.add(hangerBase);
 
-      const hangerRing = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.006, 16, 32), polishedGoldMat);
-      hangerRing.position.set(0, clockR + 0.056, 0.004);
+      const hangerRing = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.007, 20, 48), polishedGoldMat);
+      hangerRing.position.set(0, clockR + 0.068, 0.004);
       proceduralClockGroup.add(hangerRing);
 
-      const rosette = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.010, 24), brassMat);
+      const rosette = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.012, 32), brassMat);
       rosette.rotation.x = Math.PI / 2;
-      rosette.position.set(0, clockR + 0.086, -0.006);
+      rosette.position.set(0, clockR + 0.104, -0.006);
       proceduralClockGroup.add(rosette);
+
+      // 9. Dedicated Clock Highlight Lighting
+      if (typeof THREE.PointLight !== 'undefined') {
+        const clockPointLight = new THREE.PointLight(0xFFFBF2, 0.65, 3.5);
+        clockPointLight.position.set(0, 0, 0.45);
+        clockGroup.add(clockPointLight);
+      }
 
       this.studioClockHands = {
         hourHand: hourHandGroup,
@@ -2098,7 +2105,7 @@
           gltfLoader.load(clockPaths[idx], (gltf) => {
             const clockGLB = gltf.scene;
             clockGLB.name = 'studio_clock_glb';
-            const scaleFactor = 0.60 / 34.137;
+            const scaleFactor = 0.65 / 34.137;
             clockGLB.scale.set(scaleFactor, scaleFactor, scaleFactor);
             clockGLB.position.set(0, 0, 0.010);
 
@@ -2124,6 +2131,7 @@
                   if (child.material.color) {
                     child.material.color.setHex(0xFFFFFF);
                   }
+                  child.material.roughness = Math.min(child.material.roughness || 0.5, 0.45);
                 }
                 const name = (child.name || '').toLowerCase();
                 if (name === 'hour_hand' || name.includes('hour_hand')) {
@@ -2159,7 +2167,9 @@
     }
 
     /**
-     * Generates canvas texture for studio classic wall clock dial.
+     * Generates an ultra-high-definition (2048x2048) porcelain enamel clock dial
+     * with razor-sharp high-contrast Roman numerals, bold railroad minute track,
+     * and gilded accents, optimized with anisotropic filtering for crystal clarity at any distance.
      */
     createStudioClockDialTexture() {
       if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
@@ -2167,92 +2177,121 @@
       }
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = 1024;
-        canvas.height = 1024;
+        canvas.width = 2048;
+        canvas.height = 2048;
         const ctx = canvas.getContext('2d');
         if (!ctx) return null;
 
-        const cx = 512;
-        const cy = 512;
-        const r = 492;
+        const cx = 1024;
+        const cy = 1024;
+        const r = 984;
 
-        const grad = ctx.createRadialGradient(cx, cy, 60, cx, cy, r);
-        grad.addColorStop(0.0, '#FFFDF8');
-        grad.addColorStop(0.70, '#F7F3E8');
-        grad.addColorStop(1.0, '#ECE4D4');
+        // 1. Pure Porcelain Enamel Face with subtle luxury warm perimeter shading
+        const grad = ctx.createRadialGradient(cx, cy, 100, cx, cy, r);
+        grad.addColorStop(0.0, '#FFFFFF');
+        grad.addColorStop(0.72, '#FCFAF5');
+        grad.addColorStop(0.92, '#F4EFE6');
+        grad.addColorStop(1.0, '#E8E1D2');
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = '#28221B';
+        // 2. Concentric Chapter Rings & Gilded Bezel Accents
+        // Outer Polished Champagne Gold Ring
+        ctx.strokeStyle = '#D4AF37';
+        ctx.lineWidth = 22;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 960, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Primary Outer Railway Track Border (Bold Deep Jet Black)
+        ctx.strokeStyle = '#050505';
+        ctx.lineWidth = 26;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 936, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner Railway Track Border
+        ctx.lineWidth = 14;
+        ctx.strokeStyle = '#181614';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 846, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Decorative Inner Gilded Chapter Circle
         ctx.lineWidth = 8;
+        ctx.strokeStyle = '#C5A059';
         ctx.beginPath();
-        ctx.arc(cx, cy, 472, 0, Math.PI * 2);
+        ctx.arc(cx, cy, 560, 0, Math.PI * 2);
         ctx.stroke();
 
-        ctx.lineWidth = 3.2;
-        ctx.beginPath();
-        ctx.arc(cx, cy, 428, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.lineWidth = 2.4;
-        ctx.strokeStyle = '#7D6955';
-        ctx.beginPath();
-        ctx.arc(cx, cy, 284, 0, Math.PI * 2);
-        ctx.stroke();
-
+        // 3. 60-Minute Railroad Track Ticks
         for (let m = 0; m < 60; m++) {
           const angle = (m * Math.PI) / 30;
           const isHour = (m % 5 === 0);
-          const innerDist = isHour ? 428 : 448;
-          const outerDist = 472;
+          const innerDist = isHour ? 846 : 886;
+          const outerDist = 936;
 
-          ctx.strokeStyle = isHour ? '#1C1916' : '#6A5C4F';
-          ctx.lineWidth = isHour ? 7 : 3;
+          ctx.strokeStyle = isHour ? '#000000' : '#453E37';
+          ctx.lineWidth = isHour ? 26 : 9;
 
           ctx.beginPath();
           ctx.moveTo(cx + Math.sin(angle) * innerDist, cy - Math.cos(angle) * innerDist);
           ctx.lineTo(cx + Math.sin(angle) * outerDist, cy - Math.cos(angle) * outerDist);
           ctx.stroke();
 
+          // Polished Gold Hour Marker Beads
           if (isHour) {
-            ctx.fillStyle = '#C89D52';
+            const beadDist = 806;
+            const bx = cx + Math.sin(angle) * beadDist;
+            const by = cy - Math.cos(angle) * beadDist;
+
+            ctx.fillStyle = '#D4AF37';
             ctx.beginPath();
-            ctx.arc(cx + Math.sin(angle) * 412, cy - Math.cos(angle) * 412, 5, 0, Math.PI * 2);
+            ctx.arc(bx, by, 16, 0, Math.PI * 2);
             ctx.fill();
+
+            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = '#8C6C20';
+            ctx.stroke();
           }
         }
 
+        // 4. Ultra-Crisp High-Contrast Serif Roman Numerals
         const romanNumerals = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
-        ctx.fillStyle = '#1C1916';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = 'bold 72px "Cinzel", "Playfair Display", "Times New Roman", Georgia, serif';
+        ctx.font = 'bold 156px "Times New Roman", "DejaVu Serif", "Noto Serif", Georgia, serif';
+        ctx.fillStyle = '#020202';
+        ctx.strokeStyle = '#020202';
+        ctx.lineWidth = 6;
 
         for (let h = 0; h < 12; h++) {
           const angle = (h * Math.PI) / 6;
-          const textDist = 352;
+          const textDist = 676;
           const tx = cx + Math.sin(angle) * textDist;
           const ty = cy - Math.cos(angle) * textDist;
+          ctx.strokeText(romanNumerals[h], tx, ty);
           ctx.fillText(romanNumerals[h], tx, ty);
         }
 
-        ctx.fillStyle = '#42382E';
-        ctx.font = '600 30px "Cinzel", "Times New Roman", Georgia, serif';
-        ctx.fillText('S É R È N', cx, cy - 128);
+        // 5. Vintage Haute Horlogerie Inscription
+        ctx.fillStyle = '#0F0E0C';
+        ctx.font = 'bold 68px "Times New Roman", "DejaVu Serif", Georgia, serif';
+        ctx.fillText('S É R È N', cx, cy - 250);
 
-        ctx.fillStyle = '#7A6B5C';
-        ctx.font = 'italic 500 22px "Times New Roman", Georgia, serif';
-        ctx.fillText('Horlogerie d\'Atelier', cx, cy - 96);
+        ctx.fillStyle = '#5C4E42';
+        ctx.font = 'italic 600 40px "Times New Roman", Georgia, serif';
+        ctx.fillText('Horlogerie d\'Atelier', cx, cy - 192);
 
-        ctx.fillStyle = '#8C7C6D';
-        ctx.font = '500 20px "Times New Roman", Georgia, serif';
-        ctx.fillText('PARIS • 1889', cx, cy + 108);
+        ctx.fillStyle = '#6E6053';
+        ctx.font = 'bold 36px "Times New Roman", Georgia, serif';
+        ctx.fillText('PARIS • 1889', cx, cy + 225);
 
-        ctx.fillStyle = '#C89D52';
-        ctx.font = '28px serif';
-        ctx.fillText('✦', cx, cy + 140);
+        ctx.fillStyle = '#D4AF37';
+        ctx.font = 'bold 44px serif';
+        ctx.fillText('✦', cx, cy + 276);
 
         if (THREE && typeof THREE.CanvasTexture !== 'undefined') {
           const tex = new THREE.CanvasTexture(canvas);
@@ -2260,6 +2299,10 @@
           tex.generateMipmaps = true;
           if (THREE.LinearMipmapLinearFilter) tex.minFilter = THREE.LinearMipmapLinearFilter;
           if (THREE.LinearFilter) tex.magFilter = THREE.LinearFilter;
+          if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+          tex.needsUpdate = true;
+          return tex;
+        }
           if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
           tex.needsUpdate = true;
           return tex;

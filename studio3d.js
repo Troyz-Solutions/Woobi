@@ -30,8 +30,8 @@
         fovPortrait: 56
       },
       WARDROBE_CLOSEUP: {
-        position: new THREE.Vector3(-1.65, 1.25, -1.30),
-        target: new THREE.Vector3(-1.65, 1.20, -3.50),
+        position: new THREE.Vector3(-0.75, 1.35, -0.90),
+        target: new THREE.Vector3(-0.75, 1.30, -2.85),
         fovLandscape: 38,
         fovPortrait: 54
       },
@@ -1160,16 +1160,16 @@
     buildWardrobeFurniture() {
       const wardrobeGroup = new THREE.Group();
       wardrobeGroup.name = 'woobi_wardrobe_root';
-      // Moved to back of the room on the left wall with balanced architectural depth
-      wardrobeGroup.position.set(-1.68, 0, -3.35);
-      wardrobeGroup.rotation.y = 0.35;
+      // Moved to the right, near the center behind the main stage
+      wardrobeGroup.position.set(-0.75, 0, -2.85);
+      wardrobeGroup.rotation.y = 0.16;
       this.wardrobeGroup = wardrobeGroup;
 
-      const height = 3.15;
+      const height = 3.65;
 
-      // Raycastable Bounding Box for Touch & Click Interaction (sized for larger wardrobe)
+      // Raycastable Bounding Box for Touch & Click Interaction (sized for grand boutique wardrobe)
       const hitBox = new THREE.Mesh(
-        new THREE.BoxGeometry(2.30, height, 0.95),
+        new THREE.BoxGeometry(2.60, height, 1.10),
         new THREE.MeshBasicMaterial({ visible: false })
       );
       hitBox.position.set(0, height / 2, 0);
@@ -1185,13 +1185,13 @@
         closeDoors: () => { this.wardrobeModel.doorsOpen = false; }
       };
 
-      // 1. Initial responsive representation while 3D GLB model streams in (scaled up to match back wall presence)
+      // 1. Initial responsive representation while 3D GLB model streams in (scaled up to match grand proportions)
       const WardrobeClass = (typeof Wardrobe3D !== 'undefined') ? Wardrobe3D : (typeof window !== 'undefined' ? window.Wardrobe3D : null);
       if (WardrobeClass) {
         try {
-          const wardrobeInstance = new WardrobeClass({ enableLights: true, width: 2.30, height: 3.15, depth: 0.70 });
+          const wardrobeInstance = new WardrobeClass({ enableLights: true, width: 2.60, height: 3.65, depth: 0.80 });
           this.wardrobeInstance = wardrobeInstance;
-          const pScale = 1.08;
+          const pScale = 1.25;
           wardrobeInstance.group.scale.set(pScale, pScale, pScale);
           wardrobeGroup.add(wardrobeInstance.group);
         } catch (e) {
@@ -1234,9 +1234,9 @@
           // Orient front opening towards room interior (+Z in Three.js coordinates)
           model.rotation.y = -Math.PI / 2;
 
-          // Scale uniformly preserving original proportions to grand 3.15m height
-          const targetHeight = 3.15;
-          let scaleFactor = 3.20;
+          // Scale uniformly preserving original proportions to grand 3.65m height
+          const targetHeight = 3.65;
+          let scaleFactor = 3.70;
           try {
             if (THREE.Box3) {
               const bbox = new THREE.Box3().setFromObject(model);
@@ -1254,10 +1254,10 @@
               const scaledBbox = new THREE.Box3().setFromObject(model);
               model.position.set(0, -scaledBbox.min.y, 0);
             } else {
-              model.position.set(0, 1.55, 0);
+              model.position.set(0, 1.80, 0);
             }
           } catch (e) {
-            model.position.set(0, 1.55, 0);
+            model.position.set(0, 1.80, 0);
           }
 
           // Apply PR #42 authentic Beige aesthetic styling & internal warm shelf lights

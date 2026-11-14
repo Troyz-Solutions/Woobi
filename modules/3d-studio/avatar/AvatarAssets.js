@@ -4,26 +4,21 @@
  */
 
 export const FEMALE_AVATAR_PATHS = [
-  'woobi_female_mannequin.glb',
-  'Woobi_Female_Mannequin_Fixed.glb',
-  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
-  'assets/models/avatar_female.glb',
-  'female_mannequin.glb'
+  'seren_avatar.glb',
+  'assets/models/avatar_female.glb'
 ];
 
 export const MALE_AVATAR_PATHS = [
-  'woobi_male_mannequin.glb',
-  '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb',
   'assets/models/avatar_male.glb',
-  'male_mannequin.glb'
+  'woobi_male_mannequin.glb'
 ];
 
 export const AVATAR_ASSET_PATHS = [
   'seren_avatar.glb',
-  'woobi_female_mannequin.glb',
-  'Woobi_Female_Mannequin_Fixed.glb',
   'assets/models/avatar_female.glb',
   'assets/models/avatar_male.glb',
+  'woobi_female_mannequin.glb',
+  'Woobi_Female_Mannequin_Fixed.glb',
   '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
   'https://readyplayerme.github.io/visage/female.glb'
 ];
@@ -168,7 +163,7 @@ export class AvatarAssets {
               } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
                 ensureUVs(child.geometry);
                 if (child.material) {
-                  child.material.color = new THREE.Color(0xD98AA5);
+                  child.material.color = new THREE.Color(0xFAF6EF);
                   if (this.materials?.tankMat?.map) child.material.map = this.materials.tankMat.map;
                   if (this.materials?.tankMat?.bumpMap) {
                     child.material.bumpMap = this.materials.tankMat.bumpMap;
@@ -181,7 +176,7 @@ export class AvatarAssets {
               } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
                 ensureUVs(child.geometry);
                 if (child.material) {
-                  child.material.color = new THREE.Color(0x1C1C1E);
+                  child.material.color = new THREE.Color(0xC8BAA7);
                   if (this.materials?.trouserMat?.map) child.material.map = this.materials.trouserMat.map;
                   if (this.materials?.trouserMat?.bumpMap) {
                     child.material.bumpMap = this.materials.trouserMat.bumpMap;

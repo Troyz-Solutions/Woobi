@@ -2801,12 +2801,8 @@
         loader.setMeshoptDecoder(window.MeshoptDecoder);
       }
       const modelUrls = [
-        'woobi_female_mannequin.glb',
-        'Woobi_Female_Mannequin_Fixed.glb',
-        '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
         'seren_avatar.glb',
-        'assets/models/avatar_female.glb',
-        'female_mannequin.glb'
+        'assets/models/avatar_female.glb'
       ];
 
       const tryLoad = (index) => {
@@ -2854,10 +2850,10 @@
                   }
                   child.material.roughness = 0.82;
                 } else if (child.name.includes('Top') || child.name.includes('Shirt')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.jacketPink);
+                  child.material.color = new THREE.Color(COLOR_PALETTE.cropTankIvory);
                   child.material.roughness = 0.85;
                 } else if (child.name.includes('Bottom') || child.name.includes('Pants')) {
-                  child.material.color = new THREE.Color(COLOR_PALETTE.leggingsBlack);
+                  child.material.color = new THREE.Color(COLOR_PALETTE.trousersSand);
                   child.material.roughness = 0.88;
                 } else if (child.name.includes('Footwear') || child.name.includes('Shoes')) {
                   child.material.color = new THREE.Color(COLOR_PALETTE.sneakersWhite);
@@ -3643,20 +3639,12 @@
       const loader = new THREE.GLTFLoader();
       const urls = isMale
         ? [
-            'woobi_male_mannequin.glb',
-            '3D - Mannequin By Astra/Woobi_Male_Mannequin.glb',
-            '3D - Mannequin By Astra/male/Woobi_Male_Mannequin.glb',
             'assets/models/avatar_male.glb',
-            'male_mannequin.glb'
+            'woobi_male_mannequin.glb'
           ]
         : [
-            'woobi_female_mannequin.glb',
-            'Woobi_Female_Mannequin_Fixed.glb',
-            '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
-            '3D - Mannequin By Astra/female/Woobi_Female_Mannequin.glb',
             'seren_avatar.glb',
-            'assets/models/avatar_female.glb',
-            'female_mannequin.glb'
+            'assets/models/avatar_female.glb'
           ];
 
       const tryLoad = (idx) => {

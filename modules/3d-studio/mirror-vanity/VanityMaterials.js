@@ -26,9 +26,17 @@ export class VanityMaterials {
 
   static createBrassMaterial(THREE) {
     return new THREE.MeshStandardMaterial({
-      color: 0xD8BD8A, // Radiant champagne brass
-      metalness: 0.88,
-      roughness: 0.22
+      color: 0xD8BE8C, // Luxurious French champagne satin brass
+      metalness: 0.90,
+      roughness: 0.18
+    });
+  }
+
+  static createPolishedGoldMaterial(THREE) {
+    return new THREE.MeshStandardMaterial({
+      color: 0xE2C48E, // High-specular Parisian brushed gold
+      metalness: 0.92,
+      roughness: 0.14
     });
   }
 

@@ -1523,57 +1523,164 @@
       this.mirrorGlassMesh.userData = { forcePlanarUV: true };
       mirrorGroup.add(this.mirrorGlassMesh);
 
-      // B. Bevelled Sculpted Champagne Brass Mirror Frame
-      const frameArc = new THREE.Mesh(new THREE.TorusGeometry(archR + 0.018, 0.014, 16, 64, Math.PI), brassMat);
-      frameArc.position.set(0, straightH, 0);
-      mirrorGroup.add(frameArc);
-
-      [-archR - 0.018, archR + 0.018].forEach(fx => {
-        const sideFrame = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, straightH, 16), brassMat);
-        sideFrame.position.set(fx, straightH / 2, 0);
-        mirrorGroup.add(sideFrame);
+      // B. Architectural French Atelier Sculpted Champagne Brass Mirror Frame
+      const polishedGoldMat = new THREE.MeshStandardMaterial({
+        color: 0xE2C48E, // High-specular Parisian brushed gold
+        metalness: 0.92,
+        roughness: 0.14
       });
 
-      const frameBottom = new THREE.Mesh(new THREE.BoxGeometry((archR + 0.018) * 2 + 0.028, 0.016, 0.028), brassMat);
-      frameBottom.position.set(0, 0.008, 0);
-      mirrorGroup.add(frameBottom);
+      const frameOuterR = archR + 0.034; // Generous 34mm luxurious rim face
+      const frameDepth = 0.038; // 38mm deep architectural casing
 
-      // C. Continuous 3000K Warm LED Radiance Halo Ring
+      if (THREE && typeof THREE.ExtrudeGeometry !== 'undefined' && typeof THREE.Shape !== 'undefined') {
+        // 1. Seamless Monolithic Primary Beveled Frame Chassis
+        const frameShape = new THREE.Shape();
+        frameShape.moveTo(-frameOuterR, 0);
+        frameShape.lineTo(frameOuterR, 0);
+        frameShape.lineTo(frameOuterR, straightH);
+        frameShape.absarc(0, straightH, frameOuterR, 0, Math.PI, false);
+        frameShape.lineTo(-frameOuterR, 0);
+
+        const frameHole = new THREE.Path();
+        frameHole.moveTo(-archR, 0);
+        frameHole.lineTo(archR, 0);
+        frameHole.lineTo(archR, straightH);
+        frameHole.absarc(0, straightH, archR, 0, Math.PI, false);
+        frameHole.lineTo(-archR, 0);
+        frameShape.holes.push(frameHole);
+
+        const mainFrameGeo = new THREE.ExtrudeGeometry(frameShape, {
+          depth: frameDepth,
+          bevelEnabled: true,
+          bevelSegments: 4,
+          steps: 1,
+          bevelSize: 0.007,
+          bevelThickness: 0.007
+        });
+        const mainFrame = new THREE.Mesh(mainFrameGeo, brassMat);
+        mainFrame.position.set(0, 0, -frameDepth / 2);
+        mainFrame.castShadow = true;
+        mirrorGroup.add(mainFrame);
+
+        // 2. Secondary Jewelers Stepped Bezel (Inner Specular Brass Step)
+        const bezelOuterR = archR + 0.010;
+        const bezelShape = new THREE.Shape();
+        bezelShape.moveTo(-bezelOuterR, 0);
+        bezelShape.lineTo(bezelOuterR, 0);
+        bezelShape.lineTo(bezelOuterR, straightH);
+        bezelShape.absarc(0, straightH, bezelOuterR, 0, Math.PI, false);
+        bezelShape.lineTo(-bezelOuterR, 0);
+
+        const bezelHole = new THREE.Path();
+        bezelHole.moveTo(-archR, 0);
+        bezelHole.lineTo(archR, 0);
+        bezelHole.lineTo(archR, straightH);
+        bezelHole.absarc(0, straightH, archR, 0, Math.PI, false);
+        bezelHole.lineTo(-archR, 0);
+        bezelShape.holes.push(bezelHole);
+
+        const bezelGeo = new THREE.ExtrudeGeometry(bezelShape, {
+          depth: 0.014,
+          bevelEnabled: true,
+          bevelSegments: 2,
+          bevelSize: 0.002,
+          bevelThickness: 0.002
+        });
+        const bezelMesh = new THREE.Mesh(bezelGeo, polishedGoldMat);
+        bezelMesh.position.set(0, 0, 0.004);
+        mirrorGroup.add(bezelMesh);
+      } else {
+        const frameArc = new THREE.Mesh(new THREE.TorusGeometry(frameOuterR - 0.012, 0.016, 16, 64, Math.PI), brassMat);
+        frameArc.position.set(0, straightH, 0);
+        mirrorGroup.add(frameArc);
+
+        [-archR - 0.018, archR + 0.018].forEach(fx => {
+          const sideFrame = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, straightH, 16), brassMat);
+          sideFrame.position.set(fx, straightH / 2, 0);
+          mirrorGroup.add(sideFrame);
+        });
+
+        const frameBottom = new THREE.Mesh(new THREE.BoxGeometry((frameOuterR + 0.02) * 2, 0.024, 0.042), brassMat);
+        frameBottom.position.set(0, 0.012, 0);
+        mirrorGroup.add(frameBottom);
+      }
+
+      // 3. Grounding Base Threshold Rail (Flush on Calacatta Marble Console)
+      const baseRail = new THREE.Mesh(new THREE.BoxGeometry((frameOuterR + 0.022) * 2, 0.022, frameDepth + 0.018), brassMat);
+      baseRail.position.set(0, 0.011, 0.004);
+      baseRail.castShadow = true;
+      mirrorGroup.add(baseRail);
+
+      // 4. Parisian Architectural Apex Crown Crest (Exterior Frame Ornament - Strictly Above Arch, Never on Glass)
+      const crestGroup = new THREE.Group();
+      crestGroup.position.set(0, straightH + frameOuterR + 0.004, 0.006);
+
+      const crestPedestal = new THREE.Mesh(new THREE.BoxGeometry(0.096, 0.020, 0.026), brassMat);
+      crestPedestal.castShadow = true;
+      crestGroup.add(crestPedestal);
+
+      [-0.046, 0.046].forEach((cx, idx) => {
+        const scroll = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.005, 12, 24, Math.PI * 0.9), polishedGoldMat);
+        scroll.position.set(cx, 0.012, 0);
+        scroll.rotation.z = idx === 0 ? Math.PI / 4 : -Math.PI / 4;
+        crestGroup.add(scroll);
+      });
+
+      const finialCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.014, 0.008, 16), polishedGoldMat);
+      finialCollar.position.set(0, 0.014, 0);
+      crestGroup.add(finialCollar);
+
+      const finialOrb = new THREE.Mesh(new THREE.SphereGeometry(0.018, 20, 20), polishedGoldMat);
+      finialOrb.position.set(0, 0.034, 0);
+      crestGroup.add(finialOrb);
+
+      const finialSpireGeo = (typeof THREE.ConeGeometry !== 'undefined')
+        ? new THREE.ConeGeometry(0.008, 0.022, 16)
+        : new THREE.CylinderGeometry(0.002, 0.008, 0.022, 16);
+      const finialSpire = new THREE.Mesh(finialSpireGeo, polishedGoldMat);
+      finialSpire.position.set(0, 0.056, 0);
+      crestGroup.add(finialSpire);
+
+      mirrorGroup.add(crestGroup);
+
+      // C. Continuous Warm 3000K LED Radiance Halo Ring (Recessed Behind Frame Perimeter)
       const ledGlowMat = new THREE.MeshBasicMaterial({ color: 0xFFECD4 });
-      const haloArc = new THREE.Mesh(new THREE.TorusGeometry(archR + 0.006, 0.009, 16, 64, Math.PI), ledGlowMat);
-      haloArc.position.set(0, straightH, 0.004);
+      const haloArc = new THREE.Mesh(new THREE.TorusGeometry(frameOuterR + 0.002, 0.008, 16, 64, Math.PI), ledGlowMat);
+      haloArc.position.set(0, straightH, -0.016);
       mirrorGroup.add(haloArc);
 
-      [-archR - 0.006, archR + 0.006].forEach(hx => {
-        const sideHalo = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, straightH, 16), ledGlowMat);
-        sideHalo.position.set(hx, straightH / 2, 0.004);
+      [-frameOuterR - 0.002, frameOuterR + 0.002].forEach(hx => {
+        const sideHalo = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, straightH, 16), ledGlowMat);
+        sideHalo.position.set(hx, straightH / 2, -0.016);
         mirrorGroup.add(sideHalo);
       });
 
       // D. Clean, Unobstructed Grand Arched Mirror Surface per user request (no internal mullion grids, filigree or glass design)
 
-      // F. Tabletop Solid Brass Mounting Brackets with Knurled Thumbscrews
-      const bracketGeo = new THREE.BoxGeometry(0.038, 0.048, 0.038);
-      const thumbscrewGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.016, 16);
-      [-archR - 0.010, archR + 0.010].forEach(bx => {
-        const bracket = new THREE.Mesh(bracketGeo, brassMat);
-        bracket.position.set(bx, 0.024, 0.012);
+      // F. Tabletop Solid Brass Pedestal Clamps with Knurled Thumbscrews
+      const clampBaseGeo = new THREE.BoxGeometry(0.046, 0.042, 0.052);
+      const clampScrewGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.018, 20);
+      [-frameOuterR - 0.008, frameOuterR + 0.008].forEach(bx => {
+        const bracket = new THREE.Mesh(clampBaseGeo, brassMat);
+        bracket.position.set(bx, 0.021, 0.014);
+        bracket.castShadow = true;
         mirrorGroup.add(bracket);
 
-        const thumbscrew = new THREE.Mesh(thumbscrewGeo, brassMat);
+        const thumbscrew = new THREE.Mesh(clampScrewGeo, polishedGoldMat);
         thumbscrew.rotation.z = Math.PI / 2;
-        thumbscrew.position.set(bx + (bx > 0 ? 0.018 : -0.018), 0.024, 0.012);
+        thumbscrew.position.set(bx + (bx > 0 ? 0.022 : -0.022), 0.021, 0.014);
         mirrorGroup.add(thumbscrew);
       });
 
       // H. Protective Walnut Backing Panel
       const mirrorBackMat = new THREE.MeshStandardMaterial({ color: 0x2A241E, roughness: 0.6 });
-      const backRect = new THREE.Mesh(new THREE.BoxGeometry(archR * 2 + 0.02, straightH, 0.012), mirrorBackMat);
-      backRect.position.set(0, straightH / 2, -0.010);
+      const backRect = new THREE.Mesh(new THREE.BoxGeometry(frameOuterR * 2 + 0.01, straightH, 0.014), mirrorBackMat);
+      backRect.position.set(0, straightH / 2, -frameDepth / 2 - 0.004);
       mirrorGroup.add(backRect);
 
-      const backArc = new THREE.Mesh(new THREE.CircleGeometry(archR + 0.01, 64, 0, Math.PI), mirrorBackMat);
-      backArc.position.set(0, straightH, -0.010);
+      const backArc = new THREE.Mesh(new THREE.CircleGeometry(frameOuterR + 0.005, 64, 0, Math.PI), mirrorBackMat);
+      backArc.position.set(0, straightH, -frameDepth / 2 - 0.004);
       mirrorGroup.add(backArc);
 
       // Warm continuous radiance light from the mirror ring

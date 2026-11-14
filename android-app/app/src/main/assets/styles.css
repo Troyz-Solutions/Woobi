@@ -6877,6 +6877,46 @@ body.theme-dark.high-contrast,
   -ms-overflow-style: none;
 }
 
+.studio-wardrobe-card {
+  max-height: 72%;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-wardrobe-title-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-left: 10px;
+}
+
+.studio-wardrobe-title-wrap .seren-sheet-title {
+  margin: 0;
+  font-family: var(--font-serif, 'Playfair Display', serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main, #201E1B);
+}
+
+.studio-wardrobe-title-wrap .wardrobe-items-count {
+  font-size: 0.78rem;
+  color: var(--text-muted, #7A766F);
+}
+
+.sheet-drag-handle {
+  width: 42px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-border, #E0DCD5);
+  margin: 0 auto 12px auto;
+  cursor: pointer;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.sheet-drag-handle:hover {
+  background: var(--text-sub, #6A6660);
+}
+
 .seren-sheet-card::-webkit-scrollbar {
   display: none;
 }

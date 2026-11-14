@@ -380,8 +380,8 @@
 
     // Specific screen entry triggers
     if (screenId === 'wardrobe') {
-      renderWardrobeGrid();
-      updateWardrobeCounts();
+      openStudioWardrobe(true);
+      return;
     } else if (screenId === 'swap-item') {
       renderSwapGrid(state.activeSwapSlot || 'footwear');
     } else if (screenId === 'ai-stylist') {
@@ -1340,8 +1340,11 @@
   }
 
   function renderWardrobeGrid(category = state.wardrobeActiveCategory, query = '') {
-    const container = document.getElementById('wardrobeCardsGrid');
-    if (!container) return;
+    const containers = [
+      document.getElementById('wardrobeCardsGrid'),
+      document.getElementById('studioWardrobeCardsGrid')
+    ].filter(Boolean);
+    if (containers.length === 0) return;
 
     const activeCat = category || 'All';
     const normCat = activeCat.toLowerCase().trim();
@@ -1362,10 +1365,10 @@
         );
       }
 
-      container.innerHTML = '';
+      containers.forEach(c => { c.innerHTML = ''; });
 
       if (outfits.length === 0) {
-        container.innerHTML = `
+        const emptyHtml = `
           <div class="wardrobe-empty-state">
             <span class="empty-icon">👔</span>
             <h3>No outfit combinations found</h3>
@@ -1375,12 +1378,9 @@
             </button>
           </div>
         `;
+        containers.forEach(c => { c.innerHTML = emptyHtml; });
       } else {
-        outfits.forEach(outfit => {
-          const card = document.createElement('div');
-          card.className = 'wardrobe-outfit-box';
-          card.onclick = () => app.previewFullOutfit(outfit.id);
-
+        const cardsHtml = outfits.map(outfit => {
           const accHtml = outfit.accessory ? `
             <div class="w-piece-card">
               <div class="w-piece-img-wrap"><img src="${outfit.accessory.photo}" alt="${outfit.accessory.name}" onerror="this.src='assets/leather_watch.jpg'"></div>
@@ -1389,48 +1389,50 @@
             </div>
           ` : '';
 
-          card.innerHTML = `
-            <div class="w-outfit-header-row">
-              <div>
-                <span class="w-outfit-tag">Full Outfit</span>
-                <h3 class="w-outfit-title">${outfit.title}</h3>
-                <p class="w-outfit-sub">${outfit.caption}</p>
+          return `
+            <div class="wardrobe-outfit-box" onclick="app.previewFullOutfit('${outfit.id}')">
+              <div class="w-outfit-header-row">
+                <div>
+                  <span class="w-outfit-tag">Full Outfit</span>
+                  <h3 class="w-outfit-title">${outfit.title}</h3>
+                  <p class="w-outfit-sub">${outfit.caption}</p>
+                </div>
+                <span class="w-outfit-clean-badge ${outfit.isClean ? 'clean' : 'laundry'}">
+                  ${outfit.isClean ? '✨ Clean & Ready' : '🧺 Contains Laundry'}
+                </span>
               </div>
-              <span class="w-outfit-clean-badge ${outfit.isClean ? 'clean' : 'laundry'}">
-                ${outfit.isClean ? '✨ Clean & Ready' : '🧺 Contains Laundry'}
-              </span>
-            </div>
 
-            <div class="w-outfit-pieces-grid">
-              <div class="w-piece-card">
-                <div class="w-piece-img-wrap"><img src="${outfit.top.photo}" alt="${outfit.top.name}" onerror="this.src='assets/navy_shirt.jpg'"></div>
-                <span class="w-piece-cat">👕 Shirt</span>
-                <span class="w-piece-name" title="${outfit.top.name}">${outfit.top.name}</span>
+              <div class="w-outfit-pieces-grid">
+                <div class="w-piece-card">
+                  <div class="w-piece-img-wrap"><img src="${outfit.top.photo}" alt="${outfit.top.name}" onerror="this.src='assets/navy_shirt.jpg'"></div>
+                  <span class="w-piece-cat">👕 Shirt</span>
+                  <span class="w-piece-name" title="${outfit.top.name}">${outfit.top.name}</span>
+                </div>
+                <div class="w-piece-card">
+                  <div class="w-piece-img-wrap"><img src="${outfit.bottom.photo}" alt="${outfit.bottom.name}" onerror="this.src='assets/beige_chinos.jpg'"></div>
+                  <span class="w-piece-cat">👖 Pants</span>
+                  <span class="w-piece-name" title="${outfit.bottom.name}">${outfit.bottom.name}</span>
+                </div>
+                <div class="w-piece-card">
+                  <div class="w-piece-img-wrap"><img src="${outfit.footwear.photo}" alt="${outfit.footwear.name}" onerror="this.src='assets/white_sneakers.jpg'"></div>
+                  <span class="w-piece-cat">👟 Shoes</span>
+                  <span class="w-piece-name" title="${outfit.footwear.name}">${outfit.footwear.name}</span>
+                </div>
+                ${accHtml}
               </div>
-              <div class="w-piece-card">
-                <div class="w-piece-img-wrap"><img src="${outfit.bottom.photo}" alt="${outfit.bottom.name}" onerror="this.src='assets/beige_chinos.jpg'"></div>
-                <span class="w-piece-cat">👖 Pants</span>
-                <span class="w-piece-name" title="${outfit.bottom.name}">${outfit.bottom.name}</span>
-              </div>
-              <div class="w-piece-card">
-                <div class="w-piece-img-wrap"><img src="${outfit.footwear.photo}" alt="${outfit.footwear.name}" onerror="this.src='assets/white_sneakers.jpg'"></div>
-                <span class="w-piece-cat">👟 Shoes</span>
-                <span class="w-piece-name" title="${outfit.footwear.name}">${outfit.footwear.name}</span>
-              </div>
-              ${accHtml}
-            </div>
 
-            <div class="w-outfit-actions">
-              <button type="button" class="btn-outfit-wear" onclick="event.stopPropagation(); app.wearFullOutfit('${outfit.id}')">
-                <span>✨ Wear this look</span>
-              </button>
-              <button type="button" class="btn-outfit-preview" onclick="event.stopPropagation(); app.previewFullOutfit('${outfit.id}')">
-                <span>👤 Try in Studio</span>
-              </button>
+              <div class="w-outfit-actions">
+                <button type="button" class="btn-outfit-wear" onclick="event.stopPropagation(); app.wearFullOutfit('${outfit.id}')">
+                  <span>✨ Wear this look</span>
+                </button>
+                <button type="button" class="btn-outfit-preview" onclick="event.stopPropagation(); app.previewFullOutfit('${outfit.id}')">
+                  <span>👤 Try in Studio</span>
+                </button>
+              </div>
             </div>
           `;
-          container.appendChild(card);
-        });
+        }).join('');
+        containers.forEach(c => { c.innerHTML = cardsHtml; });
       }
 
       updateWardrobeCounts();
@@ -1454,10 +1456,10 @@
       );
     }
 
-    container.innerHTML = '';
+    containers.forEach(c => { c.innerHTML = ''; });
 
     if (items.length === 0) {
-      container.innerHTML = `
+      const emptyHtml = `
         <div class="wardrobe-empty-state">
           <span class="empty-icon">${activeCat === 'Shirts' ? '👕' : (activeCat === 'Pants' ? '👖' : (activeCat === 'Shoes' ? '👟' : (activeCat === 'Accessories' ? '⌚' : '👗')))}</span>
           <h3>No ${activeCat} found</h3>
@@ -1467,11 +1469,9 @@
           </button>
         </div>
       `;
+      containers.forEach(c => { c.innerHTML = emptyHtml; });
     } else {
-      items.forEach(item => {
-        const box = document.createElement('div');
-        box.className = 'wardrobe-item-box';
-
+      const itemsHtml = items.map(item => {
         const isClean = item.condition === 'clean';
         const statusBadge = isClean
           ? `<span class="badge-status clean" onclick="event.stopPropagation(); app.toggleItemCondition('${item.id}')" title="Tap to mark in laundry">✨ Clean</span>`
@@ -1485,23 +1485,24 @@
 
         const meta = getItemCategoryMeta(item);
 
-        box.innerHTML = `
-          <div class="w-img-wrap" onclick="app.wardrobeOpenZoom('${item.id}')">
-            <img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='assets/navy_shirt.jpg'">
-            <span class="w-item-cat-badge">${meta.icon} ${meta.label}</span>
-          </div>
-          <div class="w-meta" onclick="app.wardrobeOpenZoom('${item.id}')">
-            <div class="w-name" title="${item.name}">${item.name}</div>
-            <div class="w-sub-badges">
-              ${statusBadge}
-              ${fitBadge}
+        return `
+          <div class="wardrobe-item-box" onclick="app.wardrobeEquipById('${item.id}')" title="Tap to wear on studio mannequin">
+            <div class="w-img-wrap">
+              <img src="${item.photo}" alt="${item.name}" loading="lazy" onerror="this.src='assets/navy_shirt.jpg'">
+              <span class="w-item-cat-badge">${meta.icon} ${meta.label}</span>
             </div>
+            <div class="w-meta">
+              <div class="w-name" title="${item.name}">${item.name}</div>
+              <div class="w-sub-badges">
+                ${statusBadge}
+                ${fitBadge}
+              </div>
+            </div>
+            <button class="w-dots" onclick="event.stopPropagation(); app.openConditionModal('${item.id}')" title="Item options">⋮</button>
           </div>
-          <button class="w-dots" onclick="event.stopPropagation(); app.openConditionModal('${item.id}')" title="Item options">⋮</button>
         `;
-
-        container.appendChild(box);
-      });
+      }).join('');
+      containers.forEach(c => { c.innerHTML = itemsHtml; });
     }
 
     updateWardrobeCounts();
@@ -1744,9 +1745,33 @@
   }
 
   function filterWardrobeGrid() {
-    const searchInput = document.getElementById('wardrobeSearchInput');
+    const searchInput = document.getElementById('studioWardrobeSearchInput') || document.getElementById('wardrobeSearchInput');
     const query = searchInput ? searchInput.value : '';
     renderWardrobeGrid(state.wardrobeActiveCategory, query);
+  }
+
+  function filterStudioWardrobeCategory(cat, btn) {
+    state.wardrobeActiveCategory = cat;
+    if (btn) {
+      document.querySelectorAll('#studioWardrobeCatFilter .cat-pill').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#wardrobeCatFilter .cat-pill').forEach(b => {
+        if (b.textContent.trim().toLowerCase() === btn.textContent.trim().toLowerCase() || b.textContent.includes(cat)) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+      btn.classList.add('active');
+    }
+    const searchInput = document.getElementById('studioWardrobeSearchInput') || document.getElementById('wardrobeSearchInput');
+    const query = searchInput ? searchInput.value : '';
+    renderWardrobeGrid(cat, query);
+  }
+
+  function wardrobeEquipById(itemId) {
+    const item = WARDROBE_ITEMS.find(i => i.id === itemId);
+    if (!item) return;
+    wardrobeEquipToMannequin(item);
   }
 
   function updateWardrobeCounts() {
@@ -1771,6 +1796,13 @@
     const dirtyEl = document.getElementById('wardrobeLaundryCount');
     if (cleanEl) cleanEl.textContent = cleanCount;
     if (dirtyEl) dirtyEl.textContent = dirtyCount;
+
+    const studioCountLabel = document.getElementById('studioWardrobeCountLabel');
+    const studioCleanEl = document.getElementById('studioWardrobeCleanCount');
+    const studioDirtyEl = document.getElementById('studioWardrobeLaundryCount');
+    if (studioCountLabel && countLabel) studioCountLabel.textContent = countLabel.textContent;
+    if (studioCleanEl) studioCleanEl.textContent = cleanCount;
+    if (studioDirtyEl) studioDirtyEl.textContent = dirtyCount;
   }
 
   function toggleItemCondition(itemId) {
@@ -3285,12 +3317,27 @@
     renderSerenGarments(cat);
   }
 
-  function serenToggleWardrobe(forceOpen) {
-    if (forceOpen === false) {
+  function openStudioWardrobe(forceOpen = true) {
+    if (state.currentScreen !== 'today') {
       goToScreen('today');
-      return;
     }
-    goToScreen('wardrobe');
+    serenToggleWardrobe(forceOpen);
+  }
+
+  function serenToggleWardrobe(forceOpen) {
+    const sheet = document.getElementById('serenWardrobeSheet');
+    if (!sheet) return;
+
+    const isOpening = forceOpen !== undefined ? forceOpen : sheet.classList.contains('hidden');
+
+    if (isOpening) {
+      sheet.classList.remove('hidden');
+      renderWardrobeGrid();
+      updateWardrobeCounts();
+      setStudioCamera('STUDIO_OVERVIEW');
+    } else {
+      sheet.classList.add('hidden');
+    }
   }
 
   function serenToggleDailyLooks(forceOpen) {
@@ -7395,9 +7442,12 @@
 
     // Sérén 3D Virtual Studio API
     initVirtualStudio,
+    openStudioWardrobe,
     renderSerenGarments,
     serenFilterCat,
     serenToggleWardrobe,
+    filterStudioWardrobeCategory,
+    wardrobeEquipById,
     serenToggleDailyLooks,
     openDailyRecommendation,
     exitDailyRecommendation,

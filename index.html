@@ -788,7 +788,7 @@
           <div class="seren-bottom-bar-wrap">
             <nav class="seren-bottom-bar" aria-label="Studio navigation">
               <!-- Tab 1: Wardrobe (Clothes Hanger Icon) -->
-              <button type="button" class="seren-bar-tab" id="serenTabWardrobe" onclick="app.goToScreen('wardrobe')" title="Wardrobe" aria-label="Wardrobe">
+              <button type="button" class="seren-bar-tab" id="serenTabWardrobe" onclick="app.openStudioWardrobe()" title="Wardrobe" aria-label="Wardrobe">
                 <div class="seren-tab-icon" aria-hidden="true">
                   <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3a2.2 2.2 0 0 0-2 2.2c0 .9.6 1.7 1.5 2V8.5L3.8 15.2a1.8 1.8 0 0 0 1.2 3h14a1.8 1.8 0 0 0 1.2-3L12.5 8.5V7.2c.9-.3 1.5-1.1 1.5-2A2.2 2.2 0 0 0 12 3z" />
@@ -842,6 +842,60 @@
                 <span class="seren-tab-dot"></span>
               </button>
             </nav>
+          </div>
+
+          <!-- 3D Studio Interactive Wardrobe Card Sheet -->
+          <div class="seren-wardrobe-sheet hidden" id="serenWardrobeSheet">
+            <div class="seren-sheet-backdrop" onclick="app.serenToggleWardrobe(false)"></div>
+            <div class="seren-sheet-card studio-wardrobe-card">
+              <div class="sheet-drag-handle" onclick="app.serenToggleWardrobe(false)"></div>
+
+              <div class="seren-sheet-header">
+                <button type="button" class="seren-sheet-back" onclick="app.serenToggleWardrobe(false)" aria-label="Close Wardrobe">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                </button>
+                <div class="studio-wardrobe-title-wrap">
+                  <h3 class="seren-sheet-title">Your Wardrobe</h3>
+                  <span class="wardrobe-items-count" id="studioWardrobeCountLabel">Curated collection</span>
+                </div>
+                <button type="button" class="btn-circle-add" onclick="app.goToScreen('add-wardrobe')" title="Add item" style="background: var(--olive-primary, #4A5B45); width: 34px; height: 34px; border-radius: 50%; color: #fff; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer;">+</button>
+              </div>
+
+              <!-- Search Input Box -->
+              <div class="search-input-box" style="background: var(--bg-card, #FFFFFF); border: 1.5px solid var(--bg-border, #E8E5DF); border-radius: 16px; padding: 8px 14px; margin: 8px 0 10px 0; display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color: var(--olive-primary, #4A5B45);">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input type="text" placeholder="Search shirts, trousers, shoes..." id="studioWardrobeSearchInput"
+                  oninput="app.filterWardrobeGrid()" style="font-size: 0.88rem; color: var(--text-main, #201E1B); background: transparent; border: none; outline: none; width: 100%;">
+              </div>
+
+              <!-- Condition / Laundry Status Banner -->
+              <div class="wardrobe-condition-banner" style="background: var(--bg-card, #FFFFFF); border: 1px solid var(--bg-border, #E8E5DF); border-radius: 12px; padding: 8px 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.8rem;">
+                <span class="banner-stat clean" style="color: var(--color-success, #4E8752); font-weight: 600;">✨ <strong id="studioWardrobeCleanCount">21</strong> Ready</span>
+                <span style="color: var(--bg-border, #E8E5DF);">|</span>
+                <span class="banner-stat laundry" style="color: var(--color-warning, #E09F3E); font-weight: 600;">🧺 <strong id="studioWardrobeLaundryCount">3</strong> In Laundry</span>
+                <span class="banner-hint" style="color: var(--text-muted, #7A766F); font-size: 0.72rem; margin-left: auto;">Tap item to wear</span>
+              </div>
+
+              <!-- Category Filter Bar -->
+              <div class="category-filter-bar" id="studioWardrobeCatFilter" style="margin-bottom: 12px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;">
+                <button class="cat-pill active" onclick="app.filterStudioWardrobeCategory('All', this)">All</button>
+                <button class="cat-pill" onclick="app.filterStudioWardrobeCategory('Shirts', this)">👕 Shirts</button>
+                <button class="cat-pill" onclick="app.filterStudioWardrobeCategory('Pants', this)">👖 Pants</button>
+                <button class="cat-pill" onclick="app.filterStudioWardrobeCategory('Shoes', this)">👟 Shoes</button>
+                <button class="cat-pill" onclick="app.filterStudioWardrobeCategory('Accessories', this)">⌚ Accessories</button>
+                <button class="cat-pill" onclick="app.filterStudioWardrobeCategory('Full Outfit', this)">👔 Full Outfit</button>
+                <button class="cat-pill" onclick="app.filterStudioWardrobeCategory('Clean', this)">✨ Clean</button>
+                <button class="cat-pill" onclick="app.filterStudioWardrobeCategory('Laundry', this)">🧺 In Laundry</button>
+              </div>
+
+              <!-- 2-Column Garments Grid in Studio Wardrobe Card -->
+              <div class="wardrobe-2col-grid studio-wardrobe-grid" id="studioWardrobeCardsGrid"></div>
+            </div>
           </div>
 
           <!-- Sliding Vanity & Avatar Customization Sheet -->
@@ -2062,7 +2116,7 @@
               </svg>
               <span>Today</span>
             </button>
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
@@ -2169,7 +2223,7 @@
               </svg>
               <span>Today</span>
             </button>
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
@@ -2566,7 +2620,7 @@
               </svg>
               <span>Today</span>
             </button>
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
@@ -3626,7 +3680,7 @@
           </div>
 
           <nav class="phone-bottom-nav">
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
@@ -3717,7 +3771,7 @@
           </div>
 
           <nav class="phone-bottom-nav">
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
@@ -3839,7 +3893,7 @@
               </svg>
               <span>Today</span>
             </button>
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
@@ -3909,7 +3963,7 @@
               </svg>
               <span>Today</span>
             </button>
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
@@ -4066,7 +4120,7 @@
               </svg>
               <span>Today</span>
             </button>
-            <button class="nav-tab" onclick="app.goToScreen('wardrobe')">
+            <button class="nav-tab" onclick="app.openStudioWardrobe()">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path
                   d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />

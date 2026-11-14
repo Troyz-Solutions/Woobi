@@ -15,7 +15,11 @@ import {
   toHexInt,
   sampleBackgroundFromPerimeter,
   extractExactHDColor,
-  removeBackgroundOnDevice
+  removeBackgroundOnDevice,
+  pruneDisconnectedBackgroundDebris,
+  calculateGarmentOrientation,
+  neutralizeCreaseShadows,
+  detectGarmentCreasesAndAlignment
 } from './ClothingSegmentation.js';
 
 describe('ClothingSegmentation Engine ($0 Client-Side On-Device)', () => {
@@ -181,6 +185,118 @@ describe('ClothingSegmentation Engine ($0 Client-Side On-Device)', () => {
     assert.strictEqual(res.width, 1920);
     assert.strictEqual(res.height, 1080);
     assert.strictEqual(res.segmentedData.length, 1920 * 1080 * 4);
+  });
+
+  test('pruneDisconnectedBackgroundDebris isolates garment and removes isolated clutter', () => {
+    const width = 50;
+    const height = 50;
+    const mask = new Uint8Array(width * height);
+
+    // Large garment mass in center (30x30 = 900 pixels)
+    for (let y = 10; y < 40; y++) {
+      for (let x = 10; x < 40; x++) {
+        mask[y * width + x] = 255;
+      }
+    }
+
+    // Small stray debris/hanger on top-right (3x3 = 9 pixels)
+    for (let y = 1; y < 4; y++) {
+      for (let x = 40; x < 43; x++) {
+        mask[y * width + x] = 255;
+      }
+    }
+
+    // Small stray clutter on bottom-left (4x4 = 16 pixels)
+    for (let y = 44; y < 48; y++) {
+      for (let x = 2; x < 6; x++) {
+        mask[y * width + x] = 255;
+      }
+    }
+
+    assert.strictEqual(mask[2 * width + 41], 255);
+    assert.strictEqual(mask[45 * width + 3], 255);
+
+    pruneDisconnectedBackgroundDebris(mask, width, height);
+
+    // Garment remains
+    assert.strictEqual(mask[25 * width + 25], 255);
+
+    // Stray debris & clutter are completely pruned to 0
+    assert.strictEqual(mask[2 * width + 41], 0);
+    assert.strictEqual(mask[45 * width + 3], 0);
+  });
+
+  test('neutralizeCreaseShadows lifts deep fold crease shadows without altering dye color', () => {
+    const width = 20;
+    const height = 20;
+    const data = new Uint8ClampedArray(width * height * 4);
+    const mask = new Uint8Array(width * height);
+    mask.fill(255);
+
+    // Base garment color: olive fabric (R: 120, G: 140, B: 80)
+    for (let i = 0; i < width * height; i++) {
+      data[i * 4] = 120;
+      data[i * 4 + 1] = 140;
+      data[i * 4 + 2] = 80;
+      data[i * 4 + 3] = 255;
+    }
+
+    // Harsh fold crease shadow along column x=10 (Luminance drops to ~30%)
+    for (let y = 0; y < height; y++) {
+      const idx = (y * width + 10) * 4;
+      data[idx] = 40;
+      data[idx + 1] = 48;
+      data[idx + 2] = 28;
+    }
+
+    const creasePixelBefore = (5 * width + 10) * 4;
+    assert.strictEqual(data[creasePixelBefore], 40);
+
+    const res = neutralizeCreaseShadows({ width, height, data }, mask, { intensity: 0.85 });
+
+    assert.ok(res.creasesCorrected > 0);
+    // Crease shadow is lifted back significantly closer to base color 120
+    assert.ok(data[creasePixelBefore] > 70);
+  });
+
+  test('detectGarmentCreasesAndAlignment calculates flatness score and provides guidance', () => {
+    const width = 60;
+    const height = 60;
+    const data = new Uint8ClampedArray(width * height * 4);
+    const mask = new Uint8Array(width * height);
+
+    // 1. Perfectly flat centered garment
+    for (let y = 10; y < 50; y++) {
+      for (let x = 15; x < 45; x++) {
+        const idx = y * width + x;
+        mask[idx] = 255;
+        data[idx * 4] = 100;
+        data[idx * 4 + 1] = 120;
+        data[idx * 4 + 2] = 150;
+        data[idx * 4 + 3] = 255;
+      }
+    }
+
+    const flatResult = detectGarmentCreasesAndAlignment({ width, height, data }, mask);
+    assert.ok(flatResult.flatnessScore >= 80);
+    assert.strictEqual(flatResult.isFlat, true);
+    assert.strictEqual(flatResult.status, 'ready');
+    assert.ok(flatResult.feedback.includes('flat & aligned'));
+
+    // 2. Add heavy jagged creases
+    for (let y = 12; y < 48; y++) {
+      for (let x = 16; x < 44; x += 3) {
+        const idx = y * width + x;
+        data[idx * 4] = 20;
+        data[idx * 4 + 1] = 20;
+        data[idx * 4 + 2] = 20;
+      }
+    }
+
+    const wrinkledResult = detectGarmentCreasesAndAlignment({ width, height, data }, mask);
+    assert.ok(wrinkledResult.flatnessScore < 80);
+    assert.strictEqual(wrinkledResult.isFlat, false);
+    assert.ok(wrinkledResult.feedback.includes('Smooth') || wrinkledResult.feedback.includes('Folds'));
   });
 });
 

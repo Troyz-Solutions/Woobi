@@ -18,7 +18,11 @@ import {
   extractExactHDColor,
   colorDistance,
   rgbToHex,
-  toHexInt
+  toHexInt,
+  pruneDisconnectedBackgroundDebris,
+  calculateGarmentOrientation,
+  neutralizeCreaseShadows,
+  detectGarmentCreasesAndAlignment
 } from './capture/ClothingSegmentation.js';
 import { toastService } from './shared-ui/ToastService.js';
 import { modalService } from './shared-ui/ModalService.js';
@@ -52,6 +56,10 @@ export {
   colorDistance,
   rgbToHex,
   toHexInt,
+  pruneDisconnectedBackgroundDebris,
+  calculateGarmentOrientation,
+  neutralizeCreaseShadows,
+  detectGarmentCreasesAndAlignment,
   toastService,
   modalService,
   GlobalErrorHandler,
@@ -93,6 +101,10 @@ export const CoreContract = {
     removeBackgroundOnDevice: (imgData, opt) => removeBackgroundOnDevice(imgData, opt),
     processCanvasGarment: (canvas, opt) => processCanvasGarment(canvas, opt),
     extractExactHDColor: (imgData, mask) => extractExactHDColor(imgData, mask),
+    detectGarmentCreasesAndAlignment: (imgData, mask) => detectGarmentCreasesAndAlignment(imgData, mask),
+    neutralizeCreaseShadows: (imgData, mask, opt) => neutralizeCreaseShadows(imgData, mask, opt),
+    pruneDisconnectedBackgroundDebris: (mask, w, h) => pruneDisconnectedBackgroundDebris(mask, w, h),
+    calculateGarmentOrientation: (mask, w, h) => calculateGarmentOrientation(mask, w, h),
     colorDistance,
     rgbToHex,
     toHexInt

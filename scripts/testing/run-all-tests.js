@@ -52,7 +52,7 @@ const testSuites = [
   { name: 'Branding & Compatibility Verification (6 Tests)', path: 'modules/core/BrandingCompatibility.test.js', isNodeTest: true },
   { name: 'Daily Outfit Streak & Memories State Engine (15 Tests)', path: 'modules/core/state/StreakState.test.js', isNodeTest: true },
   { name: 'Clothing Silhouette Capture & Slot Budgeting Engine (10 Tests)', path: 'modules/core/state/ClothingCaptureState.test.js', isNodeTest: true },
-  { name: 'On-Device $0 Segmentation & Exact HD Color Engine (6 Tests)', path: 'modules/core/capture/ClothingSegmentation.test.js', isNodeTest: true },
+  { name: 'On-Device $0 Segmentation & Exact HD Color Engine (7 Tests)', path: 'modules/core/capture/ClothingSegmentation.test.js', isNodeTest: true },
 
   // 6. Production User Journeys & End-to-End Flows (8 Tests)
   { name: 'Application User Journeys (8 Tests)', path: 'scripts/testing/test-user-journeys.js', isNodeTest: true },

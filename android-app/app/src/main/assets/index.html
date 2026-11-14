@@ -5484,10 +5484,12 @@
 
       <!-- Review & Confirm Controls (after capture) -->
       <div class="clothing-review-controls hidden" id="clothingCameraReviewControls">
-        <!-- Exact HD Color Swatch Match -->
+        <!-- Exact HD Multi-Color Swatches & Palette -->
         <div class="clothing-hd-color-chip hidden" id="clothingHdColorChip">
-          <span class="clothing-hd-color-circle" id="clothingHdColorCircle"></span>
-          <span class="clothing-hd-color-code" id="clothingHdColorText">Fabric HD Color Matched</span>
+          <div class="clothing-palette-swatches" id="clothingPaletteSwatches">
+            <span class="clothing-hd-color-circle" id="clothingHdColorCircle"></span>
+          </div>
+          <span class="clothing-hd-color-code" id="clothingHdColorText">Fabric HD Colors Matched</span>
         </div>
         <div class="clothing-review-buttons-row">
           <button type="button" class="clothing-btn-retake" onclick="app.retakeClothingPhoto()">

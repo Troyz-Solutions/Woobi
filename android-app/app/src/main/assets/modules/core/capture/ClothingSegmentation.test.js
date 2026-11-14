@@ -90,6 +90,39 @@ describe('ClothingSegmentation Engine ($0 Client-Side On-Device)', () => {
     assert.strictEqual(hd.hex, '#1E5838');
     assert.strictEqual(hd.intHex, 0x1E5838);
     assert.ok(hd.luminance > 20 && hd.luminance < 45);
+    assert.strictEqual(hd.primary.hex, '#1E5838');
+    assert.strictEqual(hd.isMultiColor, false);
+  });
+
+  test('extractExactHDColor accurately extracts full multi-color palette (primary, secondary, accent)', () => {
+    const width = 100;
+    const height = 100;
+    const data = new Uint8ClampedArray(width * height * 4);
+
+    // 70% Navy Blue (#1B2A4A -> R:27, G:42, B:74)
+    for (let i = 0; i < 7000; i++) {
+      data[i * 4] = 27;
+      data[i * 4 + 1] = 42;
+      data[i * 4 + 2] = 74;
+      data[i * 4 + 3] = 255;
+    }
+
+    // 30% Crisp Crimson Red stripe (#C82828 -> R:200, G:40, B:40)
+    for (let i = 7000; i < 10000; i++) {
+      data[i * 4] = 200;
+      data[i * 4 + 1] = 40;
+      data[i * 4 + 2] = 40;
+      data[i * 4 + 3] = 255;
+    }
+
+    const imgData = { data, width, height };
+    const hd = extractExactHDColor(imgData);
+
+    assert.strictEqual(hd.primary.hex, '#1B2A4A');
+    assert.ok(hd.secondary !== null);
+    assert.strictEqual(hd.secondary.hex, '#C82828');
+    assert.strictEqual(hd.isMultiColor, true);
+    assert.strictEqual(hd.palette.length, 2);
   });
 
   test('removeBackgroundOnDevice removes background and retains garment', () => {
@@ -150,3 +183,4 @@ describe('ClothingSegmentation Engine ($0 Client-Side On-Device)', () => {
     assert.strictEqual(res.segmentedData.length, 1920 * 1080 * 4);
   });
 });
+

@@ -1,0 +1,63 @@
+const fs = require('fs');
+
+async function run() {
+  const res = await fetch('http://127.0.0.1:9222/json/list');
+  const tabs = await res.json();
+  const appTab = tabs.find(t => t.url.includes('localhost:8080'));
+  const ws = new WebSocket(appTab.webSocketDebuggerUrl);
+  let id = 1;
+  const pending = new Map();
+  function send(method, params = {}) {
+    return new Promise((resolve, reject) => {
+      const curId = id++;
+      pending.set(curId, { resolve, reject });
+      ws.send(JSON.stringify({ id: curId, method, params }));
+    });
+  }
+  await new Promise(r => ws.onopen = r);
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    if (d.id && pending.has(d.id)) {
+      const { resolve, reject } = pending.get(d.id);
+      pending.delete(d.id);
+      if (d.error) reject(d.error); else resolve(d.result);
+    }
+  };
+
+  const evalRes = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const s = window.Studio3D;
+      const avatar = s.gltfAvatarGroup;
+      let shirtMesh = null;
+      avatar.traverse(c => {
+        if (c.isMesh && (c.name.includes('Shirt') || c.name.includes('Sweater'))) shirtMesh = c;
+      });
+      if (!shirtMesh) return { error: 'No shirt' };
+      const mat = Array.isArray(shirtMesh.material) ? shirtMesh.material[0] : shirtMesh.material;
+      const map = mat._origMap || mat.map;
+      if (!map || !map.image) return { error: 'No image on map' };
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = map.image.width || 512;
+      canvas.height = map.image.height || 512;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(map.image, 0, 0, canvas.width, canvas.height);
+      return {
+        width: canvas.width,
+        height: canvas.height,
+        dataUrl: canvas.toDataURL('image/jpeg', 0.7)
+      };
+    })()`,
+    returnByValue: true
+  });
+
+  if (evalRes.result.value && evalRes.result.value.dataUrl) {
+    const b64 = evalRes.result.value.dataUrl.split(',')[1];
+    fs.writeFileSync('C:/Users/suriy/.gemini/antigravity/brain/5f88950f-5720-4a88-a809-d2d285b36106/orig-atlas.jpg', Buffer.from(b64, 'base64'));
+    console.log('Saved orig-atlas.jpg, size:', evalRes.result.value.width, 'x', evalRes.result.value.height);
+  } else {
+    console.log('Result:', evalRes.result.value);
+  }
+  ws.close();
+}
+run().catch(console.error);

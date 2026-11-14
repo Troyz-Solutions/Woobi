@@ -6544,6 +6544,35 @@
     }
   }
 
+  function updateClothingColorPaletteUI(hdColor) {
+    const colorChip = document.getElementById('clothingHdColorChip');
+    const swatchesWrap = document.getElementById('clothingPaletteSwatches');
+    const colorText = document.getElementById('clothingHdColorText');
+    if (!colorChip || !colorText || !hdColor) return;
+
+    if (swatchesWrap) {
+      swatchesWrap.innerHTML = '';
+      const palette = (Array.isArray(hdColor.palette) && hdColor.palette.length > 0)
+        ? hdColor.palette
+        : [{ hex: hdColor.hex || '#243242' }];
+
+      palette.forEach((item, idx) => {
+        const circle = document.createElement('span');
+        circle.className = 'clothing-hd-color-circle';
+        circle.style.backgroundColor = item.hex;
+        circle.title = `${item.role || 'Tone'} ${idx + 1}: ${item.hex} (${item.percent || 100}%)`;
+        swatchesWrap.appendChild(circle);
+      });
+    }
+
+    if (hdColor.isMultiColor && hdColor.secondary) {
+      colorText.textContent = `Colors: ${hdColor.primary?.hex || hdColor.hex} • ${hdColor.secondary.hex}`;
+    } else {
+      colorText.textContent = `HD Color: ${hdColor.hex || '#243242'}`;
+    }
+    colorChip.classList.remove('hidden');
+  }
+
   function captureClothingSnapshot() {
     const engine = getClothingCaptureEngine();
     const activeCat = engine.getActiveCategory();
@@ -6594,15 +6623,8 @@
       if (backDone) backDone.classList.remove('hidden');
     }
 
-    // Display Exact HD Fabric Color Chip
-    const colorChip = document.getElementById('clothingHdColorChip');
-    const colorCircle = document.getElementById('clothingHdColorCircle');
-    const colorText = document.getElementById('clothingHdColorText');
-    if (colorChip && colorCircle && colorText && hdColor) {
-      colorCircle.style.backgroundColor = hdColor.hex;
-      colorText.textContent = `HD Color: ${hdColor.hex}`;
-      colorChip.classList.remove('hidden');
-    }
+    // Display Exact HD Fabric Color & Palette Swatches
+    updateClothingColorPaletteUI(hdColor);
 
     // Toggle Back Side capture button
     const btnCaptureBack = document.getElementById('btnCaptureBackSide');
@@ -6769,15 +6791,8 @@
           if (backDone) backDone.classList.remove('hidden');
         }
 
-        // Display Exact HD Fabric Color Chip
-        const colorChip = document.getElementById('clothingHdColorChip');
-        const colorCircle = document.getElementById('clothingHdColorCircle');
-        const colorText = document.getElementById('clothingHdColorText');
-        if (colorChip && colorCircle && colorText && hdColor) {
-          colorCircle.style.backgroundColor = hdColor.hex;
-          colorText.textContent = `HD Color: ${hdColor.hex}`;
-          colorChip.classList.remove('hidden');
-        }
+        // Display Exact HD Fabric Color & Palette Swatches
+        updateClothingColorPaletteUI(hdColor);
 
         const btnCaptureBack = document.getElementById('btnCaptureBackSide');
         if (btnCaptureBack) {

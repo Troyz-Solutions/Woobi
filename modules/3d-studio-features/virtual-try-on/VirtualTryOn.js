@@ -337,58 +337,118 @@ export class VirtualTryOn {
 
             const photoFront = garmentRecord.photoFront || garmentRecord.photo;
             const photoBack = garmentRecord.photoBack || photoFront;
+            const isTop = (garmentRecord.category === GARMENT_CATEGORIES.TOP);
+
+            // Compute exact base fabric color as THREE.Color for uniform blending
+            let baseFabCol = (typeof window !== 'undefined' && window.THREE) ? new window.THREE.Color(0xFFFFFF) : null;
+            if (baseFabCol) {
+              if (garmentRecord.color !== undefined) {
+                baseFabCol.setHex(garmentRecord.color);
+              } else if (garmentRecord.hdColor && garmentRecord.hdColor.hex) {
+                baseFabCol.setStyle(garmentRecord.hdColor.hex);
+              }
+            }
 
             if (photoFront && typeof window !== 'undefined' && window.THREE && window.THREE.TextureLoader) {
               try {
                 const texLoader = new window.THREE.TextureLoader();
                 texLoader.load(photoFront, (frontTexture) => {
-                  frontTexture.wrapS = window.THREE.RepeatWrapping;
-                  frontTexture.wrapT = window.THREE.RepeatWrapping;
+                  frontTexture.wrapS = window.THREE.ClampToEdgeWrapping;
+                  frontTexture.wrapT = window.THREE.ClampToEdgeWrapping;
                   mat.map = frontTexture;
 
-                  if (garmentRecord.color !== undefined) {
-                    if (typeof mat.color?.setHex === 'function') mat.color.setHex(garmentRecord.color);
-                    else mat.color = garmentRecord.color;
-                  } else {
-                    mat.color.setHex(0xFFFFFF);
-                  }
+                  // Pure white material color so authentic fabric colors & patterns are 100% unadulterated
+                  mat.color.setHex(0xFFFFFF);
 
-                  // If back photo is also provided, setup Dual-Side UV Projection
-                  if (garmentRecord.photoBack && garmentRecord.photoBack !== photoFront) {
-                    texLoader.load(garmentRecord.photoBack, (backTexture) => {
-                      backTexture.wrapS = window.THREE.RepeatWrapping;
-                      backTexture.wrapT = window.THREE.RepeatWrapping;
-                      mat.userData.uFrontMap = { value: frontTexture };
-                      mat.userData.uBackMap = { value: backTexture };
-                      mat.onBeforeCompile = (shader) => {
-                        shader.uniforms.uFrontMap = mat.userData.uFrontMap;
-                        shader.uniforms.uBackMap = mat.userData.uBackMap;
-                        shader.vertexShader = shader.vertexShader.replace(
-                          '#include <common>',
-                          '#include <common>\nvarying vec3 vModelNormal;'
-                        );
-                        shader.vertexShader = shader.vertexShader.replace(
-                          '#include <defaultnormal_vertex>',
-                          '#include <defaultnormal_vertex>\nvModelNormal = normal;'
-                        );
-                        shader.fragmentShader = shader.fragmentShader.replace(
-                          '#include <common>',
-                          '#include <common>\nuniform sampler2D uFrontMap;\nuniform sampler2D uBackMap;\nvarying vec3 vModelNormal;'
-                        );
-                        shader.fragmentShader = shader.fragmentShader.replace(
-                          '#include <map_fragment>',
-                          '#ifdef USE_MAP\nvec4 frontTex = texture2D(uFrontMap, vUv);\nvec4 backTex = texture2D(uBackMap, vUv);\nfloat sideBlend = smoothstep(-0.06, 0.06, vModelNormal.z);\nvec4 texelColor = mix(backTex, frontTex, sideBlend);\ndiffuseColor *= texelColor;\n#endif'
-                        );
-                      };
-                      mat.needsUpdate = true;
+                  const setupPlanarShader = (bTexture) => {
+                    mat.userData.uFrontMap = { value: frontTexture };
+                    mat.userData.uBackMap = { value: bTexture || frontTexture };
+                    mat.userData.uBaseFabricColor = { value: baseFabCol || new window.THREE.Color(0xFFFFFF) };
+                    mat.userData.uIsTop = { value: isTop ? 1.0 : 0.0 };
+
+                    mat.customProgramCacheKey = function() {
+                      return 'woobi_planar_v2_' + (garmentRecord.id || 'custom') + '_' + (isTop ? 'top' : 'bot');
+                    };
+
+                    mat.onBeforeCompile = (shader) => {
+                      shader.uniforms.uFrontMap = mat.userData.uFrontMap;
+                      shader.uniforms.uBackMap = mat.userData.uBackMap;
+                      shader.uniforms.uBaseFabricColor = mat.userData.uBaseFabricColor;
+                      shader.uniforms.uIsTop = mat.userData.uIsTop;
+
+                      shader.vertexShader = `
+                        uniform float uIsTop;
+                        varying vec2 vProjectedFrontUV;
+                        varying vec2 vProjectedBackUV;
+                        varying vec3 vModelNormal;
+                        ${shader.vertexShader}
+                      `.replace(
+                        '#include <begin_vertex>',
+                        `#include <begin_vertex>
+                         vModelNormal = normal;
+
+                         // Precision Planar Alignment:
+                         // For TOPS: position.x spans [-1.0, 1.0] with torso around [-0.55, 0.55].
+                         // position.y spans [-0.425, 0.425] from waist to collar.
+                         float uTop = clamp((position.x * 0.90) * 0.5 + 0.5, 0.0, 1.0);
+                         float vTop = clamp((position.y + 0.425) / 0.85, 0.0, 1.0);
+
+                         // For BOTTOMS: position.x spans [-0.42, 0.42].
+                         // position.y spans [-1.0, 1.0] from ankles to waistband.
+                         float uBot = clamp((position.x / 0.84) + 0.5, 0.0, 1.0);
+                         float vBot = clamp((position.y + 1.0) * 0.5, 0.0, 1.0);
+
+                         float uProj = mix(uBot, uTop, uIsTop);
+                         float vProj = mix(vBot, vTop, uIsTop);
+
+                         vProjectedFrontUV = vec2(uProj, vProj);
+                         vProjectedBackUV = vec2(1.0 - uProj, vProj);
+                        `
+                      );
+
+                      shader.fragmentShader = `
+                        uniform sampler2D uFrontMap;
+                        uniform sampler2D uBackMap;
+                        uniform vec3 uBaseFabricColor;
+                        varying vec2 vProjectedFrontUV;
+                        varying vec2 vProjectedBackUV;
+                        varying vec3 vModelNormal;
+                        ${shader.fragmentShader}
+                      `.replace(
+                        '#include <map_fragment>',
+                        `#ifdef USE_MAP
+                           vec4 frontTex = texture2D(uFrontMap, vProjectedFrontUV);
+                           vec4 backTex = texture2D(uBackMap, vProjectedBackUV);
+                           float sideBlend = smoothstep(-0.08, 0.08, vModelNormal.z);
+                           vec4 garmentSample = mix(backTex, frontTex, sideBlend);
+
+                           // 100% Exact Authentic Fabric Color & Pattern Matching:
+                           // Transparent cutout edges blend seamlessly into exact base fabric color
+                           vec3 authenticColor = mix(uBaseFabricColor, garmentSample.rgb, garmentSample.a);
+                           diffuseColor = vec4(authenticColor, 1.0);
+                         #endif`
+                      );
+                    };
+                    mat.needsUpdate = true;
+                  };
+
+                  if (photoBack && photoBack !== photoFront) {
+                    texLoader.load(photoBack, (backTexture) => {
+                      backTexture.wrapS = window.THREE.ClampToEdgeWrapping;
+                      backTexture.wrapT = window.THREE.ClampToEdgeWrapping;
+                      setupPlanarShader(backTexture);
+                    }, undefined, () => {
+                      setupPlanarShader(frontTexture);
                     });
                   } else {
-                    mat.onBeforeCompile = null;
+                    setupPlanarShader(frontTexture);
                   }
 
                   mat.needsUpdate = true;
                 }, undefined, () => {
                   mat.map = null;
+                  mat.onBeforeCompile = () => {};
+                  mat.customProgramCacheKey = () => '';
                   if (garmentRecord.color !== undefined) {
                     if (typeof mat.color?.setHex === 'function') mat.color.setHex(garmentRecord.color);
                     else mat.color = garmentRecord.color;
@@ -397,6 +457,8 @@ export class VirtualTryOn {
                 });
               } catch (_) {
                 mat.map = null;
+                mat.onBeforeCompile = () => {};
+                mat.customProgramCacheKey = () => '';
                 if (garmentRecord.color !== undefined) {
                   if (typeof mat.color?.setHex === 'function') mat.color.setHex(garmentRecord.color);
                   else mat.color = garmentRecord.color;
@@ -405,7 +467,8 @@ export class VirtualTryOn {
             } else if (garmentRecord.color !== undefined) {
               // Unbind pre-baked suit texture so garment color renders cleanly and purely
               mat.map = null;
-              mat.onBeforeCompile = null;
+              mat.onBeforeCompile = () => {};
+              mat.customProgramCacheKey = () => '';
               if (typeof mat.color?.setHex === 'function') {
                 mat.color.setHex(garmentRecord.color);
               } else {

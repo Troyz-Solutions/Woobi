@@ -13522,6 +13522,12 @@ body.theme-dark .search-input,
   margin-inline: auto;
 }
 
+.clothing-palette-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .clothing-hd-color-circle {
   width: 16px;
   height: 16px;
@@ -13529,6 +13535,7 @@ body.theme-dark .search-input,
   border: 2px solid #FFFFFF;
   box-shadow: 0 0 6px rgba(0,0,0,0.5);
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .clothing-hd-color-code {

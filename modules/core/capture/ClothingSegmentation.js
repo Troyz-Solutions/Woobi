@@ -160,38 +160,93 @@ export function extractExactHDColor(imageData, mask = null) {
 
   if (validCount === 0 || hist.size === 0) {
     // Fallback: neutral refined navy
-    return {
+    const fallbackColor = {
       hex: '#243242',
       intHex: 0x243242,
       rgb: { r: 36, g: 50, b: 66 },
-      luminance: 35
+      luminance: 35,
+      percent: 100,
+      role: 'primary'
+    };
+    return {
+      hex: fallbackColor.hex,
+      intHex: fallbackColor.intHex,
+      rgb: fallbackColor.rgb,
+      luminance: fallbackColor.luminance,
+      primary: fallbackColor,
+      secondary: null,
+      accent: null,
+      palette: [fallbackColor],
+      isMultiColor: false,
+      samplesCount: 0
     };
   }
 
-  // Find the mode bin with highest frequency
-  let dominantBin = null;
-  let maxCount = -1;
-
+  // Convert histogram entries to structured color clusters
+  const clusters = [];
   for (const entry of hist.values()) {
-    if (entry.count > maxCount) {
-      maxCount = entry.count;
-      dominantBin = entry;
+    const r = Math.round(entry.rTotal / entry.count);
+    const g = Math.round(entry.gTotal / entry.count);
+    const b = Math.round(entry.bTotal / entry.count);
+    const hex = rgbToHex(r, g, b);
+    const intHex = toHexInt(hex);
+    const lum = Math.round(getLuminance(r, g, b));
+    clusters.push({
+      count: entry.count,
+      percent: Math.round((entry.count / validCount) * 100),
+      hex,
+      intHex,
+      rgb: { r, g, b },
+      luminance: lum
+    });
+  }
+
+  // Sort clusters descending by pixel count
+  clusters.sort((a, b) => b.count - a.count);
+
+  // Extract Primary (Dominant Base Color)
+  const primary = { ...clusters[0], role: 'primary' };
+
+  // Extract Secondary (Contrast or Pattern Tone, perceptual color distance > 38)
+  let secondary = null;
+  for (let i = 1; i < clusters.length; i++) {
+    const c = clusters[i];
+    const dist = colorDistance(primary.rgb.r, primary.rgb.g, primary.rgb.b, c.rgb.r, c.rgb.g, c.rgb.b);
+    if (dist > 38 && c.count >= Math.max(8, validCount * 0.05)) {
+      secondary = { ...c, role: 'secondary' };
+      break;
     }
   }
 
-  const finalR = Math.round(dominantBin.rTotal / dominantBin.count);
-  const finalG = Math.round(dominantBin.gTotal / dominantBin.count);
-  const finalB = Math.round(dominantBin.bTotal / dominantBin.count);
+  // Extract Accent (Third distinct color tone, if present)
+  let accent = null;
+  if (secondary) {
+    for (let i = 1; i < clusters.length; i++) {
+      const c = clusters[i];
+      if (c.hex === secondary.hex) continue;
+      const dist1 = colorDistance(primary.rgb.r, primary.rgb.g, primary.rgb.b, c.rgb.r, c.rgb.g, c.rgb.b);
+      const dist2 = colorDistance(secondary.rgb.r, secondary.rgb.g, secondary.rgb.b, c.rgb.r, c.rgb.g, c.rgb.b);
+      if (dist1 > 38 && dist2 > 38 && c.count >= Math.max(5, validCount * 0.03)) {
+        accent = { ...c, role: 'accent' };
+        break;
+      }
+    }
+  }
 
-  const hex = rgbToHex(finalR, finalG, finalB);
-  const intHex = toHexInt(hex);
-  const luminance = Math.round(getLuminance(finalR, finalG, finalB));
+  const palette = [primary];
+  if (secondary) palette.push(secondary);
+  if (accent) palette.push(accent);
 
   return {
-    hex,
-    intHex,
-    rgb: { r: finalR, g: finalG, b: finalB },
-    luminance,
+    hex: primary.hex,
+    intHex: primary.intHex,
+    rgb: primary.rgb,
+    luminance: primary.luminance,
+    primary,
+    secondary: secondary || null,
+    accent: accent || null,
+    palette,
+    isMultiColor: !!(secondary && secondary.percent >= 10),
     samplesCount: validCount
   };
 }
@@ -336,3 +391,4 @@ export function processCanvasGarment(canvas, options = {}) {
     height: canvas.height
   };
 }
+

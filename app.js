@@ -2262,13 +2262,25 @@
     const current = state.isPremium ? (state.currentPlan || 'pro') : 'free';
     const cycle = state.billingCycle || 'yearly';
 
-    // Update active tab on cadence switcher
+    // Update active tab & sliding glider on cadence switcher
+    const pill = document.getElementById('serenCadencePill');
+    if (pill) {
+      pill.dataset.cycle = cycle;
+    }
     const monthlyBtn = document.getElementById('cadenceMonthly');
     const yearlyBtn = document.getElementById('cadenceYearly');
     const lifetimeBtn = document.getElementById('cadenceLifetime');
     if (monthlyBtn) monthlyBtn.classList.toggle('active', cycle === 'monthly');
     if (yearlyBtn) yearlyBtn.classList.toggle('active', cycle === 'yearly');
     if (lifetimeBtn) lifetimeBtn.classList.toggle('active', cycle === 'lifetime');
+
+    // Micro-animation trigger for numbers & offers
+    function triggerAnim(el) {
+      if (!el) return;
+      el.classList.remove('price-animate-pop');
+      void el.offsetWidth;
+      el.classList.add('price-animate-pop');
+    }
 
     // Update Free price display
     const freeEl = document.getElementById('priceDisplayFree');
@@ -2283,7 +2295,11 @@
       const basicData = PLAN_PRICING.basic[cycle] || PLAN_PRICING.basic.yearly;
       const periodHtml = basicData.period ? `<span class="seren-price-period" id="pricePeriodBasic">${basicData.period}</span>` : '';
       basicEl.innerHTML = `${basicData.sym}${basicData.amount}${periodHtml}`;
-      if (basicOfferEl) basicOfferEl.textContent = basicData.offer;
+      triggerAnim(basicEl);
+      if (basicOfferEl) {
+        basicOfferEl.textContent = basicData.offer;
+        triggerAnim(basicOfferEl);
+      }
     }
 
     // Update Pro price display
@@ -2293,7 +2309,25 @@
       const proData = PLAN_PRICING.pro[cycle] || PLAN_PRICING.pro.yearly;
       const periodHtml = proData.period ? `<span class="seren-price-period" id="pricePeriodPro">${proData.period}</span>` : '';
       proEl.innerHTML = `${proData.sym}${proData.amount}${periodHtml}`;
-      if (proOfferEl) proOfferEl.textContent = proData.offer;
+      triggerAnim(proEl);
+      if (proOfferEl) {
+        proOfferEl.textContent = proData.offer;
+        triggerAnim(proOfferEl);
+      }
+    }
+
+    // Interactive card pulse feedback
+    const cardBasic = document.getElementById('cardPlanBasic');
+    const cardPro = document.getElementById('cardPlanPro');
+    if (cardBasic) {
+      cardBasic.classList.remove('card-pulse-active');
+      void cardBasic.offsetWidth;
+      cardBasic.classList.add('card-pulse-active');
+    }
+    if (cardPro) {
+      cardPro.classList.remove('card-pulse-active');
+      void cardPro.offsetWidth;
+      cardPro.classList.add('card-pulse-active');
     }
 
     // Update CTA buttons
@@ -2327,6 +2361,12 @@
   }
 
   function setBillingCycle(cycle) {
+    if (state.billingCycle === cycle) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(8);
+      }
+    } catch (_) {}
     state.billingCycle = cycle;
     updateSubscriptionUI();
   }

@@ -2359,7 +2359,8 @@
 
           <!-- Billing Cadence Switcher (Monthly | Annual | Lifetime) -->
           <div class="seren-cadence-switcher-wrap">
-            <div class="seren-cadence-pill" id="serenCadencePill">
+            <div class="seren-cadence-pill" id="serenCadencePill" data-cycle="yearly">
+              <div class="seren-cadence-glider" id="serenCadenceGlider"></div>
               <button type="button" class="seren-cadence-tab" id="cadenceMonthly" onclick="app.setBillingCycle('monthly')">Monthly</button>
               <button type="button" class="seren-cadence-tab active" id="cadenceYearly" onclick="app.setBillingCycle('yearly')">Annual (2 Mo. Free)</button>
               <button type="button" class="seren-cadence-tab" id="cadenceLifetime" onclick="app.setBillingCycle('lifetime')">Lifetime</button>

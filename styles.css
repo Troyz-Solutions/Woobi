@@ -13853,6 +13853,7 @@ body.premium-mode .phone-screen-container::-webkit-scrollbar,
 }
 
 .seren-cadence-pill {
+  position: relative;
   display: flex;
   background: #EEDDDA;
   border-radius: 999px;
@@ -13860,6 +13861,35 @@ body.premium-mode .phone-screen-container::-webkit-scrollbar,
   width: 100%;
   max-width: 350px;
   gap: 2px;
+  user-select: none;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.seren-cadence-glider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 3);
+  background: #B66949;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(182, 105, 73, 0.4);
+  transition: transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.seren-cadence-pill[data-cycle="monthly"] .seren-cadence-glider {
+  transform: translateX(0%);
+}
+
+.seren-cadence-pill[data-cycle="yearly"] .seren-cadence-glider,
+.seren-cadence-pill:not([data-cycle]) .seren-cadence-glider {
+  transform: translateX(100%);
+}
+
+.seren-cadence-pill[data-cycle="lifetime"] .seren-cadence-glider {
+  transform: translateX(200%);
 }
 
 .seren-cadence-tab {
@@ -13872,16 +13902,24 @@ body.premium-mode .phone-screen-container::-webkit-scrollbar,
   padding: clamp(5px, 0.9vh, 7px) 6px;
   border-radius: 999px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.25s ease, transform 0.15s ease;
   white-space: nowrap;
   text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.seren-cadence-tab:hover {
+  color: #3C332A;
+}
+
+.seren-cadence-tab:active {
+  transform: scale(0.95);
 }
 
 .seren-cadence-tab.active {
-  background: #B66949;
   color: #FFFFFF;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(182, 105, 73, 0.35);
 }
 
 /* Plan Cards Stack - Vertically filled, no dead spaces */
@@ -14037,6 +14075,76 @@ body.premium-mode .phone-screen-container::-webkit-scrollbar,
 
 .seren-card-free .seren-price-offer-sub {
   color: #8E8276;
+}
+
+/* Price update pop & slide transitions */
+@keyframes priceNumPop {
+  0% {
+    opacity: 0.15;
+    transform: translateY(-8px) scale(0.92);
+  }
+  60% {
+    transform: translateY(2px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes priceOfferSlide {
+  0% {
+    opacity: 0.15;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardGlowPulse {
+  0% {
+    box-shadow: 0 4px 14px rgba(182, 105, 73, 0.08);
+  }
+  50% {
+    box-shadow: 0 6px 22px rgba(182, 105, 73, 0.28);
+    transform: translateY(-2px);
+  }
+  100% {
+    box-shadow: 0 4px 14px rgba(182, 105, 73, 0.08);
+    transform: translateY(0);
+  }
+}
+
+@keyframes proCardGlowPulse {
+  0% {
+    box-shadow: 0 5px 18px rgba(182, 105, 73, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 28px rgba(182, 105, 73, 0.55);
+    transform: translateY(-2px);
+  }
+  100% {
+    box-shadow: 0 5px 18px rgba(182, 105, 73, 0.3);
+    transform: translateY(0);
+  }
+}
+
+.seren-card-price-display.price-animate-pop {
+  animation: priceNumPop 0.36s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+}
+
+.seren-price-offer-sub.price-animate-pop {
+  animation: priceOfferSlide 0.32s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+}
+
+.seren-card-basic.card-pulse-active {
+  animation: cardGlowPulse 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.seren-card-pro.card-pulse-active {
+  animation: proCardGlowPulse 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
 .seren-card-tagline {

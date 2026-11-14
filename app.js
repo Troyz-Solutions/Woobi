@@ -3453,7 +3453,7 @@
 
     if (stateName === 'STUDIO_OVERVIEW') {
       if (backBtn) backBtn.classList.add('hidden');
-      if (dragHint) dragHint.style.display = '';
+      if (dragHint) dragHint.style.display = 'none';
       if (greeting) greeting.style.display = 'none';
       if (tagline) tagline.style.display = 'none';
     } else {

@@ -7959,6 +7959,7 @@ body.theme-dark.high-contrast,
 }
 
 .avatar-hint {
+  display: none !important;
   bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 6px) + 154px);
   left: 50%;
   transform: translateX(-50%);

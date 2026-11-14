@@ -18,3 +18,4 @@ inspectGlbMeshBounds('assets/models/avatar_female.glb', 2, 'Ch37_Shirt');
 inspectGlbMeshBounds('assets/models/avatar_female.glb', 0, 'Ch37_Pants');
 inspectGlbMeshBounds('assets/models/avatar_male.glb', 2, 'Ch31_Sweater');
 inspectGlbMeshBounds('assets/models/avatar_male.glb', 1, 'Ch31_Pants');
+

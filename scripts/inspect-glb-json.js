@@ -20,3 +20,4 @@ function inspectGlb(path) {
 
 inspectGlb('assets/models/avatar_female.glb');
 inspectGlb('assets/models/avatar_male.glb');
+

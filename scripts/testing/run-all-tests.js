@@ -59,7 +59,14 @@ const testSuites = [
   { name: 'Wardrobe Category Separation & Full Outfits (11 Tests)', path: 'scripts/testing/test-wardrobe-organization.js', isNodeTest: true },
 
   // 7. Multi-Process Durability & OS Locking (4 Tests)
-  { name: 'Multi-Process Concurrency & Crash Durability (4 Tests)', path: 'scripts/testing/test-multiprocess-concurrency.js', isNodeTest: true }
+  { name: 'Multi-Process Concurrency & Crash Durability (4 Tests)', path: 'scripts/testing/test-multiprocess-concurrency.js', isNodeTest: true },
+
+  // 8. Engine Harmony Recommendation & Scoring Engine (PR #48)
+  { name: 'Engine Harmony: Color Science & Harmonies', path: 'engine-harmony/tests/color.test.js', isNodeTest: true },
+  { name: 'Engine Harmony: Compatibility & Style Matching', path: 'engine-harmony/tests/compatibility.test.js', isNodeTest: true },
+  { name: 'Engine Harmony: Outfit Generation & Diversity', path: 'engine-harmony/tests/generator.test.js', isNodeTest: true },
+  { name: 'Engine Harmony: Multi-Factor Scoring & Explanations', path: 'engine-harmony/tests/scoring.test.js', isNodeTest: true },
+  { name: 'Engine Harmony: End-to-End Orchestration', path: 'engine-harmony/tests/engine-harmony.test.js', isNodeTest: true }
 ];
 
 console.log('======================================================');

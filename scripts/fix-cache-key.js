@@ -41,3 +41,4 @@ async function run() {
   ws.close();
 }
 run().catch(console.error);
+

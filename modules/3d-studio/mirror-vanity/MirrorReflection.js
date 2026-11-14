@@ -127,15 +127,21 @@ export class MirrorReflection {
     }
 
     try {
-      // Calculate true mirror position in world coordinates
-      let pX = 1.15, pY = 1.65, pZ = -2.85;
+      // Calculate true mirror position in world coordinates safely without throwing
+      let pX = this.mirrorPosition ? (this.mirrorPosition.x || 1.15) : 1.15;
+      let pY = this.mirrorPosition ? (this.mirrorPosition.y || 1.65) : 1.65;
+      let pZ = this.mirrorPosition ? (this.mirrorPosition.z || -2.85) : -2.85;
 
-      if (this.mirrorMesh && typeof this.mirrorMesh.getWorldPosition === 'function') {
-        const tempPos = { x: 0, y: 0, z: 0 };
-        this.mirrorMesh.getWorldPosition(tempPos);
-        pX = tempPos.x;
-        pY = tempPos.y;
-        pZ = tempPos.z;
+      if (this.mirrorMesh && this.mirrorMesh.matrixWorld) {
+        if (typeof this.mirrorMesh.updateMatrixWorld === 'function') {
+          this.mirrorMesh.updateMatrixWorld(true);
+        }
+        const m = this.mirrorMesh.matrixWorld.elements;
+        if (m && m.length >= 15 && !isNaN(m[12]) && !isNaN(m[13]) && !isNaN(m[14])) {
+          pX = m[12];
+          pY = m[13];
+          pZ = m[14];
+        }
       }
 
       // Position mirror camera directly at the mirror plane inside the room facing the avatar

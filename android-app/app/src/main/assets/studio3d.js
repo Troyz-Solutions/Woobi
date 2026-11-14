@@ -1478,47 +1478,52 @@
         vanityGroup.add(plinth);
       });
 
-      // 2. GRAND ARCHITECTURAL GROOMING MIRROR WITH 3000K CONTINUOUS WARM LED HALO
+      // 2. GRAND ARCHITECTURAL FRENCH ATELIER GROOMING MIRROR
       const mirrorGroup = new THREE.Group();
       mirrorGroup.position.set(0, tableHeight + 0.032, -tableDepth / 2 + 0.045);
 
       const archR = 0.44;
       const straightH = 1.05; // Grand increased mirror height per user request
 
-      // Lower Rectangular Mirror Surface
-      const lowerMirror = new THREE.Mesh(
-        new THREE.BoxGeometry(archR * 2, straightH, 0.002),
-        new THREE.MeshStandardMaterial({ color: 0xEAE6DE, roughness: 0.04, metalness: 0.94 })
-      );
-      lowerMirror.position.set(0, straightH / 2, 0.002);
-      lowerMirror.userData = { forcePlanarUV: true };
-      mirrorGroup.add(lowerMirror);
+      // A. Single Unified Seamless Arched Mirror Glass Surface
+      let mirrorGlassGeo;
+      if (THREE && typeof THREE.ShapeGeometry !== 'undefined' && typeof THREE.Shape !== 'undefined') {
+        const shape = new THREE.Shape();
+        shape.moveTo(-archR, 0);
+        shape.lineTo(archR, 0);
+        shape.lineTo(archR, straightH);
+        shape.absarc(0, straightH, archR, 0, Math.PI, false);
+        shape.lineTo(-archR, 0);
+        mirrorGlassGeo = new THREE.ShapeGeometry(shape, 64);
 
-      // Upper Semicircular Arch Mirror Surface
-      const upperMirror = new THREE.Mesh(
-        new THREE.CircleGeometry(archR, 64, 0, Math.PI),
-        new THREE.MeshStandardMaterial({ color: 0xEAE6DE, roughness: 0.04, metalness: 0.94 })
-      );
-      upperMirror.position.set(0, straightH, 0.002);
-      upperMirror.userData = { forcePlanarUV: true };
-      mirrorGroup.add(upperMirror);
+        if (THREE.BufferAttribute && mirrorGlassGeo.attributes && mirrorGlassGeo.attributes.position) {
+          const pos = mirrorGlassGeo.attributes.position;
+          const uvs = new Float32Array(pos.count * 2);
+          const spanX = archR * 2;
+          const spanY = straightH + archR;
+          for (let i = 0; i < pos.count; i++) {
+            const x = pos.getX(i);
+            const y = pos.getY(i);
+            uvs[i * 2] = 1.0 - ((x + archR) / spanX); // Optical horizontal mirror reflection flip
+            uvs[i * 2 + 1] = y / spanY;
+          }
+          mirrorGlassGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+        }
+      } else {
+        mirrorGlassGeo = new THREE.CircleGeometry(archR, 64);
+      }
 
-      this.mirrorGlassMesh = upperMirror;
-      this.lowerMirrorGlassMesh = lowerMirror;
-
-      // Continuous 3000K Warm LED Radiance Halo Ring
-      const ledGlowMat = new THREE.MeshBasicMaterial({ color: 0xFFECD4 });
-      const haloArc = new THREE.Mesh(new THREE.TorusGeometry(archR + 0.006, 0.009, 16, 64, Math.PI), ledGlowMat);
-      haloArc.position.set(0, straightH, 0.004);
-      mirrorGroup.add(haloArc);
-
-      [-archR - 0.006, archR + 0.006].forEach(hx => {
-        const sideHalo = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, straightH, 16), ledGlowMat);
-        sideHalo.position.set(hx, straightH / 2, 0.004);
-        mirrorGroup.add(sideHalo);
+      const mirrorMat = new THREE.MeshStandardMaterial({
+        color: 0xEAE6DE,
+        roughness: 0.04,
+        metalness: 0.94
       });
+      this.mirrorGlassMesh = new THREE.Mesh(mirrorGlassGeo, mirrorMat);
+      this.mirrorGlassMesh.position.set(0, 0, 0.002);
+      this.mirrorGlassMesh.userData = { forcePlanarUV: true };
+      mirrorGroup.add(this.mirrorGlassMesh);
 
-      // Bevelled Sculpted Champagne Brass Mirror Frame
+      // B. Bevelled Sculpted Champagne Brass Mirror Frame
       const frameArc = new THREE.Mesh(new THREE.TorusGeometry(archR + 0.018, 0.014, 16, 64, Math.PI), brassMat);
       frameArc.position.set(0, straightH, 0);
       mirrorGroup.add(frameArc);
@@ -1533,7 +1538,105 @@
       frameBottom.position.set(0, 0.008, 0);
       mirrorGroup.add(frameBottom);
 
-      // Walnut Protective Backing Panel
+      // C. Continuous 3000K Warm LED Radiance Halo Ring
+      const ledGlowMat = new THREE.MeshBasicMaterial({ color: 0xFFECD4 });
+      const haloArc = new THREE.Mesh(new THREE.TorusGeometry(archR + 0.006, 0.009, 16, 64, Math.PI), ledGlowMat);
+      haloArc.position.set(0, straightH, 0.004);
+      mirrorGroup.add(haloArc);
+
+      [-archR - 0.006, archR + 0.006].forEach(hx => {
+        const sideHalo = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, straightH, 16), ledGlowMat);
+        sideHalo.position.set(hx, straightH / 2, 0.004);
+        mirrorGroup.add(sideHalo);
+      });
+
+      // D. Parisian Sunburst Arch Crown Filigree (Architectural Ornate Detailing)
+      const sunburstHub = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.010, 32), brassMat);
+      sunburstHub.rotation.x = Math.PI / 2;
+      sunburstHub.position.set(0, straightH, 0.006);
+      mirrorGroup.add(sunburstHub);
+
+      // Concentric Inner Arch Rib
+      const innerArch = new THREE.Mesh(new THREE.TorusGeometry(archR * 0.52, 0.005, 16, 48, Math.PI), brassMat);
+      innerArch.position.set(0, straightH, 0.006);
+      mirrorGroup.add(innerArch);
+
+      // Radiating Sunburst Spokes
+      const spokeLen = archR - 0.042;
+      const spokeGeo = new THREE.CylinderGeometry(0.004, 0.004, spokeLen, 12);
+      [Math.PI / 6, Math.PI / 3, Math.PI / 2, (2 * Math.PI) / 3, (5 * Math.PI) / 6].forEach(ang => {
+        const spoke = new THREE.Mesh(spokeGeo, brassMat);
+        spoke.position.set(Math.cos(ang) * (0.042 + spokeLen / 2), straightH + Math.sin(ang) * (0.042 + spokeLen / 2), 0.006);
+        spoke.rotation.z = ang - Math.PI / 2;
+        mirrorGroup.add(spoke);
+      });
+
+      // Apex Architectural Finial Crest Medallion
+      const finialBase = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.035, 0.022), brassMat);
+      finialBase.position.set(0, straightH + archR + 0.022, 0.005);
+      mirrorGroup.add(finialBase);
+
+      const finialBall = new THREE.Mesh(new THREE.SphereGeometry(0.018, 16, 16), brassMat);
+      finialBall.position.set(0, straightH + archR + 0.048, 0.005);
+      mirrorGroup.add(finialBall);
+
+      // E. French Atelier Crittall Windowpane Mullion Grid
+      const transom = new THREE.Mesh(new THREE.BoxGeometry(archR * 2 + 0.01, 0.014, 0.012), brassMat);
+      transom.position.set(0, straightH, 0.006);
+      mirrorGroup.add(transom);
+
+      const midBar = new THREE.Mesh(new THREE.BoxGeometry(archR * 2, 0.008, 0.008), brassMat);
+      midBar.position.set(0, straightH * 0.50, 0.006);
+      mirrorGroup.add(midBar);
+
+      const vertMullionGeo = new THREE.BoxGeometry(0.008, straightH, 0.008);
+      [-archR * 0.48, archR * 0.48].forEach(vx => {
+        const vertMullion = new THREE.Mesh(vertMullionGeo, brassMat);
+        vertMullion.position.set(vx, straightH / 2, 0.006);
+        mirrorGroup.add(vertMullion);
+      });
+
+      // F. Tabletop Solid Brass Mounting Brackets with Knurled Thumbscrews
+      const bracketGeo = new THREE.BoxGeometry(0.038, 0.048, 0.038);
+      const thumbscrewGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.016, 16);
+      [-archR - 0.010, archR + 0.010].forEach(bx => {
+        const bracket = new THREE.Mesh(bracketGeo, brassMat);
+        bracket.position.set(bx, 0.024, 0.012);
+        mirrorGroup.add(bracket);
+
+        const thumbscrew = new THREE.Mesh(thumbscrewGeo, brassMat);
+        thumbscrew.rotation.z = Math.PI / 2;
+        thumbscrew.position.set(bx + (bx > 0 ? 0.018 : -0.018), 0.024, 0.012);
+        mirrorGroup.add(thumbscrew);
+      });
+
+      // G. Dual Flanking Architectural Wall Sconces
+      const sconceGlassMat = new THREE.MeshStandardMaterial({
+        color: 0xFFF8EE,
+        emissive: 0xFFDE9E,
+        emissiveIntensity: 0.85,
+        roughness: 0.20
+      });
+      const sconceTubeGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.28, 24);
+      const sconceCapGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.022, 24);
+
+      [-archR - 0.16, archR + 0.16].forEach(sx => {
+        const sconceTube = new THREE.Mesh(sconceTubeGeo, sconceGlassMat);
+        sconceTube.position.set(sx, straightH * 0.65, 0.06);
+        mirrorGroup.add(sconceTube);
+
+        [straightH * 0.65 + 0.14, straightH * 0.65 - 0.14].forEach(cy => {
+          const cap = new THREE.Mesh(sconceCapGeo, brassMat);
+          cap.position.set(sx, cy, 0.06);
+          mirrorGroup.add(cap);
+        });
+
+        const sconceLight = new THREE.PointLight(0xFFE4BC, 1.2, 3.2);
+        sconceLight.position.set(sx, straightH * 0.65, 0.14);
+        mirrorGroup.add(sconceLight);
+      });
+
+      // H. Protective Walnut Backing Panel
       const mirrorBackMat = new THREE.MeshStandardMaterial({ color: 0x2A241E, roughness: 0.6 });
       const backRect = new THREE.Mesh(new THREE.BoxGeometry(archR * 2 + 0.02, straightH, 0.012), mirrorBackMat);
       backRect.position.set(0, straightH / 2, -0.010);

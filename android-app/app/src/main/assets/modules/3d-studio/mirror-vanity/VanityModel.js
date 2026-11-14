@@ -155,48 +155,49 @@ export class VanityModel {
     });
     this.disposables.push(pillarGeo, plinthGeo, archRailGeo);
 
-    // 2. GRAND ARCHITECTURAL GROOMING MIRROR WITH 3000K CONTINUOUS WARM LED HALO
+    // 2. GRAND ARCHITECTURAL FRENCH ATELIER GROOMING MIRROR
     this.mirrorGroup = new THREE.Group();
     this.mirrorGroup.position.set(0, tableHeight + 0.032, -tableDepth / 2 + 0.045);
 
     const archR = mirrorRadius || 0.48;
     const straightH = 1.05; // Grand increased mirror height per user request
 
-    // A. Lower Rectangular Mirror Surface
-    const lowerMirrorGeo = new THREE.BoxGeometry(archR * 2, straightH, 0.002);
+    // A. Single Unified Seamless Arched Mirror Glass Surface
+    let mirrorGlassGeo;
+    if (THREE && typeof THREE.ShapeGeometry !== 'undefined' && typeof THREE.Shape !== 'undefined') {
+      const shape = new THREE.Shape();
+      shape.moveTo(-archR, 0);
+      shape.lineTo(archR, 0);
+      shape.lineTo(archR, straightH);
+      shape.absarc(0, straightH, archR, 0, Math.PI, false);
+      shape.lineTo(-archR, 0);
+      mirrorGlassGeo = new THREE.ShapeGeometry(shape, 64);
+
+      if (THREE.BufferAttribute && mirrorGlassGeo.attributes && mirrorGlassGeo.attributes.position) {
+        const pos = mirrorGlassGeo.attributes.position;
+        const uvs = new Float32Array(pos.count * 2);
+        const spanX = archR * 2;
+        const spanY = straightH + archR;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          uvs[i * 2] = 1.0 - ((x + archR) / spanX); // Optical horizontal mirror reflection flip
+          uvs[i * 2 + 1] = y / spanY;
+        }
+        mirrorGlassGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      }
+    } else {
+      mirrorGlassGeo = new THREE.CircleGeometry(archR, 64);
+    }
+
     const mirrorMat = VanityMaterials.createMirrorMaterial(THREE);
-    const lowerMirror = new THREE.Mesh(lowerMirrorGeo, mirrorMat);
-    lowerMirror.position.set(0, straightH / 2, 0.002);
-    this.mirrorGroup.add(lowerMirror);
-    this.disposables.push(lowerMirrorGeo, mirrorMat);
+    this.mirrorGlassMesh = new THREE.Mesh(mirrorGlassGeo, mirrorMat);
+    this.mirrorGlassMesh.position.set(0, 0, 0.002);
+    this.mirrorGlassMesh.userData = { forcePlanarUV: true };
+    this.mirrorGroup.add(this.mirrorGlassMesh);
+    this.disposables.push(mirrorGlassGeo, mirrorMat);
 
-    // B. Upper Semicircular Arch Mirror Surface (Silky smooth 64-segment arc)
-    const upperMirrorGeo = new THREE.CircleGeometry(archR, 64, 0, Math.PI);
-    const upperMirror = new THREE.Mesh(upperMirrorGeo, mirrorMat);
-    upperMirror.position.set(0, straightH, 0.002);
-    this.mirrorGroup.add(upperMirror);
-    this.disposables.push(upperMirrorGeo);
-
-    upperMirror.userData = { forcePlanarUV: true };
-    lowerMirror.userData = { forcePlanarUV: true };
-    this.mirrorGlassMesh = upperMirror; // Primary bind target for reflection updates
-    this.lowerMirrorGlassMesh = lowerMirror;
-
-    // C. Continuous Warm 3000K LED Radiance Halo Ring
-    const haloArcGeo = new THREE.TorusGeometry(archR + 0.006, 0.009, 16, 64, Math.PI);
-    const haloArc = new THREE.Mesh(haloArcGeo, ledGlowMat);
-    haloArc.position.set(0, straightH, 0.004);
-    this.mirrorGroup.add(haloArc);
-
-    const haloSideGeo = new THREE.CylinderGeometry(0.009, 0.009, straightH, 16);
-    [-archR - 0.006, archR + 0.006].forEach(hx => {
-      const sideHalo = new THREE.Mesh(haloSideGeo, ledGlowMat);
-      sideHalo.position.set(hx, straightH / 2, 0.004);
-      this.mirrorGroup.add(sideHalo);
-    });
-    this.disposables.push(haloArcGeo, haloSideGeo);
-
-    // D. Bevelled Sculpted Champagne Brass Mirror Frame
+    // B. Bevelled Sculpted Champagne Brass Mirror Frame
     const frameArcGeo = new THREE.TorusGeometry(archR + 0.018, 0.014, 16, 64, Math.PI);
     const frameArc = new THREE.Mesh(frameArcGeo, brassMat);
     frameArc.position.set(0, straightH, 0);
@@ -213,9 +214,123 @@ export class VanityModel {
     const frameBottom = new THREE.Mesh(frameBottomGeo, brassMat);
     frameBottom.position.set(0, 0.008, 0);
     this.mirrorGroup.add(frameBottom);
-    this.disposables.push(frameArcGeo, frameSideGeo, frameBottomGeo);
 
-    // E. Protective Walnut Backing Panel
+    // C. Continuous Warm 3000K LED Radiance Halo Ring
+    const haloArcGeo = new THREE.TorusGeometry(archR + 0.006, 0.009, 16, 64, Math.PI);
+    const haloArc = new THREE.Mesh(haloArcGeo, ledGlowMat);
+    haloArc.position.set(0, straightH, 0.004);
+    this.mirrorGroup.add(haloArc);
+
+    const haloSideGeo = new THREE.CylinderGeometry(0.009, 0.009, straightH, 16);
+    [-archR - 0.006, archR + 0.006].forEach(hx => {
+      const sideHalo = new THREE.Mesh(haloSideGeo, ledGlowMat);
+      sideHalo.position.set(hx, straightH / 2, 0.004);
+      this.mirrorGroup.add(sideHalo);
+    });
+    this.disposables.push(frameArcGeo, frameSideGeo, frameBottomGeo, haloArcGeo, haloSideGeo);
+
+    // D. Parisian Sunburst Arch Crown Filigree (Architectural Ornate Detailing)
+    const sunburstHubGeo = new THREE.CylinderGeometry(0.042, 0.042, 0.010, 32);
+    const sunburstHub = new THREE.Mesh(sunburstHubGeo, brassMat);
+    sunburstHub.rotation.x = Math.PI / 2;
+    sunburstHub.position.set(0, straightH, 0.006);
+    this.mirrorGroup.add(sunburstHub);
+
+    // Concentric Inner Arch Rib
+    const innerArchGeo = new THREE.TorusGeometry(archR * 0.52, 0.005, 16, 48, Math.PI);
+    const innerArch = new THREE.Mesh(innerArchGeo, brassMat);
+    innerArch.position.set(0, straightH, 0.006);
+    this.mirrorGroup.add(innerArch);
+
+    // Radiating Sunburst Spokes
+    const spokeLen = archR - 0.042;
+    const spokeGeo = new THREE.CylinderGeometry(0.004, 0.004, spokeLen, 12);
+    [Math.PI / 6, Math.PI / 3, Math.PI / 2, (2 * Math.PI) / 3, (5 * Math.PI) / 6].forEach(ang => {
+      const spoke = new THREE.Mesh(spokeGeo, brassMat);
+      spoke.position.set(Math.cos(ang) * (0.042 + spokeLen / 2), straightH + Math.sin(ang) * (0.042 + spokeLen / 2), 0.006);
+      spoke.rotation.z = ang - Math.PI / 2;
+      this.mirrorGroup.add(spoke);
+    });
+
+    // Apex Architectural Finial Crest Medallion
+    const finialBaseGeo = new THREE.BoxGeometry(0.065, 0.035, 0.022);
+    const finialBase = new THREE.Mesh(finialBaseGeo, brassMat);
+    finialBase.position.set(0, straightH + archR + 0.022, 0.005);
+    this.mirrorGroup.add(finialBase);
+
+    const finialBallGeo = new THREE.SphereGeometry(0.018, 16, 16);
+    const finialBall = new THREE.Mesh(finialBallGeo, brassMat);
+    finialBall.position.set(0, straightH + archR + 0.048, 0.005);
+    this.mirrorGroup.add(finialBall);
+    this.disposables.push(sunburstHubGeo, innerArchGeo, spokeGeo, finialBaseGeo, finialBallGeo);
+
+    // E. French Atelier Crittall Windowpane Mullion Grid
+    // Horizontal Transom Bar separating Crown from Lower Mirror
+    const transomGeo = new THREE.BoxGeometry(archR * 2 + 0.01, 0.014, 0.012);
+    const transom = new THREE.Mesh(transomGeo, brassMat);
+    transom.position.set(0, straightH, 0.006);
+    this.mirrorGroup.add(transom);
+
+    // Mid-Height Horizontal Mullion Bar
+    const midBarGeo = new THREE.BoxGeometry(archR * 2, 0.008, 0.008);
+    const midBar = new THREE.Mesh(midBarGeo, brassMat);
+    midBar.position.set(0, straightH * 0.50, 0.006);
+    this.mirrorGroup.add(midBar);
+
+    // Two Slender Vertical Transom Mullion Bars (Creating classic French triptych panes)
+    const vertMullionGeo = new THREE.BoxGeometry(0.008, straightH, 0.008);
+    [-archR * 0.48, archR * 0.48].forEach(vx => {
+      const vertMullion = new THREE.Mesh(vertMullionGeo, brassMat);
+      vertMullion.position.set(vx, straightH / 2, 0.006);
+      this.mirrorGroup.add(vertMullion);
+    });
+    this.disposables.push(transomGeo, midBarGeo, vertMullionGeo);
+
+    // F. Tabletop Solid Brass Mounting Brackets with Knurled Thumbscrews
+    const bracketGeo = new THREE.BoxGeometry(0.038, 0.048, 0.038);
+    const thumbscrewGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.016, 16);
+    [-archR - 0.010, archR + 0.010].forEach(bx => {
+      const bracket = new THREE.Mesh(bracketGeo, brassMat);
+      bracket.position.set(bx, 0.024, 0.012);
+      this.mirrorGroup.add(bracket);
+
+      const thumbscrew = new THREE.Mesh(thumbscrewGeo, brassMat);
+      thumbscrew.rotation.z = Math.PI / 2;
+      thumbscrew.position.set(bx + (bx > 0 ? 0.018 : -0.018), 0.024, 0.012);
+      this.mirrorGroup.add(thumbscrew);
+    });
+    this.disposables.push(bracketGeo, thumbscrewGeo);
+
+    // G. Dual Flanking Architectural Wall Sconces (Warm Vanity Illumination)
+    const sconceGlassMat = new THREE.MeshStandardMaterial({
+      color: 0xFFF8EE,
+      emissive: 0xFFDE9E,
+      emissiveIntensity: 0.85,
+      roughness: 0.20
+    });
+    const sconceTubeGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.28, 24);
+    const sconceCapGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.022, 24);
+
+    [-archR - 0.16, archR + 0.16].forEach(sx => {
+      const sconceTube = new THREE.Mesh(sconceTubeGeo, sconceGlassMat);
+      sconceTube.position.set(sx, straightH * 0.65, 0.06);
+      this.mirrorGroup.add(sconceTube);
+
+      // Top and bottom brass caps
+      [straightH * 0.65 + 0.14, straightH * 0.65 - 0.14].forEach(cy => {
+        const cap = new THREE.Mesh(sconceCapGeo, brassMat);
+        cap.position.set(sx, cy, 0.06);
+        this.mirrorGroup.add(cap);
+      });
+
+      // Warm Vanity Sconce Point Light
+      const sconceLight = new THREE.PointLight(0xFFE4BC, 1.2, 3.2);
+      sconceLight.position.set(sx, straightH * 0.65, 0.14);
+      this.mirrorGroup.add(sconceLight);
+    });
+    this.disposables.push(sconceGlassMat, sconceTubeGeo, sconceCapGeo);
+
+    // H. Protective Walnut Backing Panel
     const mirrorBackMat = VanityMaterials.createMirrorBackMaterial(THREE);
     const backRectGeo = new THREE.BoxGeometry(archR * 2 + 0.02, straightH, 0.012);
     const backRect = new THREE.Mesh(backRectGeo, mirrorBackMat);
@@ -233,12 +348,6 @@ export class VanityModel {
 
     // Initialize Mirror Reflection Pipeline
     this.reflection.init(THREE, scene, this.mirrorGlassMesh);
-    if (this.lowerMirrorGlassMesh && this.reflection.renderTarget) {
-      if (typeof this.reflection.setAuxiliaryMirrorMesh === 'function') {
-        this.reflection.setAuxiliaryMirrorMesh(this.lowerMirrorGlassMesh);
-      }
-      this.reflection.bindMirrorMesh(this.lowerMirrorGlassMesh, THREE);
-    }
 
     proceduralGroup.add(this.mirrorGroup);
 

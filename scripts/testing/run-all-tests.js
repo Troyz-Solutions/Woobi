@@ -20,10 +20,11 @@ const testSuites = [
   { name: 'Theme Module (25 Tests)', path: 'modules/3d-studio/theme/StudioTheme.test.js' },
   { name: 'Camera Module (30 Tests)', path: 'modules/3d-studio/camera/StudioCamera.test.js' },
 
-  // 2. 3D Studio Features Submodules (159 Tests)
+  // 2. 3D Studio Features Submodules (174 Tests)
   { name: 'Virtual Try-On (26 Tests)', path: 'modules/3d-studio-features/virtual-try-on/VirtualTryOn.test.js', isNodeTest: true },
   { name: 'Garment Interactions (25 Tests)', path: 'modules/3d-studio-features/garment-interactions/GarmentInteractions.test.js', isNodeTest: true },
   { name: 'Outfit Recommendations (25 Tests)', path: 'modules/3d-studio-features/outfit-recommendations/RecommendationEngine.test.js', isNodeTest: true },
+  { name: 'Daily AI Outfit Recommendation (17 Tests)', path: 'modules/3d-studio-features/outfit-recommendations/DailyRecommendation.test.js', isNodeTest: true },
   { name: 'Avatar Customization (26 Tests)', path: 'modules/3d-studio-features/avatar-customization/AvatarCustomizer.test.js', isNodeTest: true },
   { name: 'Studio Animations & Poses (25 Tests)', path: 'modules/3d-studio-features/animations/PoseController.test.js', isNodeTest: true },
   { name: 'Saved Looks & Lookbook (26 Tests)', path: 'modules/3d-studio-features/saved-looks/SavedLooksManager.test.js', isNodeTest: true },

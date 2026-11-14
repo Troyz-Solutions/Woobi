@@ -68,5 +68,16 @@ scratch_*.ps1
 # Local Firebase project configuration
 /login/firebase-config.js
 
+# Chrome & Test Profiles
+.chrome_*
+.snap_*
+snap.js
+scripts/check-*
+scripts/take-shot.js
+scripts/test-*
+scripts/trap-*
+scripts/inspect-*
+*.png
+
 __pycache__/
 *.pyc

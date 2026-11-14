@@ -27,6 +27,9 @@ export const RecommendationsContract = {
     'completeOutfit',
     'getMatchingGarments',
     'getCuratedLooks',
-    'getOccasions'
+    'getOccasions',
+    'generateDailyRecommendation',
+    'getRecommendationHistory',
+    'recordRecommendation'
   ]
 };

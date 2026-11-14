@@ -40,8 +40,8 @@
   <script src="libs/GLTFLoader.js"></script>
 
   <!-- Woobi Core Shared Design Tokens -->
-  <link rel="stylesheet" href="modules/core/shared-ui/tokens.css">
-  <link rel="stylesheet" href="styles.css?v=20261109_v30">
+  <link rel="stylesheet" href="modules/core/shared-ui/tokens.css?v=20261114_light">
+  <link rel="stylesheet" href="styles.css?v=20261114_light">
 </head>
 
 <body>
@@ -798,17 +798,16 @@
                 <span class="seren-tab-dot"></span>
               </button>
 
-              <!-- Tab 2: Looks (2x2 Grid Icon) -->
-              <button type="button" class="seren-bar-tab" id="serenTabLooks" onclick="app.serenToggleDailyLooks()">
+              <!-- Tab 2: Today's AI Recommendation (Magic Wand / Sparkle Icon) -->
+              <button type="button" class="seren-bar-tab" id="serenTabRecommendation" onclick="app.openDailyRecommendation()" title="Today's Recommendation" aria-label="Today's Outfit Recommendation">
                 <div class="seren-tab-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                    <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
-                    <rect x="13.5" y="3.5" width="7" height="7" rx="2" />
-                    <rect x="13.5" y="13.5" width="7" height="7" rx="2" />
-                    <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>
+                    <path d="M19 3v4"/>
+                    <path d="M21 5h-4"/>
                   </svg>
                 </div>
-                <span class="seren-tab-label">Looks</span>
+                <span class="seren-tab-label">Recommend</span>
                 <span class="seren-tab-dot"></span>
               </button>
 
@@ -1349,6 +1348,70 @@
             </div>
           </div>
         </section>
+        <!-- ===================================================================
+             SCREEN: TODAY'S OUTFIT RECOMMENDATION (AI STYLIST)
+             =================================================================== -->
+        <section class="phone-screen" id="screen-today-recommendation" style="overflow-y: auto;">
+          <!-- Top Sub-Header with Clear Exit Buttons -->
+          <div class="screen-sub-header rec-header-bar">
+            <button type="button" class="nav-back-arrow rec-exit-btn" onclick="app.exitDailyRecommendation()" aria-label="Exit">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <div class="rec-header-center">
+              <span class="rec-badge-pill">AI PERSONAL STYLIST</span>
+            </div>
+            <button type="button" class="rec-exit-x" onclick="app.exitDailyRecommendation()" title="Exit" aria-label="Exit">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Screen Body -->
+          <div class="screen-body-padded rec-screen-body">
+            <!-- Screen Title & Subtitle -->
+            <div class="rec-headline-block">
+              <h1 class="rec-main-title">Today's Outfit Recommendation</h1>
+              <div class="rec-date-row">
+                <span class="rec-calendar-icon">📅</span>
+                <span class="rec-date-text" id="recTodayDate">Friday, Nov 14, 2026</span>
+              </div>
+              <p class="rec-main-subtitle">Your personal AI stylist has selected an outfit for today.</p>
+            </div>
+
+            <!-- Day Selector Chips (Allows testing/exploring variety across days) -->
+            <div class="rec-day-chips-scroll" id="recDayChips" role="tablist" aria-label="Select Date">
+              <!-- Dynamically rendered day chips -->
+            </div>
+
+            <!-- Dynamic Recommendation Card Container -->
+            <div class="rec-card-container" id="recCardContainer">
+              <!-- Rendered dynamically by app.js: renderDailyRecommendationCard(rec) -->
+            </div>
+          </div>
+
+          <!-- Garment Change Modal (Shows user's uploaded clothes for slot) -->
+          <div class="rec-change-modal hidden" id="recChangeGarmentModal">
+            <div class="rec-change-backdrop" onclick="app.closeChangeGarmentModal()"></div>
+            <div class="rec-change-sheet">
+              <div class="rec-change-handle"></div>
+              <div class="rec-change-sheet-header">
+                <div>
+                  <h3 class="rec-change-sheet-title" id="recChangeModalTitle">Change Clothing</h3>
+                  <p class="rec-change-sheet-subtitle" id="recChangeModalSub">Select from your uploaded wardrobe</p>
+                </div>
+                <button type="button" class="rec-change-sheet-close" onclick="app.closeChangeGarmentModal()" aria-label="Close">✕</button>
+              </div>
+              <div class="rec-change-grid" id="recChangeGrid">
+                <!-- User's uploaded clothes for this slot -->
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section class="phone-screen" id="screen-ai-stylist">
           <div class="screen-sub-header">
             <button class="nav-back-arrow" onclick="app.goToScreen('today')">
@@ -5493,9 +5556,9 @@
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261109_v30"></script>
+  <script src="studio3d.js?v=20261114_light"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261109_v30"></script>
+  <script src="app.js?v=20261114_light"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

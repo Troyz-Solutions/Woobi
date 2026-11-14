@@ -47,31 +47,31 @@
   --transition-smooth: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Dark Theme Tokens matching Android Jetpack Compose Material 3 Scheme */
+/* Theme Tokens - Uniform Light-Neutral Woobi Aesthetic */
 body.theme-dark,
 [data-theme="dark"] {
-  color-scheme: dark;
-  --bg-board: #121411;
-  --bg-phone: #161815;
-  --bg-card: #1D201C;
-  --bg-subtle: #252923;
-  --bg-border: #3A4036;
-  --bg-border-light: #2A3026;
+  color-scheme: light;
+  --bg-board: #F8F7F4;
+  --bg-phone: #FAF9F6;
+  --bg-card: #FFFFFF;
+  --bg-subtle: #F3EFE8;
+  --bg-border: #E8E3D8;
+  --bg-border-light: #EFECE6;
 
-  --text-main: #FAF9F6;
-  --text-sub: #D5DACF;
-  --text-muted: #9DA396;
-  --text-dim: #72786B;
+  --text-main: #1D201C;
+  --text-sub: #4A5147;
+  --text-muted: #7A8174;
+  --text-dim: #9FA499;
 
-  --olive-primary: #8FA785;
-  --olive-dark: #A6BE9C;
-  --olive-light: #B8C9B0;
-  --olive-soft: rgba(143, 167, 133, 0.18);
-  --olive-border: rgba(143, 167, 133, 0.36);
+  --olive-primary: #52634B;
+  --olive-dark: #3F4C39;
+  --olive-light: #64775B;
+  --olive-soft: rgba(82, 99, 75, 0.12);
+  --olive-border: rgba(82, 99, 75, 0.28);
 
-  --shadow-phone: 0 35px 90px -15px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(68, 72, 65, 0.8);
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-phone: 0 35px 90px -15px rgba(26, 31, 25, 0.24), 0 0 0 1px rgba(214, 208, 197, 0.8);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* High Contrast Mode Tokens */

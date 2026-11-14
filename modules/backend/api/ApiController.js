@@ -4,6 +4,7 @@
  */
 
 import { API_ROUTES, HTTP_STATUS, ApiContract } from './ApiContract.js';
+import { createRecommendationEngine } from '../../3d-studio-features/outfit-recommendations/index.js';
 
 export class ApiController {
   constructor(router, { security, auth, database, storage }) {
@@ -12,6 +13,7 @@ export class ApiController {
     this.auth = auth;
     this.db = database;
     this.storage = storage;
+    this.recommendationEngine = createRecommendationEngine();
 
     this.setupMiddlewares();
     this.setupRoutes();
@@ -314,6 +316,30 @@ export class ApiController {
 
       const record = await this.db.streak.recordStreak(authUser.userId);
       return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope(record));
+    });
+
+    // ------------------------------------------------------------------------
+    // 8B. DAILY AI OUTFIT RECOMMENDATIONS
+    // ------------------------------------------------------------------------
+    this.router.get(API_ROUTES.RECOMMENDATIONS_TODAY, async (req, res) => {
+      const authUser = this.requireAuth(req, res);
+      if (!authUser) return;
+
+      const dateStr = (req.query && req.query.date) || new Date().toISOString().slice(0, 10);
+      let items = [];
+      if (this.db.wardrobe && typeof this.db.wardrobe.listForUser === 'function') {
+        items = await this.db.wardrobe.listForUser(authUser.userId);
+      }
+      const rec = this.recommendationEngine.generateDailyRecommendation(items, { dateStr });
+      return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope(rec));
+    });
+
+    this.router.get(API_ROUTES.RECOMMENDATIONS_HISTORY, async (req, res) => {
+      const authUser = this.requireAuth(req, res);
+      if (!authUser) return;
+
+      const history = this.recommendationEngine.getRecommendationHistory();
+      return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope(history));
     });
 
     // ------------------------------------------------------------------------

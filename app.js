@@ -311,10 +311,19 @@
         typeof item.category === 'string'
       )
     ) {
+      const normalizedSaved = savedWardrobe.map(item => {
+        if (!item.subCategory) {
+          if (isShirt(item)) item.subCategory = 'Shirt';
+          else if (isPant(item)) item.subCategory = 'Pant';
+          else if (isShoe(item)) item.subCategory = 'Shoe';
+          else if (isAccessory(item)) item.subCategory = 'Accessory';
+        }
+        return item;
+      });
       WARDROBE_ITEMS.splice(
         0,
         WARDROBE_ITEMS.length,
-        ...savedWardrobe
+        ...normalizedSaved
       );
     }
 
@@ -701,9 +710,9 @@
     updateAIStep(4, 'pending');
 
     // Filter clean wardrobe items
-    const cleanTops = WARDROBE_ITEMS.filter(i => i.category === 'Tops' && i.condition === 'clean');
-    const cleanBottoms = WARDROBE_ITEMS.filter(i => i.category === 'Bottoms' && i.condition === 'clean');
-    const cleanShoes = WARDROBE_ITEMS.filter(i => i.category === 'Shoes' && i.condition === 'clean');
+    const cleanTops = WARDROBE_ITEMS.filter(i => (i.category === 'Tops' || isShirt(i)) && i.condition === 'clean');
+    const cleanBottoms = WARDROBE_ITEMS.filter(i => (i.category === 'Bottoms' || isPant(i)) && i.condition === 'clean');
+    const cleanShoes = WARDROBE_ITEMS.filter(i => (i.category === 'Shoes' || isShoe(i)) && i.condition === 'clean');
 
     // Select pieces tailored to occasion & vibe
     let top, bottom, footwear, localFallback, flatLay;
@@ -913,10 +922,10 @@
     if (!container) return;
 
     const items = WARDROBE_ITEMS.filter(item => {
-      if (state.builderCurrentTab === 'Tops') return item.category === 'Tops';
-      if (state.builderCurrentTab === 'Bottoms') return item.category === 'Bottoms';
-      if (state.builderCurrentTab === 'Shoes') return item.category === 'Shoes';
-      if (state.builderCurrentTab === 'Accessories') return item.category === 'Accessories';
+      if (state.builderCurrentTab === 'Tops' || state.builderCurrentTab === 'Shirts') return isShirt(item) || item.category === 'Tops';
+      if (state.builderCurrentTab === 'Bottoms' || state.builderCurrentTab === 'Pants') return isPant(item) || item.category === 'Bottoms';
+      if (state.builderCurrentTab === 'Shoes') return isShoe(item) || item.category === 'Shoes';
+      if (state.builderCurrentTab === 'Accessories') return isAccessory(item) || item.category === 'Accessories';
       return true;
     });
 
@@ -954,18 +963,18 @@
   }
 
   function isItemSelectedInBuilder(item) {
-    if (item.category === 'Tops' && state.builderSelection.top?.id === item.id) return true;
-    if (item.category === 'Bottoms' && state.builderSelection.bottom?.id === item.id) return true;
-    if (item.category === 'Shoes' && state.builderSelection.shoe?.id === item.id) return true;
-    if (item.category === 'Accessories' && state.builderSelection.accessory?.id === item.id) return true;
+    if ((isShirt(item) || item.category === 'Tops') && state.builderSelection.top?.id === item.id) return true;
+    if ((isPant(item) || item.category === 'Bottoms') && state.builderSelection.bottom?.id === item.id) return true;
+    if ((isShoe(item) || item.category === 'Shoes') && state.builderSelection.shoe?.id === item.id) return true;
+    if ((isAccessory(item) || item.category === 'Accessories') && state.builderSelection.accessory?.id === item.id) return true;
     return false;
   }
 
   function selectBuilderItem(item) {
-    if (item.category === 'Tops') state.builderSelection.top = item;
-    if (item.category === 'Bottoms') state.builderSelection.bottom = item;
-    if (item.category === 'Shoes') state.builderSelection.shoe = item;
-    if (item.category === 'Accessories') state.builderSelection.accessory = item;
+    if (isShirt(item) || item.category === 'Tops') state.builderSelection.top = item;
+    if (isPant(item) || item.category === 'Bottoms') state.builderSelection.bottom = item;
+    if (isShoe(item) || item.category === 'Shoes') state.builderSelection.shoe = item;
+    if (isAccessory(item) || item.category === 'Accessories') state.builderSelection.accessory = item;
 
     if (item.condition === 'dirty') {
       showToast(`⚠️ Note: ${item.name} is in laundry, but we will still preview it!`);
@@ -1072,7 +1081,7 @@
   }
 
   // =========================================================================
-  // 6. WARDROBE GRID & INTERACTIVE SECTIONS (ZOOM & DRAG-TO-MANNEQUIN)
+  // 6. WARDROBE CATEGORY NORMALIZATION, ITEM CLASSIFIER & GRID MANAGEMENT
   // =========================================================================
   let _wSelectedGarment = null;
   let _wIsDragging = false;
@@ -1130,6 +1139,7 @@
     const sub = (item.subCategory || '').toLowerCase();
     const name = (item.name || '').toLowerCase();
 
+    // Exclude heavier outerwear (blazers/jackets/coats) from shirts
     if (name.includes('blazer') || name.includes('coat') || name.includes('jacket')) {
       return false;
     }
@@ -1143,12 +1153,29 @@
     );
   }
 
-  function matchItemCategory(item, targetCategory) {
-    if (!targetCategory || targetCategory === 'All') return true;
-    if (targetCategory === 'Clean') return item.condition === 'clean';
-    if (targetCategory === 'Laundry') return item.condition === 'dirty';
+  function getItemCategoryMeta(item) {
+    if (isShirt(item)) return { group: 'Shirts', icon: '👕', label: 'Shirt' };
+    if (isPant(item)) {
+      const n = (item.name || '').toLowerCase();
+      const lbl = n.includes('skirt') ? 'Skirt' : (n.includes('trouser') || n.includes('chino') ? 'Trousers' : (n.includes('denim') || n.includes('jean') ? 'Jeans' : 'Pants'));
+      return { group: 'Pants', icon: '👖', label: lbl };
+    }
+    if (isShoe(item)) {
+      const n = (item.name || '').toLowerCase();
+      const lbl = n.includes('sneaker') ? 'Sneakers' : (n.includes('loafer') ? 'Loafers' : (n.includes('sandal') ? 'Sandals' : 'Shoes'));
+      return { group: 'Shoes', icon: '👟', label: lbl };
+    }
+    if (isAccessory(item)) return { group: 'Accessories', icon: '⌚', label: 'Accessory' };
+    return { group: 'Other', icon: '🧥', label: item.category || 'Garment' };
+  }
 
+  function matchItemCategory(item, targetCategory) {
+    if (!targetCategory) return true;
     const norm = targetCategory.toLowerCase().trim();
+    if (norm === 'all') return true;
+    if (norm === 'clean') return item.condition === 'clean';
+    if (norm === 'laundry' || norm === 'in laundry') return item.condition === 'dirty';
+
     if (norm === 'shirts' || norm === 'shirt' || norm === 'tops' || norm === 'top') {
       return isShirt(item);
     }
@@ -1163,15 +1190,6 @@
     }
     return (item.category || '').toLowerCase() === norm;
   }
-
-  function getItemCategoryMeta(item) {
-    if (isShoe(item)) return { label: 'Shoes', icon: '👟' };
-    if (isAccessory(item)) return { label: 'Accessory', icon: '⌚' };
-    if (isPant(item)) return { label: 'Pants', icon: '👖' };
-    if (isShirt(item)) return { label: 'Shirt', icon: '👕' };
-    return { label: item.category || 'Piece', icon: '✦' };
-  }
-
   function getFullOutfitCombinations() {
     const outfits = [];
 
@@ -2742,7 +2760,7 @@
     if (target) target.classList.add('active');
 
     if (sm && sm.performance) {
-      const current = sm.performance.getSettings();
+      const current = typeof sm.performance.getSettings === 'function' ? sm.performance.getSettings() : sm.performance.getPerformanceSettings();
       const shadowEl = document.getElementById('toggleShadows');
       if (shadowEl) shadowEl.checked = current.shadows !== 'off';
       const reflEl = document.getElementById('toggleReflections');

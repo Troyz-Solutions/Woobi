@@ -36,8 +36,12 @@ foreach ($f in $coreFiles) {
 # Copy assets folder
 Copy-Item (Join-Path $src "assets") $dest -Recurse -Force
 
-# Copy libs folder (Offline Three.js, OrbitControls, GLTFLoader, Meshopt)
-Copy-Item (Join-Path $src "libs") $dest -Recurse -Force
+# Copy libs folder (Offline Three.js, OrbitControls, GLTFLoader, Meshopt, DRACOLoader)
+$libsDest = Join-Path $dest "libs"
+if (-not (Test-Path $libsDest)) {
+    New-Item -ItemType Directory -Force -Path $libsDest | Out-Null
+}
+Copy-Item (Join-Path $src "libs\*") $libsDest -Recurse -Force
 
 # Copy modules folder
 Copy-Item (Join-Path $src "modules") $dest -Recurse -Force

@@ -5670,6 +5670,22 @@
   <div class="toast-popup" id="toastPopup"></div>
 
   <!-- Application Logic & Woobi Core Modules -->
+  <script type="module">
+    import EngineHarmony, {
+      EngineHarmonyContract,
+      resolveColor,
+      evaluatePaletteHarmony,
+      analyzeTonalContrast,
+      scoreOutfitEnsemble,
+      generateStylistExplanation,
+      determineTier,
+      rankOutfits
+    } from './engine-harmony/index.js';
+
+    window.EngineHarmony = EngineHarmony;
+    window.EngineHarmonyContract = EngineHarmonyContract;
+    window.engineHarmonyInstance = new EngineHarmony();
+  </script>
   <script type="module" src="modules/core/index.js"></script>
   <script type="module" src="modules/3d-studio/stage/index.js"></script>
   <script type="module" src="modules/3d-studio/wardrobe/index.js"></script>

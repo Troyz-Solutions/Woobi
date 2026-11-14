@@ -17521,6 +17521,54 @@ body.theme-dark .woobi-silk-bg,
   font-weight: 600;
 }
 
+.rec-tier-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(82, 99, 75, 0.12), rgba(78, 135, 82, 0.20));
+  border: 1px solid rgba(78, 135, 82, 0.35);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.rec-tier-text {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #2E5C32;
+}
+
+.rec-harmony-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--bg-subtle, #FAF8F5);
+  border: 1px solid var(--bg-border-light, #EFECE6);
+  border-radius: 12px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+}
+
+.rec-harmony-scheme {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--olive-primary, #52634B);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rec-contrast-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #52634B;
+  background: #FFFFFF;
+  border: 1px solid rgba(82, 99, 75, 0.22);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
 /* Outfit Preview Collage */
 .rec-preview-grid {
   display: grid;
@@ -17701,6 +17749,99 @@ body.theme-dark .woobi-silk-bg,
   line-height: 1.5;
   color: var(--text-main, #1D201C);
   margin: 0;
+}
+
+.rec-harmony-strengths {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.rec-strength-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-main, #1D201C);
+  background: rgba(255, 255, 255, 0.75);
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(82, 99, 75, 0.15);
+}
+
+.rec-strength-icon {
+  color: var(--color-success, #4E8752);
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
+.rec-subscores-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(82, 99, 75, 0.22);
+}
+
+.rec-subscore-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rec-subscore-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rec-subscore-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--text-muted, #7A8174);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.rec-subscore-val {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--olive-primary, #52634B);
+}
+
+.rec-subscore-bar {
+  width: 100%;
+  height: 5px;
+  background: rgba(82, 99, 75, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rec-subscore-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.rec-subscore-fill.color {
+  background: linear-gradient(90deg, #4E8752, #6FA873);
+}
+
+.rec-subscore-fill.formality {
+  background: linear-gradient(90deg, #52634B, #73876A);
+}
+
+.rec-subscore-fill.silhouette {
+  background: linear-gradient(90deg, #3B6B82, #558CA6);
+}
+
+.rec-subscore-fill.season {
+  background: linear-gradient(90deg, #B5843E, #D4A35B);
 }
 
 /* Large TRY ON Button */
@@ -17907,6 +18048,23 @@ body.theme-dark .woobi-silk-bg,
   padding: 2px 6px;
   border-radius: 6px;
   text-transform: uppercase;
+}
+
+.rec-change-synergy-tag {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  background: rgba(29, 32, 28, 0.88);
+  color: #A8E6CF;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(168, 230, 207, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .rec-change-card-info {

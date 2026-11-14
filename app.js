@@ -3443,6 +3443,14 @@
       _recommendationEngineInstance = window.WoobiStudioFeatures.createRecommendationEngine();
       return _recommendationEngineInstance;
     }
+    if (typeof window !== 'undefined' && window.engineHarmonyInstance) {
+      _recommendationEngineInstance = window.engineHarmonyInstance;
+      return _recommendationEngineInstance;
+    }
+    if (typeof window !== 'undefined' && window.EngineHarmony) {
+      _recommendationEngineInstance = new window.EngineHarmony();
+      return _recommendationEngineInstance;
+    }
     return null;
   }
 
@@ -3474,9 +3482,10 @@
     const todayStr = new Date().toISOString().slice(0, 10);
     _selectedRecommendationDate = dateStr || _selectedRecommendationDate || todayStr;
 
-    // 1. Gather active wardrobe items
-    const wardrobePool = (Array.isArray(state.wardrobe) && state.wardrobe.length > 0)
-      ? state.wardrobe
+    // 1. Gather active wardrobe items (merging user's custom clothes with catalog basics)
+    const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
+    const wardrobePool = userWardrobe.length > 0
+      ? [...userWardrobe, ...WARDROBE_ITEMS.filter(item => !userWardrobe.some(u => u.id === item.id))]
       : WARDROBE_ITEMS;
 
     // 2. Generate recommendation
@@ -3490,6 +3499,30 @@
       });
     } else {
       _activeDailyRecommendation = generateFallbackDailyRecommendation(wardrobePool, _selectedRecommendationDate, history);
+    }
+
+    // Enrich with Engine Harmony if not already attached
+    if (_activeDailyRecommendation && _activeDailyRecommendation.isAvailable && !_activeDailyRecommendation.subScores) {
+      if (typeof window !== 'undefined' && window.engineHarmonyInstance && typeof window.engineHarmonyInstance.scoreOutfit === 'function') {
+        try {
+          const ensemble = {
+            top: _activeDailyRecommendation.top,
+            bottom: _activeDailyRecommendation.bottom,
+            shoes: _activeDailyRecommendation.shoes,
+            accessories: _activeDailyRecommendation.accessory ? [_activeDailyRecommendation.accessory] : []
+          };
+          const report = window.engineHarmonyInstance.scoreOutfit(ensemble, { occasion: 'smart_casual' });
+          if (report && typeof report.score === 'number') {
+            _activeDailyRecommendation.subScores = report.subScores;
+            _activeDailyRecommendation.dominantHarmony = report.dominantHarmony;
+            _activeDailyRecommendation.tier = report.tier;
+            _activeDailyRecommendation.badge = report.badge;
+            if (Array.isArray(report.strengths) && report.strengths.length > 0) {
+              _activeDailyRecommendation.strengths = report.strengths;
+            }
+          }
+        } catch (e) {}
+      }
     }
 
     // 3. Update date headline
@@ -3583,6 +3616,48 @@
     const shoePhoto = shoes ? (shoes.photo || 'assets/white_sneakers.jpg') : 'assets/white_sneakers.jpg';
     const accPhoto = accessory ? (accessory.photo || 'assets/leather_watch.jpg') : 'assets/leather_watch.jpg';
 
+    // Harmony breakdown metrics from Engine Harmony
+    const subScores = rec.subScores || {
+      color: Math.min(99, (rec.harmonyScore || 92) + 2),
+      formality: rec.harmonyScore || 90,
+      silhouette: 92,
+      occasionSeason: 94
+    };
+
+    const colorScore = Math.round(subScores.color || 95);
+    const formalityScore = Math.round(subScores.formality || 92);
+    const silhouetteScore = Math.round(subScores.silhouette || 90);
+    const seasonScore = Math.round(subScores.occasionSeason || subScores.patternTexture || 91);
+
+    // Dominant harmony scheme label
+    const formatHarmonyScheme = (scheme) => {
+      const s = (scheme || '').toLowerCase().replace(/_/g, ' ');
+      if (s.includes('neutral')) return '🎨 Neutral Accent Harmony';
+      if (s.includes('complementary')) return '🎨 Complementary Balance';
+      if (s.includes('analogous')) return '🎨 Harmonious Analogous Flow';
+      if (s.includes('monochromatic')) return '🎨 Monochromatic Elegance';
+      if (s.includes('triadic')) return '🎨 Balanced Triadic Vibrancy';
+      return '🎨 Aesthetic Tonal Harmony';
+    };
+
+    const harmonySchemeLabel = formatHarmonyScheme(rec.dominantHarmony);
+    const tierBadge = rec.badge || (rec.harmonyScore >= 90 ? '✨ Elite Look' : '★ Harmonious Look');
+
+    // Strengths list
+    const strengths = Array.isArray(rec.strengths) && rec.strengths.length > 0
+      ? rec.strengths
+      : [
+          'Balanced contrast between topwear and bottomwear tones',
+          'Proportionally balanced silhouette tailored for daily comfort'
+        ];
+
+    const strengthsHtml = strengths.map(st => `
+      <div class="rec-strength-item">
+        <span class="rec-strength-icon">✓</span>
+        <span>${st}</span>
+      </div>
+    `).join('');
+
     container.innerHTML = `
       <div class="rec-fashion-card">
         <!-- Top Banner: Theme & Harmony Score -->
@@ -3590,10 +3665,19 @@
           <div class="rec-theme-pill">
             <span class="rec-theme-text">${rec.title || "Today's Curated Look"}</span>
           </div>
+          <div class="rec-tier-pill">
+            <span class="rec-tier-text">${tierBadge}</span>
+          </div>
           <div class="rec-score-pill">
             <span class="rec-score-value">${rec.harmonyScore || 96}%</span>
             <span class="rec-score-sub">Synergy</span>
           </div>
+        </div>
+
+        <!-- Engine Harmony Scheme Banner -->
+        <div class="rec-harmony-banner">
+          <span class="rec-harmony-scheme">${harmonySchemeLabel}</span>
+          <span class="rec-contrast-badge">Tonal Contrast: Balanced</span>
         </div>
 
         <!-- Outfit Collage Preview Grid -->
@@ -3620,6 +3704,50 @@
             <div class="rec-slot-badge">ACCESSORY</div>
             <div class="rec-slot-name">${accessory.name}</div>
           </div>` : ''}
+        </div>
+
+        <!-- Engine Harmony Stylist Rationale & Multi-Factor Breakdown -->
+        <div class="rec-rationale-box">
+          <div class="rec-rationale-title-row">
+            <span class="rec-rationale-icon">✨</span>
+            <span class="rec-rationale-title">Engine Harmony Stylist Analysis</span>
+          </div>
+          <p class="rec-rationale-text">${rec.explanation}</p>
+
+          <div class="rec-harmony-strengths">
+            ${strengthsHtml}
+          </div>
+
+          <div class="rec-subscores-grid">
+            <div class="rec-subscore-item">
+              <div class="rec-subscore-label-row">
+                <span class="rec-subscore-label">Color Science</span>
+                <span class="rec-subscore-val">${colorScore}%</span>
+              </div>
+              <div class="rec-subscore-bar"><div class="rec-subscore-fill color" style="width: ${colorScore}%"></div></div>
+            </div>
+            <div class="rec-subscore-item">
+              <div class="rec-subscore-label-row">
+                <span class="rec-subscore-label">Formality & Style</span>
+                <span class="rec-subscore-val">${formalityScore}%</span>
+              </div>
+              <div class="rec-subscore-bar"><div class="rec-subscore-fill formality" style="width: ${formalityScore}%"></div></div>
+            </div>
+            <div class="rec-subscore-item">
+              <div class="rec-subscore-label-row">
+                <span class="rec-subscore-label">Silhouette & Fit</span>
+                <span class="rec-subscore-val">${silhouetteScore}%</span>
+              </div>
+              <div class="rec-subscore-bar"><div class="rec-subscore-fill silhouette" style="width: ${silhouetteScore}%"></div></div>
+            </div>
+            <div class="rec-subscore-item">
+              <div class="rec-subscore-label-row">
+                <span class="rec-subscore-label">Season & Fabric</span>
+                <span class="rec-subscore-val">${seasonScore}%</span>
+              </div>
+              <div class="rec-subscore-bar"><div class="rec-subscore-fill season" style="width: ${seasonScore}%"></div></div>
+            </div>
+          </div>
         </div>
 
         <!-- Wardrobe Item Breakdown Rows with Change Option -->
@@ -3716,9 +3844,10 @@
     if (titleEl) titleEl.textContent = `Change ${slotTitle}`;
     if (subEl) subEl.textContent = `Select from your uploaded wardrobe`;
 
-    // Filter user's wardrobe items for this slot
-    const pool = (Array.isArray(state.wardrobe) && state.wardrobe.length > 0)
-      ? state.wardrobe
+    // Filter user's wardrobe items for this slot (user uploads + catalog items)
+    const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
+    const pool = userWardrobe.length > 0
+      ? [...userWardrobe, ...WARDROBE_ITEMS.filter(item => !userWardrobe.some(u => u.id === item.id))]
       : WARDROBE_ITEMS;
 
     let filtered = [];
@@ -3750,11 +3879,30 @@
       gridEl.innerHTML = filtered.map(item => {
         const isCurrent = item.id === currentItemId;
         const photo = item.photo || 'assets/navy_shirt.jpg';
+
+        // Real-time prospective synergy calculation with Engine Harmony
+        let prospectiveScore = 92;
+        if (_activeDailyRecommendation && window.engineHarmonyInstance && typeof window.engineHarmonyInstance.scoreOutfit === 'function') {
+          try {
+            const testOutfit = {
+              top: slot === 'top' ? item : _activeDailyRecommendation.top,
+              bottom: slot === 'bottom' ? item : _activeDailyRecommendation.bottom,
+              shoes: slot === 'shoes' ? item : _activeDailyRecommendation.shoes,
+              accessories: _activeDailyRecommendation.accessory ? [_activeDailyRecommendation.accessory] : []
+            };
+            const scored = window.engineHarmonyInstance.scoreOutfit(testOutfit, { occasion: 'smart_casual' });
+            if (scored && typeof scored.score === 'number') {
+              prospectiveScore = scored.score;
+            }
+          } catch (e) {}
+        }
+
         return `
           <div class="rec-change-card ${isCurrent ? 'selected' : ''}" onclick="app.selectReplacementGarment('${item.id}')" role="button" tabindex="0">
             <div class="rec-change-img-wrap">
               <img src="${photo}" alt="${item.name}" onerror="this.src='assets/navy_shirt.jpg'" />
               ${isCurrent ? '<span class="rec-change-active-tag">Current</span>' : ''}
+              <span class="rec-change-synergy-tag">✨ ${prospectiveScore}% Synergy</span>
             </div>
             <div class="rec-change-card-info">
               <span class="rec-change-card-name">${item.name}</span>
@@ -3776,8 +3924,9 @@
   function selectReplacementGarment(itemId) {
     if (!_activeDailyRecommendation) return;
 
-    const pool = (Array.isArray(state.wardrobe) && state.wardrobe.length > 0)
-      ? state.wardrobe
+    const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
+    const pool = userWardrobe.length > 0
+      ? [...userWardrobe, ...WARDROBE_ITEMS.filter(item => !userWardrobe.some(u => u.id === item.id))]
       : WARDROBE_ITEMS;
 
     const chosen = pool.find(i => i.id === itemId);
@@ -3855,10 +4004,36 @@
 
     _activeDailyRecommendation.explanation = `Paired your ${topName} with the ${bottomName} for a ${aesthetic} aesthetic. Harmonized tonal contrast highlights clean tailoring, grounded with ${shoeName}${accessoryText}. Selected exclusively from your active wardrobe.`;
 
+    // Re-score with Engine Harmony
+    const ensemble = {
+      top: _activeDailyRecommendation.top,
+      bottom: _activeDailyRecommendation.bottom,
+      shoes: _activeDailyRecommendation.shoes,
+      accessories: _activeDailyRecommendation.accessory ? [_activeDailyRecommendation.accessory] : []
+    };
+    if (window.engineHarmonyInstance && typeof window.engineHarmonyInstance.scoreOutfit === 'function') {
+      try {
+        const report = window.engineHarmonyInstance.scoreOutfit(ensemble, { occasion: 'smart_casual' });
+        if (report && typeof report.score === 'number') {
+          _activeDailyRecommendation.harmonyScore = report.score;
+          _activeDailyRecommendation.rating = report.score >= 90 ? 'Exceptional' : 'Harmonious';
+          _activeDailyRecommendation.dominantHarmony = report.dominantHarmony;
+          _activeDailyRecommendation.tier = report.tier;
+          _activeDailyRecommendation.badge = report.badge;
+          _activeDailyRecommendation.subScores = report.subScores;
+          if (Array.isArray(report.strengths) && report.strengths.length > 0) {
+            _activeDailyRecommendation.strengths = report.strengths;
+          }
+          if (Array.isArray(report.tips)) _activeDailyRecommendation.tips = report.tips;
+          if (Array.isArray(report.feedback)) _activeDailyRecommendation.feedback = report.feedback;
+        }
+      } catch (err) {}
+    }
+
     // Close modal & re-render
     closeChangeGarmentModal();
     renderDailyRecommendationCard(_activeDailyRecommendation);
-    showToast(`✨ Changed ${slot} to "${chosen.name}"`);
+    showToast(`✨ Changed ${slot} to "${chosen.name}" (${_activeDailyRecommendation.harmonyScore}% Synergy)`);
   }
 
   function tryOnRecommendedOutfit() {

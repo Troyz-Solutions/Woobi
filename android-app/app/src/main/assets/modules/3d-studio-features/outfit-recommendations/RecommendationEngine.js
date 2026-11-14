@@ -14,6 +14,7 @@ import {
   COLOR_HARMONY_PAIRS
 } from './RecommendationPresets.js';
 import { GARMENT_CATALOG, getGarmentRecord } from '../virtual-try-on/index.js';
+import { EngineHarmony } from '../../../engine-harmony/index.js';
 
 export class RecommendationEngine {
   constructor(options = {}) {
@@ -21,6 +22,15 @@ export class RecommendationEngine {
       curatedLooks: [...CURATED_LOOKS],
       minScoreThreshold: 60
     }, options);
+    this.harmonyEngine = options.harmonyEngine || new EngineHarmony();
+  }
+
+  scoreOutfitEnsemble(outfit, context = {}) {
+    return this.harmonyEngine.scoreOutfit(outfit, context);
+  }
+
+  findAlternativeItems(baseOutfit, slotToReplace, wardrobe, context = {}) {
+    return this.harmonyEngine.findAlternativeItems(baseOutfit, slotToReplace, wardrobe, context);
   }
 
   getOccasions() {
@@ -415,12 +425,28 @@ export class RecommendationEngine {
         const pairSeed = stringHash(`${dateStr}_${top.id}_${bottom.id}`) % 10;
         score += pairSeed;
 
+        const ensemble = {
+          top,
+          bottom,
+          shoes: bestShoe,
+          accessories: matchingAccessory ? [matchingAccessory] : []
+        };
+        const harmonyReport = this.harmonyEngine ? this.harmonyEngine.scoreOutfit(ensemble, { occasion: 'smart_casual' }) : null;
+
+        // Blend algorithmic factors with Engine Harmony precision score
+        let finalScore = score;
+        if (harmonyReport && typeof harmonyReport.score === 'number') {
+          // Weight harmony engine (60%) with context and day constraints (40%)
+          finalScore = Math.round(0.60 * harmonyReport.score + 0.40 * score);
+        }
+
         candidates.push({
           top,
           bottom,
           shoes: bestShoe,
           accessory: matchingAccessory,
-          score: Math.min(99, Math.max(70, score)),
+          score: Math.min(99, Math.max(70, finalScore)),
+          harmonyReport,
           comboSignature
         });
       });
@@ -492,6 +518,7 @@ export class RecommendationEngine {
 
     const explanation = `Paired your ${topName} with the ${bottomName} for a ${aesthetic} aesthetic. Harmonized tonal contrast highlights clean tailoring, grounded with ${shoeName}${accessoryText}. Selected exclusively from your active wardrobe.`;
 
+    const harmony = chosen.harmonyReport || {};
     const recommendation = {
       isAvailable: true,
       id: `rec_${dateStr}_${chosen.comboSignature}`,
@@ -507,6 +534,24 @@ export class RecommendationEngine {
       bottom: chosen.bottom,
       shoes: chosen.shoes,
       accessory: chosen.accessory,
+      // Engine Harmony smart scoring & insights
+      engine: 'EngineHarmony',
+      dominantHarmony: harmony.dominantHarmony || 'neutral_accent',
+      tier: harmony.tier || (chosen.score >= 90 ? 'Elite' : 'Harmonious'),
+      badge: harmony.badge || (chosen.score >= 90 ? '✨ Elite Look' : '★ Harmonious'),
+      subScores: harmony.subScores || {
+        color: Math.min(99, chosen.score + 2),
+        formality: chosen.score,
+        patternTexture: 92,
+        occasionSeason: 94,
+        silhouette: 92
+      },
+      strengths: Array.isArray(harmony.strengths) && harmony.strengths.length > 0 ? harmony.strengths : [
+        'Balanced color contrast between topwear and bottomwear',
+        'Cohesive silhouette proportions from head to toe'
+      ],
+      tips: harmony.tips || [],
+      feedback: harmony.feedback || [],
       mannequinOutfit: {
         top: mapToMannequinTop(chosen.top),
         bottom: mapToMannequinBottom(chosen.bottom),

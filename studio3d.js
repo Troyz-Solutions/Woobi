@@ -881,6 +881,24 @@
             this.lightingModel.keySunlight.shadow.camera.updateProjectionMatrix();
           }
         }
+
+        // Studio Rear Light & Fill illuminating avatar back for crystal-clear mirror reflections
+        const studioRearLight = new THREE.DirectionalLight(0xFFF2E0, 1.15);
+        studioRearLight.name = 'Studio_RearLight';
+        studioRearLight.position.set(1.15, 3.20, -2.85);
+        studioRearLight.target.position.set(0, 1.10, 0);
+        this.scene.add(studioRearLight);
+        this.scene.add(studioRearLight.target);
+        this.studioRearLight = studioRearLight;
+
+        const studioRearFill = new THREE.DirectionalLight(0xEDE2D5, 0.65);
+        studioRearFill.name = 'Studio_RearFill';
+        studioRearFill.position.set(-1.10, 2.80, -2.60);
+        studioRearFill.target.position.set(0, 1.05, 0);
+        this.scene.add(studioRearFill);
+        this.scene.add(studioRearFill.target);
+        this.studioRearFill = studioRearFill;
+
         return;
       }
 
@@ -924,10 +942,27 @@
       this.scene.add(wardrobeSpot.target);
 
       const vanitySpot = new THREE.SpotLight(0xFFF2DE, 0.38, 5.6, Math.PI / 4, 0.45, 1.2);
-      vanitySpot.position.set(1.60, 3.5, -2.00);
-      vanitySpot.target.position.set(1.60, 1.20, -3.30);
+      vanitySpot.position.set(1.15, 3.5, -2.00);
+      vanitySpot.target.position.set(1.15, 1.20, -2.85);
       this.scene.add(vanitySpot);
       this.scene.add(vanitySpot.target);
+
+      // Studio Rear Light & Fill illuminating avatar back for crystal-clear mirror reflections
+      const studioRearLight = new THREE.DirectionalLight(0xFFF2E0, 1.15);
+      studioRearLight.name = 'Studio_RearLight';
+      studioRearLight.position.set(1.15, 3.20, -2.85);
+      studioRearLight.target.position.set(0, 1.10, 0);
+      this.scene.add(studioRearLight);
+      this.scene.add(studioRearLight.target);
+      this.studioRearLight = studioRearLight;
+
+      const studioRearFill = new THREE.DirectionalLight(0xEDE2D5, 0.65);
+      studioRearFill.name = 'Studio_RearFill';
+      studioRearFill.position.set(-1.10, 2.80, -2.60);
+      studioRearFill.target.position.set(0, 1.05, 0);
+      this.scene.add(studioRearFill);
+      this.scene.add(studioRearFill.target);
+      this.studioRearFill = studioRearFill;
     }
 
     /**
@@ -1309,7 +1344,11 @@
      */
     buildDressingVanity() {
       if (typeof window !== 'undefined' && window.WoobiVanity && typeof window.WoobiVanity.createVanity === 'function') {
-        this.vanityModel = window.WoobiVanity.createVanity(this.scene, this.textures, THREE);
+        this.vanityModel = window.WoobiVanity.createVanity(this.scene, this.textures, THREE, {
+          position: { x: 1.15, y: 0, z: -2.85 },
+          rotationY: -0.28,
+          preferProcedural: true
+        });
         this.vanityGroup = this.vanityModel.group;
         this.mirrorGlassMesh = this.vanityModel.mirrorGlassMesh;
         if (Array.isArray(this.vanityModel.interactiveObjects)) {
@@ -1320,8 +1359,8 @@
 
       const vanityGroup = new THREE.Group();
       vanityGroup.name = 'woobi_vanity_root';
-      vanityGroup.position.set(1.60, 0, -3.30);
-      vanityGroup.rotation.y = -0.32; // Angled gracefully towards stage
+      vanityGroup.position.set(1.15, 0, -2.85);
+      vanityGroup.rotation.y = -0.28; // Angled gracefully towards stage
       this.vanityGroup = vanityGroup;
 
       // Continuous 3000K warm halo radiance radiating from the arched grooming mirror
@@ -1337,23 +1376,23 @@
       vanityGroup.add(vanityTableSpot.target);
 
       const brassMat = new THREE.MeshStandardMaterial({
-        color: COLOR_PALETTE.warmBrass,
+        color: COLOR_PALETTE.warmBrass || 0xD8BD8A,
         metalness: 0.88,
         roughness: 0.22
       });
 
-      // 1. Warm Beige Limestone / Stone Countertop Table (#CBB18D)
-      const tableHeight = 0.84;
-      const tableWidth = 0.98;
+      // 1. Italian Calacatta Gold Polished Marble Tabletop with Bullnose Lip & Cashmere Apron
+      const tableHeight = 0.82;
+      const tableWidth = 1.15;
       const tableDepth = 0.46;
 
       const marbleMat = new THREE.MeshStandardMaterial({
-        map: this.textures.calacatta || this.textures.champagneStone,
+        map: this.textures.calacatta || this.textures.champagneStone || null,
         bumpMap: this.textures.stoneBump || null,
-        bumpScale: 0.005,
-        roughness: 0.42,
-        metalness: 0.02,
-        color: 0xCBB18D
+        bumpScale: 0.003,
+        roughness: 0.18,
+        metalness: 0.04,
+        color: 0xFAF7F2
       });
       const topSlab = new THREE.Mesh(new THREE.BoxGeometry(tableWidth, 0.065, tableDepth), marbleMat);
       topSlab.position.set(0, tableHeight, 0);
@@ -1361,64 +1400,134 @@
       topSlab.receiveShadow = true;
       vanityGroup.add(topSlab);
 
-      // Deep Espresso Dark Table Legs (#362B22)
-      const legsMat = new THREE.MeshStandardMaterial({
-        color: 0x362B22,
-        roughness: 0.55,
-        metalness: 0.40
+      // Bevelled Marble Bullnose Lip
+      const marbleLip = new THREE.Mesh(new THREE.BoxGeometry(tableWidth + 0.02, 0.014, tableDepth + 0.02), marbleMat);
+      marbleLip.position.set(0, tableHeight + 0.025, 0);
+      marbleLip.castShadow = true;
+      vanityGroup.add(marbleLip);
+
+      // Cashmere Cream Vanity Apron
+      const apronMat = new THREE.MeshStandardMaterial({
+        color: 0xEDE7DF,
+        roughness: 0.38,
+        metalness: 0.04
       });
-      const legGeo = new THREE.BoxGeometry(0.030, tableHeight - 0.03, 0.030);
-      const legPositions = [
-        [-tableWidth / 2 + 0.035, -tableDepth / 2 + 0.035],
-        [tableWidth / 2 - 0.035, -tableDepth / 2 + 0.035],
-        [-tableWidth / 2 + 0.035, tableDepth / 2 - 0.035],
-        [tableWidth / 2 - 0.035, tableDepth / 2 - 0.035]
-      ];
-      legPositions.forEach(([lx, lz]) => {
-        const leg = new THREE.Mesh(legGeo, legsMat);
-        leg.position.set(lx, (tableHeight - 0.03) / 2, lz);
-        leg.castShadow = true;
-        vanityGroup.add(leg);
+      const apron = new THREE.Mesh(new THREE.BoxGeometry(tableWidth - 0.08, 0.048, tableDepth - 0.06), apronMat);
+      apron.position.set(0, tableHeight - 0.040, 0);
+      apron.castShadow = true;
+      vanityGroup.add(apron);
+
+      // Recessed Brushed Champagne Brass Reveal Groove
+      const reveal = new THREE.Mesh(new THREE.BoxGeometry(tableWidth - 0.04, 0.008, tableDepth - 0.03), brassMat);
+      reveal.position.set(0, tableHeight - 0.016, 0);
+      vanityGroup.add(reveal);
+
+      // Minimalist Champagne Brass Drawer Knobs
+      const knobGeo = new THREE.SphereGeometry(0.010, 16, 16);
+      [-0.24, 0.24].forEach(kx => {
+        const knob = new THREE.Mesh(knobGeo, brassMat);
+        knob.position.set(kx, tableHeight - 0.040, tableDepth / 2 - 0.022);
+        vanityGroup.add(knob);
       });
 
-      // 2. LARGE ARCHED / CIRCULAR MIRROR WITH CONTINUOUS WARM LED GLOW RING
+      // Architectural Curved Pedestals (Sculptural Champagne Satin Brass Bases)
+      const pedestalX = [-(tableWidth / 2 - 0.15), (tableWidth / 2 - 0.15)];
+      const pillarHeight = tableHeight - 0.07;
+      const pillarGeo = new THREE.CylinderGeometry(0.038, 0.038, pillarHeight, 32);
+      const plinthGeo = new THREE.BoxGeometry(0.12, 0.024, tableDepth - 0.12);
+      const archRailGeo = new THREE.TorusGeometry(0.11, 0.018, 16, 32, Math.PI);
+
+      pedestalX.forEach(px => {
+        const frontPillar = new THREE.Mesh(pillarGeo, brassMat);
+        frontPillar.position.set(px, pillarHeight / 2 + 0.012, tableDepth / 2 - 0.11);
+        frontPillar.castShadow = true;
+        vanityGroup.add(frontPillar);
+
+        const rearPillar = new THREE.Mesh(pillarGeo, brassMat);
+        rearPillar.position.set(px, pillarHeight / 2 + 0.012, -tableDepth / 2 + 0.11);
+        rearPillar.castShadow = true;
+        vanityGroup.add(rearPillar);
+
+        const archRail = new THREE.Mesh(archRailGeo, brassMat);
+        archRail.rotation.y = Math.PI / 2;
+        archRail.position.set(px, pillarHeight - 0.04, 0);
+        vanityGroup.add(archRail);
+
+        const plinth = new THREE.Mesh(plinthGeo, brassMat);
+        plinth.position.set(px, 0.012, 0);
+        plinth.castShadow = true;
+        plinth.receiveShadow = true;
+        vanityGroup.add(plinth);
+      });
+
+      // 2. GRAND ARCHITECTURAL GROOMING MIRROR WITH 3000K CONTINUOUS WARM LED HALO
       const mirrorGroup = new THREE.Group();
-      mirrorGroup.position.set(0, tableHeight + 0.62, -tableDepth / 2 + 0.03);
+      mirrorGroup.position.set(0, tableHeight + 0.032, -tableDepth / 2 + 0.045);
 
-      const mirrorRadius = 0.48;
+      const archR = 0.44;
+      const straightH = 0.54;
 
-      // Glowing Neon Ring Halo (Continuous 360° LED Rim Light)
-      const ledGlowGeo = new THREE.TorusGeometry(mirrorRadius + 0.012, 0.014, 16, 64);
-      const ledGlowMat = new THREE.MeshBasicMaterial({ color: 0xFFF2D2 });
-      const glowRing = new THREE.Mesh(ledGlowGeo, ledGlowMat);
-      mirrorGroup.add(glowRing);
-
-      // Brushed Brass Frame Border
-      const frameRing = new THREE.Mesh(new THREE.TorusGeometry(mirrorRadius + 0.025, 0.010, 16, 64), brassMat);
-      mirrorGroup.add(frameRing);
-
-      // Backing Panel
-      const mirrorBack = new THREE.Mesh(
-        new THREE.CircleGeometry(mirrorRadius + 0.01, 64),
-        new THREE.MeshStandardMaterial({ color: 0x2A241E, roughness: 0.6 })
+      // Lower Rectangular Mirror Surface
+      const lowerMirror = new THREE.Mesh(
+        new THREE.BoxGeometry(archR * 2, straightH, 0.002),
+        new THREE.MeshStandardMaterial({ color: 0xEAE6DE, roughness: 0.04, metalness: 0.94 })
       );
-      mirrorBack.position.z = -0.015;
-      mirrorGroup.add(mirrorBack);
+      lowerMirror.position.set(0, straightH / 2, 0.002);
+      lowerMirror.userData = { forcePlanarUV: true };
+      mirrorGroup.add(lowerMirror);
 
-      // Mirror Glass Surface
-      const mirrorGlassGeo = new THREE.CircleGeometry(mirrorRadius, 64);
-      const mirrorMat = new THREE.MeshStandardMaterial({
-        color: 0xEAE6DE,
-        roughness: 0.04,
-        metalness: 0.94
+      // Upper Semicircular Arch Mirror Surface
+      const upperMirror = new THREE.Mesh(
+        new THREE.CircleGeometry(archR, 64, 0, Math.PI),
+        new THREE.MeshStandardMaterial({ color: 0xEAE6DE, roughness: 0.04, metalness: 0.94 })
+      );
+      upperMirror.position.set(0, straightH, 0.002);
+      upperMirror.userData = { forcePlanarUV: true };
+      mirrorGroup.add(upperMirror);
+
+      this.mirrorGlassMesh = upperMirror;
+      this.lowerMirrorGlassMesh = lowerMirror;
+
+      // Continuous 3000K Warm LED Radiance Halo Ring
+      const ledGlowMat = new THREE.MeshBasicMaterial({ color: 0xFFECD4 });
+      const haloArc = new THREE.Mesh(new THREE.TorusGeometry(archR + 0.006, 0.009, 16, 64, Math.PI), ledGlowMat);
+      haloArc.position.set(0, straightH, 0.004);
+      mirrorGroup.add(haloArc);
+
+      [-archR - 0.006, archR + 0.006].forEach(hx => {
+        const sideHalo = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, straightH, 16), ledGlowMat);
+        sideHalo.position.set(hx, straightH / 2, 0.004);
+        mirrorGroup.add(sideHalo);
       });
-      this.mirrorGlassMesh = new THREE.Mesh(mirrorGlassGeo, mirrorMat);
-      this.mirrorGlassMesh.position.z = 0.002;
-      mirrorGroup.add(this.mirrorGlassMesh);
+
+      // Bevelled Sculpted Champagne Brass Mirror Frame
+      const frameArc = new THREE.Mesh(new THREE.TorusGeometry(archR + 0.018, 0.014, 16, 64, Math.PI), brassMat);
+      frameArc.position.set(0, straightH, 0);
+      mirrorGroup.add(frameArc);
+
+      [-archR - 0.018, archR + 0.018].forEach(fx => {
+        const sideFrame = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, straightH, 16), brassMat);
+        sideFrame.position.set(fx, straightH / 2, 0);
+        mirrorGroup.add(sideFrame);
+      });
+
+      const frameBottom = new THREE.Mesh(new THREE.BoxGeometry((archR + 0.018) * 2 + 0.028, 0.016, 0.028), brassMat);
+      frameBottom.position.set(0, 0.008, 0);
+      mirrorGroup.add(frameBottom);
+
+      // Walnut Protective Backing Panel
+      const mirrorBackMat = new THREE.MeshStandardMaterial({ color: 0x2A241E, roughness: 0.6 });
+      const backRect = new THREE.Mesh(new THREE.BoxGeometry(archR * 2 + 0.02, straightH, 0.012), mirrorBackMat);
+      backRect.position.set(0, straightH / 2, -0.010);
+      mirrorGroup.add(backRect);
+
+      const backArc = new THREE.Mesh(new THREE.CircleGeometry(archR + 0.01, 64, 0, Math.PI), mirrorBackMat);
+      backArc.position.set(0, straightH, -0.010);
+      mirrorGroup.add(backArc);
 
       // Warm continuous radiance light from the mirror ring
       const mirrorGlowLight = new THREE.PointLight(0xFFE8BE, 1.4, 3.2);
-      mirrorGlowLight.position.set(0, 0, 0.25);
+      mirrorGlowLight.position.set(0, straightH * 0.75, 0.25);
       mirrorGroup.add(mirrorGlowLight);
 
       vanityGroup.add(mirrorGroup);
@@ -1514,11 +1623,11 @@
 
       // 4. ROUND CREAM BOUCLÉ UPHOLSTERED OTTOMAN STOOL WITH BRASS BASE
       const stoolGroup = new THREE.Group();
-      stoolGroup.position.set(0.12, 0, 0.42);
+      stoolGroup.position.set(0.10, 0, 0.40);
 
       // Cream Bouclé Upholstery Material
       const stoolMat = new THREE.MeshStandardMaterial({
-        color: 0xEEE6DC,
+        color: 0xF5EFEB,
         roughness: 0.85,
         metalness: 0.02
       });
@@ -2292,9 +2401,9 @@
           magFilter: THREE.LinearFilter
         });
 
-        this.mirrorCamera = new THREE.PerspectiveCamera(26, 0.62, 1.2, 60);
-        this.mirrorCamera.position.set(1.60, 1.45, -3.30);
-        this.mirrorCamera.lookAt(0, 1.15, 0);
+        this.mirrorCamera = new THREE.PerspectiveCamera(28, 0.62, 1.0, 60);
+        this.mirrorCamera.position.set(1.15, 1.45, -2.85);
+        this.mirrorCamera.lookAt(0, 1.12, 0);
         this.scene.add(this.mirrorCamera);
 
         if (this.mirrorGlassMesh) {
@@ -2302,6 +2411,9 @@
             map: this.mirrorRenderTarget.texture,
             toneMapped: false
           });
+        }
+        if (this.lowerMirrorGlassMesh && this.mirrorGlassMesh) {
+          this.lowerMirrorGlassMesh.material = this.mirrorGlassMesh.material;
         }
       } catch (err) {
         console.warn('Studio3D: Mirror render target fallback active', err);
@@ -3299,8 +3411,9 @@
         this.vanityModel.reflection.update(this.renderer, this.scene, this.camera);
       } else if (this.mirrorRenderTarget && this.mirrorCamera && activeMirrorMesh) {
         activeMirrorMesh.visible = false;
-        this.mirrorCamera.position.set(1.60, 1.45, -3.30);
-        this.mirrorCamera.lookAt(0, 1.15, 0); // Looking towards avatar torso from optical reflection position
+        if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = false;
+        this.mirrorCamera.position.set(1.15, 1.45, -2.85);
+        this.mirrorCamera.lookAt(0, 1.12, 0); // Looking towards avatar torso from optical reflection position
         this.mirrorCamera.far = 60.0;
 
         const origFog = this.scene.fog;
@@ -3317,6 +3430,7 @@
         }
 
         activeMirrorMesh.visible = true;
+        if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = true;
       }
 
       // 7. Render Main Viewport

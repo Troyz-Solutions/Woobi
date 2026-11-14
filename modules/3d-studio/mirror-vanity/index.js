@@ -20,8 +20,8 @@ export {
 /**
  * Convenience factory to create and mount the mirror & vanity in the 3D scene.
  */
-export function createVanity(scene, textures, THREE) {
-  const vanity = new VanityModel();
+export function createVanity(scene, textures, THREE, options = {}) {
+  const vanity = new VanityModel(options);
   vanity.build(scene, textures, THREE);
   return vanity;
 }

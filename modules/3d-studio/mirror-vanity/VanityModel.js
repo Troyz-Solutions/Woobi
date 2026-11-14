@@ -74,7 +74,7 @@ export class VanityModel {
     const boucleMat = VanityMaterials.createBoucleMaterial(THREE, textures.wovenRug);
     this.disposables.push(marbleMat, legsMat, brassMat, ledGlowMat, glassMat, amberGlassMat, boucleMat);
 
-    // 1. Polished Calacatta Gold Marble Countertop Table
+    // 1. Polished Calacatta Gold Marble Countertop Table with Cashmere Apron & Brass Reveal
     const topSlabGeo = new THREE.BoxGeometry(tableWidth, 0.065, tableDepth);
     const topSlab = new THREE.Mesh(topSlabGeo, marbleMat);
     topSlab.position.set(0, tableHeight, 0);
@@ -83,59 +83,159 @@ export class VanityModel {
     proceduralGroup.add(topSlab);
     this.disposables.push(topSlabGeo);
 
-    // Slim Golden Brass Metallic Legs
-    const legGeo = new THREE.BoxGeometry(0.030, tableHeight - 0.03, 0.030);
-    const legPositions = [
-      [-tableWidth / 2 + 0.035, -tableDepth / 2 + 0.035],
-      [tableWidth / 2 - 0.035, -tableDepth / 2 + 0.035],
-      [-tableWidth / 2 + 0.035, tableDepth / 2 - 0.035],
-      [tableWidth / 2 - 0.035, tableDepth / 2 - 0.035]
-    ];
-    legPositions.forEach(([lx, lz]) => {
-      const leg = new THREE.Mesh(legGeo, legsMat);
-      leg.position.set(lx, (tableHeight - 0.03) / 2, lz);
-      leg.castShadow = true;
-      proceduralGroup.add(leg);
+    // Bevelled Marble Bullnose Lip
+    const marbleLipGeo = new THREE.BoxGeometry(tableWidth + 0.02, 0.014, tableDepth + 0.02);
+    const marbleLip = new THREE.Mesh(marbleLipGeo, marbleMat);
+    marbleLip.position.set(0, tableHeight + 0.025, 0);
+    marbleLip.castShadow = true;
+    marbleLip.receiveShadow = true;
+    proceduralGroup.add(marbleLip);
+    this.disposables.push(marbleLipGeo);
+
+    // Cashmere Cream Vanity Apron
+    const apronMat = new THREE.MeshStandardMaterial({
+      color: 0xEDE7DF,
+      roughness: 0.38,
+      metalness: 0.04
     });
-    this.disposables.push(legGeo);
+    const apronGeo = new THREE.BoxGeometry(tableWidth - 0.08, 0.048, tableDepth - 0.06);
+    const apron = new THREE.Mesh(apronGeo, apronMat);
+    apron.position.set(0, tableHeight - 0.040, 0);
+    apron.castShadow = true;
+    proceduralGroup.add(apron);
+    this.disposables.push(apronMat, apronGeo);
 
-    // 2. LARGE ARCHED / CIRCULAR MIRROR WITH CONTINUOUS WARM LED GLOW RING
+    // Recessed Brushed Champagne Brass Reveal Groove
+    const revealGeo = new THREE.BoxGeometry(tableWidth - 0.04, 0.008, tableDepth - 0.03);
+    const reveal = new THREE.Mesh(revealGeo, brassMat);
+    reveal.position.set(0, tableHeight - 0.016, 0);
+    proceduralGroup.add(reveal);
+    this.disposables.push(revealGeo);
+
+    // Minimalist Champagne Brass Drawer Knobs
+    const knobGeo = new THREE.SphereGeometry(0.010, 16, 16);
+    [-0.24, 0.24].forEach(kx => {
+      const knob = new THREE.Mesh(knobGeo, brassMat);
+      knob.position.set(kx, tableHeight - 0.040, tableDepth / 2 - 0.022);
+      proceduralGroup.add(knob);
+    });
+    this.disposables.push(knobGeo);
+
+    // Architectural Curved Pedestals (Sculptural Champagne Satin Brass Bases)
+    const pedestalX = [-(tableWidth / 2 - 0.15), (tableWidth / 2 - 0.15)];
+    const pillarHeight = tableHeight - 0.07;
+    const pillarGeo = new THREE.CylinderGeometry(0.038, 0.038, pillarHeight, 32);
+    const plinthGeo = new THREE.BoxGeometry(0.12, 0.024, tableDepth - 0.12);
+    const archRailGeo = new THREE.TorusGeometry(0.11, 0.018, 16, 32, Math.PI);
+
+    pedestalX.forEach(px => {
+      // Front and rear cylindrical architectural pillars
+      const frontPillar = new THREE.Mesh(pillarGeo, brassMat);
+      frontPillar.position.set(px, pillarHeight / 2 + 0.012, tableDepth / 2 - 0.11);
+      frontPillar.castShadow = true;
+      proceduralGroup.add(frontPillar);
+
+      const rearPillar = new THREE.Mesh(pillarGeo, brassMat);
+      rearPillar.position.set(px, pillarHeight / 2 + 0.012, -tableDepth / 2 + 0.11);
+      rearPillar.castShadow = true;
+      proceduralGroup.add(rearPillar);
+
+      // Curved Connecting Arch Rail
+      const archRail = new THREE.Mesh(archRailGeo, brassMat);
+      archRail.rotation.y = Math.PI / 2;
+      archRail.position.set(px, pillarHeight - 0.04, 0);
+      proceduralGroup.add(archRail);
+
+      // Solid Champagne Brass Floor Plinth Foot
+      const plinth = new THREE.Mesh(plinthGeo, brassMat);
+      plinth.position.set(px, 0.012, 0);
+      plinth.castShadow = true;
+      plinth.receiveShadow = true;
+      proceduralGroup.add(plinth);
+    });
+    this.disposables.push(pillarGeo, plinthGeo, archRailGeo);
+
+    // 2. GRAND ARCHITECTURAL GROOMING MIRROR WITH 3000K CONTINUOUS WARM LED HALO
     this.mirrorGroup = new THREE.Group();
-    this.mirrorGroup.position.set(0, tableHeight + 0.62, -tableDepth / 2 + 0.03);
+    this.mirrorGroup.position.set(0, tableHeight + 0.032, -tableDepth / 2 + 0.045);
 
-    // Glowing Neon Ring Halo (Continuous 360° LED Rim Light)
-    const ledGlowGeo = new THREE.TorusGeometry(mirrorRadius + 0.012, 0.014, 16, 64);
-    const glowRing = new THREE.Mesh(ledGlowGeo, ledGlowMat);
-    this.mirrorGroup.add(glowRing);
-    this.disposables.push(ledGlowGeo);
+    const archR = mirrorRadius || 0.48;
+    const straightH = 0.54;
 
-    // Brushed Brass Frame Border
-    const frameRingGeo = new THREE.TorusGeometry(mirrorRadius + 0.025, 0.010, 16, 64);
-    const frameRing = new THREE.Mesh(frameRingGeo, brassMat);
-    this.mirrorGroup.add(frameRing);
-    this.disposables.push(frameRingGeo);
-
-    // Backing Panel
-    const mirrorBackGeo = new THREE.CircleGeometry(mirrorRadius + 0.01, 64);
-    const mirrorBackMat = VanityMaterials.createMirrorBackMaterial(THREE);
-    const mirrorBack = new THREE.Mesh(mirrorBackGeo, mirrorBackMat);
-    mirrorBack.position.z = -0.015;
-    this.mirrorGroup.add(mirrorBack);
-    this.disposables.push(mirrorBackGeo, mirrorBackMat);
-
-    // Mirror Glass Surface
-    const mirrorGlassGeo = new THREE.CircleGeometry(mirrorRadius, 64);
+    // A. Lower Rectangular Mirror Surface
+    const lowerMirrorGeo = new THREE.BoxGeometry(archR * 2, straightH, 0.002);
     const mirrorMat = VanityMaterials.createMirrorMaterial(THREE);
-    this.mirrorGlassMesh = new THREE.Mesh(mirrorGlassGeo, mirrorMat);
-    this.mirrorGlassMesh.position.z = 0.002;
-    this.mirrorGroup.add(this.mirrorGlassMesh);
-    this.disposables.push(mirrorGlassGeo, mirrorMat);
+    const lowerMirror = new THREE.Mesh(lowerMirrorGeo, mirrorMat);
+    lowerMirror.position.set(0, straightH / 2, 0.002);
+    this.mirrorGroup.add(lowerMirror);
+    this.disposables.push(lowerMirrorGeo, mirrorMat);
+
+    // B. Upper Semicircular Arch Mirror Surface (Silky smooth 64-segment arc)
+    const upperMirrorGeo = new THREE.CircleGeometry(archR, 64, 0, Math.PI);
+    const upperMirror = new THREE.Mesh(upperMirrorGeo, mirrorMat);
+    upperMirror.position.set(0, straightH, 0.002);
+    this.mirrorGroup.add(upperMirror);
+    this.disposables.push(upperMirrorGeo);
+
+    upperMirror.userData = { forcePlanarUV: true };
+    lowerMirror.userData = { forcePlanarUV: true };
+    this.mirrorGlassMesh = upperMirror; // Primary bind target for reflection updates
+    this.lowerMirrorGlassMesh = lowerMirror;
+
+    // C. Continuous Warm 3000K LED Radiance Halo Ring
+    const haloArcGeo = new THREE.TorusGeometry(archR + 0.006, 0.009, 16, 64, Math.PI);
+    const haloArc = new THREE.Mesh(haloArcGeo, ledGlowMat);
+    haloArc.position.set(0, straightH, 0.004);
+    this.mirrorGroup.add(haloArc);
+
+    const haloSideGeo = new THREE.CylinderGeometry(0.009, 0.009, straightH, 16);
+    [-archR - 0.006, archR + 0.006].forEach(hx => {
+      const sideHalo = new THREE.Mesh(haloSideGeo, ledGlowMat);
+      sideHalo.position.set(hx, straightH / 2, 0.004);
+      this.mirrorGroup.add(sideHalo);
+    });
+    this.disposables.push(haloArcGeo, haloSideGeo);
+
+    // D. Bevelled Sculpted Champagne Brass Mirror Frame
+    const frameArcGeo = new THREE.TorusGeometry(archR + 0.018, 0.014, 16, 64, Math.PI);
+    const frameArc = new THREE.Mesh(frameArcGeo, brassMat);
+    frameArc.position.set(0, straightH, 0);
+    this.mirrorGroup.add(frameArc);
+
+    const frameSideGeo = new THREE.CylinderGeometry(0.014, 0.014, straightH, 16);
+    [-archR - 0.018, archR + 0.018].forEach(fx => {
+      const sideFrame = new THREE.Mesh(frameSideGeo, brassMat);
+      sideFrame.position.set(fx, straightH / 2, 0);
+      this.mirrorGroup.add(sideFrame);
+    });
+
+    const frameBottomGeo = new THREE.BoxGeometry((archR + 0.018) * 2 + 0.028, 0.016, 0.028);
+    const frameBottom = new THREE.Mesh(frameBottomGeo, brassMat);
+    frameBottom.position.set(0, 0.008, 0);
+    this.mirrorGroup.add(frameBottom);
+    this.disposables.push(frameArcGeo, frameSideGeo, frameBottomGeo);
+
+    // E. Protective Walnut Backing Panel
+    const mirrorBackMat = VanityMaterials.createMirrorBackMaterial(THREE);
+    const backRectGeo = new THREE.BoxGeometry(archR * 2 + 0.02, straightH, 0.012);
+    const backRect = new THREE.Mesh(backRectGeo, mirrorBackMat);
+    backRect.position.set(0, straightH / 2, -0.010);
+    this.mirrorGroup.add(backRect);
+
+    const backArcGeo = new THREE.CircleGeometry(archR + 0.01, 64, 0, Math.PI);
+    const backArc = new THREE.Mesh(backArcGeo, mirrorBackMat);
+    backArc.position.set(0, straightH, -0.010);
+    this.mirrorGroup.add(backArc);
+    this.disposables.push(mirrorBackMat, backRectGeo, backArcGeo);
 
     // Initialize Vanity Radiance Lighting
     this.lighting.init(THREE, this.mirrorGroup);
 
     // Initialize Mirror Reflection Pipeline
     this.reflection.init(THREE, scene, this.mirrorGlassMesh);
+    if (this.lowerMirrorGlassMesh && this.reflection.renderTarget) {
+      this.reflection.bindMirrorMesh(this.lowerMirrorGlassMesh, THREE);
+    }
 
     proceduralGroup.add(this.mirrorGroup);
 
@@ -253,7 +353,14 @@ export class VanityModel {
 
     this.group.add(proceduralGroup);
 
-    // 5. Attempt authentic GLB model loading (woobi_vanity.glb)
+    // 5. Authentic Model Loading / Luxury Procedural Selection
+    if (this.config.preferProcedural) {
+      this.isGLBLoaded = false;
+      proceduralGroup.visible = true;
+      scene.add(this.group);
+      return this.group;
+    }
+
     VanityAssets.loadVanityGLB(
       THREE,
       (model) => {

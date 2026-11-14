@@ -64,8 +64,8 @@ export class MirrorReflection {
 
     const THREE = THREEInstance || (typeof window !== 'undefined' ? window.THREE : null);
 
-    // If mesh geometry lacks UVs (like seren_vanity.glb's Mirror_Surface), generate planar UVs
-    if (THREE && mesh.geometry && !mesh.geometry.attributes?.uv && mesh.geometry.attributes?.position && typeof THREE.BufferAttribute !== 'undefined') {
+    // Ensure planar UVs with optical horizontal reflection flip
+    if (THREE && mesh.geometry && mesh.geometry.attributes?.position && (!mesh.geometry.attributes?.uv || mesh.userData?.forcePlanarUV) && typeof THREE.BufferAttribute !== 'undefined') {
       const pos = mesh.geometry.attributes.position;
       if (typeof mesh.geometry.computeBoundingBox === 'function') {
         mesh.geometry.computeBoundingBox();
@@ -119,11 +119,28 @@ export class MirrorReflection {
     }
 
     try {
-      // Calculate true optical planar reflection position if main viewer camera is provided
-      if (mainCamera && mainCamera.position) {
-        const pX = 0.95, pY = 1.45, pZ = -0.15;
-        const nX = -0.3144, nY = 0, nZ = 0.9493; // Normal facing into room
+      // Calculate true optical planar reflection position
+      let pX = 1.15, pY = 1.45, pZ = -2.85;
+      let nX = 0.276, nY = 0, nZ = 0.961;
 
+      if (this.mirrorMesh && typeof this.mirrorMesh.getWorldPosition === 'function') {
+        const tempPos = { x: 0, y: 0, z: 0 };
+        this.mirrorMesh.getWorldPosition(tempPos);
+        pX = tempPos.x;
+        pY = tempPos.y;
+        pZ = tempPos.z;
+
+        if (typeof this.mirrorMesh.getWorldQuaternion === 'function') {
+          const tempQuat = { x: 0, y: 0, z: 0, w: 1 };
+          this.mirrorMesh.getWorldQuaternion(tempQuat);
+          const qx = tempQuat.x, qy = tempQuat.y, qz = tempQuat.z, qw = tempQuat.w;
+          nX = 2 * (qx * qz + qw * qy);
+          nY = 2 * (qy * qz - qw * qx);
+          nZ = 1 - 2 * (qx * qx + qy * qy);
+        }
+      }
+
+      if (mainCamera && mainCamera.position) {
         const cX = mainCamera.position.x;
         const cY = mainCamera.position.y;
         const cZ = mainCamera.position.z;
@@ -144,15 +161,15 @@ export class MirrorReflection {
         if (typeof this.mirrorCamera.lookAt === 'function') {
           this.mirrorCamera.lookAt(this.lookAtPosition.x, this.lookAtPosition.y, this.lookAtPosition.z);
         }
-        this.mirrorCamera.fov = 24;
-        this.mirrorCamera.near = Math.max(1.5, dot * 0.85);
+        this.mirrorCamera.fov = 28;
+        this.mirrorCamera.near = Math.max(0.5, Math.abs(dot) * 0.5);
         this.mirrorCamera.far = 60.0;
         if (typeof this.mirrorCamera.updateProjectionMatrix === 'function') {
           this.mirrorCamera.updateProjectionMatrix();
         }
       } else {
         if (this.mirrorCamera.position && typeof this.mirrorCamera.position.set === 'function') {
-          this.mirrorCamera.position.set(this.mirrorPosition.x, this.mirrorPosition.y, this.mirrorPosition.z);
+          this.mirrorCamera.position.set(pX, pY, pZ);
         }
         if (typeof this.mirrorCamera.lookAt === 'function') {
           this.mirrorCamera.lookAt(this.lookAtPosition.x, this.lookAtPosition.y, this.lookAtPosition.z);

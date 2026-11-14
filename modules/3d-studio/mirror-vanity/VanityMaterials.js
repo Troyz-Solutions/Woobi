@@ -9,32 +9,32 @@ export class VanityMaterials {
     return new THREE.MeshStandardMaterial({
       map: marbleTexture || null,
       bumpMap: bumpTexture || null,
-      bumpScale: 0.005,
-      roughness: 0.42,
-      metalness: 0.02,
-      color: 0xCBB18D // Warm beige limestone / travertine (#CBB18D)
+      bumpScale: 0.003,
+      roughness: 0.18,
+      metalness: 0.04,
+      color: 0xFAF7F2 // Luminous Italian Calacatta Gold polished marble
     });
   }
 
   static createLegsMaterial(THREE) {
     return new THREE.MeshStandardMaterial({
-      color: 0x362B22, // Deep espresso / dark antique bronze
-      roughness: 0.55,
-      metalness: 0.40
+      color: 0xD8BD8A, // Architectural champagne satin brushed brass
+      metalness: 0.88,
+      roughness: 0.22
     });
   }
 
   static createBrassMaterial(THREE) {
     return new THREE.MeshStandardMaterial({
-      color: 0x74583D, // Antique bronze (#74583D)
-      metalness: 0.72,
-      roughness: 0.35
+      color: 0xD8BD8A, // Radiant champagne brass
+      metalness: 0.88,
+      roughness: 0.22
     });
   }
 
   static createLedGlowMaterial(THREE) {
     return new THREE.MeshBasicMaterial({
-      color: 0xFFF2D2
+      color: 0xFFECD4 // 3000K warm diffused continuous LED radiance
     });
   }
 
@@ -89,7 +89,7 @@ export class VanityMaterials {
   static createBoucleMaterial(THREE, wovenTexture = null) {
     return new THREE.MeshStandardMaterial({
       map: wovenTexture || null,
-      color: 0xE0D6C7, // Cream bouclé matching seren_vanity.glb
+      color: 0xF5EFEB, // Luxurious cream bouclé upholstery
       roughness: 0.85,
       metalness: 0.02
     });

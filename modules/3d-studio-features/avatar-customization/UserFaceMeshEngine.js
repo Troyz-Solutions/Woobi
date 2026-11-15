@@ -601,9 +601,9 @@ export class UserFaceMeshEngine {
 
   /**
    * Method 1: Creates a dedicated 3D Curved Faceplate Mesh parented directly to the avatar head bone.
-   * Renders the user's authentic face in crisp HD with zero UV atlas distortion or white bleed.
+   * Renders the user's authentic face in crisp 1024x1024 HD with zero UV atlas distortion or white bleed.
    */
-  createFacePlate(userImageSource) {
+  createFacePlate(userImageSource, options = {}) {
     if (typeof document === 'undefined' || !userImageSource || !this.studio3D) return null;
     const THREE = (typeof window !== 'undefined' && window.THREE)
       ? window.THREE
@@ -623,55 +623,89 @@ export class UserFaceMeshEngine {
       });
     }
 
+    // Hide fake mannequin hair and eyelashes so user face & hair appear cleanly without overlap
+    if (options.hideMannequinHair !== false) {
+      if (avatarRoot && typeof avatarRoot.traverse === 'function') {
+        avatarRoot.traverse((c) => {
+          if (c.isMesh) {
+            const name = (c.name || '').toLowerCase();
+            if (name.includes('hair') || name.includes('eyelash')) {
+              c.visible = false;
+            }
+          }
+        });
+      }
+    }
+
     // Determine gender
     const isMale = (this.studio3D?.avatarConfig?.gender === 'male') ||
       (this.studio3D?.currentMannequinGender === 'male') ||
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
-    // 2. Prepare 512x512 cropped face texture with soft feathered edge
+    // 2. Prepare 1024x1024 cropped face texture with soft feathered edge & background suppression
+    const res = 1024;
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = res;
+    canvas.height = res;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    const faceCanvas = this.extractFaceRegion(userImageSource, 512, 512);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    const faceCanvas = this.extractFaceRegion(userImageSource, res, res);
     if (!faceCanvas) return null;
 
-    // Soft elliptical mask to blend softly around jawline and temples
-    const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = 512;
-    maskCanvas.height = 512;
-    const mCtx = maskCanvas.getContext('2d');
-    if (mCtx) {
-      const cx = 256, cy = 256;
-      const rx = 256 * 0.88, ry = 256 * 0.94;
-      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.68, cx, cy, rx);
-      gradient.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
-      gradient.addColorStop(0.72, 'rgba(0, 0, 0, 1.0)');
-      gradient.addColorStop(0.90, 'rgba(0, 0, 0, 0.70)');
-      gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
-      mCtx.save();
-      mCtx.scale(1.0, ry / rx);
-      mCtx.fillStyle = gradient;
-      mCtx.beginPath();
-      mCtx.arc(cx, (cy * rx) / ry, rx, 0, Math.PI * 2);
-      mCtx.fill();
-      mCtx.restore();
-
-      const fCtx = faceCanvas.getContext('2d');
-      if (fCtx) {
-        fCtx.globalCompositeOperation = 'destination-in';
-        fCtx.drawImage(maskCanvas, 0, 0);
-      }
-    }
     ctx.drawImage(faceCanvas, 0, 0);
+
+    // Precise melanin & skin-guided background wall suppression
+    try {
+      const imgData = ctx.getImageData(0, 0, res, res);
+      const data = imgData.data;
+      const cx = res / 2;
+      const cy = res / 2;
+      const rx = res * 0.40;
+      const ry = res * 0.47;
+
+      for (let y = 0; y < res; y++) {
+        for (let x = 0; x < res; x++) {
+          const idx = (y * res + x) * 4;
+          const nx = (x - cx) / rx;
+          const ny = (y - cy) / ry;
+          const d = nx * nx + ny * ny;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+
+          // Wall background: high brightness, low melanin saturation
+          const isWall = (r > 165 && g > 155 && b > 145 && Math.abs(r - g) < 25 && Math.abs(r - b) < 25);
+
+          if (d <= 0.60 && !isWall) {
+            data[idx + 3] = 255;
+          } else if (d >= 1.0 || isWall) {
+            data[idx + 3] = 0;
+          } else {
+            const ratio = (d - 0.60) / 0.40;
+            data[idx + 3] = Math.round(255 * (0.5 + 0.5 * Math.cos(ratio * Math.PI)));
+          }
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    } catch (e) {
+      // Fallback to standard drawing
+    }
 
     let texture = null;
     if (THREE.CanvasTexture) {
       texture = new THREE.CanvasTexture(canvas);
+      texture.generateMipmaps = true;
+      if (THREE.LinearFilter) texture.minFilter = THREE.LinearFilter;
+      if (THREE.LinearFilter) texture.magFilter = THREE.LinearFilter;
       if (THREE.sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
       if (THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
+      if (this.studio3D?.renderer?.capabilities?.getMaxAnisotropy) {
+        texture.anisotropy = this.studio3D.renderer.capabilities.getMaxAnisotropy();
+      }
       texture.needsUpdate = true;
     }
 
@@ -679,19 +713,35 @@ export class UserFaceMeshEngine {
     this.removeFacePlate();
 
     // 4. Build curved 3D faceplate geometry
-    // When parented to headBone, local scale is cm (w: ~14.4, h: ~18.4)
-    // When parented to avatarRoot/scene, scale is meters (w: ~0.144, h: ~0.184)
+    // When parented to headBone, local scale is cm (w: ~14.8, h: ~19.4)
+    // When parented to avatarRoot/scene, scale is meters (w: ~0.148, h: ~0.194)
     const isBoneParent = !!headBone;
-    const w = isBoneParent ? (isMale ? 14.4 : 13.6) : (isMale ? 0.144 : 0.136);
-    const h = isBoneParent ? (isMale ? 18.4 : 17.6) : (isMale ? 0.184 : 0.176);
+    const scaleMul = options.scale !== undefined ? options.scale : 1.0;
+    const w = (isBoneParent ? (isMale ? 14.8 : 13.8) : (isMale ? 0.148 : 0.138)) * scaleMul;
+    const h = (isBoneParent ? (isMale ? 19.4 : 18.2) : (isMale ? 0.194 : 0.182)) * scaleMul;
 
     let geo = null;
     if (THREE.PlaneGeometry) {
       geo = new THREE.PlaneGeometry(w, h, 16, 16);
       const pos = geo.attributes.position;
+      const uv = geo.attributes.uv;
+
+      // Vertical flip calibration: by default flipY ensures right-side-up orientation
+      const flipY = (options.flipY !== undefined) ? options.flipY : true;
+      const flipX = (options.flipX !== undefined) ? options.flipX : false;
+
+      if (uv) {
+        for (let i = 0; i < uv.count; i++) {
+          if (flipY) uv.setY(i, 1.0 - uv.getY(i));
+          if (flipX) uv.setX(i, 1.0 - uv.getX(i));
+        }
+        uv.needsUpdate = true;
+      }
+
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
         const py = pos.getY(i);
+        // Anatomic facial curve: cheeks wrap back around sides of head
         const zCurve = isBoneParent
           ? (- (px * px) / 24.0 - Math.max(0, py) * 0.05)
           : (- (px * px) / 0.24 - Math.max(0, py) * 0.05 * 0.01);
@@ -725,17 +775,20 @@ export class UserFaceMeshEngine {
     mesh.receiveShadow = true;
     mesh.frustumCulled = false;
 
+    const offsetY = options.offsetY !== undefined ? options.offsetY : 0.0;
+
     if (isBoneParent) {
-      // Local position inside Mixamo Head bone: x=0, y=8.6 (eye/nose level), z=11.2 (front of face)
-      const posY = isMale ? 8.6 : 8.0;
+      // Local position inside Mixamo Head bone: x=0, y=9.8 (eye/nose level), z=11.2 (front of face)
+      const posY = (isMale ? 9.8 : 8.8) + offsetY;
       const posZ = isMale ? 11.2 : 10.0;
       mesh.position.set(0, posY, posZ);
       headBone.add(mesh);
     } else {
       // Fallback: parent to headGroup or avatarRoot at eye height
       const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
+      const posY = 1.635 + (offsetY * 0.01);
       if (mesh.position && typeof mesh.position.set === 'function') {
-        mesh.position.set(0, 1.635, 0.10);
+        mesh.position.set(0, posY, 0.10);
       }
       if (parent && typeof parent.add === 'function') {
         parent.add(mesh);
@@ -782,11 +835,15 @@ export class UserFaceMeshEngine {
     const intensity = options.intensity !== undefined ? options.intensity : 1.0;
     const biometrics = this.analyzeFaceLandmarks(imageSource);
     const deformed = this.applyParametricDeformation(biometrics, intensity);
-    const facePlate = this.createFacePlate(imageSource);
-    const textured = this.synthesizeFaceTexture(imageSource, biometrics);
+    const facePlate = this.createFacePlate(imageSource, options);
+
+    // Only fallback to UV atlas texture synthesis if faceplate could not be built
+    if (!facePlate) {
+      this.synthesizeFaceTexture(imageSource, biometrics);
+    }
 
     this.isApplied = true;
-    return !!(facePlate || deformed || textured);
+    return !!(facePlate || deformed);
   }
 
   /**
@@ -804,6 +861,20 @@ export class UserFaceMeshEngine {
    */
   resetToDefault() {
     this.removeFacePlate();
+
+    // Restore mannequin hair and eyelashes visibility
+    const avatarRoot = this.studio3D?.gltfAvatarGroup || this.studio3D?.avatarRoot;
+    if (avatarRoot && typeof avatarRoot.traverse === 'function') {
+      avatarRoot.traverse((c) => {
+        if (c.isMesh) {
+          const name = (c.name || '').toLowerCase();
+          if (name.includes('hair') || name.includes('eyelash')) {
+            c.visible = true;
+          }
+        }
+      });
+    }
+
     const meshes = this.findHeadMeshes();
     meshes.forEach((mesh) => {
       // 1. Restore geometry vertices

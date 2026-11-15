@@ -8499,6 +8499,59 @@ body.theme-dark.high-contrast,
   accent-color: #4A6348;
 }
 
+.user-face-adjustments-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.user-face-tool-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 7px 10px;
+  background: #FFFFFF;
+  border: 1px solid #D9D3CA;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #384034;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.user-face-tool-btn:hover {
+  background: #F3EFEA;
+  border-color: #4A6348;
+}
+
+.user-face-tool-btn.active {
+  background: #4A6348;
+  color: #FFFFFF;
+  border-color: #4A6348;
+}
+
+.user-face-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4A5246;
+  cursor: pointer;
+  user-select: none;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.user-face-checkbox-label input[type="checkbox"] {
+  accent-color: #4A6348;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .user-face-footer-buttons {
   display: flex;
   gap: 10px;

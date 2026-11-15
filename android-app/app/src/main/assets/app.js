@@ -4534,6 +4534,11 @@
   // ===================================================================
   let _selectedUserFaceImage = null;
   let _userFaceIntensity = 1.0;
+  let _userFaceFlipY = true;
+  let _userFaceFlipX = false;
+  let _userFaceOffsetY = 0.0;
+  let _userFaceScale = 1.0;
+  let _userFaceHideHair = true;
   let _userFaceCameraStream = null;
   let _isUserFaceCameraActive = false;
 
@@ -4666,6 +4671,51 @@
     if (label) label.textContent = `${Math.round(val)}%`;
   }
 
+  function toggleUserFaceFlipY() {
+    _userFaceFlipY = !_userFaceFlipY;
+    const btn = document.getElementById('btnUserFaceFlipY');
+    if (btn) btn.classList.toggle('active', !_userFaceFlipY);
+    showToast(_userFaceFlipY ? 'Orientation: Right-Side Up' : 'Orientation: Inverted');
+    if (_selectedUserFaceImage) {
+      applyUserFaceToMannequin(true);
+    }
+  }
+
+  function toggleUserFaceFlipX() {
+    _userFaceFlipX = !_userFaceFlipX;
+    const btn = document.getElementById('btnUserFaceFlipX');
+    if (btn) btn.classList.toggle('active', _userFaceFlipX);
+    showToast(_userFaceFlipX ? 'Mirror: ON' : 'Mirror: OFF');
+    if (_selectedUserFaceImage) {
+      applyUserFaceToMannequin(true);
+    }
+  }
+
+  function toggleUserFaceHair(checked) {
+    _userFaceHideHair = checked;
+    if (_selectedUserFaceImage) {
+      applyUserFaceToMannequin(true);
+    }
+  }
+
+  function updateUserFaceOffsetY(val) {
+    _userFaceOffsetY = parseFloat(val);
+    const label = document.getElementById('userFaceOffsetYVal');
+    if (label) label.textContent = `${_userFaceOffsetY > 0 ? '+' : ''}${_userFaceOffsetY}`;
+    if (_selectedUserFaceImage) {
+      applyUserFaceToMannequin(true);
+    }
+  }
+
+  function updateUserFaceScale(val) {
+    _userFaceScale = parseFloat(val) / 100.0;
+    const label = document.getElementById('userFaceScaleVal');
+    if (label) label.textContent = `${Math.round(val)}%`;
+    if (_selectedUserFaceImage) {
+      applyUserFaceToMannequin(true);
+    }
+  }
+
   function handleUserFaceFile(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
@@ -4690,23 +4740,33 @@
     reader.readAsDataURL(file);
   }
 
-  function applyUserFaceToMannequin() {
+  function applyUserFaceToMannequin(isLiveTweak = false) {
     if (!_selectedUserFaceImage) {
-      showToast('Please take a selfie or choose a face photo first!');
+      if (!isLiveTweak) showToast('Please take a selfie or choose a face photo first!');
       return;
     }
 
     const studio = window.Studio3D || window.studio3d;
     if (studio && typeof studio.applyUserFace === 'function') {
-      const success = studio.applyUserFace(_selectedUserFaceImage, { intensity: _userFaceIntensity });
+      const options = {
+        intensity: _userFaceIntensity,
+        flipY: _userFaceFlipY,
+        flipX: _userFaceFlipX,
+        offsetY: _userFaceOffsetY,
+        scale: _userFaceScale,
+        hideMannequinHair: _userFaceHideHair
+      };
+      const success = studio.applyUserFace(_selectedUserFaceImage, options);
       if (success) {
-        showToast('✦ Likeness applied! 3D structure morphed & face UV blended seamlessly.');
-        closeUserFaceModal();
+        if (!isLiveTweak) {
+          showToast('✦ Likeness applied! 3D structure morphed & face UV blended seamlessly.');
+          closeUserFaceModal();
+        }
       } else {
-        showToast('Could not deform face. Ensure studio avatar is loaded.');
+        if (!isLiveTweak) showToast('Could not deform face. Ensure studio avatar is loaded.');
       }
     } else {
-      showToast('3D Studio is initializing, please try again in a moment.');
+      if (!isLiveTweak) showToast('3D Studio is initializing, please try again in a moment.');
     }
   }
 
@@ -8209,6 +8269,11 @@
     stopUserFaceCamera,
     triggerUserFaceGallery,
     updateUserFaceIntensity,
+    toggleUserFaceFlipY,
+    toggleUserFaceFlipX,
+    toggleUserFaceHair,
+    updateUserFaceOffsetY,
+    updateUserFaceScale,
     handleUserFaceFile,
     applyUserFaceToMannequin,
     resetUserFace,

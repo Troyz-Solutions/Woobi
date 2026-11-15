@@ -41,7 +41,7 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css?v=20261114_light">
-  <link rel="stylesheet" href="styles.css?v=20261114_light">
+  <link rel="stylesheet" href="styles.css?v=20261115_faceplate_hd2">
 </head>
 
 <body>
@@ -796,6 +796,36 @@
                     <span>🖼️ Choose Photo</span>
                   </button>
                   <input type="file" id="userFaceGalleryInput" accept="image/*" style="position:absolute; opacity:0; width:0.1px; height:0.1px; pointer-events:none;" onchange="app.handleUserFaceFile(event)">
+                </div>
+
+                <!-- Orientation, Hair & Placement Controls -->
+                <div class="user-face-adjustments-row">
+                  <button type="button" class="user-face-tool-btn" id="btnUserFaceFlipY" onclick="app.toggleUserFaceFlipY()" title="Flip Vertical">
+                    🔄 Flip Upside-Down
+                  </button>
+                  <button type="button" class="user-face-tool-btn" id="btnUserFaceFlipX" onclick="app.toggleUserFaceFlipX()" title="Mirror Horizontal">
+                    ↔️ Mirror
+                  </button>
+                  <label class="user-face-checkbox-label">
+                    <input type="checkbox" id="chkUserFaceHideHair" checked onchange="app.toggleUserFaceHair(this.checked)">
+                    <span>Hide Mannequin Hair & Eyelashes</span>
+                  </label>
+                </div>
+
+                <div class="user-face-slider-wrap">
+                  <div class="slider-label-row">
+                    <span class="slider-title">Vertical Position (Up / Down)</span>
+                    <span class="slider-val" id="userFaceOffsetYVal">0</span>
+                  </div>
+                  <input type="range" id="userFaceOffsetYRange" min="-4" max="4" step="0.5" value="0" class="user-face-range" oninput="app.updateUserFaceOffsetY(this.value)">
+                </div>
+
+                <div class="user-face-slider-wrap">
+                  <div class="slider-label-row">
+                    <span class="slider-title">Face Size</span>
+                    <span class="slider-val" id="userFaceScaleVal">100%</span>
+                  </div>
+                  <input type="range" id="userFaceScaleRange" min="80" max="130" step="2" value="100" class="user-face-range" oninput="app.updateUserFaceScale(this.value)">
                 </div>
 
                 <div class="user-face-slider-wrap">
@@ -5587,16 +5617,16 @@
   <script type="module" src="modules/3d-studio/lighting/index.js"></script>
   <script type="module" src="modules/3d-studio/theme/index.js"></script>
   <script type="module" src="modules/3d-studio/camera/index.js"></script>
-  <script type="module" src="modules/3d-studio-features/avatar-customization/UserFaceMeshEngine.js?v=20261115_faceplate_v1"></script>
+  <script type="module" src="modules/3d-studio-features/avatar-customization/UserFaceMeshEngine.js?v=20261115_faceplate_hd2"></script>
   <script type="module" src="modules/3d-studio-features/index.js"></script>
   <script type="module" src="modules/settings/index.js"></script>
   <script src="assets/brick-wall-data.js?v=20261105_v1"></script>
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261115_face_perfect"></script>
+  <script src="studio3d.js?v=20261115_faceplate_hd2"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261115_face_perfect"></script>
+  <script src="app.js?v=20261115_faceplate_hd2"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

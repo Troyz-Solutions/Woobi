@@ -420,14 +420,14 @@ export class PersonalizedAvatarManager {
     const foreheadSearchStart = Math.round(scanSize * 0.15);
     let foreheadY = foreheadSearchStart;
     for (let y = foreheadSearchStart; y < Math.round(scanSize * 0.60); y++) {
-      if (stripSkin[y] > 0.45) {
+      if (stripSkin[y] > 0.40) {
         foreheadY = y;
         break;
       }
     }
 
     // Eye row: local minimum of luma in upper face below forehead
-    const eyeSearchStart = Math.min(scanSize - 20, foreheadY + 5);
+    const eyeSearchStart = Math.min(scanSize - 20, foreheadY + 4);
     const eyeSearchEnd = Math.min(scanSize - 15, foreheadY + Math.round(scanSize * 0.35));
     let eyeY = eyeSearchStart;
     let minEyeLuma = 999;
@@ -462,10 +462,10 @@ export class PersonalizedAvatarManager {
     }
 
     // Chin: below mouth
-    const chinY = Math.min(scanSize - 1, mouthY + Math.round(eyeToNose * 1.1));
+    const chinY = Math.min(scanSize - 1, mouthY + Math.round(eyeToNose * 1.05));
 
-    // Refined forehead: just above eyebrows, strictly omitting hair
-    const cleanForeheadY = Math.max(0, eyeY - Math.round(eyeToNose * 1.05));
+    // Refined forehead: just above eyebrows, strictly omitting hair bangs
+    const cleanForeheadY = Math.max(0, eyeY - Math.round(eyeToNose * 0.75));
 
     // Convert normalized coordinates back to full image resolution
     const realX = Math.round((leftX / scanSize) * srcW);
@@ -474,10 +474,9 @@ export class PersonalizedAvatarManager {
     const realBottom = Math.round((chinY / scanSize) * srcH);
     const realH = Math.max(40, realBottom - realTop);
 
-    // Human anatomical ratio (H = 1.08 * W) to guarantee 100% natural, distortion-free face proportions
-    const naturalH = Math.round(realW * 1.08);
-    const finalH = Math.min(srcH - realTop, Math.max(realH, naturalH));
-    const finalW = Math.round(finalH / 1.08);
+    const naturalW = Math.round(realH * 0.98);
+    const finalW = Math.min(srcW, Math.max(realW, naturalW));
+    const finalH = realH;
     const finalCX = realX + realW / 2;
     const finalX = Math.max(0, Math.min(srcW - finalW, Math.round(finalCX - finalW / 2)));
     const finalY = Math.max(0, Math.min(srcH - finalH, realTop));
@@ -502,7 +501,7 @@ export class PersonalizedAvatarManager {
     if (!imageSource || typeof document === 'undefined') {
       return {
         biometrics: { jawWidth: 1.0, chinShape: 0.5, noseProminence: 1.0, cheekProminence: 1.0 },
-        skinTone: { r: 165, g: 115, b: 90 },
+        skinTone: { r: 85, g: 65, b: 52 },
         hairColor: { r: 28, g: 22, b: 20 },
         textureCanvas: null
       };
@@ -522,7 +521,7 @@ export class PersonalizedAvatarManager {
     sampleCanvas.width = 64;
     sampleCanvas.height = 64;
     const sCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
-    let skinTone = { r: 160, g: 112, b: 88 };
+    let skinTone = { r: 85, g: 65, b: 52 };
     let hairColor = { r: 27, g: 22, b: 20 };
 
     if (sCtx) {
@@ -530,14 +529,14 @@ export class PersonalizedAvatarManager {
       const sData = sCtx.getImageData(0, 0, 64, 64).data;
 
       let rSum = 0, gSum = 0, bSum = 0, count = 0;
-      // Mid-face cheek region
-      for (let y = 20; y < 44; y++) {
-        for (let x = 20; x < 44; x++) {
+      // Mid-face cheek & nose region
+      for (let y = 18; y < 48; y++) {
+        for (let x = 16; x < 48; x++) {
           const idx = (y * 64 + x) * 4;
           const r = sData[idx];
           const g = sData[idx + 1];
           const b = sData[idx + 2];
-          if (r > 50 && g > 30 && b > 20 && r > b && (r + g + b) < 600) {
+          if (r > 30 && r < 210 && (r > b + 2) && (r + g + b) < 640) {
             rSum += r; gSum += g; bSum += b; count++;
           }
         }
@@ -907,11 +906,11 @@ export class PersonalizedAvatarManager {
       (this.studio3D?.currentMannequinGender === 'male') ||
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
-    // Anatomically verified UV coordinates on standard 2048×2048 Mixamo texture atlas
-    // Center=(X:1543, Y:1718 [nose tip]), Chin=Y:1525, Forehead=Y:1895, Width=340, Height=370
+    // Full face UV bounds on standard 2048×2048 Mixamo texture atlas
+    // Covers the entire visible face from chin to hairline and temple to temple
     const faceBounds = isMale
-      ? { x: 1373, y: 1525, width: 340, height: 370 }
-      : { x: 1373, y: 1525, width: 340, height: 370 };
+      ? { x: 1313, y: 1475, width: 460, height: 475 }
+      : { x: 1313, y: 1475, width: 460, height: 475 };
 
     const targetMesh = meshes[0];
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
@@ -931,11 +930,11 @@ export class PersonalizedAvatarManager {
         this.originalBodyMaterials.set('body_tex_map', currentTexture);
       }
 
-      const userSkin = this.activeSkinTone || { r: 160, g: 112, b: 88 };
-      const defSkin = { r: 180, g: 140, b: 120 };
-      const skinScaleR = Math.max(0.60, Math.min(1.35, userSkin.r / defSkin.r));
-      const skinScaleG = Math.max(0.60, Math.min(1.35, userSkin.g / defSkin.g));
-      const skinScaleB = Math.max(0.60, Math.min(1.35, userSkin.b / defSkin.b));
+      const userSkin = this.activeSkinTone || { r: 85, g: 65, b: 52 };
+      const defSkin = { r: 178, g: 142, b: 122 };
+      const skinScaleR = Math.max(0.20, Math.min(1.40, userSkin.r / defSkin.r));
+      const skinScaleG = Math.max(0.20, Math.min(1.40, userSkin.g / defSkin.g));
+      const skinScaleB = Math.max(0.20, Math.min(1.40, userSkin.b / defSkin.b));
 
       const baseTex = this.originalBodyMaterials.get('body_tex_map') || currentTexture;
       let drawnBase = false;
@@ -962,7 +961,7 @@ export class PersonalizedAvatarManager {
               const r = d[idx];
               const g = d[idx + 1];
               const b = d[idx + 2];
-              if (r > b + 8 && r > 65 && r < 240) {
+              if (r > b + 4 && r > 45 && r < 245) {
                 d[idx] = Math.min(255, Math.round(r * skinScaleR));
                 d[idx + 1] = Math.min(255, Math.round(g * skinScaleG));
                 d[idx + 2] = Math.min(255, Math.round(b * skinScaleB));
@@ -1007,8 +1006,8 @@ export class PersonalizedAvatarManager {
         const data = imgData.data;
         const mcx = drawW / 2;
         const mcy = drawH * 0.48;
-        const rx = (drawW / 2) * 0.88;
-        const ry = (drawH / 2) * 0.92;
+        const rx = (drawW / 2) * 0.92;
+        const ry = (drawH / 2) * 0.94;
 
         for (let y = 0; y < drawH; y++) {
           const dy = (y - mcy) / ry;
@@ -1018,12 +1017,12 @@ export class PersonalizedAvatarManager {
             const dist = Math.sqrt(dx * dx + dy2);
             const idx = (y * drawW + x) * 4;
 
-            if (dist <= 0.68) {
+            if (dist <= 0.80) {
               // Core facial features (eyes, nose, mouth, beard): 100% authentic photograph
             } else if (dist >= 1.0) {
               data[idx + 3] = 0;
             } else {
-              const ratio = (dist - 0.68) / 0.32;
+              const ratio = (dist - 0.80) / 0.20;
               const alphaMul = 0.5 + 0.5 * Math.cos(ratio * Math.PI);
               data[idx + 3] = Math.round(data[idx + 3] * alphaMul);
             }

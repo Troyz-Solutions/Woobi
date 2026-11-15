@@ -43,10 +43,10 @@
         fovPortrait: 44
       },
       AVATAR_DETAIL: {
-        position: new THREE.Vector3(0, 1.50, 1.45),
-        target: new THREE.Vector3(0, 1.45, 0),
-        fovLandscape: 32,
-        fovPortrait: 40
+        position: new THREE.Vector3(0, 1.35, 2.40),
+        target: new THREE.Vector3(0, 1.25, 0),
+        fovLandscape: 38,
+        fovPortrait: 46
       },
       VANITY_VIEW: {
         position: new THREE.Vector3(1.35, 1.25, -1.75),

@@ -27,10 +27,10 @@ export const CAMERA_PRESETS = {
   },
   AVATAR_DETAIL: {
     name: 'AVATAR_DETAIL',
-    position: { x: 0.0, y: 1.50, z: 1.45 },
-    target: { x: 0.0, y: 1.45, z: 0.0 },
-    fovLandscape: 32,
-    fovPortrait: 40
+    position: { x: 0.0, y: 1.35, z: 2.40 },
+    target: { x: 0.0, y: 1.25, z: 0.0 },
+    fovLandscape: 38,
+    fovPortrait: 46
   },
   VANITY_VIEW: {
     name: 'VANITY_VIEW',

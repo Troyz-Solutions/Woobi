@@ -716,9 +716,10 @@ export class PersonalizedAvatarManager {
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
     // Verified exact UV regions for Mixamo body texture (2048×2048 atlas)
+    // Centered precisely on the facial features (from chin to forehead, ear to ear)
     const faceBounds = isMale
-      ? { x: 1360, y: 1510, width: 380, height: 380 }
-      : { x: 1270, y: 1460, width: 380, height: 380 };
+      ? { x: 1300, y: 1490, width: 450, height: 420 }
+      : { x: 1240, y: 1440, width: 440, height: 410 };
 
     const targetMesh = meshes[0];
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
@@ -754,101 +755,23 @@ export class PersonalizedAvatarManager {
         ctx.fillRect(0, 0, res, res);
       }
 
-      // --- Build a clean face patch with tight crop + background removal ---
+      // --- Build a clean face patch with generous crop and smooth feathering ---
       const src = imageSource || this.lastImageSource;
       if (!src) return false;
 
       const srcW = src.naturalWidth || src.videoWidth || src.width || 512;
       const srcH = src.naturalHeight || src.videoHeight || src.height || 512;
 
-      // Tight face-only crop: center face (forehead below hair down to beard/chin)
-      // avoiding background walls, clothes, floating hair
+      // Extract complete facial structure (hairline, forehead, eyes, nose, cheeks, mouth, chin/beard)
       const isLandscape = srcW > srcH;
       const cx = srcW * 0.50;
-      const cy = isLandscape ? srcH * 0.44 : srcH * 0.42;
-      const cropW = Math.round(isLandscape ? srcH * 0.55 : srcW * 0.58);
-      const cropH = Math.round(cropW * 1.25); // 4:5 aspect — head from forehead to chin
-      const cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
-      const cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH * 0.42));
+      const cy = isLandscape ? srcH * 0.45 : srcH * 0.42;
+      const faceW = Math.round(isLandscape ? srcH * 0.72 : srcW * 0.72);
+      const faceH = Math.round(faceW * 1.05);
+      const cropX = Math.max(0, Math.min(srcW - faceW, Math.round(cx - faceW / 2)));
+      const cropY = Math.max(0, Math.min(srcH - faceH, Math.round(cy - faceH * 0.48)));
 
-      // Render cropped face into a temp canvas for pixel-level background scrubbing
-      const tmpW = faceBounds.width * 2;
-      const tmpH = faceBounds.height * 2;
-      const tmpCanvas = document.createElement('canvas');
-      tmpCanvas.width = tmpW;
-      tmpCanvas.height = tmpH;
-      const tCtx = tmpCanvas.getContext('2d', { willReadFrequently: true });
-      if (!tCtx) return false;
-
-      tCtx.imageSmoothingEnabled = true;
-      tCtx.imageSmoothingQuality = 'high';
-      tCtx.drawImage(src, cropX, cropY, cropW, cropH, 0, 0, tmpW, tmpH);
-
-      // --- Pixel-level background removal ---
-      const sampleR = [], sampleG = [], sampleB = [];
-      try {
-        const skinSample = tCtx.getImageData(
-          Math.round(tmpW * 0.35), Math.round(tmpH * 0.15),
-          Math.round(tmpW * 0.30), Math.round(tmpH * 0.15)
-        );
-        const sd = skinSample.data;
-        for (let i = 0; i < sd.length; i += 4) {
-          const r = sd[i], g = sd[i+1], b = sd[i+2];
-          if (r > 50 && g > 35 && b > 20 && r > b && (r + g + b) < 700) {
-            sampleR.push(r); sampleG.push(g); sampleB.push(b);
-          }
-        }
-      } catch (e) { /* ignore */ }
-
-      let skinR = biometrics?.skinTone?.r || this.activeSkinTone?.r || 160;
-      let skinG = biometrics?.skinTone?.g || this.activeSkinTone?.g || 112;
-      let skinB = biometrics?.skinTone?.b || this.activeSkinTone?.b || 88;
-      if (sampleR.length > 5) {
-        skinR = Math.round(sampleR.reduce((a, b) => a + b, 0) / sampleR.length);
-        skinG = Math.round(sampleG.reduce((a, b) => a + b, 0) / sampleG.length);
-        skinB = Math.round(sampleB.reduce((a, b) => a + b, 0) / sampleB.length);
-      }
-
-      // Apply anatomical egg mask + background removal pixel pass
-      try {
-        const imgData = tCtx.getImageData(0, 0, tmpW, tmpH);
-        const data = imgData.data;
-        const mcx = tmpW / 2;
-        const mcy = tmpH * 0.48;
-        const ry = tmpH * 0.45;
-        const rx = tmpW * 0.40;
-
-        for (let y = 0; y < tmpH; y++) {
-          for (let x = 0; x < tmpW; x++) {
-            const idx = (y * tmpW + x) * 4;
-            const r = data[idx], g = data[idx+1], b = data[idx+2];
-
-            const nx = (x - mcx) / rx;
-            const ny = (y - mcy) / ry;
-            const ellipseDist = nx * nx + ny * ny;
-
-            const skinDiff = Math.abs(r - skinR) + Math.abs(g - skinG) + Math.abs(b - skinB);
-            const isBackground = skinDiff > 120 && ellipseDist > 0.50;
-            const isHair = (r + g + b) < 80 && ellipseDist > 0.50;
-
-            if (ellipseDist >= 1.0 || isBackground || isHair) {
-              data[idx + 3] = 0;
-            } else if (ellipseDist > 0.70) {
-              const ratio = (ellipseDist - 0.70) / 0.30;
-              const alpha = Math.round(255 * (0.5 + 0.5 * Math.cos(ratio * Math.PI)));
-              const bgFade = isBackground ? Math.round(alpha * 0.25) : alpha;
-              data[idx + 3] = bgFade;
-            } else {
-              data[idx + 3] = 255;
-            }
-          }
-        }
-        tCtx.putImageData(imgData, 0, 0);
-      } catch (e) {
-        console.warn('PersonalizedAvatarManager: pixel mask pass failed', e);
-      }
-
-      // --- Build clean face canvas ---
+      // Render face onto faceCanvas at exact faceBounds dimensions
       const faceCanvas = document.createElement('canvas');
       faceCanvas.width = faceBounds.width;
       faceCanvas.height = faceBounds.height;
@@ -856,7 +779,36 @@ export class PersonalizedAvatarManager {
       if (!fCtx) return false;
       fCtx.imageSmoothingEnabled = true;
       fCtx.imageSmoothingQuality = 'high';
-      fCtx.drawImage(tmpCanvas, 0, 0, faceBounds.width, faceBounds.height);
+      fCtx.drawImage(src, cropX, cropY, faceW, faceH, 0, 0, faceBounds.width, faceBounds.height);
+
+      // Smooth anatomical alpha mask for seamless skin blending without holes or pixel clipping
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = faceBounds.width;
+      maskCanvas.height = faceBounds.height;
+      const mCtx = maskCanvas.getContext('2d');
+      if (mCtx) {
+        const mcx = faceBounds.width / 2;
+        const mcy = faceBounds.height * 0.48;
+        const rx = (faceBounds.width / 2) * 0.84;
+        const ry = (faceBounds.height / 2) * 0.90;
+
+        const grad = mCtx.createRadialGradient(mcx, mcy, rx * 0.60, mcx, mcy, rx);
+        grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
+        grad.addColorStop(0.75, 'rgba(0, 0, 0, 1.0)');
+        grad.addColorStop(0.92, 'rgba(0, 0, 0, 0.45)');
+        grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+
+        mCtx.save();
+        mCtx.scale(1.0, ry / rx);
+        mCtx.fillStyle = grad;
+        mCtx.beginPath();
+        mCtx.arc(mcx, (mcy * rx) / ry, rx, 0, Math.PI * 2);
+        mCtx.fill();
+        mCtx.restore();
+
+        fCtx.globalCompositeOperation = 'destination-in';
+        fCtx.drawImage(maskCanvas, 0, 0);
+      }
 
       // --- Composite face into body texture atlas ---
       // IMPORTANT: In the Mixamo GLB texture atlas, the face region is inverted vertically

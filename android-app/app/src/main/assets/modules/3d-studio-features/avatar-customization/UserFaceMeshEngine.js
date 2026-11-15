@@ -859,6 +859,7 @@ export class UserFaceMeshEngine {
       }
     }
 
+    mesh.visible = (options.useMeshOverlay === true);
     this.facePlateMesh = mesh;
     return mesh;
   }

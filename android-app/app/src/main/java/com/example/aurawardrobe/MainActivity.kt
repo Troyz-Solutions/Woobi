@@ -1,13 +1,19 @@
 package com.example.aurawardrobe
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -17,6 +23,9 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -26,6 +35,27 @@ import androidx.webkit.WebViewAssetLoader
 
 class MainActivity : ComponentActivity() {
     private var webView: WebView? = null
+    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+
+    private val fileChooserLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val results = WebChromeClient.FileChooserParams.parseResult(result.resultCode, data)
+            filePathCallback?.onReceiveValue(results)
+        } else {
+            filePathCallback?.onReceiveValue(null)
+        }
+        filePathCallback = null
+    }
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val cameraGranted = permissions[android.Manifest.permission.CAMERA] ?: false
+        Log.d(TAG, "Camera permission callback: granted = $cameraGranted")
+    }
 
     companion object {
         private const val TAG = "WoobiWebView"
@@ -70,6 +100,20 @@ class MainActivity : ComponentActivity() {
         }
         val initBg = Color.parseColor(if (isSystemDark) DARK_BG else LIGHT_BG)
         window.decorView.setBackgroundColor(initBg)
+
+        // Request runtime Camera and Media permissions for outfit photos & virtual try-on
+        val requiredPerms = mutableListOf<String>()
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requiredPerms.add(android.Manifest.permission.CAMERA)
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                requiredPerms.add(android.Manifest.permission.READ_MEDIA_IMAGES)
+            }
+        }
+        if (requiredPerms.isNotEmpty()) {
+            cameraPermissionLauncher.launch(requiredPerms.toTypedArray())
+        }
 
         // Enable Chrome remote debugging: open chrome://inspect in desktop Chrome
         WebView.setWebContentsDebuggingEnabled(true)
@@ -154,6 +198,34 @@ class MainActivity : ComponentActivity() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                     consoleMessage?.let {
                         Log.d(TAG, "[${it.messageLevel()}] ${it.message()} (${it.sourceId()}:${it.lineNumber()})")
+                    }
+                    return true
+                }
+
+                override fun onPermissionRequest(request: PermissionRequest?) {
+                    Log.d(TAG, "WebView permission requested: ${request?.resources?.joinToString()}")
+                    runOnUiThread {
+                        request?.grant(request.resources)
+                    }
+                }
+
+                override fun onShowFileChooser(
+                    webView: WebView?,
+                    filePathCallback: ValueCallback<Array<Uri>>?,
+                    fileChooserParams: FileChooserParams?
+                ): Boolean {
+                    this@MainActivity.filePathCallback?.onReceiveValue(null)
+                    this@MainActivity.filePathCallback = filePathCallback
+
+                    val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "image/*"
+                    }
+                    try {
+                        fileChooserLauncher.launch(intent)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error launching file chooser", e)
+                        this@MainActivity.filePathCallback = null
+                        return false
                     }
                     return true
                 }

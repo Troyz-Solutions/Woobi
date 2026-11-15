@@ -408,11 +408,6 @@
       const screenPremium = document.getElementById('screen-premium');
       if (screenPremium) {
         screenPremium.scrollTop = 0;
-        if (!screenPremium.dataset.scrollLockInit) {
-          screenPremium.dataset.scrollLockInit = 'true';
-          screenPremium.addEventListener('wheel', (e) => { e.preventDefault(); }, { passive: false });
-          screenPremium.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
-        }
       }
     }
 
@@ -423,17 +418,10 @@
     const container = document.getElementById('phoneScreenContainer');
     if (container) {
       container.scrollTop = 0;
-      if (screenId === 'premium') {
-        container.classList.add('premium-mode');
-        document.body.classList.add('premium-mode');
-        container.style.overflow = 'hidden';
-        container.style.overflowY = 'hidden';
-      } else {
-        container.classList.remove('premium-mode');
-        document.body.classList.remove('premium-mode');
-        container.style.overflow = '';
-        container.style.overflowY = '';
-      }
+      container.classList.remove('premium-mode');
+      document.body.classList.remove('premium-mode');
+      container.style.overflow = '';
+      container.style.overflowY = '';
     }
   }
 
@@ -2353,13 +2341,16 @@
     const plan = state.pendingUpgradePlan || 'pro';
     const cycle = state.billingCycle || 'yearly';
     state.selectedPlanPreference = plan;
+    state.isPremium = true;
+    state.currentPlan = plan;
+    if (typeof saveState === 'function') saveState();
     closeUpgradeConfirmation();
 
-    const planData = (PLAN_PRICING[plan] && PLAN_PRICING[plan][cycle]) || { amount: '3,870', cadence: '/ year' };
-    const planLabel = plan === 'pro' ? 'Pro' : 'Standard';
-    showToast(`✓ Preference recorded for Woobi ${planLabel} (₹${planData.amount} ${planData.cadence})! Payment gateway integration coming soon.`);
+    const planLabel = plan === 'pro' ? 'Woobi Pro 👑' : 'Woobi Basic';
+    showToast(`🎉 Activated ${planLabel}! Unlimited 3D Wardrobe & VIP Stylist Unlocked.`);
 
     updateSubscriptionUI();
+    updateProfileScreenData();
   }
 
   function toggleFaq(element) {

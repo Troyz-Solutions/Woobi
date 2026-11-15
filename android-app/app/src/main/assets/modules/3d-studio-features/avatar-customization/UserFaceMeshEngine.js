@@ -411,11 +411,10 @@ export class UserFaceMeshEngine {
 
     const isLandscape = srcW > srcH;
     // Precise facial bounding box: focuses strictly on facial features (forehead, eyes, nose, mouth, beard)
-    // Eliminates webcam hair clash, earbuds, and white shirt collars
-    let cx = isLandscape ? (srcW * 0.485) : (srcW * 0.50);
-    let cy = isLandscape ? (srcH * 0.67) : (srcH * 0.52);
-    let cropW = isLandscape ? (srcH * 0.42) : (srcW * 0.55);
-    let cropH = isLandscape ? (srcH * 0.52) : (srcW * 0.68);
+    let cx = srcW * 0.50;
+    let cy = isLandscape ? (srcH * 0.50) : (srcH * 0.50);
+    let cropH = Math.min(srcH, isLandscape ? Math.round(srcH * 0.85) : Math.round(srcW * 0.85));
+    let cropW = Math.round(cropH * 0.80);
 
     // Dynamic skin centroid fine-tuning if available
     try {
@@ -806,8 +805,8 @@ export class UserFaceMeshEngine {
       matOptions.roughness = 0.58;
       matOptions.metalness = 0.0;
       matOptions.polygonOffset = true;
-      matOptions.polygonOffsetFactor = -2;
-      matOptions.polygonOffsetUnits = -2;
+      matOptions.polygonOffsetFactor = -4;
+      matOptions.polygonOffsetUnits = -4;
     }
 
     const material = MaterialClass ? new MaterialClass(matOptions) : {};
@@ -816,13 +815,14 @@ export class UserFaceMeshEngine {
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.frustumCulled = false;
+    mesh.renderOrder = 999;
 
     const offsetY = options.offsetY !== undefined ? options.offsetY : 0.0;
 
     if (isBoneParent) {
-      // Local position inside Mixamo Head bone: x=0, y=10.5 (hairline meets hair top, eyes in socket, chin at jaw), z=9.8
+      // Local position inside Mixamo Head bone: x=0, y=10.5 (hairline meets hair top, eyes in socket, chin at jaw), z=11.0
       const posY = (isMale ? 10.5 : 9.8) + offsetY;
-      const posZ = isMale ? 9.8 : 8.8;
+      const posZ = isMale ? 11.0 : 10.2;
       mesh.position.set(0, posY, posZ);
       headBone.add(mesh);
     } else {
@@ -830,7 +830,7 @@ export class UserFaceMeshEngine {
       const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
       const posY = 1.635 + (offsetY * 0.01);
       if (mesh.position && typeof mesh.position.set === 'function') {
-        mesh.position.set(0, posY, 0.09);
+        mesh.position.set(0, posY, 0.11);
       }
       if (parent && typeof parent.add === 'function') {
         parent.add(mesh);

@@ -3917,7 +3917,7 @@
       if (this.personalizedAvatarManager) {
         const processed = this.personalizedAvatarManager.processFaceImage(imageSource, options.selectedFaceIndex || 0);
         const headMesh = this.personalizedAvatarManager.generatePersonalizedHead(processed.biometrics, processed.textureCanvas, options);
-        const success = this.personalizedAvatarManager.replaceMannequinHead(headMesh);
+        const success = this.personalizedAvatarManager.replaceMannequinHead(headMesh, options);
         if (success) return true;
       }
 

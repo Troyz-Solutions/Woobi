@@ -4801,6 +4801,11 @@
         if (!isLiveTweak) {
           setFaceStatusBadge('✦ Personalized 3D head integrated seamlessly!', '✓', false);
           showToast('✦ Likeness applied! 3D structure morphed & face UV blended seamlessly.');
+          if (typeof studio.setCameraState === 'function') {
+            studio.setCameraState('AVATAR_DETAIL');
+          } else if (studio.cameraController && typeof studio.cameraController.setCameraPreset === 'function') {
+            studio.cameraController.setCameraPreset('AVATAR_DETAIL');
+          }
           setTimeout(() => {
             closeUserFaceModal();
             setFaceStatusBadge(null);

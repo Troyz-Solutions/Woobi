@@ -20,9 +20,9 @@ export const DEFAULT_HEAD_CONFIG = {
     eyeLevelY: 10.5,        // cm at eye sockets
     hairlineY: 16.5,        // cm at hair fringe
     chinY: 3.8,             // cm at chin tip
-    faceWidth: 12.2,        // cm across zygomatic arches
-    faceHeight: 15.2,       // cm from hairline to chin
-    depthZ: 9.8             // cm forward from cervical spine
+    faceWidth: 12.8,        // cm across zygomatic arches
+    faceHeight: 15.6,       // cm from hairline to chin
+    depthZ: 11.0            // cm forward from cervical spine to sit flush on front surface
   },
   female: {
     neckRadius: 5.4,
@@ -30,9 +30,9 @@ export const DEFAULT_HEAD_CONFIG = {
     eyeLevelY: 9.8,
     hairlineY: 15.5,
     chinY: 3.6,
-    faceWidth: 11.4,
-    faceHeight: 14.2,
-    depthZ: 8.8
+    faceWidth: 11.8,
+    faceHeight: 14.4,
+    depthZ: 10.2
   }
 };
 
@@ -316,12 +316,11 @@ export class PersonalizedAvatarManager {
     const srcH = imageSource.naturalHeight || imageSource.videoHeight || imageSource.height || 1024;
     const isLandscape = srcW > srcH;
 
-    // Precise framing: focus on facial mask (forehead down to chin, cheek to cheek)
-    // Avoids webcam hair, earbuds, and t-shirt collar
-    const cx = isLandscape ? (srcW * 0.485) : (srcW * 0.50);
-    const cy = isLandscape ? (srcH * 0.67) : (srcH * 0.52);
-    const cropW = isLandscape ? Math.round(srcH * 0.42) : Math.round(srcW * 0.55);
-    const cropH = isLandscape ? Math.round(srcH * 0.52) : Math.round(srcW * 0.68);
+    // Precise framing: centered cleanly on face (forehead, eyebrows, eyes, nose, cheeks, mouth, beard)
+    const cx = srcW * 0.50;
+    const cy = isLandscape ? (srcH * 0.50) : (srcH * 0.50);
+    const cropH = Math.min(srcH, isLandscape ? Math.round(srcH * 0.85) : Math.round(srcW * 0.85));
+    const cropW = Math.round(cropH * 0.80); // Natural 4:5 anatomical head proportion
 
     const cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
     const cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH / 2));
@@ -377,29 +376,22 @@ export class PersonalizedAvatarManager {
         const imgData = tCtx.getImageData(0, 0, resW, resH);
         const data = imgData.data;
         const mcx = resW / 2;
-        const mcy = resH * 0.50;
+        const mcy = resH * 0.48;
 
         for (let y = 0; y < resH; y++) {
           for (let x = 0; x < resW; x++) {
             const idx = (y * resW + x) * 4;
             const ny = (y - mcy) / (resH * 0.48);
-            const rx = (ny < 0) ? (resW * 0.46) : (resW * 0.46 - (resW * 0.10) * Math.pow(Math.min(1.0, ny), 1.2));
+            const rx = (ny < 0) ? (resW * 0.46) : (resW * 0.46 - (resW * 0.08) * Math.pow(Math.min(1.0, Math.max(0, ny)), 1.2));
             const nx = Math.abs(x - mcx) / rx;
             const d = nx * nx + ny * ny;
 
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-            const isWall = (r > 165 && g > 155 && b > 145 && Math.abs(r - g) < 25 && Math.abs(r - b) < 25);
-
-            if (isWall && d > 0.40) {
-              data[idx + 3] = 0;
-            } else if (d <= 0.70) {
+            if (d <= 0.72) {
               data[idx + 3] = 255;
-            } else if (d >= 1.02) {
+            } else if (d >= 1.05) {
               data[idx + 3] = 0;
             } else {
-              const ratio = (d - 0.70) / 0.32;
+              const ratio = (d - 0.72) / 0.33;
               data[idx + 3] = Math.round(255 * (0.5 + 0.5 * Math.cos(ratio * Math.PI)));
             }
           }
@@ -522,8 +514,8 @@ export class PersonalizedAvatarManager {
       matOptions.roughness = 0.58;
       matOptions.metalness = 0.0;
       matOptions.polygonOffset = true;
-      matOptions.polygonOffsetFactor = -2;
-      matOptions.polygonOffsetUnits = -2;
+      matOptions.polygonOffsetFactor = -4;
+      matOptions.polygonOffsetUnits = -4;
     }
 
     const material = MaterialClass ? new MaterialClass(matOptions) : {};
@@ -535,6 +527,7 @@ export class PersonalizedAvatarManager {
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.frustumCulled = false;
+    mesh.renderOrder = 999;
 
     return mesh;
   }
@@ -553,7 +546,7 @@ export class PersonalizedAvatarManager {
    * Lifecycle Method 6: replaceMannequinHead
    * Mounts the personalized head to Mixamo head bone, harmonizes skin & preserves hair.
    */
-  replaceMannequinHead(personalizedHead = null) {
+  replaceMannequinHead(personalizedHead = null, options = {}) {
     const headMesh = personalizedHead || this.currentPersonalizedHead;
     if (!headMesh || !this.studio3D) return false;
 
@@ -576,6 +569,7 @@ export class PersonalizedAvatarManager {
     // 3. Hair & Eyelashes Styling:
     // Retain 3D hair (Ch31_Hair / Ch37_Hair), tint to natural dark hair matching user.
     // Hide eyelash cards so fake cards do not poke through real eyes.
+    const showHair = (options.hideMannequinHair === false || options.showHair !== false);
     const hairHex = this.activeBiometrics?.hairColor
       ? ((this.activeBiometrics.hairColor.r << 16) | (this.activeBiometrics.hairColor.g << 8) | this.activeBiometrics.hairColor.b)
       : 0x1B1614;
@@ -584,7 +578,7 @@ export class PersonalizedAvatarManager {
       if (c.isMesh) {
         const name = (c.name || '').toLowerCase();
         if (name.includes('hair')) {
-          c.visible = true;
+          c.visible = showHair;
           if (c.material) {
             const mats = Array.isArray(c.material) ? c.material : [c.material];
             mats.forEach((m) => {
@@ -631,14 +625,15 @@ export class PersonalizedAvatarManager {
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
     const config = isMale ? DEFAULT_HEAD_CONFIG.male : DEFAULT_HEAD_CONFIG.female;
+    const offsetY = (options && options.offsetY !== undefined) ? options.offsetY : 0.0;
 
     if (headBone) {
-      headMesh.position.set(0, config.eyeLevelY, config.depthZ);
+      headMesh.position.set(0, config.eyeLevelY + offsetY, config.depthZ);
       headBone.add(headMesh);
     } else {
       const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
       if (headMesh.position && typeof headMesh.position.set === 'function') {
-        headMesh.position.set(0, 1.635, 0.09);
+        headMesh.position.set(0, 1.635 + (offsetY * 0.01), 0.11);
       }
       if (parent && typeof parent.add === 'function') {
         parent.add(headMesh);
@@ -727,4 +722,10 @@ export class PersonalizedAvatarManager {
     this.isProcessing = false;
   }
 }
+
+if (typeof window !== 'undefined') {
+  window.PersonalizedAvatarManager = PersonalizedAvatarManager;
+  window.DEFAULT_HEAD_CONFIG = DEFAULT_HEAD_CONFIG;
+}
+
 

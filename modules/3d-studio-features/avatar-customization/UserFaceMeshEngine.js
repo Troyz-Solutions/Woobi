@@ -737,10 +737,11 @@ export class UserFaceMeshEngine {
           const r = data[idx];
           const g = data[idx + 1];
           const b = data[idx + 2];
-          // Wall background suppression: off-white/beige room walls
-          const isWall = (r > 165 && g > 155 && b > 145 && Math.abs(r - g) < 25 && Math.abs(r - b) < 25);
+          // Wall background suppression: only applied outside core facial structure
+          const diff = Math.max(r, g, b) - Math.min(r, g, b);
+          const isNeutralWall = (diff < 15 && (r + g + b) > 480);
 
-          if (isWall && d > 0.40) {
+          if (isNeutralWall && d > 0.85) {
             data[idx + 3] = 0;
           } else if (d <= 0.70) {
             data[idx + 3] = 255;

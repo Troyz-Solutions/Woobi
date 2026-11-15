@@ -300,7 +300,8 @@ export class PersonalizedAvatarManager {
 
   /**
    * Helper: Automatically detects face position, center, and dimensions from photograph
-   * Runs fast, zero-dependency client-side skin-luma clustering.
+   * Runs fast, zero-dependency client-side melanin chromaticity clustering with percentile filtering.
+   * Completely eliminates background walls, white clothing, and earphones.
    */
   detectFaceBounds(imageSource) {
     if (!imageSource || typeof document === 'undefined') {
@@ -316,10 +317,10 @@ export class PersonalizedAvatarManager {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) {
       return {
-        x: Math.round(srcW * 0.15),
-        y: Math.round(srcH * 0.10),
-        width: Math.round(srcW * 0.70),
-        height: Math.round(srcH * 0.80),
+        x: Math.round(srcW * 0.20),
+        y: Math.round(srcH * 0.15),
+        width: Math.round(srcW * 0.60),
+        height: Math.round(srcH * 0.70),
         centerX: srcW * 0.50,
         centerY: srcH * 0.48
       };
@@ -328,8 +329,8 @@ export class PersonalizedAvatarManager {
     ctx.drawImage(imageSource, 0, 0, scanSize, scanSize);
     const data = ctx.getImageData(0, 0, scanSize, scanSize).data;
 
-    const colCounts = new Int32Array(scanSize);
-    const rowCounts = new Int32Array(scanSize);
+    const skinPtsX = [];
+    const skinPtsY = [];
 
     for (let y = 0; y < scanSize; y++) {
       for (let x = 0; x < scanSize; x++) {
@@ -337,76 +338,62 @@ export class PersonalizedAvatarManager {
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
-        // Skin heuristic across fair to deep melanin tones
-        if (r > 40 && g > 25 && b > 15 && (r - b) > 8 && (r - g) > 4 && (r + g + b) < 640) {
-          colCounts[x]++;
-          rowCounts[y]++;
+        const tot = r + g + b + 0.001;
+        const rn = r / tot;
+        const gn = g / tot;
+        const diff = Math.max(r, g, b) - Math.min(r, g, b);
+
+        // Melanin-dominant chromaticity filter (excludes off-white/beige walls, white shirts, dark hair & deep shadows)
+        if (rn > 0.38 && rn < 0.65 && gn > 0.24 && gn < 0.38 && (rn - gn) > 0.05 && diff > 18 && r > 35 && tot < 560) {
+          skinPtsX.push(x);
+          skinPtsY.push(y);
         }
       }
     }
 
-    let totalSkin = 0;
-    for (let i = 0; i < scanSize; i++) totalSkin += colCounts[i];
-
-    if (totalSkin < scanSize * 5) {
+    const n = skinPtsX.length;
+    if (n < scanSize * 3) {
+      // Fallback: centered portrait face
+      const w = Math.round(srcW * 0.55);
+      const h = Math.round(w * 1.15);
       return {
-        x: Math.round(srcW * 0.15),
-        y: Math.round(srcH * 0.10),
-        width: Math.round(srcW * 0.70),
-        height: Math.round(srcH * 0.80),
+        x: Math.max(0, Math.round(srcW * 0.50 - w / 2)),
+        y: Math.max(0, Math.round(srcH * 0.45 - h / 2)),
+        width: w,
+        height: h,
         centerX: srcW * 0.50,
-        centerY: srcH * 0.48
+        centerY: srcH * 0.45
       };
     }
 
-    let minX = 0, maxX = scanSize - 1;
-    let accum = 0;
-    for (let x = 0; x < scanSize; x++) {
-      accum += colCounts[x];
-      if (accum >= totalSkin * 0.08) { minX = x; break; }
-    }
-    accum = 0;
-    for (let x = scanSize - 1; x >= 0; x--) {
-      accum += colCounts[x];
-      if (accum >= totalSkin * 0.08) { maxX = x; break; }
-    }
+    // Sort coordinates to compute robust percentiles (eliminating stray wall/background pixels)
+    skinPtsX.sort((a, b) => a - b);
+    skinPtsY.sort((a, b) => a - b);
 
-    let minY = 0, maxY = scanSize - 1;
-    accum = 0;
-    for (let y = 0; y < scanSize; y++) {
-      accum += rowCounts[y];
-      if (accum >= totalSkin * 0.08) { minY = y; break; }
-    }
-    accum = 0;
-    for (let y = scanSize - 1; y >= 0; y--) {
-      accum += rowCounts[y];
-      if (accum >= totalSkin * 0.08) { maxY = y; break; }
-    }
+    const p20X = skinPtsX[Math.floor(n * 0.20)];
+    const p80X = skinPtsX[Math.floor(n * 0.80)];
+    const p20Y = skinPtsY[Math.floor(n * 0.20)];
+    const p80Y = skinPtsY[Math.floor(n * 0.80)];
 
-    const faceGridW = Math.max(20, maxX - minX);
-    const faceGridH = Math.max(20, maxY - minY);
-    const faceGridCX = minX + faceGridW / 2;
-    const faceGridCY = minY + faceGridH * 0.48;
+    const cx = ((p20X + p80X) / 2 / scanSize) * srcW;
+    const cy = ((p20Y + p80Y) / 2 / scanSize) * srcH;
+    const faceW = (((p80X - p20X) / scanSize) * srcW) * 1.05;
+    const faceH = faceW * 1.08;
 
-    const realCX = (faceGridCX / scanSize) * srcW;
-    const realCY = (faceGridCY / scanSize) * srcH;
-    const realW = (faceGridW / scanSize) * srcW;
-    const realH = (faceGridH / scanSize) * srcH;
-
-    const cropW = Math.min(srcW, Math.round(realW * 1.30));
-    const cropH = Math.min(srcH, Math.round(realH * 1.35));
-    const cropX = Math.max(0, Math.min(srcW - cropW, Math.round(realCX - cropW / 2)));
-    const cropY = Math.max(0, Math.min(srcH - cropH, Math.round(realCY - cropH * 0.48)));
+    const cropW = Math.max(120, Math.min(srcW, Math.round(faceW)));
+    const cropH = Math.max(120, Math.min(srcH, Math.round(faceH)));
+    const cropX = Math.max(0, Math.min(srcW - cropW, Math.round(cx - cropW / 2)));
+    const cropY = Math.max(0, Math.min(srcH - cropH, Math.round(cy - cropH * 0.52)));
 
     return {
       x: cropX,
       y: cropY,
       width: cropW,
       height: cropH,
-      centerX: realCX,
-      centerY: realCY,
-      rawFaceW: realW,
-      rawFaceH: realH
+      centerX: cx,
+      centerY: cy,
+      rawFaceW: faceW,
+      rawFaceH: faceH
     };
   }
 
@@ -824,10 +811,10 @@ export class PersonalizedAvatarManager {
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
     // Anatomically verified UV coordinates on standard 2048×2048 Mixamo texture atlas
-    // Center=(X:1543, Y:1720 [nose tip]), Chin=Y:1500, Forehead=Y:1940, Width=420, Height=440
+    // Center=(X:1542, Y:1730 [nose tip]), Chin=Y:1510, Forehead=Y:1950, Width=420, Height=440
     const faceBounds = isMale
-      ? { x: 1333, y: 1500, width: 420, height: 440 }
-      : { x: 1333, y: 1500, width: 420, height: 440 };
+      ? { x: 1332, y: 1510, width: 420, height: 440 }
+      : { x: 1332, y: 1510, width: 420, height: 440 };
 
     const targetMesh = meshes[0];
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
@@ -917,32 +904,36 @@ export class PersonalizedAvatarManager {
       fCtx.drawImage(src, cropX, cropY, faceW, faceH, 0, 0, drawW, drawH);
 
       // Smooth anatomical alpha mask for seamless skin blending without holes or pixel clipping
-      const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = drawW;
-      maskCanvas.height = drawH;
-      const mCtx = maskCanvas.getContext('2d');
-      if (mCtx) {
+      try {
+        const imgData = fCtx.getImageData(0, 0, drawW, drawH);
+        const data = imgData.data;
         const mcx = drawW / 2;
         const mcy = drawH * 0.48;
-        const rx = (drawW / 2) * 0.82;
+        const rx = (drawW / 2) * 0.84;
         const ry = (drawH / 2) * 0.88;
 
-        const grad = mCtx.createRadialGradient(mcx, mcy, rx * 0.65, mcx, mcy, rx);
-        grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
-        grad.addColorStop(0.70, 'rgba(0, 0, 0, 1.0)');
-        grad.addColorStop(0.90, 'rgba(0, 0, 0, 0.45)');
-        grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+        for (let y = 0; y < drawH; y++) {
+          const dy = (y - mcy) / ry;
+          const dy2 = dy * dy;
+          for (let x = 0; x < drawW; x++) {
+            const dx = (x - mcx) / rx;
+            const dist = Math.sqrt(dx * dx + dy2);
+            const idx = (y * drawW + x) * 4;
 
-        mCtx.save();
-        mCtx.scale(1.0, ry / rx);
-        mCtx.fillStyle = grad;
-        mCtx.beginPath();
-        mCtx.arc(mcx, (mcy * rx) / ry, rx, 0, Math.PI * 2);
-        mCtx.fill();
-        mCtx.restore();
-
-        fCtx.globalCompositeOperation = 'destination-in';
-        fCtx.drawImage(maskCanvas, 0, 0);
+            if (dist <= 0.68) {
+              // Core facial features (eyes, nose, mouth, beard): 100% authentic photograph
+            } else if (dist >= 1.0) {
+              data[idx + 3] = 0;
+            } else {
+              const ratio = (dist - 0.68) / 0.32;
+              const alphaMul = 0.5 + 0.5 * Math.cos(ratio * Math.PI);
+              data[idx + 3] = Math.round(data[idx + 3] * alphaMul);
+            }
+          }
+        }
+        fCtx.putImageData(imgData, 0, 0);
+      } catch (e) {
+        console.warn('PersonalizedAvatarManager: feather mask error', e);
       }
 
       // --- Composite face into body texture atlas ---

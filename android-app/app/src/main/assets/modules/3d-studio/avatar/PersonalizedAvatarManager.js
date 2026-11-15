@@ -20,19 +20,19 @@ export const DEFAULT_HEAD_CONFIG = {
     eyeLevelY: 10.5,        // cm at eye sockets
     hairlineY: 16.5,        // cm at hair fringe
     chinY: 3.8,             // cm at chin tip
-    faceWidth: 12.8,        // cm across zygomatic arches
-    faceHeight: 15.6,       // cm from hairline to chin
-    depthZ: 11.0            // cm forward from cervical spine to sit flush on front surface
+    faceWidth: 16.0,        // cm across zygomatic arches
+    faceHeight: 22.0,       // cm from hairline to chin
+    depthZ: 15.3            // cm forward from cervical spine to sit flush on nose tip (Z=0.138m)
   },
   female: {
     neckRadius: 5.4,
     neckY: 0.0,
-    eyeLevelY: 9.8,
-    hairlineY: 15.5,
-    chinY: 3.6,
-    faceWidth: 11.8,
-    faceHeight: 14.4,
-    depthZ: 10.2
+    eyeLevelY: 10.8,        // cm at eye sockets
+    hairlineY: 16.0,        // cm at hair fringe
+    chinY: 3.6,             // cm at chin tip
+    faceWidth: 15.2,        // cm across zygomatic arches
+    faceHeight: 21.0,       // cm from hairline to chin
+    depthZ: 16.1            // cm forward from cervical spine (matches Z=0.160m)
   }
 };
 
@@ -619,6 +619,10 @@ export class PersonalizedAvatarManager {
       }
     });
 
+    // 4b. Synthesize and composite authentic face directly onto avatar 3D body texture
+    const sourceImage = (options && options.imageSource) || this.lastImageSource || null;
+    this.synthesizeFaceTexture(sourceImage, this.activeBiometrics);
+
     // 5. Mount Personalized Head to Skeleton at verified anatomical eye-line
     const isMale = (this.studio3D?.avatarConfig?.gender === 'male') ||
       (this.studio3D?.currentMannequinGender === 'male') ||
@@ -633,7 +637,7 @@ export class PersonalizedAvatarManager {
     } else {
       const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
       if (headMesh.position && typeof headMesh.position.set === 'function') {
-        headMesh.position.set(0, 1.635 + (offsetY * 0.01), 0.11);
+        headMesh.position.set(0, 1.635 + (offsetY * 0.01), 0.14);
       }
       if (parent && typeof parent.add === 'function') {
         parent.add(headMesh);
@@ -643,6 +647,150 @@ export class PersonalizedAvatarManager {
     this.currentPersonalizedHead = headMesh;
     this.isPersonalized = true;
     return true;
+  }
+
+  /**
+   * Directly composites user face into avatar body baseColor texture map
+   */
+  synthesizeFaceTexture(imageSource, biometrics = null) {
+    if (typeof document === 'undefined') return false;
+    const avatarRoot = this.studio3D?.gltfAvatarGroup || this.studio3D?.avatarRoot;
+    if (!avatarRoot) return false;
+
+    const meshes = [];
+    if (typeof avatarRoot.traverse === 'function') {
+      avatarRoot.traverse((c) => {
+        if (c.isMesh && (c.name || '').toLowerCase().includes('body')) {
+          meshes.push(c);
+        }
+      });
+    }
+    if (meshes.length === 0) return false;
+
+    const isMale = (this.studio3D?.avatarConfig?.gender === 'male') ||
+      (this.studio3D?.currentMannequinGender === 'male') ||
+      (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
+
+    // Verified exact UV regions for Mixamo body texture
+    const faceBounds = isMale
+      ? { x: 1360, y: 1510, width: 380, height: 380 }
+      : { x: 1160, y: 1380, width: 380, height: 380 };
+
+    const targetMesh = meshes[0];
+    const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
+    if (!material) return false;
+
+    try {
+      const res = 2048;
+      const canvas = document.createElement('canvas');
+      canvas.width = res;
+      canvas.height = res;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return false;
+
+      // Back up original pristine texture if first time
+      const currentTexture = material.map;
+      if (!this.originalBodyMaterials.has('body_tex_map')) {
+        this.originalBodyMaterials.set('body_tex_map', currentTexture);
+      }
+
+      const baseTex = this.originalBodyMaterials.get('body_tex_map') || currentTexture;
+      let drawnBase = false;
+      const texImg = baseTex ? (baseTex.image || baseTex.source?.data) : null;
+      if (texImg) {
+        try {
+          ctx.drawImage(texImg, 0, 0, res, res);
+          drawnBase = true;
+        } catch (e) {
+          console.warn('PersonalizedAvatarManager: drawImage from baseTex failed', e);
+        }
+      }
+      if (!drawnBase) {
+        ctx.fillStyle = '#E8D2BE';
+        ctx.fillRect(0, 0, res, res);
+      }
+
+      const faceCanvas = document.createElement('canvas');
+      faceCanvas.width = faceBounds.width;
+      faceCanvas.height = faceBounds.height;
+      const fCtx = faceCanvas.getContext('2d');
+      if (!fCtx) return false;
+
+      const src = imageSource || this.lastImageSource;
+      if (src) {
+        const srcW = src.naturalWidth || src.videoWidth || src.width || 512;
+        const srcH = src.naturalHeight || src.videoHeight || src.height || 512;
+        const isLandscape = srcW > srcH;
+        const cx = srcW * 0.50;
+        const cy = srcH * 0.50;
+        const cropH = Math.min(srcH, isLandscape ? Math.round(srcH * 0.85) : Math.round(srcW * 0.85));
+        const cropW = Math.round(cropH * 0.80);
+        const cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
+        const cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH / 2));
+        fCtx.drawImage(src, cropX, cropY, cropW, cropH, 0, 0, faceBounds.width, faceBounds.height);
+      } else if (this.currentPersonalizedHead?.material?.map?.image) {
+        fCtx.drawImage(this.currentPersonalizedHead.material.map.image, 0, 0, faceBounds.width, faceBounds.height);
+      }
+
+      // Smooth elliptical alpha feathering
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = faceBounds.width;
+      maskCanvas.height = faceBounds.height;
+      const mCtx = maskCanvas.getContext('2d');
+      if (mCtx) {
+        const cx = faceBounds.width / 2;
+        const cy = faceBounds.height * 0.50;
+        const rx = (faceBounds.width / 2) * 0.88;
+        const ry = (faceBounds.height / 2) * 0.94;
+        const grad = mCtx.createRadialGradient(cx, cy, rx * 0.65, cx, cy, rx);
+        grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
+        grad.addColorStop(0.70, 'rgba(0, 0, 0, 1.0)');
+        grad.addColorStop(0.90, 'rgba(0, 0, 0, 0.60)');
+        grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+        mCtx.save();
+        mCtx.scale(1.0, ry / rx);
+        mCtx.fillStyle = grad;
+        mCtx.beginPath();
+        mCtx.arc(cx, (cy * rx) / ry, rx, 0, Math.PI * 2);
+        mCtx.fill();
+        mCtx.restore();
+
+        fCtx.globalCompositeOperation = 'destination-in';
+        fCtx.drawImage(maskCanvas, 0, 0);
+      }
+
+      ctx.globalAlpha = 1.0;
+      ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
+
+      const THREE = this.THREE || (typeof window !== 'undefined' ? window.THREE : null);
+      if (THREE && THREE.CanvasTexture) {
+        const newTexture = new THREE.CanvasTexture(canvas);
+        newTexture.flipY = false;
+        if (THREE.sRGBEncoding) newTexture.encoding = THREE.sRGBEncoding;
+        if (THREE.SRGBColorSpace) newTexture.colorSpace = THREE.SRGBColorSpace;
+        newTexture.needsUpdate = true;
+
+        meshes.forEach((mesh) => {
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((m) => {
+              m.map = newTexture;
+              if (m.color && typeof m.color.setHex === 'function') m.color.setHex(0xFFFFFF);
+              m.needsUpdate = true;
+            });
+          } else if (mesh.material) {
+            mesh.material.map = newTexture;
+            if (mesh.material.color && typeof mesh.material.color.setHex === 'function') {
+              mesh.material.color.setHex(0xFFFFFF);
+            }
+            mesh.material.needsUpdate = true;
+          }
+        });
+      }
+      return true;
+    } catch (err) {
+      console.warn('PersonalizedAvatarManager: synthesizeFaceTexture error', err);
+      return false;
+    }
   }
 
   /**
@@ -703,6 +851,23 @@ export class PersonalizedAvatarManager {
           }
         }
       });
+    }
+
+    // Restore original base texture map if synthesized
+    if (this.originalBodyMaterials.has('body_tex_map')) {
+      const origTex = this.originalBodyMaterials.get('body_tex_map');
+      if (avatarRoot && typeof avatarRoot.traverse === 'function') {
+        avatarRoot.traverse((c) => {
+          if (c.isMesh && (c.name || '').toLowerCase().includes('body')) {
+            if (Array.isArray(c.material)) {
+              c.material.forEach((m) => { m.map = origTex; m.needsUpdate = true; });
+            } else if (c.material) {
+              c.material.map = origTex;
+              c.material.needsUpdate = true;
+            }
+          }
+        });
+      }
     }
 
     this.isPersonalized = false;

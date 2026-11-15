@@ -820,9 +820,9 @@ export class UserFaceMeshEngine {
     const offsetY = options.offsetY !== undefined ? options.offsetY : 0.0;
 
     if (isBoneParent) {
-      // Local position inside Mixamo Head bone: x=0, y=10.5 (hairline meets hair top, eyes in socket, chin at jaw), z=11.0
-      const posY = (isMale ? 10.5 : 9.8) + offsetY;
-      const posZ = isMale ? 11.0 : 10.2;
+      // Local position inside Mixamo Head bone: x=0, y=10.5, z=15.3 (flush on nose tip)
+      const posY = (isMale ? 10.5 : 10.8) + offsetY;
+      const posZ = isMale ? 15.3 : 16.1;
       mesh.position.set(0, posY, posZ);
       headBone.add(mesh);
     } else {
@@ -830,7 +830,7 @@ export class UserFaceMeshEngine {
       const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
       const posY = 1.635 + (offsetY * 0.01);
       if (mesh.position && typeof mesh.position.set === 'function') {
-        mesh.position.set(0, posY, 0.11);
+        mesh.position.set(0, posY, 0.14);
       }
       if (parent && typeof parent.add === 'function') {
         parent.add(mesh);
@@ -879,10 +879,8 @@ export class UserFaceMeshEngine {
     const deformed = this.applyParametricDeformation(biometrics, intensity);
     const facePlate = this.createFacePlate(imageSource, options);
 
-    // Only fallback to UV atlas texture synthesis if faceplate could not be built
-    if (!facePlate) {
-      this.synthesizeFaceTexture(imageSource, biometrics);
-    }
+    // Always synthesize and composite authentic user face onto the avatar body texture map
+    this.synthesizeFaceTexture(imageSource, biometrics);
 
     this.isApplied = true;
     return !!(facePlate || deformed);

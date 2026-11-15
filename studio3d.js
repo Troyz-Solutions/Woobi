@@ -43,10 +43,10 @@
         fovPortrait: 44
       },
       AVATAR_DETAIL: {
-        position: new THREE.Vector3(0, 1.44, 1.10),
-        target: new THREE.Vector3(0, 1.38, 0),
-        fovLandscape: 30,
-        fovPortrait: 36
+        position: new THREE.Vector3(0, 1.62, 0.85),
+        target: new THREE.Vector3(0, 1.58, 0),
+        fovLandscape: 28,
+        fovPortrait: 34
       },
       VANITY_VIEW: {
         position: new THREE.Vector3(1.35, 1.25, -1.75),
@@ -3915,6 +3915,8 @@
         }
       }
       if (this.personalizedAvatarManager) {
+        options.imageSource = imageSource;
+        this.personalizedAvatarManager.lastImageSource = imageSource;
         const processed = this.personalizedAvatarManager.processFaceImage(imageSource, options.selectedFaceIndex || 0);
         const headMesh = this.personalizedAvatarManager.generatePersonalizedHead(processed.biometrics, processed.textureCanvas, options);
         const success = this.personalizedAvatarManager.replaceMannequinHead(headMesh, options);

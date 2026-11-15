@@ -828,6 +828,14 @@
 
                 <div class="user-face-slider-wrap">
                   <div class="slider-label-row">
+                    <span class="slider-title">Horizontal Position (Left / Right)</span>
+                    <span class="slider-val" id="userFaceOffsetXVal">0</span>
+                  </div>
+                  <input type="range" id="userFaceOffsetXRange" min="-4" max="4" step="0.5" value="0" class="user-face-range" oninput="app.updateUserFaceOffsetX(this.value)">
+                </div>
+
+                <div class="user-face-slider-wrap">
+                  <div class="slider-label-row">
                     <span class="slider-title">Face Size</span>
                     <span class="slider-val" id="userFaceScaleVal">100%</span>
                   </div>
@@ -5620,20 +5628,20 @@
   <script type="module" src="modules/3d-studio/wardrobe/index.js"></script>
   <script type="module" src="modules/3d-studio/mirror-vanity/index.js"></script>
   <script type="module" src="modules/3d-studio/avatar/index.js"></script>
-  <script type="module" src="modules/3d-studio/avatar/PersonalizedAvatarManager.js?v=20261115_personalized_head8"></script>
+  <script type="module" src="modules/3d-studio/avatar/PersonalizedAvatarManager.js?v=20261115_personalized_head9"></script>
   <script type="module" src="modules/3d-studio/lighting/index.js"></script>
   <script type="module" src="modules/3d-studio/theme/index.js"></script>
   <script type="module" src="modules/3d-studio/camera/index.js"></script>
-  <script type="module" src="modules/3d-studio-features/avatar-customization/UserFaceMeshEngine.js?v=20261115_personalized_head7"></script>
+  <script type="module" src="modules/3d-studio-features/avatar-customization/UserFaceMeshEngine.js?v=20261115_personalized_head9"></script>
   <script type="module" src="modules/3d-studio-features/index.js"></script>
   <script type="module" src="modules/settings/index.js"></script>
   <script src="assets/brick-wall-data.js?v=20261105_v1"></script>
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261115_personalized_head8"></script>
+  <script src="studio3d.js?v=20261115_personalized_head9"></script>
   <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261115_personalized_head8"></script>
+  <script src="app.js?v=20261115_personalized_head9"></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');

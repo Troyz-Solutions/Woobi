@@ -300,8 +300,8 @@ export class PersonalizedAvatarManager {
 
   /**
    * Helper: Automatically detects face position, center, and dimensions from photograph
-   * Runs fast, zero-dependency client-side melanin chromaticity clustering with percentile filtering.
-   * Completely eliminates background walls, white clothing, and earphones.
+   * Runs fast, zero-dependency 1D energy projection with horizontal center weighting.
+   * Accurately localizes the head, completely eliminating background walls, exposed shoulders, and clothing.
    */
   detectFaceBounds(imageSource) {
     if (!imageSource || typeof document === 'undefined') {
@@ -317,83 +317,134 @@ export class PersonalizedAvatarManager {
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) {
       return {
-        x: Math.round(srcW * 0.20),
+        x: Math.round(srcW * 0.25),
         y: Math.round(srcH * 0.15),
-        width: Math.round(srcW * 0.60),
+        width: Math.round(srcW * 0.50),
         height: Math.round(srcH * 0.70),
         centerX: srcW * 0.50,
-        centerY: srcH * 0.48
+        centerY: srcH * 0.45
       };
     }
 
     ctx.drawImage(imageSource, 0, 0, scanSize, scanSize);
     const data = ctx.getImageData(0, 0, scanSize, scanSize).data;
 
-    const skinPtsX = [];
-    const skinPtsY = [];
+    // 1D Foreground Energy Profiles with horizontal center weighting
+    // In human portraiture / selfies, the face is centrally composed.
+    // Background walls are typically bright neutral colors (luma > 170, color diff < 24).
+    const colEnergy = new Float32Array(scanSize);
+    const rowEnergy = new Float32Array(scanSize);
+    const halfScan = scanSize / 2.0;
 
-    for (let y = 0; y < scanSize; y++) {
-      for (let x = 0; x < scanSize; x++) {
+    for (let x = 0; x < scanSize; x++) {
+      // Parabolic center-weighting: 1.0 at center, drops to 0.25 at edges
+      // This immediately filters out background shoulders, exposed arms, doors or edges
+      const distFromCenter = Math.abs(x - halfScan) / halfScan;
+      const weight = Math.max(0.20, 1.0 - 0.75 * distFromCenter * distFromCenter);
+
+      for (let y = 0; y < scanSize; y++) {
         const idx = (y * scanSize + x) * 4;
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
-        const tot = r + g + b + 0.001;
-        const rn = r / tot;
-        const gn = g / tot;
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
         const diff = Math.max(r, g, b) - Math.min(r, g, b);
+        const isWall = (luma > 170 && diff < 24);
 
-        // Melanin-dominant chromaticity filter (excludes off-white/beige walls, white shirts, dark hair & deep shadows)
-        if (rn > 0.38 && rn < 0.65 && gn > 0.24 && gn < 0.38 && (rn - gn) > 0.05 && diff > 18 && r > 35 && tot < 560) {
-          skinPtsX.push(x);
-          skinPtsY.push(y);
+        if (!isWall && luma > 15) {
+          colEnergy[x] += weight;
         }
       }
     }
 
-    const n = skinPtsX.length;
-    if (n < scanSize * 3) {
-      // Fallback: centered portrait face
-      const w = Math.round(srcW * 0.55);
-      const h = Math.round(w * 1.15);
+    // Find peak horizontal column
+    let peakX = Math.round(scanSize / 2);
+    let maxColVal = 0;
+    for (let x = 10; x < scanSize - 10; x++) {
+      if (colEnergy[x] > maxColVal) {
+        maxColVal = colEnergy[x];
+        peakX = x;
+      }
+    }
+
+    if (maxColVal < 5) {
+      // Fallback: standard centered portrait
+      const w = Math.round(srcW * 0.50);
+      const h = Math.round(w * 1.25);
       return {
         x: Math.max(0, Math.round(srcW * 0.50 - w / 2)),
-        y: Math.max(0, Math.round(srcH * 0.45 - h / 2)),
+        y: Math.max(0, Math.round(srcH * 0.40 - h / 2)),
         width: w,
         height: h,
         centerX: srcW * 0.50,
-        centerY: srcH * 0.45
+        centerY: srcH * 0.40
       };
     }
 
-    // Sort coordinates to compute robust percentiles (eliminating stray wall/background pixels)
-    skinPtsX.sort((a, b) => a - b);
-    skinPtsY.sort((a, b) => a - b);
+    // Expand left and right from peakX until energy drops below 30% of peak
+    const thresholdX = maxColVal * 0.30;
+    let leftX = peakX;
+    while (leftX > 0 && colEnergy[leftX] > thresholdX) leftX--;
+    let rightX = peakX;
+    while (rightX < scanSize - 1 && colEnergy[rightX] > thresholdX) rightX++;
 
-    const p20X = skinPtsX[Math.floor(n * 0.20)];
-    const p80X = skinPtsX[Math.floor(n * 0.80)];
-    const p20Y = skinPtsY[Math.floor(n * 0.20)];
-    const p80Y = skinPtsY[Math.floor(n * 0.80)];
+    // Compute vertical energy profile within [leftX, rightX]
+    for (let y = 0; y < scanSize; y++) {
+      for (let x = leftX; x <= rightX; x++) {
+        const idx = (y * scanSize + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+        const diff = Math.max(r, g, b) - Math.min(r, g, b);
+        const isWall = (luma > 170 && diff < 24);
 
-    const cx = ((p20X + p80X) / 2 / scanSize) * srcW;
-    const cy = ((p20Y + p80Y) / 2 / scanSize) * srcH;
-    const faceW = (((p80X - p20X) / scanSize) * srcW) * 1.05;
-    const faceH = faceW * 1.08;
+        if (!isWall && luma > 15) {
+          rowEnergy[y]++;
+        }
+      }
+    }
 
-    const cropW = Math.max(120, Math.min(srcW, Math.round(faceW)));
-    const cropH = Math.max(120, Math.min(srcH, Math.round(faceH)));
-    const cropX = Math.max(0, Math.min(srcW - cropW, Math.round(cx - cropW / 2)));
-    const cropY = Math.max(0, Math.min(srcH - cropH, Math.round(cy - cropH * 0.52)));
+    let peakY = Math.round(scanSize * 0.45);
+    let maxRowVal = 0;
+    for (let y = 5; y < scanSize - 5; y++) {
+      if (rowEnergy[y] > maxRowVal) {
+        maxRowVal = rowEnergy[y];
+        peakY = y;
+      }
+    }
+
+    const thresholdY = maxRowVal * 0.25;
+    let topY = peakY;
+    while (topY > 0 && rowEnergy[topY] > thresholdY) topY--;
+    let bottomY = peakY;
+    while (bottomY < scanSize - 1 && rowEnergy[bottomY] > thresholdY) bottomY++;
+
+    // Convert normalized coordinates back to full image resolution
+    const realLeft = (leftX / scanSize) * srcW;
+    const realRight = (rightX / scanSize) * srcW;
+    const realTop = (topY / scanSize) * srcH;
+    const realBottom = (bottomY / scanSize) * srcH;
+
+    const realW = Math.max(40, realRight - realLeft);
+    const realH = Math.max(40, realBottom - realTop);
+    const realCX = realLeft + realW / 2;
+    const realCY = realTop + realH / 2;
+
+    const cropW = Math.max(60, Math.min(srcW, Math.round(realW * 1.05)));
+    const cropH = Math.max(60, Math.min(srcH, Math.round(realH * 1.02)));
+    const cropX = Math.max(0, Math.min(srcW - cropW, Math.round(realCX - cropW / 2)));
+    const cropY = Math.max(0, Math.min(srcH - cropH, Math.round(realCY - cropH / 2)));
 
     return {
       x: cropX,
       y: cropY,
       width: cropW,
       height: cropH,
-      centerX: cx,
-      centerY: cy,
-      rawFaceW: faceW,
-      rawFaceH: faceH
+      centerX: realCX,
+      centerY: realCY,
+      rawFaceW: realW,
+      rawFaceH: realH
     };
   }
 
@@ -889,8 +940,9 @@ export class PersonalizedAvatarManager {
       const scaleMult = (options.scale !== undefined) ? options.scale : 1.0;
       const drawW = Math.round(faceBounds.width * scaleMult);
       const drawH = Math.round(faceBounds.height * scaleMult);
+      const offsetX = ((options.offsetX !== undefined) ? options.offsetX : 0) * 15;
       const offsetY = ((options.offsetY !== undefined) ? options.offsetY : 0) * 15;
-      const targetX = Math.round(faceBounds.x + (faceBounds.width - drawW) / 2);
+      const targetX = Math.round(faceBounds.x + (faceBounds.width - drawW) / 2 + offsetX);
       const targetY = Math.round(faceBounds.y + (faceBounds.height - drawH) / 2 + offsetY);
 
       // Render face onto faceCanvas

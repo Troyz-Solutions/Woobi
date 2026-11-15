@@ -4537,6 +4537,7 @@
   let _userFaceFlipY = false;
   let _userFaceFlipX = false;
   let _userFaceOffsetY = 0.0;
+  let _userFaceOffsetX = 0.0;
   let _userFaceScale = 1.0;
   let _userFaceShowHair = true;
   let _userFaceCameraStream = null;
@@ -4707,6 +4708,15 @@
     }
   }
 
+  function updateUserFaceOffsetX(val) {
+    _userFaceOffsetX = parseFloat(val);
+    const label = document.getElementById('userFaceOffsetXVal');
+    if (label) label.textContent = `${_userFaceOffsetX > 0 ? '+' : ''}${_userFaceOffsetX}`;
+    if (_selectedUserFaceImage) {
+      applyUserFaceToMannequin(true);
+    }
+  }
+
   function updateUserFaceScale(val) {
     _userFaceScale = parseFloat(val) / 100.0;
     const label = document.getElementById('userFaceScaleVal');
@@ -4791,6 +4801,7 @@
         intensity: _userFaceIntensity,
         flipY: _userFaceFlipY,
         flipX: _userFaceFlipX,
+        offsetX: _userFaceOffsetX,
         offsetY: _userFaceOffsetY,
         scale: _userFaceScale,
         showHair: _userFaceShowHair,
@@ -8324,6 +8335,7 @@
     toggleUserFaceFlipX,
     toggleUserFaceHair,
     updateUserFaceOffsetY,
+    updateUserFaceOffsetX,
     updateUserFaceScale,
     handleUserFaceFile,
     applyUserFaceToMannequin,

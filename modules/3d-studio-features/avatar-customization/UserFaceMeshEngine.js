@@ -9,8 +9,8 @@
  * 4. Non-destructive geometry backup and 1-tap instant restoration to default avatar.
  */
 
-export const FACE_UV_BOUNDS = {
-  // Region in the 2048x2048 baseColor texture where facial features map
+export const FEMALE_FACE_UV_BOUNDS = {
+  // Region in the 2048x2048 baseColor texture for female avatar
   x: 350,
   y: 50,
   width: 500,
@@ -20,6 +20,20 @@ export const FACE_UV_BOUNDS = {
   vMin: 50 / 2048,
   vMax: 550 / 2048
 };
+
+export const MALE_FACE_UV_BOUNDS = {
+  // Region in the 2048x2048 baseColor texture for male avatar
+  x: 1250,
+  y: 1400,
+  width: 500,
+  height: 500,
+  uMin: 1250 / 2048,
+  uMax: 1750 / 2048,
+  vMin: 1400 / 2048,
+  vMax: 1900 / 2048
+};
+
+export const FACE_UV_BOUNDS = FEMALE_FACE_UV_BOUNDS;
 
 export const DEFAULT_BIOMETRICS = {
   jawWidth: 1.0,         // 0.8 (narrow/tapered) to 1.25 (wide/square)
@@ -48,6 +62,7 @@ export class UserFaceMeshEngine {
 
     this.activeBiometrics = { ...DEFAULT_BIOMETRICS };
     this.originalVertices = new Map(); // mesh UUID -> Float32Array
+    this.originalNormals = new Map();  // mesh UUID -> Float32Array
     this.originalTextures = new Map(); // material UUID -> original Texture
     this.synthesizedTexture = null;
     this.isApplied = false;
@@ -176,7 +191,8 @@ export class UserFaceMeshEngine {
   }
 
   /**
-   * Finds all 3D head/face meshes attached to the rigged avatar model.
+   * Finds the authentic avatar body/head mesh attached to the rigged avatar model.
+   * Strictly filters out clothing, sweaters, pants, shoes, and hair.
    */
   findHeadMeshes() {
     const meshes = [];
@@ -188,25 +204,47 @@ export class UserFaceMeshEngine {
     avatarRoot.traverse((child) => {
       if (child.isMesh && child.geometry) {
         const name = (child.name || '').toLowerCase();
-        // Check if mesh is identified as head/body or positioned high in Y
-        if (name.includes('body') || name.includes('head') || name.includes('face')) {
-          meshes.push(child);
-        } else if (child.geometry.attributes && child.geometry.attributes.position) {
-          // Check if mesh has vertices in the head region (> 1.36m)
-          const pos = child.geometry.attributes.position;
-          let hasHeadVerts = false;
-          for (let i = 0; i < Math.min(pos.count, 200); i++) {
-            if (pos.getY(i) > this.options.headYThreshold) {
-              hasHeadVerts = true;
-              break;
-            }
-          }
-          if (hasHeadVerts) {
+        // Specifically exclude clothing, pants, sweaters, jackets, shoes, collar, eyelashes, hair
+        const isExcluded = name.includes('sweater') ||
+          name.includes('pants') ||
+          name.includes('trouser') ||
+          name.includes('shirt') ||
+          name.includes('jacket') ||
+          name.includes('collar') ||
+          name.includes('shoe') ||
+          name.includes('hair') ||
+          name.includes('eyelash') ||
+          name.includes('eye_');
+
+        if (!isExcluded) {
+          if (name.includes('body') || name.includes('head') || name.includes('face') || name.includes('avatar') || name === 'mesh') {
             meshes.push(child);
           }
         }
       }
     });
+
+    // If still no mesh found, fallback to the primary human body skinned mesh
+    if (meshes.length === 0) {
+      avatarRoot.traverse((child) => {
+        if (child.isMesh && child.geometry && child.geometry.attributes?.position) {
+          const name = (child.name || '').toLowerCase();
+          const isExcluded = name.includes('sweater') ||
+            name.includes('pants') ||
+            name.includes('trouser') ||
+            name.includes('jacket') ||
+            name.includes('shoe') ||
+            name.includes('hair') ||
+            name.includes('eyelash');
+          if (!isExcluded) {
+            meshes.push(child);
+          }
+        }
+      });
+      // Sort by vertex count descending and select the body mesh
+      meshes.sort((a, b) => ((b.geometry.attributes.position?.count || 0) - (a.geometry.attributes.position?.count || 0)));
+      return meshes.slice(0, 1);
+    }
 
     return meshes;
   }
@@ -230,9 +268,49 @@ export class UserFaceMeshEngine {
       const posAttr = geo.attributes.position;
       const count = posAttr.count;
 
-      // 1. Back up original vertex array if first deformation
+      // 1. Decompress quantized/normalized Int16 positions to Float32Array to avoid integer truncation
+      if (posAttr.normalized || !(posAttr.array instanceof Float32Array)) {
+        const floatPositions = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          floatPositions[i * 3] = posAttr.getX(i);
+          floatPositions[i * 3 + 1] = posAttr.getY(i);
+          floatPositions[i * 3 + 2] = posAttr.getZ(i);
+        }
+        if (typeof THREE !== 'undefined' && THREE.BufferAttribute) {
+          geo.setAttribute('position', new THREE.BufferAttribute(floatPositions, 3));
+        } else {
+          posAttr.array = floatPositions;
+          posAttr.normalized = false;
+        }
+      }
+
+      // 2. Decompress quantized/normalized Int8 normals to Float32Array to avoid truncating normal floats to integer 0
+      if (geo.attributes.normal && (geo.attributes.normal.normalized || !(geo.attributes.normal.array instanceof Float32Array))) {
+        const normAttr = geo.attributes.normal;
+        const floatNormals = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          floatNormals[i * 3] = normAttr.getX(i);
+          floatNormals[i * 3 + 1] = normAttr.getY(i);
+          floatNormals[i * 3 + 2] = normAttr.getZ(i);
+        }
+        if (typeof THREE !== 'undefined' && THREE.BufferAttribute) {
+          geo.setAttribute('normal', new THREE.BufferAttribute(floatNormals, 3));
+        } else {
+          normAttr.array = floatNormals;
+          normAttr.normalized = false;
+        }
+      }
+
+      const activePosAttr = geo.attributes.position;
+
+      // 3. Back up original vertex array if first deformation
       if (!this.originalVertices.has(mesh.uuid)) {
-        this.originalVertices.set(mesh.uuid, new Float32Array(posAttr.array));
+        this.originalVertices.set(mesh.uuid, new Float32Array(activePosAttr.array));
+      }
+
+      // 4. Back up original normal array if present
+      if (geo.attributes.normal && !this.originalNormals.has(mesh.uuid)) {
+        this.originalNormals.set(mesh.uuid, new Float32Array(geo.attributes.normal.array));
       }
 
       const original = this.originalVertices.get(mesh.uuid);
@@ -273,27 +351,27 @@ export class UserFaceMeshEngine {
             newZ += (bio.chinShape - 0.5) * 0.008 * chinWeight * clampedIntensity;
           }
 
-          // C. NOSE BRIDGE & PROJECTION (y: 1.45 - 1.54, central x < 0.025, front z > 0.04)
+          // C. NOSE BRIDGE & PROJECTION (y: 1.45 - 1.54, central x < 0.025, front z > 0.035)
           if (origY >= 1.45 && origY <= 1.54 && absX < 0.025 && origZ > 0.035) {
             const noseWeight = 1.0 - (absX / 0.025);
             newZ += noseDeltaZ * noseWeight;
             newX *= bio.noseWidth;
           }
 
-          // D. CHEEKBONE CONTOUR (y: 1.46 - 1.57, lateral x: 0.035 - 0.080)
+          // D. CHEEKBONE CONTOUR (y: 1.46 - 1.57, lateral x: 0.032 - 0.080)
           if (origY >= 1.46 && origY <= 1.57 && absX >= 0.032 && isFrontFace) {
             const cheekWeight = Math.sin(((origY - 1.46) / 0.11) * Math.PI);
             newX += Math.sign(origX) * cheekDeltaX * cheekWeight;
             newZ += cheekDeltaX * 0.4 * cheekWeight;
           }
 
-          posAttr.array[i3] = newX;
-          posAttr.array[i3 + 1] = newY;
-          posAttr.array[i3 + 2] = newZ;
+          activePosAttr.array[i3] = newX;
+          activePosAttr.array[i3 + 1] = newY;
+          activePosAttr.array[i3 + 2] = newZ;
         }
       }
 
-      posAttr.needsUpdate = true;
+      activePosAttr.needsUpdate = true;
       if (typeof geo.computeVertexNormals === 'function') {
         geo.computeVertexNormals();
       }
@@ -314,6 +392,10 @@ export class UserFaceMeshEngine {
 
     const bio = biometrics || this.activeBiometrics || DEFAULT_BIOMETRICS;
     const targetMesh = meshes[0];
+    const isMale = (targetMesh.name || '').toLowerCase().includes('31') ||
+      (this.studio3D?.avatarConfig?.gender === 'male');
+    const faceBounds = isMale ? MALE_FACE_UV_BOUNDS : FEMALE_FACE_UV_BOUNDS;
+
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
     if (!material) return false;
 
@@ -334,15 +416,19 @@ export class UserFaceMeshEngine {
       // Always draw from the original clean base texture
       const baseTex = this.originalTextures.get(material.uuid) || currentTexture;
       if (baseTex && baseTex.image) {
-        ctx.drawImage(baseTex.image, 0, 0, res, res);
+        try {
+          ctx.drawImage(baseTex.image, 0, 0, res, res);
+        } catch (drawErr) {
+          ctx.fillStyle = isMale ? '#DABEA7' : '#F3D5C6';
+          ctx.fillRect(0, 0, res, res);
+        }
       } else {
         // Fallback tone if texture image not loaded
-        ctx.fillStyle = '#F3D5C6';
+        ctx.fillStyle = isMale ? '#DABEA7' : '#F3D5C6';
         ctx.fillRect(0, 0, res, res);
       }
 
       // 2. Prepare user face crop on intermediate canvas
-      const faceBounds = FACE_UV_BOUNDS;
       const faceCanvas = document.createElement('canvas');
       faceCanvas.width = faceBounds.width;
       faceCanvas.height = faceBounds.height;
@@ -352,7 +438,7 @@ export class UserFaceMeshEngine {
       fCtx.drawImage(userImageSource, 0, 0, faceBounds.width, faceBounds.height);
 
       // 3. Color Harmonization: match user image tone with avatar neck/body
-      const avatarTone = bio.skinTone || { r: 235, g: 213, b: 196 };
+      const avatarTone = bio.skinTone || (isMale ? { r: 215, g: 175, b: 150 } : { r: 235, g: 213, b: 196 });
       const fImgData = fCtx.getImageData(0, 0, faceBounds.width, faceBounds.height);
       const pixels = fImgData.data;
 
@@ -414,7 +500,7 @@ export class UserFaceMeshEngine {
       ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
       ctx.globalAlpha = 1.0;
 
-      // 6. Instantiate Three.js CanvasTexture and bind to avatar head materials
+      // 6. Instantiate Three.js CanvasTexture and bind ONLY to avatar body mesh
       if (typeof THREE !== 'undefined' && THREE.CanvasTexture) {
         const newTexture = new THREE.CanvasTexture(canvas);
         newTexture.flipY = false;
@@ -423,16 +509,15 @@ export class UserFaceMeshEngine {
         newTexture.needsUpdate = true;
 
         meshes.forEach((mesh) => {
-          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mats.forEach((m) => {
-            if (m) {
-              if (!this.originalTextures.has(m.uuid)) {
-                this.originalTextures.set(m.uuid, m.map);
-              }
-              m.map = newTexture;
-              m.needsUpdate = true;
-            }
-          });
+          if (!mesh.userData._originalMaterial) {
+            mesh.userData._originalMaterial = mesh.material;
+          }
+          const clonedMat = (typeof mesh.material?.clone === 'function')
+            ? mesh.material.clone()
+            : Object.assign({}, mesh.material);
+          clonedMat.map = newTexture;
+          clonedMat.needsUpdate = true;
+          mesh.material = clonedMat;
         });
         this.synthesizedTexture = newTexture;
       }
@@ -479,21 +564,26 @@ export class UserFaceMeshEngine {
     const meshes = this.findHeadMeshes();
     meshes.forEach((mesh) => {
       // 1. Restore geometry vertices
-      if (this.originalVertices.has(mesh.uuid)) {
+      if (this.originalVertices.has(mesh.uuid) && mesh.geometry?.attributes?.position) {
         const origArray = this.originalVertices.get(mesh.uuid);
-        const posAttr = mesh.geometry.attributes.position;
-        posAttr.array.set(origArray);
-        posAttr.needsUpdate = true;
-        if (typeof mesh.geometry.computeVertexNormals === 'function') {
-          mesh.geometry.computeVertexNormals();
-        }
+        mesh.geometry.attributes.position.array.set(origArray);
+        mesh.geometry.attributes.position.needsUpdate = true;
       }
 
-      // 2. Restore original texture
-      const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-      if (mat && this.originalTextures.has(mat.uuid)) {
-        mat.map = this.originalTextures.get(mat.uuid);
-        mat.needsUpdate = true;
+      // 2. Restore geometry normals
+      if (this.originalNormals.has(mesh.uuid) && mesh.geometry?.attributes?.normal) {
+        const origNorm = this.originalNormals.get(mesh.uuid);
+        mesh.geometry.attributes.normal.array.set(origNorm);
+        mesh.geometry.attributes.normal.needsUpdate = true;
+      }
+
+      // 3. Restore original material
+      if (mesh.userData && mesh.userData._originalMaterial) {
+        if (mesh.material && typeof mesh.material.dispose === 'function') {
+          mesh.material.dispose();
+        }
+        mesh.material = mesh.userData._originalMaterial;
+        mesh.material.needsUpdate = true;
       }
     });
 

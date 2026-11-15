@@ -10,27 +10,27 @@
  */
 
 export const FEMALE_FACE_UV_BOUNDS = {
-  // Region in the 2048x2048 baseColor texture for female avatar
-  x: 350,
-  y: 50,
-  width: 500,
-  height: 500,
-  uMin: 350 / 2048,
-  uMax: 850 / 2048,
-  vMin: 50 / 2048,
-  vMax: 550 / 2048
+  // Region in the 2048x2048 baseColor texture for female avatar (Mixamo Ch37)
+  x: 1340,
+  y: 80,
+  width: 400,
+  height: 360,
+  uMin: 1340 / 2048,
+  uMax: 1740 / 2048,
+  vMin: 80 / 2048,
+  vMax: 440 / 2048
 };
 
 export const MALE_FACE_UV_BOUNDS = {
-  // Region in the 2048x2048 baseColor texture for male avatar
-  x: 1250,
-  y: 1400,
-  width: 500,
-  height: 500,
-  uMin: 1250 / 2048,
+  // Region in the 2048x2048 baseColor texture for male avatar (Mixamo Ch31)
+  x: 1330,
+  y: 120,
+  width: 420,
+  height: 380,
+  uMin: 1330 / 2048,
   uMax: 1750 / 2048,
-  vMin: 1400 / 2048,
-  vMax: 1900 / 2048
+  vMin: 120 / 2048,
+  vMax: 500 / 2048
 };
 
 export const FACE_UV_BOUNDS = FEMALE_FACE_UV_BOUNDS;
@@ -314,13 +314,23 @@ export class UserFaceMeshEngine {
       }
 
       const original = this.originalVertices.get(mesh.uuid);
-      const yThreshold = this.options.headYThreshold;
+      
+      // Dynamically calculate coordinate bounds to work seamlessly with both meter and scaled coordinates
+      let maxY = -Infinity;
+      for (let i = 0; i < count; i++) {
+        const yVal = original[i * 3 + 1];
+        if (yVal > maxY) maxY = yVal;
+      }
+      const yThreshold = (maxY > 100) ? (maxY * 0.76) : this.options.headYThreshold;
+      const coordScale = (maxY > 100) ? (maxY / 1.78) : 1.0;
 
-      // Biometric displacement factors
-      const jawDelta = (bio.jawWidth - 1.0) * this.options.maxJawDisplacement * clampedIntensity;
-      const chinDeltaY = (0.5 - bio.chinShape) * this.options.maxChinDisplacement * clampedIntensity;
-      const noseDeltaZ = (bio.noseProminence - 1.0) * this.options.maxNoseDisplacement * clampedIntensity;
-      const cheekDeltaX = (bio.cheekProminence - 1.0) * this.options.maxCheekDisplacement * clampedIntensity;
+      // Biometric displacement factors scaled to mesh coordinate space
+      const jawDelta = (bio.jawWidth - 1.0) * this.options.maxJawDisplacement * clampedIntensity * coordScale;
+      const chinDeltaY = (0.5 - bio.chinShape) * this.options.maxChinDisplacement * clampedIntensity * coordScale;
+      const noseDeltaZ = (bio.noseProminence - 1.0) * this.options.maxNoseDisplacement * clampedIntensity * coordScale;
+      const cheekDeltaX = (bio.cheekProminence - 1.0) * this.options.maxCheekDisplacement * clampedIntensity * coordScale;
+
+      const yRange = (maxY - yThreshold) || 1.0;
 
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
@@ -334,33 +344,33 @@ export class UserFaceMeshEngine {
           let newY = origY;
           let newZ = origZ;
 
-          const isFrontFace = origZ > 0.015;
+          const normHeadY = (origY - yThreshold) / yRange; // 0.0 (chin/neck) to 1.0 (crown)
+          const isFrontFace = origZ > (0.01 * coordScale);
           const absX = Math.abs(origX);
 
-          // A. JAWLINE DEFORMATION (y between 1.38 and 1.50, lateral x)
-          if (origY >= 1.38 && origY <= 1.50 && absX > 0.02) {
-            const jawWeight = Math.sin(((origY - 1.38) / 0.12) * Math.PI);
+          // A. JAWLINE DEFORMATION (lower head third, lateral x)
+          if (normHeadY >= 0.08 && normHeadY <= 0.45 && absX > (0.02 * coordScale)) {
+            const jawWeight = Math.sin(((normHeadY - 0.08) / 0.37) * Math.PI);
             newX += Math.sign(origX) * jawDelta * jawWeight;
           }
 
-          // B. CHIN CONTOUR DEFORMATION (apex at y: 1.36 - 1.42, central x < 0.04)
-          if (origY >= 1.36 && origY <= 1.42 && absX < 0.045 && isFrontFace) {
-            const chinWeight = 1.0 - (absX / 0.045);
+          // B. CHIN CONTOUR DEFORMATION (apex at lower chin, central x)
+          if (normHeadY >= 0.0 && normHeadY <= 0.22 && absX < (0.045 * coordScale) && isFrontFace) {
+            const chinWeight = 1.0 - (absX / (0.045 * coordScale));
             newY += chinDeltaY * chinWeight;
-            // Sharpen/square chin forward depth
-            newZ += (bio.chinShape - 0.5) * 0.008 * chinWeight * clampedIntensity;
+            newZ += (bio.chinShape - 0.5) * 0.008 * chinWeight * clampedIntensity * coordScale;
           }
 
-          // C. NOSE BRIDGE & PROJECTION (y: 1.45 - 1.54, central x < 0.025, front z > 0.035)
-          if (origY >= 1.45 && origY <= 1.54 && absX < 0.025 && origZ > 0.035) {
-            const noseWeight = 1.0 - (absX / 0.025);
+          // C. NOSE BRIDGE & PROJECTION (mid-face, central x, front z)
+          if (normHeadY >= 0.32 && normHeadY <= 0.62 && absX < (0.025 * coordScale) && origZ > (0.03 * coordScale)) {
+            const noseWeight = 1.0 - (absX / (0.025 * coordScale));
             newZ += noseDeltaZ * noseWeight;
             newX *= bio.noseWidth;
           }
 
-          // D. CHEEKBONE CONTOUR (y: 1.46 - 1.57, lateral x: 0.032 - 0.080)
-          if (origY >= 1.46 && origY <= 1.57 && absX >= 0.032 && isFrontFace) {
-            const cheekWeight = Math.sin(((origY - 1.46) / 0.11) * Math.PI);
+          // D. CHEEKBONE CONTOUR (mid-upper face, lateral x)
+          if (normHeadY >= 0.35 && normHeadY <= 0.70 && absX >= (0.030 * coordScale) && isFrontFace) {
+            const cheekWeight = Math.sin(((normHeadY - 0.35) / 0.35) * Math.PI);
             newX += Math.sign(origX) * cheekDeltaX * cheekWeight;
             newZ += cheekDeltaX * 0.4 * cheekWeight;
           }
@@ -382,8 +392,85 @@ export class UserFaceMeshEngine {
   }
 
   /**
-   * Synthesizes and projects the user's face onto the avatar's 2048x2048 baseColor map.
-   * Performs automated skin-tone color transfer, illumination leveling, and elliptical alpha feathering.
+   * Intelligently crops and centers the user's face from any photo orientation
+   * (landscape selfie, portrait, square) without stretching or background bleeding.
+   */
+  extractFaceRegion(imageSource, targetWidth, targetHeight) {
+    if (typeof document === 'undefined') return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const srcW = imageSource.naturalWidth || imageSource.videoWidth || imageSource.width || 512;
+    const srcH = imageSource.naturalHeight || imageSource.videoHeight || imageSource.height || 512;
+
+    // Scan downscaled image to detect user skin/face centroid
+    let cx = srcW * 0.48;
+    let cy = srcH * 0.56;
+
+    try {
+      const scanSize = 128;
+      const scanCanvas = document.createElement('canvas');
+      scanCanvas.width = scanSize;
+      scanCanvas.height = scanSize;
+      const sCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+      if (sCtx) {
+        sCtx.drawImage(imageSource, 0, 0, scanSize, scanSize);
+        const imgData = sCtx.getImageData(0, 0, scanSize, scanSize);
+        const data = imgData.data;
+        let sumX = 0, sumY = 0, count = 0;
+
+        for (let y = 10; y < scanSize - 10; y++) {
+          for (let x = 10; x < scanSize - 10; x++) {
+            const idx = (y * scanSize + x) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            // Genuine human skin condition: distinct warmth/melanin vs background wall
+            if (r > 55 && g > 35 && b > 25 && (r - b) > 20 && (r - g) > 10 && (r + g + b) < 600) {
+              sumX += x;
+              sumY += y;
+              count++;
+            }
+          }
+        }
+        if (count > 60) {
+          cx = (sumX / count) * (srcW / scanSize);
+          cy = (sumY / count) * (srcH / scanSize);
+        }
+      }
+    } catch (e) {
+      // Fallback to default centering
+    }
+
+    // Determine crop window matching target aspect ratio (targetWidth / targetHeight)
+    const targetAspect = targetWidth / targetHeight;
+    let cropH = Math.min(srcH * 0.74, srcW * 0.74);
+    let cropW = cropH * targetAspect;
+
+    if (cropW > srcW) {
+      cropW = srcW;
+      cropH = cropW / targetAspect;
+    }
+    if (cropH > srcH) {
+      cropH = srcH;
+      cropW = cropH * targetAspect;
+    }
+
+    // Center crop on face/eyes/nose, shifting slightly down from forehead
+    let cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
+    let cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH * 0.48));
+
+    ctx.drawImage(imageSource, cropX, cropY, cropW, cropH, 0, 0, targetWidth, targetHeight);
+    return canvas;
+  }
+
+  /**
+   * Synthesizes and projects the user's authentic face onto the avatar's 2048x2048 baseColor map.
+   * Completely preserves the user's authentic facial likeness, eyes, beard, mustache, and rich natural skin tone.
    */
   synthesizeFaceTexture(userImageSource, biometrics = null) {
     if (!this.options.enableTextureSynthesis || typeof document === 'undefined') return false;
@@ -392,8 +479,12 @@ export class UserFaceMeshEngine {
 
     const bio = biometrics || this.activeBiometrics || DEFAULT_BIOMETRICS;
     const targetMesh = meshes[0];
-    const isMale = (targetMesh.name || '').toLowerCase().includes('31') ||
-      (this.studio3D?.avatarConfig?.gender === 'male');
+    const meshName = (targetMesh.name || '').toLowerCase();
+    const isMale = meshName.includes('31') ||
+      meshName.includes('male') ||
+      (this.studio3D?.avatarConfig?.gender === 'male') ||
+      (this.studio3D?.currentMannequinGender === 'male') ||
+      (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
     const faceBounds = isMale ? MALE_FACE_UV_BOUNDS : FEMALE_FACE_UV_BOUNDS;
 
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
@@ -428,59 +519,26 @@ export class UserFaceMeshEngine {
         ctx.fillRect(0, 0, res, res);
       }
 
-      // 2. Prepare user face crop on intermediate canvas
-      const faceCanvas = document.createElement('canvas');
-      faceCanvas.width = faceBounds.width;
-      faceCanvas.height = faceBounds.height;
+      // 2. Intelligently crop user face without distortion or white background bleeding
+      const faceCanvas = this.extractFaceRegion(userImageSource, faceBounds.width, faceBounds.height) || document.createElement('canvas');
       const fCtx = faceCanvas.getContext('2d');
+      if (!fCtx) return false;
 
-      // Draw user photo with center-cropped perspective
-      fCtx.drawImage(userImageSource, 0, 0, faceBounds.width, faceBounds.height);
-
-      // 3. Color Harmonization: match user image tone with avatar neck/body
-      const avatarTone = bio.skinTone || (isMale ? { r: 215, g: 175, b: 150 } : { r: 235, g: 213, b: 196 });
-      const fImgData = fCtx.getImageData(0, 0, faceBounds.width, faceBounds.height);
-      const pixels = fImgData.data;
-
-      // Calculate user image average
-      let userR = 0, userG = 0, userB = 0, sampleCount = 0;
-      for (let i = 0; i < pixels.length; i += 16) {
-        userR += pixels[i];
-        userG += pixels[i + 1];
-        userB += pixels[i + 2];
-        sampleCount++;
-      }
-      const avgUserR = Math.max(1, userR / (sampleCount || 1));
-      const avgUserG = Math.max(1, userG / (sampleCount || 1));
-      const avgUserB = Math.max(1, userB / (sampleCount || 1));
-
-      // Color transfer scalars
-      const scaleR = avatarTone.r / avgUserR;
-      const scaleG = avatarTone.g / avgUserG;
-      const scaleB = avatarTone.b / avgUserB;
-
-      for (let i = 0; i < pixels.length; i += 4) {
-        pixels[i] = Math.min(255, pixels[i] * (0.65 * scaleR + 0.35));
-        pixels[i + 1] = Math.min(255, pixels[i + 1] * (0.65 * scaleG + 0.35));
-        pixels[i + 2] = Math.min(255, pixels[i + 2] * (0.65 * scaleB + 0.35));
-      }
-      fCtx.putImageData(fImgData, 0, 0);
-
-      // 4. Create elliptical feathered alpha mask
+      // 3. Create elliptical feathered alpha mask with smooth Gaussian falloff
       const maskCanvas = document.createElement('canvas');
       maskCanvas.width = faceBounds.width;
       maskCanvas.height = faceBounds.height;
       const mCtx = maskCanvas.getContext('2d');
 
       const cx = faceBounds.width / 2;
-      const cy = faceBounds.height / 2;
-      const rx = (faceBounds.width / 2) * 0.88;
-      const ry = (faceBounds.height / 2) * 0.94;
+      const cy = faceBounds.height * 0.48;
+      const rx = (faceBounds.width / 2) * 0.82;
+      const ry = (faceBounds.height / 2) * 0.88;
 
-      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.40, cx, cy, rx);
+      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.42, cx, cy, rx);
       gradient.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
-      gradient.addColorStop(0.65, 'rgba(0, 0, 0, 0.92)');
-      gradient.addColorStop(0.85, 'rgba(0, 0, 0, 0.45)');
+      gradient.addColorStop(0.70, 'rgba(0, 0, 0, 1.0)');
+      gradient.addColorStop(0.86, 'rgba(0, 0, 0, 0.55)');
       gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
 
       mCtx.save();
@@ -491,16 +549,16 @@ export class UserFaceMeshEngine {
       mCtx.fill();
       mCtx.restore();
 
-      // Mask user face
+      // Mask user face with seamless soft outer edge
       fCtx.globalCompositeOperation = 'destination-in';
       fCtx.drawImage(maskCanvas, 0, 0);
 
-      // 5. Composite masked user face directly into UV face coordinates
-      ctx.globalAlpha = 0.94;
+      // 4. Composite authentic user face directly into exact UV face atlas coordinates
+      ctx.globalAlpha = 0.98;
       ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
       ctx.globalAlpha = 1.0;
 
-      // 6. Instantiate Three.js CanvasTexture and bind ONLY to avatar body mesh
+      // 5. Instantiate Three.js CanvasTexture and bind ONLY to avatar body mesh
       if (typeof THREE !== 'undefined' && THREE.CanvasTexture) {
         const newTexture = new THREE.CanvasTexture(canvas);
         newTexture.flipY = false;

@@ -289,7 +289,7 @@
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.5 : 2));
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.25 : 2));
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = isMobileDevice ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
       if (THREE.ACESFilmicToneMapping) {
@@ -924,8 +924,9 @@
       const keySunlight = new THREE.DirectionalLight(0xFFEED4, 0.88);
       keySunlight.position.set(2.8, 4.8, 3.0);
       keySunlight.castShadow = true;
-      keySunlight.shadow.mapSize.width = 1024;
-      keySunlight.shadow.mapSize.height = 1024;
+      const shadowRes = isMobileDevice ? 512 : 1024;
+      keySunlight.shadow.mapSize.width = shadowRes;
+      keySunlight.shadow.mapSize.height = shadowRes;
       keySunlight.shadow.camera.near = 0.5;
       keySunlight.shadow.camera.far = 20.0;
       keySunlight.shadow.bias = -0.0003;
@@ -1282,9 +1283,9 @@
         }
 
         const wardrobePaths = [
-          '3D- Wardrobe by Astra/wardrobe.glb',
           'wardrobe.glb',
-          'wardrobe-revised-compressed.glb'
+          'wardrobe-revised-compressed.glb',
+          '3D- Wardrobe by Astra/wardrobe.glb'
         ];
 
         const onWardrobeLoad = (gltf) => {
@@ -1823,9 +1824,9 @@
         }
 
         const vanityPaths = [
-          '3D - Mirror and stuffs/woobi_vanity.glb',
           'woobi_vanity.glb',
-          'seren_vanity.glb'
+          'seren_vanity.glb',
+          '3D - Mirror and stuffs/woobi_vanity.glb'
         ];
 
         const tryLoadGLB = (idx) => {
@@ -2106,11 +2107,9 @@
       if (typeof THREE.GLTFLoader !== 'undefined') {
         const gltfLoader = new THREE.GLTFLoader();
         const clockPaths = [
-          'Clock/clock.glb',
           'clock.glb',
-          'assets/clock.glb',
-          'android-app/app/src/main/assets/Clock/clock.glb',
-          'android-app/app/src/main/assets/clock.glb'
+          'Clock/clock.glb',
+          'assets/clock.glb'
         ];
         const tryLoadClock = (idx) => {
           if (idx >= clockPaths.length) return;
@@ -2814,11 +2813,9 @@
         loader.setMeshoptDecoder(window.MeshoptDecoder);
       }
       const modelUrls = [
-        'assets/models/avatar_female.glb',
-        'avatar_female.glb',
-        'seren_avatar.glb',
+        'woobi_female_mannequin.glb',
         'Woobi_Female_Mannequin_Fixed.glb',
-        'woobi_female_mannequin.glb'
+        'avatar_female.glb'
       ];
 
       const tryLoad = (index) => {
@@ -3079,11 +3076,11 @@
           const deltaX = e.touches[0].clientX - this.lastPointerX;
           const deltaY = e.touches[0].clientY - this.lastPointerY;
 
-          if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+          if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
             this.hasDragged = true;
           }
 
-          this.targetRotationY += deltaX * 0.009;
+          this.targetRotationY += deltaX * 0.012;
           this.lastPointerX = e.touches[0].clientX;
           this.lastPointerY = e.touches[0].clientY;
         } else if (e.touches.length === 2) {
@@ -3124,8 +3121,11 @@
     handlePointerDown(clientX, clientY) {
       if (!this.canvas || !this.camera || !this.scene || !this.raycaster || !this.mouse) return false;
       const rect = this.canvas.getBoundingClientRect();
-      this.mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-      this.mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      const relX = (clientX - rect.left) / (rect.width || 1);
+      // Wardrobe is situated on the left (relX < 0.42). Skip heavy raycasting when touching mannequin or center stage
+      if (relX > 0.42) return false;
+      this.mouse.x = (relX * 2) - 1;
+      this.mouse.y = -((clientY - rect.top) / (rect.height || 1)) * 2 + 1;
       this.raycaster.setFromCamera(this.mouse, this.camera);
       const intersects = this.raycaster.intersectObjects(this.interactiveObjects, true);
       for (const hit of intersects) {
@@ -3922,7 +3922,7 @@
       }
 
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.5 : 2));
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.25 : 2));
     }
 
     /**
@@ -3966,7 +3966,9 @@
           this.avatarRotationY = this.avatarModel.animations.avatarRotationY;
         }
       } else {
-        this.avatarRotationY += (this.targetRotationY - this.avatarRotationY) * 0.12;
+        const lerpSpeed = 26.0;
+        const factor = 1.0 - Math.exp(-lerpSpeed * Math.min(delta || 0.016, 0.1));
+        this.avatarRotationY += (this.targetRotationY - this.avatarRotationY) * factor;
         if (this.avatarRoot) {
           this.avatarRoot.rotation.y = this.avatarRotationY;
         }
@@ -4004,7 +4006,6 @@
           // Natural living slow movements: graceful postural sway & weight shift from ankle/hip pivot
           this.gltfAvatarGroup.rotation.x = swayX;
           this.gltfAvatarGroup.rotation.z = swayZ;
-          this.gltfAvatarGroup.rotation.y = swayY;
         }
 
         // 3. Natural Periodic Eyelid Blinking
@@ -4077,7 +4078,7 @@
 
       // 6. Real-time Optical Planar Mirror Rendering (True Physical Reflector)
       this._mirrorFrameCount = (this._mirrorFrameCount || 0) + 1;
-      const shouldRenderMirror = !isMobileDevice || (this.currentCameraState === 'MIRROR_VIEW') || (this._mirrorFrameCount % 3 === 0);
+      const shouldRenderMirror = !isMobileDevice ? ((this._mirrorFrameCount % 2 === 0) || (this.currentCameraState === 'MIRROR_VIEW')) : (this.currentCameraState === 'MIRROR_VIEW');
 
       const activeMirrorMesh = (this.vanityModel && this.vanityModel.mirrorGlassMesh) ? this.vanityModel.mirrorGlassMesh : this.mirrorGlassMesh;
       if (shouldRenderMirror) {

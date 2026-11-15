@@ -154,12 +154,12 @@ export class CameraInteractions {
       const deltaX = e.touches[0].clientX - this.lastPointerX;
       const deltaY = e.touches[0].clientY - this.lastPointerY;
 
-      if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+      if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
         this.hasDragged = true;
       }
 
       if (typeof this.onRotate === 'function') {
-        this.onRotate(deltaX * 0.009);
+        this.onRotate(deltaX * (this.touchRotateSensitivity || 0.009));
       }
 
       this.lastPointerX = e.touches[0].clientX;

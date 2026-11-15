@@ -57,8 +57,10 @@ export class AvatarAnimations {
   }
 
   update(delta, time) {
-    // 1. Smooth Avatar Rotation Damping
-    this.avatarRotationY += (this.targetRotationY - this.avatarRotationY) * this.rotationDamping;
+    // 1. Instant & Smooth Mannequin Rotation Tracking (Snappy, zero input-lag tracking)
+    const lerpSpeed = 26.0;
+    const factor = 1.0 - Math.exp(-lerpSpeed * Math.min(delta || 0.016, 0.1));
+    this.avatarRotationY += (this.targetRotationY - this.avatarRotationY) * factor;
     if (this.avatarRoot) {
       this.avatarRoot.rotation.y = this.avatarRotationY;
     }

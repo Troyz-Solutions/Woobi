@@ -7,17 +7,13 @@
 export const VANITY_ASSET_PATHS = [
   'seren_vanity.glb',
   'woobi_vanity.glb',
-  '3D - Mirror and stuffs/woobi_vanity.glb',
-  '3D - Mirror and stuffs/Woobi_Vanity_Package/woobi_vanity.glb',
-  '3D - Vanity/seren_vanity.glb'
+  '3D - Mirror and stuffs/woobi_vanity.glb'
 ];
 
 export const CLOCK_ASSET_PATHS = [
-  'Clock/clock.glb',
   'clock.glb',
-  'assets/clock.glb',
-  'android-app/app/src/main/assets/Clock/clock.glb',
-  'android-app/app/src/main/assets/clock.glb'
+  'Clock/clock.glb',
+  'assets/clock.glb'
 ];
 
 export class VanityAssets {

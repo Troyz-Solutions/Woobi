@@ -26,6 +26,7 @@ const testSuites = [
   { name: 'Outfit Recommendations (25 Tests)', path: 'modules/3d-studio-features/outfit-recommendations/RecommendationEngine.test.js', isNodeTest: true },
   { name: 'Daily AI Outfit Recommendation (17 Tests)', path: 'modules/3d-studio-features/outfit-recommendations/DailyRecommendation.test.js', isNodeTest: true },
   { name: 'Avatar Customization (26 Tests)', path: 'modules/3d-studio-features/avatar-customization/AvatarCustomizer.test.js', isNodeTest: true },
+  { name: 'User Face 3D Mesh & Texture Engine (8 Tests)', path: 'modules/3d-studio-features/avatar-customization/UserFaceMeshEngine.test.js', isNodeTest: true },
   { name: 'Studio Animations & Poses (25 Tests)', path: 'modules/3d-studio-features/animations/PoseController.test.js', isNodeTest: true },
   { name: 'Saved Looks & Lookbook (26 Tests)', path: 'modules/3d-studio-features/saved-looks/SavedLooksManager.test.js', isNodeTest: true },
   { name: 'Studio Features Root Orchestrator (6 Tests)', path: 'modules/3d-studio-features/index.test.js', isNodeTest: true },

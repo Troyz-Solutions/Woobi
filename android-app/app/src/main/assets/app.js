@@ -4529,6 +4529,92 @@
     return selectMannequin(gender);
   }
 
+  // ===================================================================
+  // FREE HYBRID METHOD 2 & 3: USER FACE 3D MORPH & TEXTURE BLENDING
+  // ===================================================================
+  let _selectedUserFaceImage = null;
+  let _userFaceIntensity = 1.0;
+
+  function openUserFaceModal() {
+    const menu = document.getElementById('mannequinDropdownMenu');
+    if (menu) menu.classList.remove('show');
+    const modal = document.getElementById('userFaceModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+    }
+  }
+
+  function closeUserFaceModal() {
+    const modal = document.getElementById('userFaceModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  function updateUserFaceIntensity(val) {
+    _userFaceIntensity = parseFloat(val) / 100.0;
+    const label = document.getElementById('userFaceStrengthVal');
+    if (label) label.textContent = `${Math.round(val)}%`;
+  }
+
+  function handleUserFaceFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        _selectedUserFaceImage = img;
+        const previewImg = document.getElementById('userFacePreviewImg');
+        const emptyState = document.getElementById('userFaceEmptyState');
+        if (previewImg && emptyState) {
+          previewImg.src = img.src;
+          previewImg.classList.remove('hidden');
+          emptyState.classList.add('hidden');
+        }
+        showToast('Face photo loaded! Tap "Apply to Mannequin" to morph.');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function applyUserFaceToMannequin() {
+    if (!_selectedUserFaceImage) {
+      showToast('Please take a selfie or choose a face photo first!');
+      return;
+    }
+
+    const studio = window.Studio3D || window.studio3d;
+    if (studio && typeof studio.applyUserFace === 'function') {
+      const success = studio.applyUserFace(_selectedUserFaceImage, { intensity: _userFaceIntensity });
+      if (success) {
+        showToast('✦ Likeness applied! 3D structure morphed & face UV blended seamlessly.');
+        closeUserFaceModal();
+      } else {
+        showToast('Could not deform face. Ensure studio avatar is loaded.');
+      }
+    } else {
+      showToast('3D Studio is initializing, please try again in a moment.');
+    }
+  }
+
+  function resetUserFace() {
+    const studio = window.Studio3D || window.studio3d;
+    if (studio && typeof studio.resetUserFace === 'function') {
+      studio.resetUserFace();
+      _selectedUserFaceImage = null;
+      const previewImg = document.getElementById('userFacePreviewImg');
+      const emptyState = document.getElementById('userFaceEmptyState');
+      if (previewImg && emptyState) {
+        previewImg.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+      }
+      showToast('Mannequin restored to default pristine form.');
+    }
+  }
+
   function serenSetModelType(type, btn) {
     const isMale = (type === 'mannequin_male');
     const btnFemale = document.getElementById('btnQuickFemale');
@@ -8004,6 +8090,12 @@
     serenSetModelType,
     toggleMannequinDropdown,
     selectMannequin,
+    openUserFaceModal,
+    closeUserFaceModal,
+    updateUserFaceIntensity,
+    handleUserFaceFile,
+    applyUserFaceToMannequin,
+    resetUserFace,
     toggleAtmosphereDropdown,
     selectStudioAtmosphere,
     setMannequinGender,

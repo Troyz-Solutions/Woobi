@@ -43,7 +43,10 @@ import {
   CUSTOMIZER_EVENTS,
   CustomizerContract,
   AvatarCustomizer,
-  createAvatarCustomizer
+  createAvatarCustomizer,
+  UserFaceMeshEngine,
+  FACE_UV_BOUNDS,
+  DEFAULT_BIOMETRICS
 } from './avatar-customization/index.js';
 
 import {
@@ -211,6 +214,9 @@ export {
   CustomizerContract,
   AvatarCustomizer,
   createAvatarCustomizer,
+  UserFaceMeshEngine,
+  FACE_UV_BOUNDS,
+  DEFAULT_BIOMETRICS,
 
   // Animations & Poses
   STUDIO_POSES,
@@ -262,7 +268,7 @@ if (typeof window !== 'undefined') {
     virtualTryOn: { VirtualTryOn, createVirtualTryOn, GARMENT_CATALOG, GARMENT_CATEGORIES, DEFAULT_OUTFIT, getGarmentRecord },
     interactions: { GarmentInteractions, createGarmentInteractions, SelectionFeedback, INTERACTION_STATES, INTERACTION_EVENTS },
     recommendations: { RecommendationEngine, createRecommendationEngine, OCCASIONS, STYLE_AESTHETICS, CURATED_LOOKS },
-    customizer: { AvatarCustomizer, createAvatarCustomizer, SKIN_TONE_PRESETS, HAIR_COLOR_PRESETS, HAIR_STYLES, BODY_PROPORTIONS },
+    customizer: { AvatarCustomizer, createAvatarCustomizer, SKIN_TONE_PRESETS, HAIR_COLOR_PRESETS, HAIR_STYLES, BODY_PROPORTIONS, UserFaceMeshEngine, FACE_UV_BOUNDS, DEFAULT_BIOMETRICS },
     animations: { PoseController, createPoseController, IdleMotion, STUDIO_POSES, POSE_KEYFRAMES },
     savedLooks: { SavedLooksManager, createSavedLooksManager, LookbookStorage, LOOKS_EVENTS },
     colourMatching: {

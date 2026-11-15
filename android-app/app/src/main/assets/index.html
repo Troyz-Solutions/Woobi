@@ -711,7 +711,21 @@
                       </svg>
                     </span>
                   </button>
+                  <hr class="dropdown-divider" style="margin: 4px 0; border: none; border-top: 1px solid rgba(0,0,0,0.06);">
+                  <button type="button" class="mannequin-option-item" id="mannequinOptMyFace" role="menuitem" onclick="app.openUserFaceModal()">
+                    <span class="option-name">📸 Customize My Face</span>
+                  </button>
+                  <button type="button" class="mannequin-option-item" id="mannequinOptResetFace" role="menuitem" onclick="app.resetUserFace()">
+                    <span class="option-name">🔄 Reset Default Face</span>
+                  </button>
                 </div>
+              </div>
+
+              <!-- My Face 3D Swap Action Pill Button -->
+              <div class="user-face-btn-container" id="userFaceBtnContainer">
+                <button type="button" class="select-mannequin-btn user-face-pill" id="userFacePillBtn" onclick="app.openUserFaceModal()" title="Swap My Face (Free Hybrid 3D)">
+                  <span class="mannequin-btn-text">📸 My Face</span>
+                </button>
               </div>
 
               <!-- Quick Studio Atmosphere Selector Control -->
@@ -746,6 +760,57 @@
                     <span class="atm-dot clay"></span>
                     <span class="option-name">Warm Terracotta</span>
                     <span class="option-check" id="checkAtmTerracotta" style="display:none;">✓</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Face 3D Likeness Modal (Free Hybrid Method 2 & 3) -->
+            <div class="user-face-modal hidden" id="userFaceModal">
+              <div class="user-face-backdrop" onclick="app.closeUserFaceModal()"></div>
+              <div class="user-face-card">
+                <div class="user-face-header">
+                  <div class="user-face-title-wrap">
+                    <h3 class="user-face-title">My 3D Face Likeness</h3>
+                    <span class="user-face-badge-free">100% Free • On-Device 3D</span>
+                  </div>
+                  <button type="button" class="user-face-close" onclick="app.closeUserFaceModal()" aria-label="Close">✕</button>
+                </div>
+                <p class="user-face-desc">Take a selfie or choose a photo to morph the mannequin's 3D facial structure and project your likeness seamlessly.</p>
+                
+                <div class="user-face-preview-area" id="userFacePreviewArea">
+                  <div class="user-face-empty" id="userFaceEmptyState">
+                    <span class="user-face-empty-icon">👤</span>
+                    <span class="user-face-empty-text">No face photo selected yet</span>
+                  </div>
+                  <img id="userFacePreviewImg" class="user-face-preview-img hidden" alt="Face Preview" />
+                </div>
+
+                <div class="user-face-actions-row">
+                  <label class="user-face-btn user-face-camera-btn">
+                    <span>📷 Take Selfie</span>
+                    <input type="file" id="userFaceCameraInput" accept="image/*" capture="user" style="display:none;" onchange="app.handleUserFaceFile(event)">
+                  </label>
+                  <label class="user-face-btn user-face-gallery-btn">
+                    <span>🖼️ Choose Photo</span>
+                    <input type="file" id="userFaceGalleryInput" accept="image/*" style="display:none;" onchange="app.handleUserFaceFile(event)">
+                  </label>
+                </div>
+
+                <div class="user-face-slider-wrap">
+                  <div class="slider-label-row">
+                    <span class="slider-title">3D Likeness Strength</span>
+                    <span class="slider-val" id="userFaceStrengthVal">100%</span>
+                  </div>
+                  <input type="range" id="userFaceIntensityRange" min="0" max="150" value="100" class="user-face-range" oninput="app.updateUserFaceIntensity(this.value)">
+                </div>
+
+                <div class="user-face-footer-buttons">
+                  <button type="button" class="btn-olive-primary user-face-apply-btn" id="btnApplyUserFace" onclick="app.applyUserFaceToMannequin()">
+                    ✦ Apply to Mannequin
+                  </button>
+                  <button type="button" class="btn-secondary user-face-reset-btn" onclick="app.resetUserFace()">
+                    🔄 Reset Default
                   </button>
                 </div>
               </div>

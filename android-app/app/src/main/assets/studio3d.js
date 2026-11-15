@@ -3896,6 +3896,37 @@
     }
 
     /**
+     * Applies User Face Likeness via Free Hybrid Method 2 & 3
+     * (Parametric 3D Head Morphing + Seamless UV Texture Synthesis)
+     * @param {HTMLImageElement|HTMLCanvasElement|ImageData} imageSource
+     * @param {Object} options
+     */
+    applyUserFace(imageSource, options = {}) {
+      if (!this.userFaceEngine) {
+        const EngineClass = (typeof UserFaceMeshEngine !== 'undefined')
+          ? UserFaceMeshEngine
+          : (typeof window !== 'undefined' && window.WoobiAvatarCustomizer ? window.WoobiAvatarCustomizer.UserFaceMeshEngine : null);
+        if (EngineClass) {
+          this.userFaceEngine = new EngineClass(this);
+        }
+      }
+      if (this.userFaceEngine) {
+        return this.userFaceEngine.applyUserFace(imageSource, options);
+      }
+      return false;
+    }
+
+    /**
+     * Resets 3D Mannequin Face and Head Geometry to Pristine Default
+     */
+    resetUserFace() {
+      if (this.userFaceEngine) {
+        return this.userFaceEngine.resetToDefault();
+      }
+      return false;
+    }
+
+    /**
      * Window / Container Resize Handler
      */
     onResize() {

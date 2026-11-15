@@ -12,6 +12,7 @@ import {
 } from './CustomizationPresets.js';
 import { CUSTOMIZER_EVENTS, CustomizerContract } from './CustomizerContract.js';
 import { AvatarCustomizer, createAvatarCustomizer } from './AvatarCustomizer.js';
+import { UserFaceMeshEngine, FACE_UV_BOUNDS, DEFAULT_BIOMETRICS } from './UserFaceMeshEngine.js';
 
 export {
   SKIN_TONE_PRESETS,
@@ -22,7 +23,10 @@ export {
   CUSTOMIZER_EVENTS,
   CustomizerContract,
   AvatarCustomizer,
-  createAvatarCustomizer
+  createAvatarCustomizer,
+  UserFaceMeshEngine,
+  FACE_UV_BOUNDS,
+  DEFAULT_BIOMETRICS
 };
 
 if (typeof window !== 'undefined') {
@@ -35,6 +39,9 @@ if (typeof window !== 'undefined') {
     CUSTOMIZER_EVENTS,
     CustomizerContract,
     AvatarCustomizer,
-    createAvatarCustomizer
+    createAvatarCustomizer,
+    UserFaceMeshEngine,
+    FACE_UV_BOUNDS,
+    DEFAULT_BIOMETRICS
   };
 }

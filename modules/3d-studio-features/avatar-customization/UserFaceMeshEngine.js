@@ -11,26 +11,26 @@
 
 export const FEMALE_FACE_UV_BOUNDS = {
   // Region in the 2048x2048 baseColor texture for female avatar (Mixamo Ch37)
-  x: 1340,
-  y: 80,
-  width: 400,
-  height: 360,
-  uMin: 1340 / 2048,
-  uMax: 1740 / 2048,
-  vMin: 80 / 2048,
-  vMax: 440 / 2048
+  x: 1100,
+  y: 1340,
+  width: 500,
+  height: 440,
+  uMin: 1100 / 2048,
+  uMax: 1600 / 2048,
+  vMin: 1340 / 2048,
+  vMax: 1780 / 2048
 };
 
 export const MALE_FACE_UV_BOUNDS = {
   // Region in the 2048x2048 baseColor texture for male avatar (Mixamo Ch31)
-  x: 1330,
-  y: 120,
-  width: 420,
-  height: 380,
-  uMin: 1330 / 2048,
+  x: 1250,
+  y: 1360,
+  width: 500,
+  height: 460,
+  uMin: 1250 / 2048,
   uMax: 1750 / 2048,
-  vMin: 120 / 2048,
-  vMax: 500 / 2048
+  vMin: 1360 / 2048,
+  vMax: 1820 / 2048
 };
 
 export const FACE_UV_BOUNDS = FEMALE_FACE_UV_BOUNDS;
@@ -506,16 +506,18 @@ export class UserFaceMeshEngine {
 
       // Always draw from the original clean base texture
       const baseTex = this.originalTextures.get(material.uuid) || currentTexture;
+      let drawnBase = false;
       if (baseTex && baseTex.image) {
         try {
           ctx.drawImage(baseTex.image, 0, 0, res, res);
+          drawnBase = true;
         } catch (drawErr) {
-          ctx.fillStyle = isMale ? '#DABEA7' : '#F3D5C6';
-          ctx.fillRect(0, 0, res, res);
+          console.warn('UserFaceMeshEngine: drawImage from baseTex failed', drawErr);
         }
-      } else {
-        // Fallback tone if texture image not loaded
-        ctx.fillStyle = isMale ? '#DABEA7' : '#F3D5C6';
+      }
+      if (!drawnBase) {
+        // Natural neutral mannequin tone if texture image not loaded
+        ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, res, res);
       }
 
@@ -532,13 +534,13 @@ export class UserFaceMeshEngine {
 
       const cx = faceBounds.width / 2;
       const cy = faceBounds.height * 0.48;
-      const rx = (faceBounds.width / 2) * 0.82;
-      const ry = (faceBounds.height / 2) * 0.88;
+      const rx = (faceBounds.width / 2) * 0.84;
+      const ry = (faceBounds.height / 2) * 0.90;
 
-      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.42, cx, cy, rx);
+      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.45, cx, cy, rx);
       gradient.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
-      gradient.addColorStop(0.70, 'rgba(0, 0, 0, 1.0)');
-      gradient.addColorStop(0.86, 'rgba(0, 0, 0, 0.55)');
+      gradient.addColorStop(0.72, 'rgba(0, 0, 0, 1.0)');
+      gradient.addColorStop(0.88, 'rgba(0, 0, 0, 0.50)');
       gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
 
       mCtx.save();
@@ -554,9 +556,8 @@ export class UserFaceMeshEngine {
       fCtx.drawImage(maskCanvas, 0, 0);
 
       // 4. Composite authentic user face directly into exact UV face atlas coordinates
-      ctx.globalAlpha = 0.98;
-      ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
       ctx.globalAlpha = 1.0;
+      ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
 
       // 5. Instantiate Three.js CanvasTexture and bind ONLY to avatar body mesh
       if (typeof THREE !== 'undefined' && THREE.CanvasTexture) {
@@ -574,6 +575,9 @@ export class UserFaceMeshEngine {
             ? mesh.material.clone()
             : Object.assign({}, mesh.material);
           clonedMat.map = newTexture;
+          if (clonedMat.color && typeof clonedMat.color.setHex === 'function') {
+            clonedMat.color.setHex(0xFFFFFF);
+          }
           clonedMat.needsUpdate = true;
           mesh.material = clonedMat;
         });

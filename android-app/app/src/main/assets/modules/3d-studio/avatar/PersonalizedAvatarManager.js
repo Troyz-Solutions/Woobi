@@ -333,14 +333,13 @@ export class PersonalizedAvatarManager {
     // In human portraiture / selfies, the face is centrally composed.
     // Background walls are typically bright neutral colors (luma > 170, color diff < 24).
     const colEnergy = new Float32Array(scanSize);
-    const rowEnergy = new Float32Array(scanSize);
     const halfScan = scanSize / 2.0;
 
     for (let x = 0; x < scanSize; x++) {
-      // Parabolic center-weighting: 1.0 at center, drops to 0.25 at edges
+      // Parabolic center-weighting: 1.0 at center, drops to 0.30 at edges
       // This immediately filters out background shoulders, exposed arms, doors or edges
       const distFromCenter = Math.abs(x - halfScan) / halfScan;
-      const weight = Math.max(0.20, 1.0 - 0.75 * distFromCenter * distFromCenter);
+      const weight = Math.max(0.20, 1.0 - 0.70 * distFromCenter * distFromCenter);
 
       for (let y = 0; y < scanSize; y++) {
         const idx = (y * scanSize + x) * 4;
@@ -349,9 +348,10 @@ export class PersonalizedAvatarManager {
         const b = data[idx + 2];
         const luma = 0.299 * r + 0.587 * g + 0.114 * b;
         const diff = Math.max(r, g, b) - Math.min(r, g, b);
-        const isWall = (luma > 170 && diff < 24);
+        const isSkin = (r > 45) && (g > 30) && (b > 20) && (r > b) && ((r + g + b) < 680);
+        const isNotWall = !(luma > 170 && diff < 24);
 
-        if (!isWall && luma > 15) {
+        if (isSkin && isNotWall) {
           colEnergy[x] += weight;
         }
       }
@@ -360,7 +360,7 @@ export class PersonalizedAvatarManager {
     // Find peak horizontal column
     let peakX = Math.round(scanSize / 2);
     let maxColVal = 0;
-    for (let x = 10; x < scanSize - 10; x++) {
+    for (let x = 12; x < scanSize - 12; x++) {
       if (colEnergy[x] > maxColVal) {
         maxColVal = colEnergy[x];
         peakX = x;
@@ -369,80 +369,126 @@ export class PersonalizedAvatarManager {
 
     if (maxColVal < 5) {
       // Fallback: standard centered portrait
-      const w = Math.round(srcW * 0.50);
-      const h = Math.round(w * 1.25);
+      const w = Math.round(srcW * 0.45);
+      const h = Math.round(w * 1.10);
       return {
         x: Math.max(0, Math.round(srcW * 0.50 - w / 2)),
-        y: Math.max(0, Math.round(srcH * 0.40 - h / 2)),
+        y: Math.max(0, Math.round(srcH * 0.35 - h / 2)),
         width: w,
         height: h,
         centerX: srcW * 0.50,
-        centerY: srcH * 0.40
+        centerY: srcH * 0.35
       };
     }
 
-    // Expand left and right from peakX until energy drops below 30% of peak
-    const thresholdX = maxColVal * 0.30;
+    // Expand left and right from peakX until energy drops below 35% of peak
+    const thresholdX = maxColVal * 0.35;
     let leftX = peakX;
     while (leftX > 0 && colEnergy[leftX] > thresholdX) leftX--;
     let rightX = peakX;
     while (rightX < scanSize - 1 && colEnergy[rightX] > thresholdX) rightX++;
 
-    // Compute vertical energy profile within [leftX, rightX]
+    const faceW_scan = Math.max(20, rightX - leftX);
+
+    // Anatomical Landmark Row Profiles within [leftX + 0.15*faceW, rightX - 0.15*faceW]
+    const sx0 = Math.max(0, Math.round(leftX + faceW_scan * 0.15));
+    const sx1 = Math.min(scanSize - 1, Math.round(rightX - faceW_scan * 0.15));
+    const stripWidth = Math.max(1, sx1 - sx0 + 1);
+
+    const stripLuma = new Float32Array(scanSize);
+    const stripSkin = new Float32Array(scanSize);
+
     for (let y = 0; y < scanSize; y++) {
-      for (let x = leftX; x <= rightX; x++) {
+      let lumaSum = 0;
+      let skinCount = 0;
+      for (let x = sx0; x <= sx1; x++) {
         const idx = (y * scanSize + x) * 4;
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
         const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-        const diff = Math.max(r, g, b) - Math.min(r, g, b);
-        const isWall = (luma > 170 && diff < 24);
-
-        if (!isWall && luma > 15) {
-          rowEnergy[y]++;
+        lumaSum += luma;
+        if ((r > 45) && (g > 30) && (b > 20) && (r > b + 4) && (r > g) && ((r + g + b) < 620)) {
+          skinCount++;
         }
       }
+      stripLuma[y] = lumaSum / stripWidth;
+      stripSkin[y] = skinCount / stripWidth;
     }
 
-    let peakY = Math.round(scanSize * 0.45);
-    let maxRowVal = 0;
-    for (let y = 5; y < scanSize - 5; y++) {
-      if (rowEnergy[y] > maxRowVal) {
-        maxRowVal = rowEnergy[y];
-        peakY = y;
+    // Forehead scan: find where skin starts below dark hair
+    const foreheadSearchStart = Math.round(scanSize * 0.15);
+    let foreheadY = foreheadSearchStart;
+    for (let y = foreheadSearchStart; y < Math.round(scanSize * 0.60); y++) {
+      if (stripSkin[y] > 0.45) {
+        foreheadY = y;
+        break;
       }
     }
 
-    const thresholdY = maxRowVal * 0.25;
-    let topY = peakY;
-    while (topY > 0 && rowEnergy[topY] > thresholdY) topY--;
-    let bottomY = peakY;
-    while (bottomY < scanSize - 1 && rowEnergy[bottomY] > thresholdY) bottomY++;
+    // Eye row: local minimum of luma in upper face below forehead
+    const eyeSearchStart = Math.min(scanSize - 20, foreheadY + 5);
+    const eyeSearchEnd = Math.min(scanSize - 15, foreheadY + Math.round(scanSize * 0.35));
+    let eyeY = eyeSearchStart;
+    let minEyeLuma = 999;
+    for (let y = eyeSearchStart; y <= eyeSearchEnd; y++) {
+      if (stripLuma[y] < minEyeLuma) {
+        minEyeLuma = stripLuma[y];
+        eyeY = y;
+      }
+    }
+
+    // Nose tip: local maximum of luma below eye level
+    const noseSearchEnd = Math.min(scanSize - 10, eyeY + Math.round(scanSize * 0.25));
+    let noseY = eyeY;
+    let maxNoseLuma = -1;
+    for (let y = eyeY; y <= noseSearchEnd; y++) {
+      if (stripLuma[y] > maxNoseLuma) {
+        maxNoseLuma = stripLuma[y];
+        noseY = y;
+      }
+    }
+    const eyeToNose = Math.max(5, noseY - eyeY);
+
+    // Mouth: dip below nose
+    const mouthSearchEnd = Math.min(scanSize - 5, noseY + Math.round(eyeToNose * 1.5));
+    let mouthY = noseY;
+    let minMouthLuma = 999;
+    for (let y = noseY; y <= mouthSearchEnd; y++) {
+      if (stripLuma[y] < minMouthLuma) {
+        minMouthLuma = stripLuma[y];
+        mouthY = y;
+      }
+    }
+
+    // Chin: below mouth
+    const chinY = Math.min(scanSize - 1, mouthY + Math.round(eyeToNose * 1.1));
+
+    // Refined forehead: just above eyebrows, strictly omitting hair
+    const cleanForeheadY = Math.max(0, eyeY - Math.round(eyeToNose * 1.05));
 
     // Convert normalized coordinates back to full image resolution
-    const realLeft = (leftX / scanSize) * srcW;
-    const realRight = (rightX / scanSize) * srcW;
-    const realTop = (topY / scanSize) * srcH;
-    const realBottom = (bottomY / scanSize) * srcH;
-
-    const realW = Math.max(40, realRight - realLeft);
+    const realX = Math.round((leftX / scanSize) * srcW);
+    const realW = Math.round((faceW_scan / scanSize) * srcW);
+    const realTop = Math.round((cleanForeheadY / scanSize) * srcH);
+    const realBottom = Math.round((chinY / scanSize) * srcH);
     const realH = Math.max(40, realBottom - realTop);
-    const realCX = realLeft + realW / 2;
-    const realCY = realTop + realH / 2;
 
-    const cropW = Math.max(60, Math.min(srcW, Math.round(realW * 1.05)));
-    const cropH = Math.max(60, Math.min(srcH, Math.round(realH * 1.02)));
-    const cropX = Math.max(0, Math.min(srcW - cropW, Math.round(realCX - cropW / 2)));
-    const cropY = Math.max(0, Math.min(srcH - cropH, Math.round(realCY - cropH / 2)));
+    // Human anatomical ratio (H = 1.08 * W) to guarantee 100% natural, distortion-free face proportions
+    const naturalH = Math.round(realW * 1.08);
+    const finalH = Math.min(srcH - realTop, Math.max(realH, naturalH));
+    const finalW = Math.round(finalH / 1.08);
+    const finalCX = realX + realW / 2;
+    const finalX = Math.max(0, Math.min(srcW - finalW, Math.round(finalCX - finalW / 2)));
+    const finalY = Math.max(0, Math.min(srcH - finalH, realTop));
 
     return {
-      x: cropX,
-      y: cropY,
-      width: cropW,
-      height: cropH,
-      centerX: realCX,
-      centerY: realCY,
+      x: finalX,
+      y: finalY,
+      width: Math.min(srcW - finalX, finalW),
+      height: Math.min(srcH - finalY, finalH),
+      centerX: finalCX,
+      centerY: finalY + finalH / 2,
       rawFaceW: realW,
       rawFaceH: realH
     };
@@ -862,10 +908,10 @@ export class PersonalizedAvatarManager {
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
     // Anatomically verified UV coordinates on standard 2048×2048 Mixamo texture atlas
-    // Center=(X:1542, Y:1730 [nose tip]), Chin=Y:1510, Forehead=Y:1950, Width=420, Height=440
+    // Center=(X:1543, Y:1718 [nose tip]), Chin=Y:1525, Forehead=Y:1895, Width=340, Height=370
     const faceBounds = isMale
-      ? { x: 1332, y: 1510, width: 420, height: 440 }
-      : { x: 1332, y: 1510, width: 420, height: 440 };
+      ? { x: 1373, y: 1525, width: 340, height: 370 }
+      : { x: 1373, y: 1525, width: 340, height: 370 };
 
     const targetMesh = meshes[0];
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
@@ -940,12 +986,12 @@ export class PersonalizedAvatarManager {
       const scaleMult = (options.scale !== undefined) ? options.scale : 1.0;
       const drawW = Math.round(faceBounds.width * scaleMult);
       const drawH = Math.round(faceBounds.height * scaleMult);
-      const offsetX = ((options.offsetX !== undefined) ? options.offsetX : 0) * 15;
-      const offsetY = ((options.offsetY !== undefined) ? options.offsetY : 0) * 15;
+      const offsetX = ((options.offsetX !== undefined) ? options.offsetX : 0) * 12;
+      const offsetY = ((options.offsetY !== undefined) ? options.offsetY : 0) * 12;
       const targetX = Math.round(faceBounds.x + (faceBounds.width - drawW) / 2 + offsetX);
       const targetY = Math.round(faceBounds.y + (faceBounds.height - drawH) / 2 + offsetY);
 
-      // Render face onto faceCanvas
+      // Render face onto faceCanvas in native crisp resolution
       const faceCanvas = document.createElement('canvas');
       faceCanvas.width = drawW;
       faceCanvas.height = drawH;
@@ -961,8 +1007,8 @@ export class PersonalizedAvatarManager {
         const data = imgData.data;
         const mcx = drawW / 2;
         const mcy = drawH * 0.48;
-        const rx = (drawW / 2) * 0.84;
-        const ry = (drawH / 2) * 0.88;
+        const rx = (drawW / 2) * 0.88;
+        const ry = (drawH / 2) * 0.92;
 
         for (let y = 0; y < drawH; y++) {
           const dy = (y - mcy) / ry;
@@ -1016,8 +1062,14 @@ export class PersonalizedAvatarManager {
       if (THREE && THREE.CanvasTexture) {
         const newTexture = new THREE.CanvasTexture(canvas);
         newTexture.flipY = false;
+        newTexture.generateMipmaps = true;
+        newTexture.minFilter = THREE.LinearMipmapLinearFilter;
+        newTexture.magFilter = THREE.LinearFilter;
         if (THREE.sRGBEncoding) newTexture.encoding = THREE.sRGBEncoding;
         if (THREE.SRGBColorSpace) newTexture.colorSpace = THREE.SRGBColorSpace;
+        if (this.studio3D?.renderer?.capabilities?.getMaxAnisotropy) {
+          newTexture.anisotropy = this.studio3D.renderer.capabilities.getMaxAnisotropy();
+        }
         newTexture.needsUpdate = true;
 
         meshes.forEach((mesh) => {

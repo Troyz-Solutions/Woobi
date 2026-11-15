@@ -3905,7 +3905,12 @@
       if (!this.userFaceEngine) {
         const EngineClass = (typeof UserFaceMeshEngine !== 'undefined')
           ? UserFaceMeshEngine
-          : (typeof window !== 'undefined' && window.WoobiAvatarCustomizer ? window.WoobiAvatarCustomizer.UserFaceMeshEngine : null);
+          : (typeof window !== 'undefined'
+              ? (window.UserFaceMeshEngine ||
+                 (window.WoobiAvatarCustomizer && window.WoobiAvatarCustomizer.UserFaceMeshEngine) ||
+                 (window.WoobiStudioFeatures && window.WoobiStudioFeatures.customizer && window.WoobiStudioFeatures.customizer.UserFaceMeshEngine) ||
+                 null)
+              : null);
         if (EngineClass) {
           this.userFaceEngine = new EngineClass(this);
         }
@@ -3920,6 +3925,19 @@
      * Resets 3D Mannequin Face and Head Geometry to Pristine Default
      */
     resetUserFace() {
+      if (!this.userFaceEngine) {
+        const EngineClass = (typeof UserFaceMeshEngine !== 'undefined')
+          ? UserFaceMeshEngine
+          : (typeof window !== 'undefined'
+              ? (window.UserFaceMeshEngine ||
+                 (window.WoobiAvatarCustomizer && window.WoobiAvatarCustomizer.UserFaceMeshEngine) ||
+                 (window.WoobiStudioFeatures && window.WoobiStudioFeatures.customizer && window.WoobiStudioFeatures.customizer.UserFaceMeshEngine) ||
+                 null)
+              : null);
+        if (EngineClass) {
+          this.userFaceEngine = new EngineClass(this);
+        }
+      }
       if (this.userFaceEngine) {
         return this.userFaceEngine.resetToDefault();
       }

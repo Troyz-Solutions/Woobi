@@ -517,3 +517,11 @@ export class UserFaceMeshEngine {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.UserFaceMeshEngine = UserFaceMeshEngine;
+  window.FACE_UV_BOUNDS = FACE_UV_BOUNDS;
+  window.DEFAULT_BIOMETRICS = DEFAULT_BIOMETRICS;
+}
+
+export default UserFaceMeshEngine;
+

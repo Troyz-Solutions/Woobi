@@ -299,6 +299,118 @@ export class PersonalizedAvatarManager {
   }
 
   /**
+   * Helper: Automatically detects face position, center, and dimensions from photograph
+   * Runs fast, zero-dependency client-side skin-luma clustering.
+   */
+  detectFaceBounds(imageSource) {
+    if (!imageSource || typeof document === 'undefined') {
+      return { x: 0, y: 0, width: 512, height: 512, centerX: 256, centerY: 256 };
+    }
+    const srcW = imageSource.naturalWidth || imageSource.videoWidth || imageSource.width || 1024;
+    const srcH = imageSource.naturalHeight || imageSource.videoHeight || imageSource.height || 1024;
+
+    const scanSize = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = scanSize;
+    canvas.height = scanSize;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+      return {
+        x: Math.round(srcW * 0.15),
+        y: Math.round(srcH * 0.10),
+        width: Math.round(srcW * 0.70),
+        height: Math.round(srcH * 0.80),
+        centerX: srcW * 0.50,
+        centerY: srcH * 0.48
+      };
+    }
+
+    ctx.drawImage(imageSource, 0, 0, scanSize, scanSize);
+    const data = ctx.getImageData(0, 0, scanSize, scanSize).data;
+
+    const colCounts = new Int32Array(scanSize);
+    const rowCounts = new Int32Array(scanSize);
+
+    for (let y = 0; y < scanSize; y++) {
+      for (let x = 0; x < scanSize; x++) {
+        const idx = (y * scanSize + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        // Skin heuristic across fair to deep melanin tones
+        if (r > 40 && g > 25 && b > 15 && (r - b) > 8 && (r - g) > 4 && (r + g + b) < 640) {
+          colCounts[x]++;
+          rowCounts[y]++;
+        }
+      }
+    }
+
+    let totalSkin = 0;
+    for (let i = 0; i < scanSize; i++) totalSkin += colCounts[i];
+
+    if (totalSkin < scanSize * 5) {
+      return {
+        x: Math.round(srcW * 0.15),
+        y: Math.round(srcH * 0.10),
+        width: Math.round(srcW * 0.70),
+        height: Math.round(srcH * 0.80),
+        centerX: srcW * 0.50,
+        centerY: srcH * 0.48
+      };
+    }
+
+    let minX = 0, maxX = scanSize - 1;
+    let accum = 0;
+    for (let x = 0; x < scanSize; x++) {
+      accum += colCounts[x];
+      if (accum >= totalSkin * 0.08) { minX = x; break; }
+    }
+    accum = 0;
+    for (let x = scanSize - 1; x >= 0; x--) {
+      accum += colCounts[x];
+      if (accum >= totalSkin * 0.08) { maxX = x; break; }
+    }
+
+    let minY = 0, maxY = scanSize - 1;
+    accum = 0;
+    for (let y = 0; y < scanSize; y++) {
+      accum += rowCounts[y];
+      if (accum >= totalSkin * 0.08) { minY = y; break; }
+    }
+    accum = 0;
+    for (let y = scanSize - 1; y >= 0; y--) {
+      accum += rowCounts[y];
+      if (accum >= totalSkin * 0.08) { maxY = y; break; }
+    }
+
+    const faceGridW = Math.max(20, maxX - minX);
+    const faceGridH = Math.max(20, maxY - minY);
+    const faceGridCX = minX + faceGridW / 2;
+    const faceGridCY = minY + faceGridH * 0.48;
+
+    const realCX = (faceGridCX / scanSize) * srcW;
+    const realCY = (faceGridCY / scanSize) * srcH;
+    const realW = (faceGridW / scanSize) * srcW;
+    const realH = (faceGridH / scanSize) * srcH;
+
+    const cropW = Math.min(srcW, Math.round(realW * 1.30));
+    const cropH = Math.min(srcH, Math.round(realH * 1.35));
+    const cropX = Math.max(0, Math.min(srcW - cropW, Math.round(realCX - cropW / 2)));
+    const cropY = Math.max(0, Math.min(srcH - cropH, Math.round(realCY - cropH * 0.48)));
+
+    return {
+      x: cropX,
+      y: cropY,
+      width: cropW,
+      height: cropH,
+      centerX: realCX,
+      centerY: realCY,
+      rawFaceW: realW,
+      rawFaceH: realH
+    };
+  }
+
+  /**
    * Lifecycle Method 3: processFaceImage
    * Extracts landmarks, skin tone, and creates cleaned high-res face texture.
    */
@@ -314,18 +426,14 @@ export class PersonalizedAvatarManager {
 
     const srcW = imageSource.naturalWidth || imageSource.videoWidth || imageSource.width || 1024;
     const srcH = imageSource.naturalHeight || imageSource.videoHeight || imageSource.height || 1024;
-    const isLandscape = srcW > srcH;
 
-    // Precise framing: centered cleanly on face (forehead, eyebrows, eyes, nose, cheeks, mouth, beard)
-    const cx = srcW * 0.50;
-    const cy = isLandscape ? (srcH * 0.50) : (srcH * 0.50);
-    const cropH = Math.min(srcH, isLandscape ? Math.round(srcH * 0.85) : Math.round(srcW * 0.85));
-    const cropW = Math.round(cropH * 0.80); // Natural 4:5 anatomical head proportion
+    const bounds = this.detectFaceBounds(imageSource);
+    const cropX = bounds.x;
+    const cropY = bounds.y;
+    const cropW = bounds.width;
+    const cropH = bounds.height;
 
-    const cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
-    const cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH / 2));
-
-    // Sample skin tone
+    // Sample skin tone from detected face
     const sampleCanvas = document.createElement('canvas');
     sampleCanvas.width = 64;
     sampleCanvas.height = 64;
@@ -345,7 +453,7 @@ export class PersonalizedAvatarManager {
           const r = sData[idx];
           const g = sData[idx + 1];
           const b = sData[idx + 2];
-          if (r > 60 && g > 40 && b > 25 && r > b && (r + g + b) < 600) {
+          if (r > 50 && g > 30 && b > 20 && r > b && (r + g + b) < 600) {
             rSum += r; gSum += g; bSum += b; count++;
           }
         }
@@ -715,11 +823,11 @@ export class PersonalizedAvatarManager {
       (this.studio3D?.currentMannequinGender === 'male') ||
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
-    // Verified exact UV regions for Mixamo body texture (2048×2048 atlas)
-    // Centered precisely on the facial features (from chin to forehead, ear to ear)
+    // Anatomically verified UV coordinates on standard 2048×2048 Mixamo texture atlas
+    // Center=(X:1543, Y:1720 [nose tip]), Chin=Y:1500, Forehead=Y:1940, Width=420, Height=440
     const faceBounds = isMale
-      ? { x: 1300, y: 1490, width: 450, height: 420 }
-      : { x: 1240, y: 1440, width: 440, height: 410 };
+      ? { x: 1333, y: 1500, width: 420, height: 440 }
+      : { x: 1333, y: 1500, width: 420, height: 440 };
 
     const targetMesh = meshes[0];
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
@@ -739,6 +847,12 @@ export class PersonalizedAvatarManager {
         this.originalBodyMaterials.set('body_tex_map', currentTexture);
       }
 
+      const userSkin = this.activeSkinTone || { r: 160, g: 112, b: 88 };
+      const defSkin = { r: 180, g: 140, b: 120 };
+      const skinScaleR = Math.max(0.60, Math.min(1.35, userSkin.r / defSkin.r));
+      const skinScaleG = Math.max(0.60, Math.min(1.35, userSkin.g / defSkin.g));
+      const skinScaleB = Math.max(0.60, Math.min(1.35, userSkin.b / defSkin.b));
+
       const baseTex = this.originalBodyMaterials.get('body_tex_map') || currentTexture;
       let drawnBase = false;
       const texImg = baseTex ? (baseTex.image || baseTex.source?.data) : null;
@@ -751,51 +865,72 @@ export class PersonalizedAvatarManager {
         }
       }
       if (!drawnBase) {
-        ctx.fillStyle = '#E8D2BE';
+        ctx.fillStyle = `rgb(${userSkin.r}, ${userSkin.g}, ${userSkin.b})`;
         ctx.fillRect(0, 0, res, res);
+      } else {
+        // Harmonize mannequin skin (neck, ears, temples, hands) with user's skin tone
+        try {
+          const imgData = ctx.getImageData(0, 0, res, res);
+          const d = imgData.data;
+          for (let y = 1000; y < 2048; y++) {
+            for (let x = 1000; x < 2048; x++) {
+              const idx = (y * 2048 + x) * 4;
+              const r = d[idx];
+              const g = d[idx + 1];
+              const b = d[idx + 2];
+              if (r > b + 8 && r > 65 && r < 240) {
+                d[idx] = Math.min(255, Math.round(r * skinScaleR));
+                d[idx + 1] = Math.min(255, Math.round(g * skinScaleG));
+                d[idx + 2] = Math.min(255, Math.round(b * skinScaleB));
+              }
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        } catch (_) {}
       }
 
-      // --- Build a clean face patch with generous crop and smooth feathering ---
+      // --- Build clean face patch using detected face coordinates ---
       const src = imageSource || this.lastImageSource;
       if (!src) return false;
 
-      const srcW = src.naturalWidth || src.videoWidth || src.width || 512;
-      const srcH = src.naturalHeight || src.videoHeight || src.height || 512;
+      const bounds = this.detectFaceBounds(src);
+      const cropX = bounds.x;
+      const cropY = bounds.y;
+      const faceW = bounds.width;
+      const faceH = bounds.height;
 
-      // Extract complete facial structure (hairline, forehead, eyes, nose, cheeks, mouth, chin/beard)
-      const isLandscape = srcW > srcH;
-      const cx = srcW * 0.50;
-      const cy = isLandscape ? srcH * 0.45 : srcH * 0.42;
-      const faceW = Math.round(isLandscape ? srcH * 0.72 : srcW * 0.72);
-      const faceH = Math.round(faceW * 1.05);
-      const cropX = Math.max(0, Math.min(srcW - faceW, Math.round(cx - faceW / 2)));
-      const cropY = Math.max(0, Math.min(srcH - faceH, Math.round(cy - faceH * 0.48)));
+      const scaleMult = (options.scale !== undefined) ? options.scale : 1.0;
+      const drawW = Math.round(faceBounds.width * scaleMult);
+      const drawH = Math.round(faceBounds.height * scaleMult);
+      const offsetY = ((options.offsetY !== undefined) ? options.offsetY : 0) * 15;
+      const targetX = Math.round(faceBounds.x + (faceBounds.width - drawW) / 2);
+      const targetY = Math.round(faceBounds.y + (faceBounds.height - drawH) / 2 + offsetY);
 
-      // Render face onto faceCanvas at exact faceBounds dimensions
+      // Render face onto faceCanvas
       const faceCanvas = document.createElement('canvas');
-      faceCanvas.width = faceBounds.width;
-      faceCanvas.height = faceBounds.height;
+      faceCanvas.width = drawW;
+      faceCanvas.height = drawH;
       const fCtx = faceCanvas.getContext('2d');
       if (!fCtx) return false;
       fCtx.imageSmoothingEnabled = true;
       fCtx.imageSmoothingQuality = 'high';
-      fCtx.drawImage(src, cropX, cropY, faceW, faceH, 0, 0, faceBounds.width, faceBounds.height);
+      fCtx.drawImage(src, cropX, cropY, faceW, faceH, 0, 0, drawW, drawH);
 
       // Smooth anatomical alpha mask for seamless skin blending without holes or pixel clipping
       const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = faceBounds.width;
-      maskCanvas.height = faceBounds.height;
+      maskCanvas.width = drawW;
+      maskCanvas.height = drawH;
       const mCtx = maskCanvas.getContext('2d');
       if (mCtx) {
-        const mcx = faceBounds.width / 2;
-        const mcy = faceBounds.height * 0.48;
-        const rx = (faceBounds.width / 2) * 0.84;
-        const ry = (faceBounds.height / 2) * 0.90;
+        const mcx = drawW / 2;
+        const mcy = drawH * 0.48;
+        const rx = (drawW / 2) * 0.82;
+        const ry = (drawH / 2) * 0.88;
 
-        const grad = mCtx.createRadialGradient(mcx, mcy, rx * 0.60, mcx, mcy, rx);
+        const grad = mCtx.createRadialGradient(mcx, mcy, rx * 0.65, mcx, mcy, rx);
         grad.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
-        grad.addColorStop(0.75, 'rgba(0, 0, 0, 1.0)');
-        grad.addColorStop(0.92, 'rgba(0, 0, 0, 0.45)');
+        grad.addColorStop(0.70, 'rgba(0, 0, 0, 1.0)');
+        grad.addColorStop(0.90, 'rgba(0, 0, 0, 0.45)');
         grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
 
         mCtx.save();
@@ -811,31 +946,26 @@ export class PersonalizedAvatarManager {
       }
 
       // --- Composite face into body texture atlas ---
-      // IMPORTANT: In the Mixamo GLB texture atlas, the face region is inverted vertically
-      // (lower Y is chin, higher Y is forehead). Therefore, to display 100% RIGHT-SIDE UP
-      // in 3D, we must flip vertically by default (scale(1, -1)).
-      const shouldFlipY = (options.flipY !== true); // Default TRUE for upright 3D view
-      const shouldFlipX = (options.flipX === true); // Default FALSE (normal view)
-      const offsetY = (options.offsetY !== undefined) ? options.offsetY : 0;
-
-      const targetX = faceBounds.x;
-      const targetY = faceBounds.y + offsetY;
+      // In Mixamo atlas, face is inverted vertically (lower Y is chin, higher Y is forehead)
+      // Therefore, flip vertically by default (scale(1, -1)) for upright 3D view.
+      const shouldFlipY = (options.flipY !== true);
+      const shouldFlipX = (options.flipX === true);
 
       ctx.save();
       if (shouldFlipY && shouldFlipX) {
-        ctx.translate(targetX + faceBounds.width, targetY + faceBounds.height);
+        ctx.translate(targetX + drawW, targetY + drawH);
         ctx.scale(-1.0, -1.0);
-        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+        ctx.drawImage(faceCanvas, 0, 0, drawW, drawH);
       } else if (shouldFlipY) {
-        ctx.translate(targetX, targetY + faceBounds.height);
+        ctx.translate(targetX, targetY + drawH);
         ctx.scale(1.0, -1.0);
-        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+        ctx.drawImage(faceCanvas, 0, 0, drawW, drawH);
       } else if (shouldFlipX) {
-        ctx.translate(targetX + faceBounds.width, targetY);
+        ctx.translate(targetX + drawW, targetY);
         ctx.scale(-1.0, 1.0);
-        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+        ctx.drawImage(faceCanvas, 0, 0, drawW, drawH);
       } else {
-        ctx.drawImage(faceCanvas, targetX, targetY, faceBounds.width, faceBounds.height);
+        ctx.drawImage(faceCanvas, targetX, targetY, drawW, drawH);
       }
       ctx.restore();
 

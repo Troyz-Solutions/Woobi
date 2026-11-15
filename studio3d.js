@@ -2813,9 +2813,9 @@
         loader.setMeshoptDecoder(window.MeshoptDecoder);
       }
       const modelUrls = [
-        'woobi_female_mannequin.glb',
-        'Woobi_Female_Mannequin_Fixed.glb',
-        'avatar_female.glb'
+        'avatar_female.glb',
+        'assets/models/avatar_female.glb',
+        'seren_avatar.glb'
       ];
 
       const tryLoad = (index) => {
@@ -3712,16 +3712,13 @@
       const loader = new THREE.GLTFLoader();
       const urls = isMale
         ? [
-            'assets/models/avatar_male.glb',
             'avatar_male.glb',
-            'woobi_male_mannequin.glb'
+            'assets/models/avatar_male.glb'
           ]
         : [
-            'assets/models/avatar_female.glb',
             'avatar_female.glb',
-            'seren_avatar.glb',
-            'Woobi_Female_Mannequin_Fixed.glb',
-            'woobi_female_mannequin.glb'
+            'assets/models/avatar_female.glb',
+            'seren_avatar.glb'
           ];
 
       const tryLoad = (idx) => {

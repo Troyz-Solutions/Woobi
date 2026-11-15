@@ -6,38 +6,30 @@
 export const FEMALE_AVATAR_PATHS = [
   'assets/models/avatar_female.glb',
   'avatar_female.glb',
-  'seren_avatar.glb',
-  'Woobi_Female_Mannequin_Fixed.glb',
-  'woobi_female_mannequin.glb'
+  'seren_avatar.glb'
 ];
 
 export const MALE_AVATAR_PATHS = [
   'assets/models/avatar_male.glb',
-  'avatar_male.glb',
-  'woobi_male_mannequin.glb'
+  'avatar_male.glb'
 ];
 
 export const AVATAR_ASSET_PATHS = [
   'assets/models/avatar_female.glb',
   'avatar_female.glb',
   'seren_avatar.glb',
-  'Woobi_Female_Mannequin_Fixed.glb',
-  'woobi_female_mannequin.glb',
   'assets/models/avatar_male.glb',
-  'avatar_male.glb',
-  '3D - Mannequin By Astra/Woobi_Female_Mannequin.glb',
-  'https://readyplayerme.github.io/visage/female.glb'
+  'avatar_male.glb'
 ];
 
 export const MANNEQUIN_ASSET_PATHS = {
   female: [
-    'woobi_female_mannequin.glb',
-    'Woobi_Female_Mannequin_Fixed.glb',
+    'assets/models/avatar_female.glb',
     'avatar_female.glb',
     'seren_avatar.glb'
   ],
   male: [
-    'woobi_male_mannequin.glb',
+    'assets/models/avatar_male.glb',
     'avatar_male.glb'
   ]
 };

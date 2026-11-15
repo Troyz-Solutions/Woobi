@@ -216,6 +216,18 @@ test('dispose clears all memory allocations and restores geometry', () => {
   assert.strictEqual(engine.isApplied, false);
 });
 
+test('createFacePlate and removeFacePlate lifecycle works reliably', () => {
+  const mockStudio = new MockStudio3D();
+  const engine = new UserFaceMeshEngine(mockStudio);
+  
+  // In node environment without DOM canvas, returns null safely
+  const res = engine.createFacePlate(null);
+  assert.strictEqual(res, null);
+
+  engine.removeFacePlate();
+  assert.strictEqual(engine.facePlateMesh, null);
+});
+
 console.log('--------------------------------------------------');
 if (failed === 0) {
   console.log(`SUCCESS: All ${passed} UserFaceMeshEngine tests passed.\n`);

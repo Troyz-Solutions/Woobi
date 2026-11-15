@@ -65,6 +65,7 @@ export class UserFaceMeshEngine {
     this.originalNormals = new Map();  // mesh UUID -> Float32Array
     this.originalTextures = new Map(); // material UUID -> original Texture
     this.synthesizedTexture = null;
+    this.facePlateMesh = null; // Method 1: Dedicated 3D Curved Faceplate Mesh
     this.isApplied = false;
   }
 
@@ -599,8 +600,179 @@ export class UserFaceMeshEngine {
   }
 
   /**
+   * Method 1: Creates a dedicated 3D Curved Faceplate Mesh parented directly to the avatar head bone.
+   * Renders the user's authentic face in crisp HD with zero UV atlas distortion or white bleed.
+   */
+  createFacePlate(userImageSource) {
+    if (typeof document === 'undefined' || !userImageSource || !this.studio3D) return null;
+    const THREE = (typeof window !== 'undefined' && window.THREE)
+      ? window.THREE
+      : (typeof global !== 'undefined' && global.THREE
+          ? global.THREE
+          : (this.studio3D.THREE || null));
+    if (!THREE) return null;
+
+    // 1. Locate Head Bone or Head Group
+    let headBone = null;
+    const avatarRoot = this.studio3D.gltfAvatarGroup || this.studio3D.avatarRoot;
+    if (avatarRoot && typeof avatarRoot.traverse === 'function') {
+      avatarRoot.traverse((c) => {
+        if (c.isBone && c.name && c.name.toLowerCase().includes('head') && !c.name.toLowerCase().includes('end')) {
+          headBone = c;
+        }
+      });
+    }
+
+    // Determine gender
+    const isMale = (this.studio3D?.avatarConfig?.gender === 'male') ||
+      (this.studio3D?.currentMannequinGender === 'male') ||
+      (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
+
+    // 2. Prepare 512x512 cropped face texture with soft feathered edge
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const faceCanvas = this.extractFaceRegion(userImageSource, 512, 512);
+    if (!faceCanvas) return null;
+
+    // Soft elliptical mask to blend softly around jawline and temples
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = 512;
+    maskCanvas.height = 512;
+    const mCtx = maskCanvas.getContext('2d');
+    if (mCtx) {
+      const cx = 256, cy = 256;
+      const rx = 256 * 0.88, ry = 256 * 0.94;
+      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.68, cx, cy, rx);
+      gradient.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
+      gradient.addColorStop(0.72, 'rgba(0, 0, 0, 1.0)');
+      gradient.addColorStop(0.90, 'rgba(0, 0, 0, 0.70)');
+      gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+      mCtx.save();
+      mCtx.scale(1.0, ry / rx);
+      mCtx.fillStyle = gradient;
+      mCtx.beginPath();
+      mCtx.arc(cx, (cy * rx) / ry, rx, 0, Math.PI * 2);
+      mCtx.fill();
+      mCtx.restore();
+
+      const fCtx = faceCanvas.getContext('2d');
+      if (fCtx) {
+        fCtx.globalCompositeOperation = 'destination-in';
+        fCtx.drawImage(maskCanvas, 0, 0);
+      }
+    }
+    ctx.drawImage(faceCanvas, 0, 0);
+
+    let texture = null;
+    if (THREE.CanvasTexture) {
+      texture = new THREE.CanvasTexture(canvas);
+      if (THREE.sRGBEncoding) texture.encoding = THREE.sRGBEncoding;
+      if (THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
+      texture.needsUpdate = true;
+    }
+
+    // 3. Remove existing faceplate if present
+    this.removeFacePlate();
+
+    // 4. Build curved 3D faceplate geometry
+    // When parented to headBone, local scale is cm (w: ~14.4, h: ~18.4)
+    // When parented to avatarRoot/scene, scale is meters (w: ~0.144, h: ~0.184)
+    const isBoneParent = !!headBone;
+    const w = isBoneParent ? (isMale ? 14.4 : 13.6) : (isMale ? 0.144 : 0.136);
+    const h = isBoneParent ? (isMale ? 18.4 : 17.6) : (isMale ? 0.184 : 0.176);
+
+    let geo = null;
+    if (THREE.PlaneGeometry) {
+      geo = new THREE.PlaneGeometry(w, h, 16, 16);
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const px = pos.getX(i);
+        const py = pos.getY(i);
+        const zCurve = isBoneParent
+          ? (- (px * px) / 24.0 - Math.max(0, py) * 0.05)
+          : (- (px * px) / 0.24 - Math.max(0, py) * 0.05 * 0.01);
+        pos.setZ(i, zCurve);
+      }
+      if (typeof geo.computeVertexNormals === 'function') {
+        geo.computeVertexNormals();
+      }
+    }
+
+    const MaterialClass = THREE.MeshStandardMaterial || THREE.MeshBasicMaterial;
+    const matOptions = {
+      map: texture,
+      transparent: true,
+      opacity: 0.99,
+      depthTest: true,
+      depthWrite: false
+    };
+    if (THREE.MeshStandardMaterial) {
+      matOptions.roughness = 0.52;
+      matOptions.metalness = 0.0;
+      matOptions.polygonOffset = true;
+      matOptions.polygonOffsetFactor = -4;
+      matOptions.polygonOffsetUnits = -4;
+    }
+
+    const material = MaterialClass ? new MaterialClass(matOptions) : {};
+    const mesh = (THREE.Mesh && geo) ? new THREE.Mesh(geo, material) : { geometry: geo, material: material, position: { set: () => {} } };
+    mesh.name = 'UserFacePlateMesh';
+    mesh.castShadow = false;
+    mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
+
+    if (isBoneParent) {
+      // Local position inside Mixamo Head bone: x=0, y=8.6 (eye/nose level), z=11.2 (front of face)
+      const posY = isMale ? 8.6 : 8.0;
+      const posZ = isMale ? 11.2 : 10.0;
+      mesh.position.set(0, posY, posZ);
+      headBone.add(mesh);
+    } else {
+      // Fallback: parent to headGroup or avatarRoot at eye height
+      const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
+      if (mesh.position && typeof mesh.position.set === 'function') {
+        mesh.position.set(0, 1.635, 0.10);
+      }
+      if (parent && typeof parent.add === 'function') {
+        parent.add(mesh);
+      }
+    }
+
+    this.facePlateMesh = mesh;
+    return mesh;
+  }
+
+  /**
+   * Safely removes and disposes faceplate mesh
+   */
+  removeFacePlate() {
+    if (this.facePlateMesh) {
+      if (this.facePlateMesh.parent && typeof this.facePlateMesh.parent.remove === 'function') {
+        this.facePlateMesh.parent.remove(this.facePlateMesh);
+      }
+      if (this.facePlateMesh.geometry && typeof this.facePlateMesh.geometry.dispose === 'function') {
+        this.facePlateMesh.geometry.dispose();
+      }
+      if (this.facePlateMesh.material) {
+        if (this.facePlateMesh.material.map && typeof this.facePlateMesh.material.map.dispose === 'function') {
+          this.facePlateMesh.material.map.dispose();
+        }
+        if (typeof this.facePlateMesh.material.dispose === 'function') {
+          this.facePlateMesh.material.dispose();
+        }
+      }
+      this.facePlateMesh = null;
+    }
+  }
+
+  /**
    * Complete hybrid pipeline execution:
-   * Analyzes user photo, morphs 3D physical head geometry, and projects seamless UV texture.
+   * Analyzes user photo, morphs 3D physical head geometry, projects 3D curved faceplate mesh,
+   * and blends UV texture.
    */
   applyUserFace(imageSource, options = {}) {
     if (!imageSource) return false;
@@ -610,9 +782,11 @@ export class UserFaceMeshEngine {
     const intensity = options.intensity !== undefined ? options.intensity : 1.0;
     const biometrics = this.analyzeFaceLandmarks(imageSource);
     const deformed = this.applyParametricDeformation(biometrics, intensity);
+    const facePlate = this.createFacePlate(imageSource);
     const textured = this.synthesizeFaceTexture(imageSource, biometrics);
 
-    return deformed || textured;
+    this.isApplied = true;
+    return !!(facePlate || deformed || textured);
   }
 
   /**
@@ -626,9 +800,10 @@ export class UserFaceMeshEngine {
   }
 
   /**
-   * 1-Tap Restoration: Restores original 3D geometry and original baseColor texture.
+   * 1-Tap Restoration: Restores original 3D geometry and removes faceplate.
    */
   resetToDefault() {
+    this.removeFacePlate();
     const meshes = this.findHeadMeshes();
     meshes.forEach((mesh) => {
       // 1. Restore geometry vertices
@@ -670,6 +845,7 @@ export class UserFaceMeshEngine {
    */
   dispose() {
     this.resetToDefault();
+    this.removeFacePlate();
     this.originalVertices.clear();
     this.originalTextures.clear();
   }

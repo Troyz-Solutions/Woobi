@@ -134,43 +134,60 @@ export class MirrorReflection {
     }
 
     if (this.renderTarget) {
-      if (THREE && typeof THREE.ShaderMaterial !== 'undefined') {
-        // Authentic Three.js Reflector Projective Shader
-        const reflectorShader = {
-          uniforms: {
-            color: { value: (THREE.Color ? new THREE.Color(0xFFFFFF) : { r: 1, g: 1, b: 1 }) },
-            tDiffuse: { value: this.renderTarget.texture },
-            textureMatrix: { value: (THREE.Matrix4 ? new THREE.Matrix4() : null) }
-          },
-          vertexShader: /* glsl */`
-            uniform mat4 textureMatrix;
-            varying vec4 vUv;
-            void main() {
-              vUv = textureMatrix * vec4(position, 1.0);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-          `,
-          fragmentShader: /* glsl */`
-            uniform vec3 color;
-            uniform sampler2D tDiffuse;
-            varying vec4 vUv;
-            void main() {
-              vec4 base = texture2DProj(tDiffuse, vUv);
-              gl_FragColor = vec4(base.rgb * color, 1.0);
-            }
-          `
-        };
+      const isMobile = typeof navigator !== 'undefined' && (
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+        (typeof window !== 'undefined' && window.innerWidth <= 768)
+      );
 
-        const mat = new THREE.ShaderMaterial({
-          uniforms: reflectorShader.uniforms,
-          vertexShader: reflectorShader.vertexShader,
-          fragmentShader: reflectorShader.fragmentShader,
-          toneMapped: false
-        });
-        // Essential: Keep .map pointing to renderTarget.texture so tests and standard Three.js property checks pass
-        mat.map = this.renderTarget.texture;
-        this.mirrorMaterial = mat;
-        mesh.material = mat;
+      // On mobile devices, use ultra-reliable MeshBasicMaterial with planar UVs
+      // to eliminate GLSL precision bugs, oblique clipping inversions and black screens.
+      if (!isMobile && THREE && typeof THREE.ShaderMaterial !== 'undefined') {
+        try {
+          const reflectorShader = {
+            uniforms: {
+              color: { value: (THREE.Color ? new THREE.Color(0xFFFFFF) : { r: 1, g: 1, b: 1 }) },
+              tDiffuse: { value: this.renderTarget.texture },
+              textureMatrix: { value: (THREE.Matrix4 ? new THREE.Matrix4() : null) }
+            },
+            vertexShader: /* glsl */`
+              precision highp float;
+              uniform mat4 textureMatrix;
+              varying vec4 vUv;
+              void main() {
+                vUv = textureMatrix * vec4(position, 1.0);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }
+            `,
+            fragmentShader: /* glsl */`
+              precision highp float;
+              uniform vec3 color;
+              uniform sampler2D tDiffuse;
+              varying vec4 vUv;
+              void main() {
+                vec4 base = texture2DProj(tDiffuse, vUv);
+                gl_FragColor = vec4(base.rgb * color, 1.0);
+              }
+            `
+          };
+
+          const mat = new THREE.ShaderMaterial({
+            uniforms: reflectorShader.uniforms,
+            vertexShader: reflectorShader.vertexShader,
+            fragmentShader: reflectorShader.fragmentShader,
+            toneMapped: false
+          });
+          mat.map = this.renderTarget.texture;
+          this.mirrorMaterial = mat;
+          mesh.material = mat;
+        } catch (e) {
+          // Fallback to MeshBasicMaterial if ShaderMaterial instantiation fails
+          mesh.material = new THREE.MeshBasicMaterial({
+            map: this.renderTarget.texture,
+            toneMapped: false
+          });
+          mesh.material.map = this.renderTarget.texture;
+          this.mirrorMaterial = mesh.material;
+        }
       } else if (THREE && typeof THREE.MeshBasicMaterial !== 'undefined') {
         mesh.material = new THREE.MeshBasicMaterial({
           map: this.renderTarget.texture,
@@ -215,14 +232,26 @@ export class MirrorReflection {
         camera.updateMatrixWorld(true);
       }
 
-      // Check if full Three.js Vector3 & Matrix4 optical math primitives are present
-      if (camera && this._normal && this._reflectorPlane && this._textureMatrix) {
-        this.updateOpticalReflection(renderer, scene, camera);
+      const isMobile = typeof navigator !== 'undefined' && (
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+        (typeof window !== 'undefined' && window.innerWidth <= 768)
+      );
+
+      // On mobile devices, use rock-solid planar camera fallback to avoid oblique plane clipping blackouts
+      if (!isMobile && camera && this._normal && this._reflectorPlane && this._textureMatrix) {
+        try {
+          this.updateOpticalReflection(renderer, scene, camera);
+        } catch (optErr) {
+          this.updateFallbackReflection(renderer, scene, camera);
+        }
       } else {
         this.updateFallbackReflection(renderer, scene, camera);
       }
     } catch (err) {
       console.warn('[MirrorReflection] Error rendering optical mirror reflection:', err);
+      try {
+        this.updateFallbackReflection(renderer, scene, camera);
+      } catch (fbErr) {}
     } finally {
       if (this.mirrorMesh) {
         this.mirrorMesh.visible = true;
@@ -382,10 +411,19 @@ export class MirrorReflection {
       this.mirrorCamera.updateProjectionMatrix();
     }
 
+    const currentRenderTarget = renderer.getRenderTarget ? renderer.getRenderTarget() : null;
+    const currentShadowAutoUpdate = renderer.shadowMap ? renderer.shadowMap.autoUpdate : false;
+    if (renderer.shadowMap) renderer.shadowMap.autoUpdate = false;
+
     renderer.setRenderTarget(this.renderTarget);
+    if (renderer.state && renderer.state.buffers && renderer.state.buffers.depth) {
+      renderer.state.buffers.depth.setMask(true);
+    }
     renderer.clear();
     renderer.render(scene, this.mirrorCamera);
-    renderer.setRenderTarget(null);
+
+    if (renderer.shadowMap) renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
+    if (renderer.setRenderTarget) renderer.setRenderTarget(currentRenderTarget);
   }
 
   handleContextLost() {

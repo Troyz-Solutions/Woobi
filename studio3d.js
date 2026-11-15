@@ -4124,7 +4124,9 @@
 
       // 6. Real-time Optical Planar Mirror Rendering (True Physical Reflector)
       this._mirrorFrameCount = (this._mirrorFrameCount || 0) + 1;
-      const shouldRenderMirror = !isMobileDevice ? ((this._mirrorFrameCount % 2 === 0) || (this.currentCameraState === 'MIRROR_VIEW')) : (this.currentCameraState === 'MIRROR_VIEW');
+      const shouldRenderMirror = (this.currentCameraState === 'MIRROR_VIEW') ||
+        (this._mirrorFrameCount < 20) ||
+        (!isMobileDevice ? (this._mirrorFrameCount % 2 === 0) : (this._mirrorFrameCount % 3 === 0));
 
       const activeMirrorMesh = (this.vanityModel && this.vanityModel.mirrorGlassMesh) ? this.vanityModel.mirrorGlassMesh : this.mirrorGlassMesh;
       if (shouldRenderMirror) {
@@ -4144,10 +4146,16 @@
             this.mirrorCamera.updateProjectionMatrix();
           }
 
+          const currentRenderTarget = this.renderer.getRenderTarget ? this.renderer.getRenderTarget() : null;
+          const currentShadowAutoUpdate = this.renderer.shadowMap ? this.renderer.shadowMap.autoUpdate : false;
+          if (this.renderer.shadowMap) this.renderer.shadowMap.autoUpdate = false;
+
           this.renderer.setRenderTarget(this.mirrorRenderTarget);
           this.renderer.clear();
           this.renderer.render(this.scene, this.mirrorCamera);
-          this.renderer.setRenderTarget(null);
+
+          if (this.renderer.shadowMap) this.renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
+          if (this.renderer.setRenderTarget) this.renderer.setRenderTarget(currentRenderTarget);
 
           activeMirrorMesh.visible = true;
           if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = true;

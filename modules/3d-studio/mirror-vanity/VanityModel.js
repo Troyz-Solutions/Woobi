@@ -33,7 +33,11 @@ export class VanityModel {
     this.interactiveObjects = [];
     this.disposables = [];
     this.lighting = new VanityLighting();
-    this.reflection = new MirrorReflection();
+    const isMobile = typeof navigator !== 'undefined' && (
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+      (typeof window !== 'undefined' && window.innerWidth <= 768)
+    );
+    this.reflection = new MirrorReflection({ resolution: isMobile ? 512 : 1024 });
     this.isGLBLoaded = false;
     this.isClockGLBLoaded = false;
     this.clockHands = null;

@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
@@ -217,15 +218,35 @@ class MainActivity : ComponentActivity() {
                     this@MainActivity.filePathCallback?.onReceiveValue(null)
                     this@MainActivity.filePathCallback = filePathCallback
 
-                    val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                    val isCapture = fileChooserParams?.isCaptureEnabled ?: false
+                    val pickIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
                         type = "image/*"
                     }
+
+                    val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                    val chooserIntent: Intent
+
+                    if (isCapture) {
+                        chooserIntent = Intent.createChooser(takePictureIntent, "Take Photo").apply {
+                            putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(pickIntent))
+                        }
+                    } else {
+                        chooserIntent = Intent.createChooser(pickIntent, "Select Image").apply {
+                            putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(takePictureIntent))
+                        }
+                    }
+
                     try {
-                        fileChooserLauncher.launch(intent)
+                        fileChooserLauncher.launch(chooserIntent)
                     } catch (e: Exception) {
                         Log.e(TAG, "Error launching file chooser", e)
-                        this@MainActivity.filePathCallback = null
-                        return false
+                        try {
+                            fileChooserLauncher.launch(pickIntent)
+                        } catch (e2: Exception) {
+                            this@MainActivity.filePathCallback = null
+                            return false
+                        }
                     }
                     return true
                 }

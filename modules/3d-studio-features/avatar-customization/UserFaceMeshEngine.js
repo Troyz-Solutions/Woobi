@@ -493,3 +493,4 @@ export class UserFaceMeshEngine {
     this.originalTextures.clear();
   }
 }
+

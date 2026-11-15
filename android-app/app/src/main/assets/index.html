@@ -783,18 +783,19 @@
                     <span class="user-face-empty-icon">👤</span>
                     <span class="user-face-empty-text">No face photo selected yet</span>
                   </div>
+                  <video id="userFaceVideo" class="user-face-video hidden" autoplay playsinline muted></video>
                   <img id="userFacePreviewImg" class="user-face-preview-img hidden" alt="Face Preview" />
+                  <div id="userFaceOvalGuide" class="user-face-oval-guide hidden"></div>
                 </div>
 
                 <div class="user-face-actions-row">
-                  <label class="user-face-btn user-face-camera-btn">
-                    <span>📷 Take Selfie</span>
-                    <input type="file" id="userFaceCameraInput" accept="image/*" capture="user" style="display:none;" onchange="app.handleUserFaceFile(event)">
-                  </label>
-                  <label class="user-face-btn user-face-gallery-btn">
+                  <button type="button" class="user-face-btn user-face-camera-btn" id="btnUserFaceCameraAction" onclick="app.toggleUserFaceCamera()">
+                    <span id="userFaceCameraBtnLabel">📷 Take Selfie</span>
+                  </button>
+                  <button type="button" class="user-face-btn user-face-gallery-btn" onclick="app.triggerUserFaceGallery()">
                     <span>🖼️ Choose Photo</span>
-                    <input type="file" id="userFaceGalleryInput" accept="image/*" style="display:none;" onchange="app.handleUserFaceFile(event)">
-                  </label>
+                  </button>
+                  <input type="file" id="userFaceGalleryInput" accept="image/*" style="position:absolute; opacity:0; width:0.1px; height:0.1px; pointer-events:none;" onchange="app.handleUserFaceFile(event)">
                 </div>
 
                 <div class="user-face-slider-wrap">

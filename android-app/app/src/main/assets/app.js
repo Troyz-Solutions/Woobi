@@ -4534,6 +4534,8 @@
   // ===================================================================
   let _selectedUserFaceImage = null;
   let _userFaceIntensity = 1.0;
+  let _userFaceCameraStream = null;
+  let _isUserFaceCameraActive = false;
 
   function openUserFaceModal() {
     const menu = document.getElementById('mannequinDropdownMenu');
@@ -4545,9 +4547,116 @@
   }
 
   function closeUserFaceModal() {
+    stopUserFaceCamera();
     const modal = document.getElementById('userFaceModal');
     if (modal) {
       modal.classList.add('hidden');
+    }
+  }
+
+  async function toggleUserFaceCamera() {
+    if (_isUserFaceCameraActive) {
+      captureUserFaceFromCamera();
+    } else {
+      startUserFaceCamera();
+    }
+  }
+
+  async function startUserFaceCamera() {
+    const videoEl = document.getElementById('userFaceVideo');
+    const emptyState = document.getElementById('userFaceEmptyState');
+    const previewImg = document.getElementById('userFacePreviewImg');
+    const ovalGuide = document.getElementById('userFaceOvalGuide');
+    const btnLabel = document.getElementById('userFaceCameraBtnLabel');
+    const btn = document.getElementById('btnUserFaceCameraAction');
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        _userFaceCameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1080 }, height: { ideal: 1080 } }
+        });
+        if (videoEl) {
+          videoEl.srcObject = _userFaceCameraStream;
+          videoEl.classList.remove('hidden');
+          videoEl.play();
+        }
+        if (emptyState) emptyState.classList.add('hidden');
+        if (previewImg) previewImg.classList.add('hidden');
+        if (ovalGuide) ovalGuide.classList.remove('hidden');
+
+        _isUserFaceCameraActive = true;
+        if (btnLabel) btnLabel.textContent = '📸 Snap Photo';
+        if (btn) btn.classList.add('capturing');
+        showToast('Camera active! Frame your face in the oval and tap "Snap Photo".');
+      } catch (err) {
+        console.warn('Live camera error, falling back to file picker:', err);
+        showToast('Opening system camera...');
+        triggerUserFaceGallery(true);
+      }
+    } else {
+      triggerUserFaceGallery(true);
+    }
+  }
+
+  function captureUserFaceFromCamera() {
+    const videoEl = document.getElementById('userFaceVideo');
+    const previewImg = document.getElementById('userFacePreviewImg');
+    const emptyState = document.getElementById('userFaceEmptyState');
+
+    if (!videoEl || !videoEl.videoWidth) {
+      showToast('Camera initializing, please try again in a moment.');
+      return;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(videoEl, 0, 0);
+
+    const img = new Image();
+    img.onload = () => {
+      _selectedUserFaceImage = img;
+      if (previewImg) {
+        previewImg.src = img.src;
+        previewImg.classList.remove('hidden');
+      }
+      if (emptyState) emptyState.classList.add('hidden');
+      stopUserFaceCamera();
+      showToast('Selfie captured! Tap "Apply to Mannequin" to morph.');
+    };
+    img.src = canvas.toDataURL('image/jpeg', 0.95);
+  }
+
+  function stopUserFaceCamera() {
+    const videoEl = document.getElementById('userFaceVideo');
+    const ovalGuide = document.getElementById('userFaceOvalGuide');
+    const btnLabel = document.getElementById('userFaceCameraBtnLabel');
+    const btn = document.getElementById('btnUserFaceCameraAction');
+
+    if (_userFaceCameraStream) {
+      _userFaceCameraStream.getTracks().forEach(t => t.stop());
+      _userFaceCameraStream = null;
+    }
+    if (videoEl) {
+      videoEl.classList.add('hidden');
+      videoEl.srcObject = null;
+    }
+    if (ovalGuide) ovalGuide.classList.add('hidden');
+    _isUserFaceCameraActive = false;
+    if (btnLabel) btnLabel.textContent = '📷 Take Selfie';
+    if (btn) btn.classList.remove('capturing');
+  }
+
+  function triggerUserFaceGallery(forCapture = false) {
+    const input = document.getElementById('userFaceGalleryInput');
+    if (input) {
+      if (forCapture) {
+        input.setAttribute('capture', 'user');
+      } else {
+        input.removeAttribute('capture');
+      }
+      input.click();
     }
   }
 
@@ -4566,6 +4675,7 @@
       const img = new Image();
       img.onload = () => {
         _selectedUserFaceImage = img;
+        stopUserFaceCamera();
         const previewImg = document.getElementById('userFacePreviewImg');
         const emptyState = document.getElementById('userFaceEmptyState');
         if (previewImg && emptyState) {
@@ -4601,6 +4711,7 @@
   }
 
   function resetUserFace() {
+    stopUserFaceCamera();
     const studio = window.Studio3D || window.studio3d;
     if (studio && typeof studio.resetUserFace === 'function') {
       studio.resetUserFace();
@@ -8092,6 +8203,11 @@
     selectMannequin,
     openUserFaceModal,
     closeUserFaceModal,
+    toggleUserFaceCamera,
+    startUserFaceCamera,
+    captureUserFaceFromCamera,
+    stopUserFaceCamera,
+    triggerUserFaceGallery,
     updateUserFaceIntensity,
     handleUserFaceFile,
     applyUserFaceToMannequin,

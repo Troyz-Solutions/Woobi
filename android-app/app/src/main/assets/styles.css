@@ -8421,6 +8421,40 @@ body.theme-dark.high-contrast,
   border-radius: 14px;
 }
 
+.user-face-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.user-face-oval-guide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 110px;
+  height: 145px;
+  border: 2px dashed rgba(255, 255, 255, 0.90);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.28);
+}
+
+.user-face-btn.capturing {
+  background: #4A6348 !important;
+  color: #FFFFFF !important;
+  border-color: #4A6348 !important;
+  box-shadow: 0 4px 14px rgba(74, 99, 72, 0.35) !important;
+  animation: pulse-shutter 1.4s infinite;
+}
+
+@keyframes pulse-shutter {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
 .user-face-actions-row {
   display: flex;
   gap: 10px;

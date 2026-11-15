@@ -410,11 +410,11 @@ export class UserFaceMeshEngine {
     const srcH = imageSource.naturalHeight || imageSource.videoHeight || imageSource.height || 512;
 
     const isLandscape = srcW > srcH;
-    // In landscape (webcam/desktop selfie), user face is centered ~49% width, ~58% height (hairline to beard)
-    // In portrait (mobile phone selfie), user face is centered ~50% width, ~44% height
-    let cx = isLandscape ? (srcW * 0.49) : (srcW * 0.50);
-    let cy = isLandscape ? (srcH * 0.58) : (srcH * 0.44);
-    let cropSize = isLandscape ? (srcH * 0.46) : (srcW * 0.56);
+    // In landscape (webcam/desktop selfie), face extends from hair to chin/neck
+    // Framing captures user's hairline, forehead, eyes, nose, mouth, beard, and upper neck
+    let cx = isLandscape ? (srcW * 0.485) : (srcW * 0.50);
+    let cy = isLandscape ? (srcH * 0.60) : (srcH * 0.48);
+    let cropSize = isLandscape ? (srcH * 0.72) : (srcW * 0.82);
 
     // Dynamic skin centroid fine-tuning if available
     try {
@@ -623,18 +623,58 @@ export class UserFaceMeshEngine {
       });
     }
 
-    // Hide fake mannequin hair and eyelashes so user face & hair appear cleanly without overlap
-    if (options.hideMannequinHair !== false) {
-      if (avatarRoot && typeof avatarRoot.traverse === 'function') {
-        avatarRoot.traverse((c) => {
-          if (c.isMesh) {
-            const name = (c.name || '').toLowerCase();
-            if (name.includes('hair') || name.includes('eyelash')) {
-              c.visible = false;
+    // 3D Hair & Eyelashes handling:
+    // ALWAYS keep mannequin 3D hair visible by default so the avatar has full styled hair (NEVER a bald egg).
+    // Tint hair to natural deep dark hair color matching user's hair.
+    const showHair = (options.hideMannequinHair === false || options.showHair !== false);
+    if (avatarRoot && typeof avatarRoot.traverse === 'function') {
+      avatarRoot.traverse((c) => {
+        if (c.isMesh) {
+          const name = (c.name || '').toLowerCase();
+          if (name.includes('hair')) {
+            c.visible = showHair;
+            if (c.material) {
+              const mats = Array.isArray(c.material) ? c.material : [c.material];
+              mats.forEach((m) => {
+                if (m.userData._origHairHex === undefined && m.color && typeof m.color.getHex === 'function') {
+                  m.userData._origHairHex = m.color.getHex();
+                }
+                if (m.color && typeof m.color.setHex === 'function') {
+                  m.color.setHex(0x1B1614); // Natural deep dark brown/black
+                }
+              });
+            }
+          } else if (name.includes('eyelash')) {
+            // Eyelashes are 2D floating cards that clip with real photo eyes
+            c.visible = false;
+          }
+        }
+      });
+    }
+
+    // Harmonize skin tone on neck, throat, and ears
+    const biometrics = options.biometrics || this.activeBiometrics || DEFAULT_BIOMETRICS;
+    const skinTone = biometrics?.skinTone || { r: 155, g: 110, b: 85 };
+    const skinHex = (skinTone.r << 16) | (skinTone.g << 8) | skinTone.b;
+    if (avatarRoot && typeof avatarRoot.traverse === 'function') {
+      avatarRoot.traverse((c) => {
+        if (c.isMesh) {
+          const name = (c.name || '').toLowerCase();
+          if (name.includes('body') || name.includes('head') || name.includes('skin')) {
+            if (c.material) {
+              const mats = Array.isArray(c.material) ? c.material : [c.material];
+              mats.forEach((m) => {
+                if (m.userData._origBodyHex === undefined && m.color && typeof m.color.getHex === 'function') {
+                  m.userData._origBodyHex = m.color.getHex();
+                }
+                if (m.color && typeof m.color.setHex === 'function') {
+                  m.color.setHex(skinHex);
+                }
+              });
             }
           }
-        });
-      }
+        }
+      });
     }
 
     // Determine gender
@@ -658,34 +698,36 @@ export class UserFaceMeshEngine {
 
     ctx.drawImage(faceCanvas, 0, 0);
 
-    // Precise melanin & skin-guided background wall suppression
+    // Anatomical contour mask with jaw taper, neck transition & room background suppression
     try {
       const imgData = ctx.getImageData(0, 0, res, res);
       const data = imgData.data;
       const cx = res / 2;
-      const cy = res / 2;
-      const rx = res * 0.40;
-      const ry = res * 0.47;
+      const cy = res * 0.49;
 
       for (let y = 0; y < res; y++) {
         for (let x = 0; x < res; x++) {
           const idx = (y * res + x) * 4;
+          const ny = (y - cy) / (res * 0.45);
+          // Anatomical tapering: upper face is round/wide, lower face tapers along jaw to neck
+          const rx = (ny < 0) ? (res * 0.36) : (res * 0.36 - (res * 0.13) * Math.pow(Math.min(1.0, ny), 1.2));
           const nx = (x - cx) / rx;
-          const ny = (y - cy) / ry;
           const d = nx * nx + ny * ny;
+
           const r = data[idx];
           const g = data[idx + 1];
           const b = data[idx + 2];
-
-          // Wall background: high brightness, low melanin saturation
+          // Wall background suppression: off-white/beige room walls
           const isWall = (r > 165 && g > 155 && b > 145 && Math.abs(r - g) < 25 && Math.abs(r - b) < 25);
 
-          if (d <= 0.60 && !isWall) {
+          if (isWall && d > 0.40) {
+            data[idx + 3] = 0;
+          } else if (d <= 0.68) {
             data[idx + 3] = 255;
-          } else if (d >= 1.0 || isWall) {
+          } else if (d >= 1.05) {
             data[idx + 3] = 0;
           } else {
-            const ratio = (d - 0.60) / 0.40;
+            const ratio = (d - 0.68) / 0.37;
             data[idx + 3] = Math.round(255 * (0.5 + 0.5 * Math.cos(ratio * Math.PI)));
           }
         }
@@ -713,24 +755,25 @@ export class UserFaceMeshEngine {
     this.removeFacePlate();
 
     // 4. Build curved 3D faceplate geometry
-    // When parented to headBone, local scale is cm (w: ~14.8, h: ~19.4)
-    // When parented to avatarRoot/scene, scale is meters (w: ~0.148, h: ~0.194)
+    // When parented to headBone, local scale is cm (w: ~16.0, h: ~22.8)
+    // When parented to avatarRoot/scene, scale is meters (w: ~0.160, h: ~0.228)
     const isBoneParent = !!headBone;
     const scaleMul = options.scale !== undefined ? options.scale : 1.0;
-    const w = (isBoneParent ? (isMale ? 14.8 : 13.8) : (isMale ? 0.148 : 0.138)) * scaleMul;
-    const h = (isBoneParent ? (isMale ? 19.4 : 18.2) : (isMale ? 0.194 : 0.182)) * scaleMul;
+    const w = (isBoneParent ? (isMale ? 16.0 : 14.8) : (isMale ? 0.160 : 0.148)) * scaleMul;
+    const h = (isBoneParent ? (isMale ? 22.8 : 20.8) : (isMale ? 0.228 : 0.208)) * scaleMul;
 
     let geo = null;
     if (THREE.PlaneGeometry) {
-      geo = new THREE.PlaneGeometry(w, h, 16, 16);
+      geo = new THREE.PlaneGeometry(w, h, 20, 20);
       const pos = geo.attributes.position;
       const uv = geo.attributes.uv;
 
-      // Vertical flip calibration: by default flipY ensures right-side-up orientation
-      const flipY = (options.flipY !== undefined) ? options.flipY : true;
-      const flipX = (options.flipX !== undefined) ? options.flipX : false;
+      // Invert vertical UVs ONLY if user explicitly requests inversion.
+      // Default (flipY=false) keeps the face 100% RIGHT-SIDE UP!
+      const flipY = (options.flipY === true);
+      const flipX = (options.flipX === true);
 
-      if (uv) {
+      if (uv && (flipY || flipX)) {
         for (let i = 0; i < uv.count; i++) {
           if (flipY) uv.setY(i, 1.0 - uv.getY(i));
           if (flipX) uv.setX(i, 1.0 - uv.getX(i));
@@ -741,10 +784,10 @@ export class UserFaceMeshEngine {
       for (let i = 0; i < pos.count; i++) {
         const px = pos.getX(i);
         const py = pos.getY(i);
-        // Anatomic facial curve: cheeks wrap back around sides of head
+        // Anatomic facial curve: cheeks wrap back around sides of head and jaw
         const zCurve = isBoneParent
-          ? (- (px * px) / 24.0 - Math.max(0, py) * 0.05)
-          : (- (px * px) / 0.24 - Math.max(0, py) * 0.05 * 0.01);
+          ? (- (px * px) / 26.0 - Math.max(0, py - 2.0) * 0.04)
+          : (- (px * px) / 0.26 - Math.max(0, py - 0.02) * 0.04 * 0.01);
         pos.setZ(i, zCurve);
       }
       if (typeof geo.computeVertexNormals === 'function') {
@@ -761,11 +804,11 @@ export class UserFaceMeshEngine {
       depthWrite: false
     };
     if (THREE.MeshStandardMaterial) {
-      matOptions.roughness = 0.52;
+      matOptions.roughness = 0.55;
       matOptions.metalness = 0.0;
       matOptions.polygonOffset = true;
-      matOptions.polygonOffsetFactor = -4;
-      matOptions.polygonOffsetUnits = -4;
+      matOptions.polygonOffsetFactor = -2;
+      matOptions.polygonOffsetUnits = -2;
     }
 
     const material = MaterialClass ? new MaterialClass(matOptions) : {};
@@ -778,17 +821,17 @@ export class UserFaceMeshEngine {
     const offsetY = options.offsetY !== undefined ? options.offsetY : 0.0;
 
     if (isBoneParent) {
-      // Local position inside Mixamo Head bone: x=0, y=9.8 (eye/nose level), z=11.2 (front of face)
-      const posY = (isMale ? 9.8 : 8.8) + offsetY;
-      const posZ = isMale ? 11.2 : 10.0;
+      // Local position inside Mixamo Head bone: x=0, y=8.4 (eye level), z=10.0 (front surface of face)
+      const posY = (isMale ? 8.4 : 7.6) + offsetY;
+      const posZ = isMale ? 10.0 : 9.0;
       mesh.position.set(0, posY, posZ);
       headBone.add(mesh);
     } else {
       // Fallback: parent to headGroup or avatarRoot at eye height
       const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
-      const posY = 1.635 + (offsetY * 0.01);
+      const posY = 1.62 + (offsetY * 0.01);
       if (mesh.position && typeof mesh.position.set === 'function') {
-        mesh.position.set(0, posY, 0.10);
+        mesh.position.set(0, posY, 0.09);
       }
       if (parent && typeof parent.add === 'function') {
         parent.add(mesh);
@@ -862,7 +905,7 @@ export class UserFaceMeshEngine {
   resetToDefault() {
     this.removeFacePlate();
 
-    // Restore mannequin hair and eyelashes visibility
+    // Restore mannequin hair, eyelashes, and original materials/colors
     const avatarRoot = this.studio3D?.gltfAvatarGroup || this.studio3D?.avatarRoot;
     if (avatarRoot && typeof avatarRoot.traverse === 'function') {
       avatarRoot.traverse((c) => {
@@ -870,6 +913,24 @@ export class UserFaceMeshEngine {
           const name = (c.name || '').toLowerCase();
           if (name.includes('hair') || name.includes('eyelash')) {
             c.visible = true;
+            if (c.material) {
+              const mats = Array.isArray(c.material) ? c.material : [c.material];
+              mats.forEach((m) => {
+                if (m.userData && m.userData._origHairHex !== undefined && m.color) {
+                  m.color.setHex(m.userData._origHairHex);
+                }
+              });
+            }
+          }
+          if (name.includes('body') || name.includes('head') || name.includes('skin')) {
+            if (c.material) {
+              const mats = Array.isArray(c.material) ? c.material : [c.material];
+              mats.forEach((m) => {
+                if (m.userData && m.userData._origBodyHex !== undefined && m.color) {
+                  m.color.setHex(m.userData._origBodyHex);
+                }
+              });
+            }
           }
         }
       });

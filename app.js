@@ -4534,11 +4534,11 @@
   // ===================================================================
   let _selectedUserFaceImage = null;
   let _userFaceIntensity = 1.0;
-  let _userFaceFlipY = true;
+  let _userFaceFlipY = false;
   let _userFaceFlipX = false;
   let _userFaceOffsetY = 0.0;
   let _userFaceScale = 1.0;
-  let _userFaceHideHair = true;
+  let _userFaceShowHair = true;
   let _userFaceCameraStream = null;
   let _isUserFaceCameraActive = false;
 
@@ -4674,8 +4674,8 @@
   function toggleUserFaceFlipY() {
     _userFaceFlipY = !_userFaceFlipY;
     const btn = document.getElementById('btnUserFaceFlipY');
-    if (btn) btn.classList.toggle('active', !_userFaceFlipY);
-    showToast(_userFaceFlipY ? 'Orientation: Right-Side Up' : 'Orientation: Inverted');
+    if (btn) btn.classList.toggle('active', _userFaceFlipY);
+    showToast(_userFaceFlipY ? 'Orientation: Inverted' : 'Orientation: Right-Side Up');
     if (_selectedUserFaceImage) {
       applyUserFaceToMannequin(true);
     }
@@ -4692,7 +4692,7 @@
   }
 
   function toggleUserFaceHair(checked) {
-    _userFaceHideHair = checked;
+    _userFaceShowHair = checked;
     if (_selectedUserFaceImage) {
       applyUserFaceToMannequin(true);
     }
@@ -4754,7 +4754,8 @@
         flipX: _userFaceFlipX,
         offsetY: _userFaceOffsetY,
         scale: _userFaceScale,
-        hideMannequinHair: _userFaceHideHair
+        showHair: _userFaceShowHair,
+        hideMannequinHair: !_userFaceShowHair
       };
       const success = studio.applyUserFace(_selectedUserFaceImage, options);
       if (success) {

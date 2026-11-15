@@ -21,6 +21,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import android.view.View
+import android.view.WindowManager
 import androidx.webkit.WebViewAssetLoader
 
 class MainActivity : ComponentActivity() {
@@ -72,6 +73,10 @@ class MainActivity : ComponentActivity() {
 
         // Enable Chrome remote debugging: open chrome://inspect in desktop Chrome
         WebView.setWebContentsDebuggingEnabled(true)
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        )
 
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
@@ -94,6 +99,7 @@ class MainActivity : ComponentActivity() {
         }
 
         val view = WebView(this).apply {
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT

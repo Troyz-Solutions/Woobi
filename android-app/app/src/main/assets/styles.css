@@ -13480,8 +13480,17 @@ body.theme-dark .search-input,
 /* Post-Capture Review Controls */
 .clothing-review-controls {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.clothing-review-buttons-row {
+  display: flex;
   gap: 12px;
   align-items: center;
+  width: 100%;
 }
 
 .clothing-btn-retake {
@@ -13576,16 +13585,17 @@ body.theme-dark .search-input,
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(16, 40, 24, 0.85);
+  background: rgba(16, 40, 24, 0.9);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(46, 204, 113, 0.5);
-  padding: 4px 12px;
+  padding: 6px 16px;
   border-radius: 999px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   width: fit-content;
   margin-inline: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
 }
 
 .clothing-scan-quality-badge {
@@ -18186,4 +18196,25 @@ body.theme-dark .woobi-silk-bg,
   color: var(--text-muted, #7A8174);
   margin-bottom: 12px;
 }
+
+/* ==========================================================================
+   MOBILE GPU PERFORMANCE OPTIMIZATIONS (Eliminates WebView Compositor Lag)
+   ========================================================================== */
+@media (max-width: 768px), (pointer: coarse) {
+  /* Disable expensive backdrop-filter GPU readbacks on mobile WebViews */
+  .clothing-fold-assist-pill,
+  .clothing-scan-quality-chip,
+  .clothing-hd-color-chip,
+  .clothing-guide-banner,
+  .clothing-slot-pill,
+  .glass-card,
+  .glass-panel,
+  .bottom-nav,
+  .top-bar,
+  .modal-backdrop {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
 

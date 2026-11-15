@@ -17,6 +17,7 @@
 
   // Camera Presets configured specifically for Portrait Mobile & Desktop Framing.
   // Instantiated lazily only when Three.js is loaded.
+  const isMobileDevice = typeof navigator !== 'undefined' && (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (typeof window !== 'undefined' && window.innerWidth <= 768));
   let CAMERA_STATES = null;
 
   function createCameraStates() {
@@ -283,14 +284,14 @@
       // 3. WebGL Renderer with Tone Mapping and Soft Shadows
       this.renderer = new THREE.WebGLRenderer({
         canvas: this.canvas,
-        antialias: true,
+        antialias: !isMobileDevice,
         alpha: false,
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.5 : 2));
       this.renderer.shadowMap.enabled = true;
-      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.shadowMap.type = isMobileDevice ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
       if (THREE.ACESFilmicToneMapping) {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 0.88; // Calibrated exposure preventing washed-out overly bright appearance and preserving rich contrast
@@ -2978,8 +2979,9 @@
         }
 
         const activeMesh = this.mirrorGlassMesh;
+        const mirrorRes = isMobileDevice ? 512 : 1024;
         if (typeof window !== 'undefined' && window.WoobiVanity && window.WoobiVanity.MirrorReflection && activeMesh) {
-          this.standaloneReflection = new window.WoobiVanity.MirrorReflection({ resolution: 1024 });
+          this.standaloneReflection = new window.WoobiVanity.MirrorReflection({ resolution: mirrorRes });
           this.standaloneReflection.init(THREE, this.scene, activeMesh);
           this.mirrorRenderTarget = this.standaloneReflection.renderTarget;
           this.mirrorCamera = this.standaloneReflection.mirrorCamera;
@@ -2987,7 +2989,7 @@
         }
 
         const renderFormat = (typeof THREE.RGBAFormat !== 'undefined') ? THREE.RGBAFormat : (THREE.RGBFormat || 1022);
-        this.mirrorRenderTarget = new THREE.WebGLRenderTarget(1024, 1024, {
+        this.mirrorRenderTarget = new THREE.WebGLRenderTarget(mirrorRes, mirrorRes, {
           format: renderFormat,
           generateMipmaps: false,
           minFilter: THREE.LinearFilter,
@@ -3918,7 +3920,7 @@
       }
 
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.5 : 2));
     }
 
     /**
@@ -4072,30 +4074,35 @@
       }
 
       // 6. Real-time Optical Planar Mirror Rendering (True Physical Reflector)
+      this._mirrorFrameCount = (this._mirrorFrameCount || 0) + 1;
+      const shouldRenderMirror = !isMobileDevice || (this.currentCameraState === 'MIRROR_VIEW') || (this._mirrorFrameCount % 3 === 0);
+
       const activeMirrorMesh = (this.vanityModel && this.vanityModel.mirrorGlassMesh) ? this.vanityModel.mirrorGlassMesh : this.mirrorGlassMesh;
-      if (this.vanityModel && this.vanityModel.reflection) {
-        this.vanityModel.reflection.update(this.renderer, this.scene, this.camera);
-      } else if (this.standaloneReflection) {
-        this.standaloneReflection.update(this.renderer, this.scene, this.camera);
-      } else if (this.mirrorRenderTarget && this.mirrorCamera && activeMirrorMesh) {
-        activeMirrorMesh.visible = false;
-        if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = false;
-        this.mirrorCamera.position.set(1.15, 1.65, -2.80);
-        this.mirrorCamera.lookAt(0, 1.15, 0); // Looking towards avatar torso from mirror position
-        this.mirrorCamera.fov = 34;
-        this.mirrorCamera.near = 0.15;
-        this.mirrorCamera.far = 40.0;
-        if (typeof this.mirrorCamera.updateProjectionMatrix === 'function') {
-          this.mirrorCamera.updateProjectionMatrix();
+      if (shouldRenderMirror) {
+        if (this.vanityModel && this.vanityModel.reflection) {
+          this.vanityModel.reflection.update(this.renderer, this.scene, this.camera);
+        } else if (this.standaloneReflection) {
+          this.standaloneReflection.update(this.renderer, this.scene, this.camera);
+        } else if (this.mirrorRenderTarget && this.mirrorCamera && activeMirrorMesh) {
+          activeMirrorMesh.visible = false;
+          if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = false;
+          this.mirrorCamera.position.set(1.15, 1.65, -2.80);
+          this.mirrorCamera.lookAt(0, 1.15, 0); // Looking towards avatar torso from mirror position
+          this.mirrorCamera.fov = 34;
+          this.mirrorCamera.near = 0.15;
+          this.mirrorCamera.far = 40.0;
+          if (typeof this.mirrorCamera.updateProjectionMatrix === 'function') {
+            this.mirrorCamera.updateProjectionMatrix();
+          }
+
+          this.renderer.setRenderTarget(this.mirrorRenderTarget);
+          this.renderer.clear();
+          this.renderer.render(this.scene, this.mirrorCamera);
+          this.renderer.setRenderTarget(null);
+
+          activeMirrorMesh.visible = true;
+          if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = true;
         }
-
-        this.renderer.setRenderTarget(this.mirrorRenderTarget);
-        this.renderer.clear();
-        this.renderer.render(this.scene, this.mirrorCamera);
-        this.renderer.setRenderTarget(null);
-
-        activeMirrorMesh.visible = true;
-        if (this.lowerMirrorGlassMesh) this.lowerMirrorGlassMesh.visible = true;
       }
 
       // 7. Render Main Viewport

@@ -46,6 +46,12 @@ Copy-Item (Join-Path $src "libs\*") $libsDest -Recurse -Force
 # Copy modules folder
 Copy-Item (Join-Path $src "modules") $dest -Recurse -Force
 
+# Copy engine-harmony folder (Engine Harmony Recommendation Engine)
+$harmonySrc = Join-Path $src "engine-harmony"
+if (Test-Path $harmonySrc) {
+    Copy-Item $harmonySrc $dest -Recurse -Force
+}
+
 # Copy 3D model subfolders (GLB files only to keep APK size optimal)
 $mirrorDest = Join-Path $dest "3D - Mirror and stuffs"
 New-Item -ItemType Directory -Force -Path $mirrorDest | Out-Null

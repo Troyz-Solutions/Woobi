@@ -410,11 +410,12 @@ export class UserFaceMeshEngine {
     const srcH = imageSource.naturalHeight || imageSource.videoHeight || imageSource.height || 512;
 
     const isLandscape = srcW > srcH;
-    // In landscape (webcam/desktop selfie), face extends from hair to chin/neck
-    // Framing captures user's hairline, forehead, eyes, nose, mouth, beard, and upper neck
+    // Precise facial bounding box: focuses strictly on facial features (forehead, eyes, nose, mouth, beard)
+    // Eliminates webcam hair clash, earbuds, and white shirt collars
     let cx = isLandscape ? (srcW * 0.485) : (srcW * 0.50);
-    let cy = isLandscape ? (srcH * 0.60) : (srcH * 0.48);
-    let cropSize = isLandscape ? (srcH * 0.72) : (srcW * 0.82);
+    let cy = isLandscape ? (srcH * 0.67) : (srcH * 0.52);
+    let cropW = isLandscape ? (srcH * 0.42) : (srcW * 0.55);
+    let cropH = isLandscape ? (srcH * 0.52) : (srcW * 0.68);
 
     // Dynamic skin centroid fine-tuning if available
     try {
@@ -428,10 +429,10 @@ export class UserFaceMeshEngine {
         const imgData = sCtx.getImageData(0, 0, scanSize, scanSize);
         const data = imgData.data;
 
-        const minX = Math.floor(scanSize * 0.25);
-        const maxX = Math.floor(scanSize * 0.75);
-        const minY = Math.floor(scanSize * (isLandscape ? 0.30 : 0.20));
-        const maxY = Math.floor(scanSize * (isLandscape ? 0.85 : 0.70));
+        const minX = Math.floor(scanSize * 0.30);
+        const maxX = Math.floor(scanSize * 0.70);
+        const minY = Math.floor(scanSize * (isLandscape ? 0.40 : 0.30));
+        const maxY = Math.floor(scanSize * (isLandscape ? 0.85 : 0.75));
 
         let sumX = 0, sumY = 0, count = 0;
         for (let y = minY; y < maxY; y++) {
@@ -459,9 +460,6 @@ export class UserFaceMeshEngine {
     } catch (e) {
       // Fallback cleanly to default center
     }
-
-    const cropW = cropSize;
-    const cropH = cropSize;
 
     let cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
     let cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH / 2));
@@ -682,36 +680,37 @@ export class UserFaceMeshEngine {
       (this.studio3D?.currentMannequinGender === 'male') ||
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
-    // 2. Prepare 1024x1024 cropped face texture with soft feathered edge & background suppression
-    const res = 1024;
+    // 2. Prepare 1024x1280 cropped face texture with soft feathered edge & background suppression
+    const resW = 1024;
+    const resH = 1280;
     const canvas = document.createElement('canvas');
-    canvas.width = res;
-    canvas.height = res;
+    canvas.width = resW;
+    canvas.height = resH;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
-    const faceCanvas = this.extractFaceRegion(userImageSource, res, res);
+    const faceCanvas = this.extractFaceRegion(userImageSource, resW, resH);
     if (!faceCanvas) return null;
 
     ctx.drawImage(faceCanvas, 0, 0);
 
     // Anatomical contour mask with jaw taper, neck transition & room background suppression
     try {
-      const imgData = ctx.getImageData(0, 0, res, res);
+      const imgData = ctx.getImageData(0, 0, resW, resH);
       const data = imgData.data;
-      const cx = res / 2;
-      const cy = res * 0.49;
+      const mcx = resW / 2;
+      const mcy = resH * 0.50;
 
-      for (let y = 0; y < res; y++) {
-        for (let x = 0; x < res; x++) {
-          const idx = (y * res + x) * 4;
-          const ny = (y - cy) / (res * 0.45);
-          // Anatomical tapering: upper face is round/wide, lower face tapers along jaw to neck
-          const rx = (ny < 0) ? (res * 0.36) : (res * 0.36 - (res * 0.13) * Math.pow(Math.min(1.0, ny), 1.2));
-          const nx = (x - cx) / rx;
+      for (let y = 0; y < resH; y++) {
+        for (let x = 0; x < resW; x++) {
+          const idx = (y * resW + x) * 4;
+          const ny = (y - mcy) / (resH * 0.48);
+          // Anatomical tapering: upper face is round/wide, lower face tapers along jaw to chin
+          const rx = (ny < 0) ? (resW * 0.46) : (resW * 0.46 - (resW * 0.10) * Math.pow(Math.min(1.0, ny), 1.2));
+          const nx = Math.abs(x - mcx) / rx;
           const d = nx * nx + ny * ny;
 
           const r = data[idx];
@@ -722,12 +721,12 @@ export class UserFaceMeshEngine {
 
           if (isWall && d > 0.40) {
             data[idx + 3] = 0;
-          } else if (d <= 0.68) {
+          } else if (d <= 0.70) {
             data[idx + 3] = 255;
-          } else if (d >= 1.05) {
+          } else if (d >= 1.02) {
             data[idx + 3] = 0;
           } else {
-            const ratio = (d - 0.68) / 0.37;
+            const ratio = (d - 0.70) / 0.32;
             data[idx + 3] = Math.round(255 * (0.5 + 0.5 * Math.cos(ratio * Math.PI)));
           }
         }
@@ -755,12 +754,12 @@ export class UserFaceMeshEngine {
     this.removeFacePlate();
 
     // 4. Build curved 3D faceplate geometry
-    // When parented to headBone, local scale is cm (w: ~16.0, h: ~22.8)
-    // When parented to avatarRoot/scene, scale is meters (w: ~0.160, h: ~0.228)
+    // When parented to headBone, local scale is cm (w: ~12.2, h: ~15.2)
+    // When parented to avatarRoot/scene, scale is meters (w: ~0.122, h: ~0.152)
     const isBoneParent = !!headBone;
     const scaleMul = options.scale !== undefined ? options.scale : 1.0;
-    const w = (isBoneParent ? (isMale ? 16.0 : 14.8) : (isMale ? 0.160 : 0.148)) * scaleMul;
-    const h = (isBoneParent ? (isMale ? 22.8 : 20.8) : (isMale ? 0.228 : 0.208)) * scaleMul;
+    const w = (isBoneParent ? (isMale ? 12.2 : 11.4) : (isMale ? 0.122 : 0.114)) * scaleMul;
+    const h = (isBoneParent ? (isMale ? 15.2 : 14.0) : (isMale ? 0.152 : 0.140)) * scaleMul;
 
     let geo = null;
     if (THREE.PlaneGeometry) {
@@ -786,8 +785,8 @@ export class UserFaceMeshEngine {
         const py = pos.getY(i);
         // Anatomic facial curve: cheeks wrap back around sides of head and jaw
         const zCurve = isBoneParent
-          ? (- (px * px) / 26.0 - Math.max(0, py - 2.0) * 0.04)
-          : (- (px * px) / 0.26 - Math.max(0, py - 0.02) * 0.04 * 0.01);
+          ? (- (px * px) / 18.0 - Math.max(0, py - 1.0) * 0.03)
+          : (- (px * px) / 0.18 - Math.max(0, py - 0.01) * 0.03 * 0.01);
         pos.setZ(i, zCurve);
       }
       if (typeof geo.computeVertexNormals === 'function') {
@@ -804,7 +803,7 @@ export class UserFaceMeshEngine {
       depthWrite: false
     };
     if (THREE.MeshStandardMaterial) {
-      matOptions.roughness = 0.55;
+      matOptions.roughness = 0.58;
       matOptions.metalness = 0.0;
       matOptions.polygonOffset = true;
       matOptions.polygonOffsetFactor = -2;
@@ -821,15 +820,15 @@ export class UserFaceMeshEngine {
     const offsetY = options.offsetY !== undefined ? options.offsetY : 0.0;
 
     if (isBoneParent) {
-      // Local position inside Mixamo Head bone: x=0, y=8.4 (eye level), z=10.0 (front surface of face)
-      const posY = (isMale ? 8.4 : 7.6) + offsetY;
-      const posZ = isMale ? 10.0 : 9.0;
+      // Local position inside Mixamo Head bone: x=0, y=10.5 (hairline meets hair top, eyes in socket, chin at jaw), z=9.8
+      const posY = (isMale ? 10.5 : 9.8) + offsetY;
+      const posZ = isMale ? 9.8 : 8.8;
       mesh.position.set(0, posY, posZ);
       headBone.add(mesh);
     } else {
       // Fallback: parent to headGroup or avatarRoot at eye height
       const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
-      const posY = 1.62 + (offsetY * 0.01);
+      const posY = 1.635 + (offsetY * 0.01);
       if (mesh.position && typeof mesh.position.set === 'function') {
         mesh.position.set(0, posY, 0.09);
       }

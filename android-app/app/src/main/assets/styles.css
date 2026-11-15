@@ -8583,6 +8583,30 @@ body.theme-dark.high-contrast,
   cursor: pointer;
 }
 
+.user-face-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(74, 99, 72, 0.08);
+  border: 1px solid rgba(74, 99, 72, 0.22);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  color: #2F422E;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.user-face-status-badge.hidden {
+  display: none !important;
+}
+
+.user-face-status-badge.warning {
+  background: rgba(180, 80, 50, 0.08);
+  border-color: rgba(180, 80, 50, 0.25);
+  color: #8A3015;
+}
+
 .avatar-hint {
   bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 98px) !important;
   left: 50% !important;

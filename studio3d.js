@@ -3902,6 +3902,25 @@
      * @param {Object} options
      */
     applyUserFace(imageSource, options = {}) {
+      if (!this.personalizedAvatarManager) {
+        const ManagerClass = (typeof PersonalizedAvatarManager !== 'undefined')
+          ? PersonalizedAvatarManager
+          : (typeof window !== 'undefined'
+              ? (window.PersonalizedAvatarManager ||
+                 (window.WoobiAvatar && window.WoobiAvatar.PersonalizedAvatarManager) ||
+                 null)
+              : null);
+        if (ManagerClass) {
+          this.personalizedAvatarManager = new ManagerClass(this);
+        }
+      }
+      if (this.personalizedAvatarManager) {
+        const processed = this.personalizedAvatarManager.processFaceImage(imageSource, options.selectedFaceIndex || 0);
+        const headMesh = this.personalizedAvatarManager.generatePersonalizedHead(processed.biometrics, processed.textureCanvas, options);
+        const success = this.personalizedAvatarManager.replaceMannequinHead(headMesh);
+        if (success) return true;
+      }
+
       if (!this.userFaceEngine) {
         const EngineClass = (typeof UserFaceMeshEngine !== 'undefined')
           ? UserFaceMeshEngine
@@ -3925,23 +3944,14 @@
      * Resets 3D Mannequin Face and Head Geometry to Pristine Default
      */
     resetUserFace() {
-      if (!this.userFaceEngine) {
-        const EngineClass = (typeof UserFaceMeshEngine !== 'undefined')
-          ? UserFaceMeshEngine
-          : (typeof window !== 'undefined'
-              ? (window.UserFaceMeshEngine ||
-                 (window.WoobiAvatarCustomizer && window.WoobiAvatarCustomizer.UserFaceMeshEngine) ||
-                 (window.WoobiStudioFeatures && window.WoobiStudioFeatures.customizer && window.WoobiStudioFeatures.customizer.UserFaceMeshEngine) ||
-                 null)
-              : null);
-        if (EngineClass) {
-          this.userFaceEngine = new EngineClass(this);
-        }
+      let reset = false;
+      if (this.personalizedAvatarManager) {
+        reset = this.personalizedAvatarManager.resetToDefaultAvatar() || reset;
       }
       if (this.userFaceEngine) {
-        return this.userFaceEngine.resetToDefault();
+        reset = this.userFaceEngine.resetToDefault() || reset;
       }
-      return false;
+      return reset;
     }
 
     /**

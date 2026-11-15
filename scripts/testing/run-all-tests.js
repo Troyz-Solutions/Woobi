@@ -16,6 +16,7 @@ const testSuites = [
   { name: 'Wardrobe Module (25 Tests)', path: 'modules/3d-studio/wardrobe/WardrobeModel.test.js' },
   { name: 'Mirror & Vanity Module (25 Tests)', path: 'modules/3d-studio/mirror-vanity/VanityModel.test.js' },
   { name: 'Avatar Module (30 Tests)', path: 'modules/3d-studio/avatar/AvatarModel.test.js' },
+  { name: 'Personalized 3D Face Integration (8 Tests)', path: 'modules/3d-studio/avatar/PersonalizedAvatarManager.test.js', isNodeTest: true },
   { name: 'Lighting Module (30 Tests)', path: 'modules/3d-studio/lighting/StudioLighting.test.js' },
   { name: 'Theme Module (25 Tests)', path: 'modules/3d-studio/theme/StudioTheme.test.js' },
   { name: 'Camera Module (30 Tests)', path: 'modules/3d-studio/camera/StudioCamera.test.js' },

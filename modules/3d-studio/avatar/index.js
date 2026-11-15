@@ -10,6 +10,7 @@ import { AvatarAssets, AVATAR_ASSET_PATHS, MANNEQUIN_ASSET_PATHS } from './Avata
 import { AvatarMorphs, PROPORTION_PRESETS } from './AvatarMorphs.js';
 import { AvatarAnimations } from './AvatarAnimations.js';
 import { AvatarController } from './AvatarController.js';
+import { PersonalizedAvatarManager, DEFAULT_HEAD_CONFIG } from './PersonalizedAvatarManager.js';
 
 export {
   AvatarModel,
@@ -19,6 +20,8 @@ export {
   AvatarMorphs,
   AvatarAnimations,
   AvatarController,
+  PersonalizedAvatarManager,
+  DEFAULT_HEAD_CONFIG,
   AVATAR_CONFIG,
   AVATAR_PALETTE,
   AVATAR_ASSET_PATHS,
@@ -62,6 +65,8 @@ if (typeof window !== 'undefined') {
     AvatarMorphs,
     AvatarAnimations,
     AvatarController,
+    PersonalizedAvatarManager,
+    DEFAULT_HEAD_CONFIG,
     AVATAR_CONFIG,
     AVATAR_PALETTE,
     AVATAR_ASSET_PATHS,

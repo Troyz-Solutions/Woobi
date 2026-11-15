@@ -4716,9 +4716,26 @@
     }
   }
 
+  function setFaceStatusBadge(msg, icon = '⏳', isWarning = false) {
+    const badge = document.getElementById('userFaceStatusBadge');
+    const iconEl = document.getElementById('userFaceStatusIcon');
+    const textEl = document.getElementById('userFaceStatusText');
+    if (!badge) return;
+    if (!msg) {
+      badge.classList.add('hidden');
+      return;
+    }
+    badge.classList.remove('hidden');
+    badge.classList.toggle('warning', !!isWarning);
+    if (iconEl) iconEl.textContent = icon;
+    if (textEl) textEl.textContent = msg;
+  }
+
   function handleUserFaceFile(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
+
+    setFaceStatusBadge('Reading photograph...', '⏳', false);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -4733,6 +4750,24 @@
           previewImg.classList.remove('hidden');
           emptyState.classList.add('hidden');
         }
+
+        // Validate image quality immediately
+        const studio = window.Studio3D || window.studio3d;
+        const manager = studio?.personalizedAvatarManager ||
+          (typeof window.WoobiAvatar?.PersonalizedAvatarManager === 'function' ? new window.WoobiAvatar.PersonalizedAvatarManager(studio) : null);
+
+        if (manager && typeof manager.validateFaceImage === 'function') {
+          const val = manager.validateFaceImage(img);
+          if (!val.valid) {
+            setFaceStatusBadge(val.reason, '⚠️', true);
+            showToast(val.reason);
+            return;
+          } else {
+            setFaceStatusBadge('✨ Portrait quality verified! Tap "Apply to Mannequin".', '✓', false);
+          }
+        } else {
+          setFaceStatusBadge('✨ Face photo ready! Tap "Apply to Mannequin".', '✓', false);
+        }
         showToast('Face photo loaded! Tap "Apply to Mannequin" to morph.');
       };
       img.src = e.target.result;
@@ -4744,6 +4779,10 @@
     if (!_selectedUserFaceImage) {
       if (!isLiveTweak) showToast('Please take a selfie or choose a face photo first!');
       return;
+    }
+
+    if (!isLiveTweak) {
+      setFaceStatusBadge('Reconstructing personalized 3D head...', '⏳', false);
     }
 
     const studio = window.Studio3D || window.studio3d;
@@ -4760,11 +4799,18 @@
       const success = studio.applyUserFace(_selectedUserFaceImage, options);
       if (success) {
         if (!isLiveTweak) {
+          setFaceStatusBadge('✦ Personalized 3D head integrated seamlessly!', '✓', false);
           showToast('✦ Likeness applied! 3D structure morphed & face UV blended seamlessly.');
-          closeUserFaceModal();
+          setTimeout(() => {
+            closeUserFaceModal();
+            setFaceStatusBadge(null);
+          }, 800);
         }
       } else {
-        if (!isLiveTweak) showToast('Could not deform face. Ensure studio avatar is loaded.');
+        if (!isLiveTweak) {
+          setFaceStatusBadge('Could not fit head mesh onto mannequin skeleton.', '⚠️', true);
+          showToast('Could not deform face. Ensure studio avatar is loaded.');
+        }
       }
     } else {
       if (!isLiveTweak) showToast('3D Studio is initializing, please try again in a moment.');
@@ -4773,6 +4819,7 @@
 
   function resetUserFace() {
     stopUserFaceCamera();
+    setFaceStatusBadge(null);
     const studio = window.Studio3D || window.studio3d;
     if (studio && typeof studio.resetUserFace === 'function') {
       studio.resetUserFace();

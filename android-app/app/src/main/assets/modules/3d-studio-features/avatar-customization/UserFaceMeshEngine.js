@@ -471,7 +471,7 @@ export class UserFaceMeshEngine {
    * Synthesizes and projects the user's authentic face onto the avatar's 2048x2048 baseColor map.
    * Completely preserves the user's authentic facial likeness, eyes, beard, mustache, and rich natural skin tone.
    */
-  synthesizeFaceTexture(userImageSource, biometrics = null) {
+  synthesizeFaceTexture(userImageSource, biometrics = null, options = {}) {
     if (!this.options.enableTextureSynthesis || typeof document === 'undefined') return false;
     const meshes = this.findHeadMeshes();
     if (meshes.length === 0) return false;
@@ -556,8 +556,30 @@ export class UserFaceMeshEngine {
       fCtx.drawImage(maskCanvas, 0, 0);
 
       // 4. Composite authentic user face directly into exact UV face atlas coordinates
-      ctx.globalAlpha = 1.0;
-      ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
+      // Mixamo UV map is inverted vertically in texture coordinates (lower Y is chin, higher Y is forehead).
+      // Flip vertically by default so face appears 100% RIGHT-SIDE UP in 3D.
+      ctx.save();
+      const shouldFlipY = (options.flipY !== true);
+      const shouldFlipX = (options.flipX === true);
+      const targetX = faceBounds.x;
+      const targetY = faceBounds.y + (options.offsetY || 0);
+
+      if (shouldFlipY && shouldFlipX) {
+        ctx.translate(targetX + faceBounds.width, targetY + faceBounds.height);
+        ctx.scale(-1.0, -1.0);
+        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+      } else if (shouldFlipY) {
+        ctx.translate(targetX, targetY + faceBounds.height);
+        ctx.scale(1.0, -1.0);
+        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+      } else if (shouldFlipX) {
+        ctx.translate(targetX + faceBounds.width, targetY);
+        ctx.scale(-1.0, 1.0);
+        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+      } else {
+        ctx.drawImage(faceCanvas, targetX, targetY, faceBounds.width, faceBounds.height);
+      }
+      ctx.restore();
 
       // 5. Instantiate Three.js CanvasTexture and bind to avatar body mesh
       if (typeof THREE !== 'undefined' && THREE.CanvasTexture) {
@@ -878,9 +900,12 @@ export class UserFaceMeshEngine {
     const biometrics = this.analyzeFaceLandmarks(imageSource);
     const deformed = this.applyParametricDeformation(biometrics, intensity);
     const facePlate = this.createFacePlate(imageSource, options);
+    if (facePlate) {
+      facePlate.visible = (options.useMeshOverlay === true);
+    }
 
     // Always synthesize and composite authentic user face onto the avatar body texture map
-    this.synthesizeFaceTexture(imageSource, biometrics);
+    this.synthesizeFaceTexture(imageSource, biometrics, options);
 
     this.isApplied = true;
     return !!(facePlate || deformed);

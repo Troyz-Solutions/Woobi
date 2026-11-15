@@ -621,9 +621,10 @@ export class PersonalizedAvatarManager {
 
     // 4b. Synthesize and composite authentic face directly onto avatar 3D body texture
     const sourceImage = (options && options.imageSource) || this.lastImageSource || null;
-    this.synthesizeFaceTexture(sourceImage, this.activeBiometrics);
+    this.synthesizeFaceTexture(sourceImage, this.activeBiometrics, options);
 
     // 5. Mount Personalized Head to Skeleton at verified anatomical eye-line
+    // If mesh overlay is not explicitly requested, keep it hidden so pure UV synthesis displays cleanly
     const isMale = (this.studio3D?.avatarConfig?.gender === 'male') ||
       (this.studio3D?.currentMannequinGender === 'male') ||
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
@@ -631,28 +632,71 @@ export class PersonalizedAvatarManager {
     const config = isMale ? DEFAULT_HEAD_CONFIG.male : DEFAULT_HEAD_CONFIG.female;
     const offsetY = (options && options.offsetY !== undefined) ? options.offsetY : 0.0;
 
-    if (headBone) {
-      headMesh.position.set(0, config.eyeLevelY + offsetY, config.depthZ);
-      headBone.add(headMesh);
-    } else {
-      const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
-      if (headMesh.position && typeof headMesh.position.set === 'function') {
-        headMesh.position.set(0, 1.635 + (offsetY * 0.01), 0.14);
+    if (headMesh) {
+      headMesh.visible = (options.useMeshOverlay === true);
+      if (headBone) {
+        headMesh.position.set(0, config.eyeLevelY + offsetY, config.depthZ);
+        headBone.add(headMesh);
+      } else {
+        const parent = this.studio3D.headGroup || this.studio3D.avatarRoot;
+        if (headMesh.position && typeof headMesh.position.set === 'function') {
+          headMesh.position.set(0, 1.635 + (offsetY * 0.01), 0.14);
+        }
+        if (parent && typeof parent.add === 'function') {
+          parent.add(headMesh);
+        }
       }
-      if (parent && typeof parent.add === 'function') {
-        parent.add(headMesh);
-      }
+      this.currentPersonalizedHead = headMesh;
     }
 
-    this.currentPersonalizedHead = headMesh;
     this.isPersonalized = true;
     return true;
   }
 
   /**
-   * Directly composites user face into avatar body baseColor texture map
+   * Helper: Apply hair tinting and eyelash hiding without mounting 3D mesh
+   * Called from studio3d.js UV-only flow instead of full replaceMannequinHead
    */
-  synthesizeFaceTexture(imageSource, biometrics = null) {
+  _applyHairAndSkinStyling(options = {}) {
+    if (!this.studio3D) return;
+    const avatarRoot = this.studio3D.gltfAvatarGroup || this.studio3D.avatarRoot;
+    if (!avatarRoot || typeof avatarRoot.traverse !== 'function') return;
+
+    const showHair = (options.hideMannequinHair === false || options.showHair !== false);
+    const hairHex = this.activeBiometrics?.hairColor
+      ? ((this.activeBiometrics.hairColor.r << 16) | (this.activeBiometrics.hairColor.g << 8) | this.activeBiometrics.hairColor.b)
+      : 0x1B1614;
+
+    avatarRoot.traverse((c) => {
+      if (c.isMesh) {
+        const name = (c.name || '').toLowerCase();
+        if (name.includes('hair')) {
+          c.visible = showHair;
+          if (c.material) {
+            const mats = Array.isArray(c.material) ? c.material : [c.material];
+            mats.forEach((m) => {
+              if (m.userData._origHairHex === undefined && m.color && typeof m.color.getHex === 'function') {
+                m.userData._origHairHex = m.color.getHex();
+              }
+              if (m.color && typeof m.color.setHex === 'function') {
+                m.color.setHex(hairHex);
+              }
+            });
+          }
+        } else if (name.includes('eyelash')) {
+          c.visible = false;
+        }
+      }
+    });
+  }
+
+  /**
+   * Directly composites user face into avatar body baseColor texture map.
+   * Uses tight face-only crop with skin-tone-aware background removal.
+   * Flips vertically by default so that the face is 100% RIGHT-SIDE UP in 3D.
+   * No 3D mesh overlay — pure UV texture synthesis.
+   */
+  synthesizeFaceTexture(imageSource, biometrics = null, options = {}) {
     if (typeof document === 'undefined') return false;
     const avatarRoot = this.studio3D?.gltfAvatarGroup || this.studio3D?.avatarRoot;
     if (!avatarRoot) return false;
@@ -671,10 +715,10 @@ export class PersonalizedAvatarManager {
       (this.studio3D?.currentMannequinGender === 'male') ||
       (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
 
-    // Verified exact UV regions for Mixamo body texture
+    // Verified exact UV regions for Mixamo body texture (2048×2048 atlas)
     const faceBounds = isMale
       ? { x: 1360, y: 1510, width: 380, height: 380 }
-      : { x: 1160, y: 1380, width: 380, height: 380 };
+      : { x: 1270, y: 1460, width: 380, height: 380 };
 
     const targetMesh = meshes[0];
     const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
@@ -710,6 +754,220 @@ export class PersonalizedAvatarManager {
         ctx.fillRect(0, 0, res, res);
       }
 
+      // --- Build a clean face patch with tight crop + background removal ---
+      const src = imageSource || this.lastImageSource;
+      if (!src) return false;
+
+      const srcW = src.naturalWidth || src.videoWidth || src.width || 512;
+      const srcH = src.naturalHeight || src.videoHeight || src.height || 512;
+
+      // Tight face-only crop: center face (forehead below hair down to beard/chin)
+      // avoiding background walls, clothes, floating hair
+      const isLandscape = srcW > srcH;
+      const cx = srcW * 0.50;
+      const cy = isLandscape ? srcH * 0.44 : srcH * 0.42;
+      const cropW = Math.round(isLandscape ? srcH * 0.55 : srcW * 0.58);
+      const cropH = Math.round(cropW * 1.25); // 4:5 aspect — head from forehead to chin
+      const cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
+      const cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH * 0.42));
+
+      // Render cropped face into a temp canvas for pixel-level background scrubbing
+      const tmpW = faceBounds.width * 2;
+      const tmpH = faceBounds.height * 2;
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width = tmpW;
+      tmpCanvas.height = tmpH;
+      const tCtx = tmpCanvas.getContext('2d', { willReadFrequently: true });
+      if (!tCtx) return false;
+
+      tCtx.imageSmoothingEnabled = true;
+      tCtx.imageSmoothingQuality = 'high';
+      tCtx.drawImage(src, cropX, cropY, cropW, cropH, 0, 0, tmpW, tmpH);
+
+      // --- Pixel-level background removal ---
+      const sampleR = [], sampleG = [], sampleB = [];
+      try {
+        const skinSample = tCtx.getImageData(
+          Math.round(tmpW * 0.35), Math.round(tmpH * 0.15),
+          Math.round(tmpW * 0.30), Math.round(tmpH * 0.15)
+        );
+        const sd = skinSample.data;
+        for (let i = 0; i < sd.length; i += 4) {
+          const r = sd[i], g = sd[i+1], b = sd[i+2];
+          if (r > 50 && g > 35 && b > 20 && r > b && (r + g + b) < 700) {
+            sampleR.push(r); sampleG.push(g); sampleB.push(b);
+          }
+        }
+      } catch (e) { /* ignore */ }
+
+      let skinR = biometrics?.skinTone?.r || this.activeSkinTone?.r || 160;
+      let skinG = biometrics?.skinTone?.g || this.activeSkinTone?.g || 112;
+      let skinB = biometrics?.skinTone?.b || this.activeSkinTone?.b || 88;
+      if (sampleR.length > 5) {
+        skinR = Math.round(sampleR.reduce((a, b) => a + b, 0) / sampleR.length);
+        skinG = Math.round(sampleG.reduce((a, b) => a + b, 0) / sampleG.length);
+        skinB = Math.round(sampleB.reduce((a, b) => a + b, 0) / sampleB.length);
+      }
+
+      // Apply anatomical egg mask + background removal pixel pass
+      try {
+        const imgData = tCtx.getImageData(0, 0, tmpW, tmpH);
+        const data = imgData.data;
+        const mcx = tmpW / 2;
+        const mcy = tmpH * 0.48;
+        const ry = tmpH * 0.45;
+        const rx = tmpW * 0.40;
+
+        for (let y = 0; y < tmpH; y++) {
+          for (let x = 0; x < tmpW; x++) {
+            const idx = (y * tmpW + x) * 4;
+            const r = data[idx], g = data[idx+1], b = data[idx+2];
+
+            const nx = (x - mcx) / rx;
+            const ny = (y - mcy) / ry;
+            const ellipseDist = nx * nx + ny * ny;
+
+            const skinDiff = Math.abs(r - skinR) + Math.abs(g - skinG) + Math.abs(b - skinB);
+            const isBackground = skinDiff > 120 && ellipseDist > 0.50;
+            const isHair = (r + g + b) < 80 && ellipseDist > 0.50;
+
+            if (ellipseDist >= 1.0 || isBackground || isHair) {
+              data[idx + 3] = 0;
+            } else if (ellipseDist > 0.70) {
+              const ratio = (ellipseDist - 0.70) / 0.30;
+              const alpha = Math.round(255 * (0.5 + 0.5 * Math.cos(ratio * Math.PI)));
+              const bgFade = isBackground ? Math.round(alpha * 0.25) : alpha;
+              data[idx + 3] = bgFade;
+            } else {
+              data[idx + 3] = 255;
+            }
+          }
+        }
+        tCtx.putImageData(imgData, 0, 0);
+      } catch (e) {
+        console.warn('PersonalizedAvatarManager: pixel mask pass failed', e);
+      }
+
+      // --- Build clean face canvas ---
+      const faceCanvas = document.createElement('canvas');
+      faceCanvas.width = faceBounds.width;
+      faceCanvas.height = faceBounds.height;
+      const fCtx = faceCanvas.getContext('2d');
+      if (!fCtx) return false;
+      fCtx.imageSmoothingEnabled = true;
+      fCtx.imageSmoothingQuality = 'high';
+      fCtx.drawImage(tmpCanvas, 0, 0, faceBounds.width, faceBounds.height);
+
+      // --- Composite face into body texture atlas ---
+      // IMPORTANT: In the Mixamo GLB texture atlas, the face region is inverted vertically
+      // (lower Y is chin, higher Y is forehead). Therefore, to display 100% RIGHT-SIDE UP
+      // in 3D, we must flip vertically by default (scale(1, -1)).
+      const shouldFlipY = (options.flipY !== true); // Default TRUE for upright 3D view
+      const shouldFlipX = (options.flipX === true); // Default FALSE (normal view)
+      const offsetY = (options.offsetY !== undefined) ? options.offsetY : 0;
+
+      const targetX = faceBounds.x;
+      const targetY = faceBounds.y + offsetY;
+
+      ctx.save();
+      if (shouldFlipY && shouldFlipX) {
+        ctx.translate(targetX + faceBounds.width, targetY + faceBounds.height);
+        ctx.scale(-1.0, -1.0);
+        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+      } else if (shouldFlipY) {
+        ctx.translate(targetX, targetY + faceBounds.height);
+        ctx.scale(1.0, -1.0);
+        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+      } else if (shouldFlipX) {
+        ctx.translate(targetX + faceBounds.width, targetY);
+        ctx.scale(-1.0, 1.0);
+        ctx.drawImage(faceCanvas, 0, 0, faceBounds.width, faceBounds.height);
+      } else {
+        ctx.drawImage(faceCanvas, targetX, targetY, faceBounds.width, faceBounds.height);
+      }
+      ctx.restore();
+
+      const THREE = this.THREE || (typeof window !== 'undefined' ? window.THREE : null);
+      if (THREE && THREE.CanvasTexture) {
+        const newTexture = new THREE.CanvasTexture(canvas);
+        newTexture.flipY = false;
+        if (THREE.sRGBEncoding) newTexture.encoding = THREE.sRGBEncoding;
+        if (THREE.SRGBColorSpace) newTexture.colorSpace = THREE.SRGBColorSpace;
+        newTexture.needsUpdate = true;
+
+        meshes.forEach((mesh) => {
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((m) => {
+              m.map = newTexture;
+              if (m.color && typeof m.color.setHex === 'function') m.color.setHex(0xFFFFFF);
+              m.needsUpdate = true;
+            });
+          } else if (mesh.material) {
+            mesh.material.map = newTexture;
+            if (mesh.material.color && typeof mesh.material.color.setHex === 'function') {
+              mesh.material.color.setHex(0xFFFFFF);
+            }
+            mesh.material.needsUpdate = true;
+          }
+        });
+      }
+      return true;
+    } catch (err) {
+      console.warn('PersonalizedAvatarManager: synthesizeFaceTexture error', err);
+      return false;
+    }
+  }
+
+  // ---- LEGACY: kept for API compatibility but no longer called from main UV flow ----
+  _synthesizeFaceTexture_OLD(imageSource, biometrics = null) {
+    if (typeof document === 'undefined') return false;
+    const avatarRoot = this.studio3D?.gltfAvatarGroup || this.studio3D?.avatarRoot;
+    if (!avatarRoot) return false;
+
+    const meshes = [];
+    if (typeof avatarRoot.traverse === 'function') {
+      avatarRoot.traverse((c) => {
+        if (c.isMesh && (c.name || '').toLowerCase().includes('body')) {
+          meshes.push(c);
+        }
+      });
+    }
+    if (meshes.length === 0) return false;
+
+    const isMale = (this.studio3D?.avatarConfig?.gender === 'male') ||
+      (this.studio3D?.currentMannequinGender === 'male') ||
+      (this.studio3D?.activeModelPath || '').toLowerCase().includes('male');
+
+    // Verified exact UV regions for Mixamo body texture
+    const faceBounds = isMale
+      ? { x: 1360, y: 1510, width: 380, height: 380 }
+      : { x: 1160, y: 1380, width: 380, height: 380 };
+
+    const targetMesh = meshes[0];
+    const material = Array.isArray(targetMesh.material) ? targetMesh.material[0] : targetMesh.material;
+    if (!material) return false;
+
+    try {
+      const res = 2048;
+      const canvas = document.createElement('canvas');
+      canvas.width = res;
+      canvas.height = res;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return false;
+
+      const currentTexture = material.map;
+      if (!this.originalBodyMaterials.has('body_tex_map')) {
+        this.originalBodyMaterials.set('body_tex_map', currentTexture);
+      }
+
+      const baseTex = this.originalBodyMaterials.get('body_tex_map') || currentTexture;
+      let drawnBase = false;
+      const texImg = baseTex ? (baseTex.image || baseTex.source?.data) : null;
+      if (texImg) {
+        try { ctx.drawImage(texImg, 0, 0, res, res); drawnBase = true; } catch (e) {}
+      }
+      if (!drawnBase) { ctx.fillStyle = '#E8D2BE'; ctx.fillRect(0, 0, res, res); }
+
       const faceCanvas = document.createElement('canvas');
       faceCanvas.width = faceBounds.width;
       faceCanvas.height = faceBounds.height;
@@ -728,11 +986,8 @@ export class PersonalizedAvatarManager {
         const cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
         const cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH / 2));
         fCtx.drawImage(src, cropX, cropY, cropW, cropH, 0, 0, faceBounds.width, faceBounds.height);
-      } else if (this.currentPersonalizedHead?.material?.map?.image) {
-        fCtx.drawImage(this.currentPersonalizedHead.material.map.image, 0, 0, faceBounds.width, faceBounds.height);
       }
 
-      // Smooth elliptical alpha feathering
       const maskCanvas = document.createElement('canvas');
       maskCanvas.width = faceBounds.width;
       maskCanvas.height = faceBounds.height;

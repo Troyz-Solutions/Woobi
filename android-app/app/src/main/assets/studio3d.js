@@ -43,10 +43,10 @@
         fovPortrait: 44
       },
       AVATAR_DETAIL: {
-        position: new THREE.Vector3(0, 1.62, 0.85),
-        target: new THREE.Vector3(0, 1.58, 0),
-        fovLandscape: 28,
-        fovPortrait: 34
+        position: new THREE.Vector3(0, 1.50, 1.45),
+        target: new THREE.Vector3(0, 1.45, 0),
+        fovLandscape: 32,
+        fovPortrait: 40
       },
       VANITY_VIEW: {
         position: new THREE.Vector3(1.35, 1.25, -1.75),
@@ -3917,10 +3917,20 @@
       if (this.personalizedAvatarManager) {
         options.imageSource = imageSource;
         this.personalizedAvatarManager.lastImageSource = imageSource;
+        // UV texture synthesis only — no 3D faceplate overlay (eliminates giant blob artifact)
         const processed = this.personalizedAvatarManager.processFaceImage(imageSource, options.selectedFaceIndex || 0);
-        const headMesh = this.personalizedAvatarManager.generatePersonalizedHead(processed.biometrics, processed.textureCanvas, options);
-        const success = this.personalizedAvatarManager.replaceMannequinHead(headMesh, options);
-        if (success) return true;
+        this.personalizedAvatarManager.activeBiometrics = processed.biometrics;
+        this.personalizedAvatarManager.activeSkinTone = processed.skinTone;
+        // Remove any previously mounted 3D head mesh
+        this.personalizedAvatarManager.removePersonalizedHead();
+        // Apply hair/eyelash styling from replaceMannequinHead without mounting the 3D plane
+        this.personalizedAvatarManager._applyHairAndSkinStyling(options);
+        // Composite user face directly into body mesh UV texture
+        const success = this.personalizedAvatarManager.synthesizeFaceTexture(imageSource, processed.biometrics, options);
+        if (success) {
+          this.personalizedAvatarManager.isPersonalized = true;
+          return true;
+        }
       }
 
       if (!this.userFaceEngine) {

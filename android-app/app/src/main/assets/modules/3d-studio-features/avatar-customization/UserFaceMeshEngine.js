@@ -325,19 +325,20 @@ export class UserFaceMeshEngine {
       const ctx = canvas.getContext('2d');
       if (!ctx) return false;
 
-      // 1. Draw existing base texture
+      // 1. Back up original pristine texture if first time
       const currentTexture = material.map;
-      if (currentTexture && currentTexture.image) {
-        ctx.drawImage(currentTexture.image, 0, 0, res, res);
+      if (!this.originalTextures.has(material.uuid)) {
+        this.originalTextures.set(material.uuid, currentTexture);
+      }
+
+      // Always draw from the original clean base texture
+      const baseTex = this.originalTextures.get(material.uuid) || currentTexture;
+      if (baseTex && baseTex.image) {
+        ctx.drawImage(baseTex.image, 0, 0, res, res);
       } else {
         // Fallback tone if texture image not loaded
         ctx.fillStyle = '#F3D5C6';
         ctx.fillRect(0, 0, res, res);
-      }
-
-      // Back up original texture
-      if (!this.originalTextures.has(material.uuid)) {
-        this.originalTextures.set(material.uuid, currentTexture);
       }
 
       // 2. Prepare user face crop on intermediate canvas
@@ -413,7 +414,7 @@ export class UserFaceMeshEngine {
       ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
       ctx.globalAlpha = 1.0;
 
-      // 6. Instantiate Three.js CanvasTexture and bind to avatar material
+      // 6. Instantiate Three.js CanvasTexture and bind to avatar head materials
       if (typeof THREE !== 'undefined' && THREE.CanvasTexture) {
         const newTexture = new THREE.CanvasTexture(canvas);
         newTexture.flipY = false;
@@ -421,8 +422,18 @@ export class UserFaceMeshEngine {
         if (THREE.SRGBColorSpace) newTexture.colorSpace = THREE.SRGBColorSpace;
         newTexture.needsUpdate = true;
 
-        material.map = newTexture;
-        material.needsUpdate = true;
+        meshes.forEach((mesh) => {
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          mats.forEach((m) => {
+            if (m) {
+              if (!this.originalTextures.has(m.uuid)) {
+                this.originalTextures.set(m.uuid, m.map);
+              }
+              m.map = newTexture;
+              m.needsUpdate = true;
+            }
+          });
+        });
         this.synthesizedTexture = newTexture;
       }
 
@@ -440,13 +451,25 @@ export class UserFaceMeshEngine {
    */
   applyUserFace(imageSource, options = {}) {
     if (!imageSource) return false;
-    const intensity = options.intensity !== undefined ? options.intensity : 1.0;
+    this.lastAppliedImage = imageSource;
+    this.lastAppliedOptions = options;
 
+    const intensity = options.intensity !== undefined ? options.intensity : 1.0;
     const biometrics = this.analyzeFaceLandmarks(imageSource);
     const deformed = this.applyParametricDeformation(biometrics, intensity);
     const textured = this.synthesizeFaceTexture(imageSource, biometrics);
 
     return deformed || textured;
+  }
+
+  /**
+   * Re-applies likeness onto newly loaded models (e.g. on gender switch)
+   */
+  reapply() {
+    if (this.lastAppliedImage && this.isApplied) {
+      return this.applyUserFace(this.lastAppliedImage, this.lastAppliedOptions || {});
+    }
+    return false;
   }
 
   /**

@@ -338,7 +338,7 @@
       // Fail-safe veil dismissal ensures studio is revealed smoothly even if network is throttled
       this._veilFallbackTimer = setTimeout(() => {
         this.dismissLoadingVeil();
-      }, 1800);
+      }, 15000);
 
       console.log('Studio3D: Sérén Studio Production V4 Initialized with Stylized Avatar & Atmospheric Dressing Room.');
     }
@@ -1243,25 +1243,18 @@
         closeDoors: () => { this.wardrobeModel.doorsOpen = false; }
       };
 
-      // 1. Initial responsive representation while 3D GLB model streams in (scaled up to match grand proportions)
+      // 1. Prepare Raycastable Bounding Box & Interactive wardrobe structure (authentically powered by 3D GLB model)
+      // Note: Legacy procedural wardrobe fallback eliminated in favor of PR #42 Authentic 3D Wardrobe GLB only
       const WardrobeClass = (typeof Wardrobe3D !== 'undefined') ? Wardrobe3D : (typeof window !== 'undefined' ? window.Wardrobe3D : null);
       if (WardrobeClass) {
         try {
           const wardrobeInstance = new WardrobeClass({ enableLights: true, width: 2.60, height: 3.65, depth: 0.80 });
           this.wardrobeInstance = wardrobeInstance;
-          const pScale = 1.25;
-          wardrobeInstance.group.scale.set(pScale, pScale, pScale);
-          wardrobeGroup.add(wardrobeInstance.group);
-
-          // Register individual hanging clothes and shoes for direct 3D tap-to-equip interactions
-          if (wardrobeInstance.garmentGroup) {
-            wardrobeInstance.garmentGroup.children.forEach(c => this.interactiveObjects.push(c));
-          }
-          if (wardrobeInstance.trouserGroup) {
-            wardrobeInstance.trouserGroup.children.forEach(c => this.interactiveObjects.push(c));
+          if (wardrobeInstance.group) {
+            wardrobeInstance.group.visible = false; // Kept strictly invisible so old procedural wardrobe never flashes
           }
         } catch (e) {
-          console.warn('Initial wardrobe placeholder warning:', e);
+          console.warn('Wardrobe setup warning:', e);
         }
       }
 
@@ -1963,6 +1956,7 @@
 
       const proceduralClockGroup = new THREE.Group();
       proceduralClockGroup.name = 'studio_procedural_clock';
+      proceduralClockGroup.visible = false; // Strictly hidden so only authentic GLB clock is ever displayed
       clockGroup.add(proceduralClockGroup);
 
       const clockR = 0.32; // 64cm diameter classic station wall clock
@@ -2384,6 +2378,7 @@
       this.avatarRoot.position.set(0, 0.080, 0); // Grounded on elevated 8cm stage dais
 
       this.sculptedAvatarGroup = new THREE.Group();
+      this.sculptedAvatarGroup.visible = false; // Strictly hidden so only authentic GLTF mannequin is displayed
       this.avatarRoot.add(this.sculptedAvatarGroup);
 
       this.skinMaterials = [];
@@ -2820,7 +2815,10 @@
       }
       const modelUrls = [
         'assets/models/avatar_female.glb',
-        'seren_avatar.glb'
+        'avatar_female.glb',
+        'seren_avatar.glb',
+        'Woobi_Female_Mannequin_Fixed.glb',
+        'woobi_female_mannequin.glb'
       ];
 
       const tryLoad = (index) => {
@@ -3715,11 +3713,15 @@
       const urls = isMale
         ? [
             'assets/models/avatar_male.glb',
+            'avatar_male.glb',
             'woobi_male_mannequin.glb'
           ]
         : [
             'assets/models/avatar_female.glb',
-            'seren_avatar.glb'
+            'avatar_female.glb',
+            'seren_avatar.glb',
+            'Woobi_Female_Mannequin_Fixed.glb',
+            'woobi_female_mannequin.glb'
           ];
 
       const tryLoad = (idx) => {

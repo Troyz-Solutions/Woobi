@@ -21,6 +21,8 @@ $coreFiles = @(
     "wardrobe-revised-compressed.glb",
     "seren_stage.glb",
     "seren_avatar.glb",
+    "avatar_female.glb",
+    "avatar_male.glb",
     "woobi_female_mannequin.glb",
     "Woobi_Female_Mannequin_Fixed.glb",
     "woobi_male_mannequin.glb"

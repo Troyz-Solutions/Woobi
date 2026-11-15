@@ -53,10 +53,14 @@ export class AvatarModel {
     // 1. Initialize Materials
     this.materials = new AvatarMaterials(textures, _THREE);
 
-    // 2. Initialize Anatomical Rig & Hierarchy
+    // 2. Initialize Anatomical Rig & Hierarchy (kept hidden while authentic GLTF streams in)
     this.rig = new AvatarRig(this.materials, _THREE);
     this.avatarRoot = this.rig.buildRig();
     this.sculptedAvatarGroup = this.rig.sculptedAvatarGroup;
+    if (this.sculptedAvatarGroup) {
+      this.sculptedAvatarGroup.visible = false;
+      this.sculptedAvatarGroup.traverse((c) => { c.visible = false; });
+    }
 
     // 3. Initialize Morphs & Proportions
     this.morphs = new AvatarMorphs(this.avatarRoot, this.rig);

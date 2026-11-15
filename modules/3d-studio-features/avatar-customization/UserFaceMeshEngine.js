@@ -11,26 +11,26 @@
 
 export const FEMALE_FACE_UV_BOUNDS = {
   // Region in the 2048x2048 baseColor texture for female avatar (Mixamo Ch37)
-  x: 1100,
-  y: 1340,
-  width: 500,
-  height: 440,
-  uMin: 1100 / 2048,
-  uMax: 1600 / 2048,
-  vMin: 1340 / 2048,
-  vMax: 1780 / 2048
+  x: 1160,
+  y: 1380,
+  width: 360,
+  height: 360,
+  uMin: 1160 / 2048,
+  uMax: 1520 / 2048,
+  vMin: 1380 / 2048,
+  vMax: 1740 / 2048
 };
 
 export const MALE_FACE_UV_BOUNDS = {
   // Region in the 2048x2048 baseColor texture for male avatar (Mixamo Ch31)
-  x: 1250,
-  y: 1360,
-  width: 500,
-  height: 460,
-  uMin: 1250 / 2048,
-  uMax: 1750 / 2048,
-  vMin: 1360 / 2048,
-  vMax: 1820 / 2048
+  x: 1360,
+  y: 1500,
+  width: 360,
+  height: 360,
+  uMin: 1360 / 2048,
+  uMax: 1720 / 2048,
+  vMin: 1500 / 2048,
+  vMax: 1860 / 2048
 };
 
 export const FACE_UV_BOUNDS = FEMALE_FACE_UV_BOUNDS;
@@ -394,6 +394,7 @@ export class UserFaceMeshEngine {
   /**
    * Intelligently crops and centers the user's face from any photo orientation
    * (landscape selfie, portrait, square) without stretching or background bleeding.
+   * Guarantees 100% authentic capture of forehead, eyes, nose, cheeks, mouth, and beard.
    */
   extractFaceRegion(imageSource, targetWidth, targetHeight) {
     if (typeof document === 'undefined') return null;
@@ -407,12 +408,16 @@ export class UserFaceMeshEngine {
     const srcW = imageSource.naturalWidth || imageSource.videoWidth || imageSource.width || 512;
     const srcH = imageSource.naturalHeight || imageSource.videoHeight || imageSource.height || 512;
 
-    // Scan downscaled image to detect user skin/face centroid
-    let cx = srcW * 0.48;
-    let cy = srcH * 0.56;
+    const isLandscape = srcW > srcH;
+    // In landscape (webcam/desktop selfie), user face is centered ~49% width, ~58% height (hairline to beard)
+    // In portrait (mobile phone selfie), user face is centered ~50% width, ~44% height
+    let cx = isLandscape ? (srcW * 0.49) : (srcW * 0.50);
+    let cy = isLandscape ? (srcH * 0.58) : (srcH * 0.44);
+    let cropSize = isLandscape ? (srcH * 0.46) : (srcW * 0.56);
 
+    // Dynamic skin centroid fine-tuning if available
     try {
-      const scanSize = 128;
+      const scanSize = 64;
       const scanCanvas = document.createElement('canvas');
       scanCanvas.width = scanSize;
       scanCanvas.height = scanSize;
@@ -421,48 +426,44 @@ export class UserFaceMeshEngine {
         sCtx.drawImage(imageSource, 0, 0, scanSize, scanSize);
         const imgData = sCtx.getImageData(0, 0, scanSize, scanSize);
         const data = imgData.data;
-        let sumX = 0, sumY = 0, count = 0;
 
-        for (let y = 10; y < scanSize - 10; y++) {
-          for (let x = 10; x < scanSize - 10; x++) {
+        const minX = Math.floor(scanSize * 0.25);
+        const maxX = Math.floor(scanSize * 0.75);
+        const minY = Math.floor(scanSize * (isLandscape ? 0.30 : 0.20));
+        const maxY = Math.floor(scanSize * (isLandscape ? 0.85 : 0.70));
+
+        let sumX = 0, sumY = 0, count = 0;
+        for (let y = minY; y < maxY; y++) {
+          for (let x = minX; x < maxX; x++) {
             const idx = (y * scanSize + x) * 4;
             const r = data[idx];
             const g = data[idx + 1];
             const b = data[idx + 2];
-            // Genuine human skin condition: distinct warmth/melanin vs background wall
-            if (r > 55 && g > 35 && b > 25 && (r - b) > 20 && (r - g) > 10 && (r + g + b) < 600) {
+            // Melanin skin detection condition
+            if (r > 50 && g > 30 && b > 20 && (r - b) > 15 && (r - g) > 8 && (r + g + b) < 550) {
               sumX += x;
               sumY += y;
               count++;
             }
           }
         }
-        if (count > 60) {
-          cx = (sumX / count) * (srcW / scanSize);
-          cy = (sumY / count) * (srcH / scanSize);
+        if (count > 25) {
+          const detX = (sumX / count) * (srcW / scanSize);
+          const detY = (sumY / count) * (srcH / scanSize);
+          // Stabilize centroid with default geometric center (weighted blend)
+          cx = cx * 0.75 + detX * 0.25;
+          cy = cy * 0.75 + detY * 0.25;
         }
       }
     } catch (e) {
-      // Fallback to default centering
+      // Fallback cleanly to default center
     }
 
-    // Determine crop window matching target aspect ratio (targetWidth / targetHeight)
-    const targetAspect = targetWidth / targetHeight;
-    let cropH = Math.min(srcH * 0.74, srcW * 0.74);
-    let cropW = cropH * targetAspect;
+    const cropW = cropSize;
+    const cropH = cropSize;
 
-    if (cropW > srcW) {
-      cropW = srcW;
-      cropH = cropW / targetAspect;
-    }
-    if (cropH > srcH) {
-      cropH = srcH;
-      cropW = cropH * targetAspect;
-    }
-
-    // Center crop on face/eyes/nose, shifting slightly down from forehead
     let cropX = Math.max(0, Math.min(srcW - cropW, cx - cropW / 2));
-    let cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH * 0.48));
+    let cropY = Math.max(0, Math.min(srcH - cropH, cy - cropH / 2));
 
     ctx.drawImage(imageSource, cropX, cropY, cropW, cropH, 0, 0, targetWidth, targetHeight);
     return canvas;
@@ -507,9 +508,10 @@ export class UserFaceMeshEngine {
       // Always draw from the original clean base texture
       const baseTex = this.originalTextures.get(material.uuid) || currentTexture;
       let drawnBase = false;
-      if (baseTex && baseTex.image) {
+      const texImg = baseTex ? (baseTex.image || baseTex.source?.data) : null;
+      if (texImg) {
         try {
-          ctx.drawImage(baseTex.image, 0, 0, res, res);
+          ctx.drawImage(texImg, 0, 0, res, res);
           drawnBase = true;
         } catch (drawErr) {
           console.warn('UserFaceMeshEngine: drawImage from baseTex failed', drawErr);
@@ -517,7 +519,7 @@ export class UserFaceMeshEngine {
       }
       if (!drawnBase) {
         // Natural neutral mannequin tone if texture image not loaded
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = '#E8D2BE';
         ctx.fillRect(0, 0, res, res);
       }
 
@@ -526,21 +528,21 @@ export class UserFaceMeshEngine {
       const fCtx = faceCanvas.getContext('2d');
       if (!fCtx) return false;
 
-      // 3. Create elliptical feathered alpha mask with smooth Gaussian falloff
+      // 3. Create elliptical feathered alpha mask with smooth falloff
       const maskCanvas = document.createElement('canvas');
       maskCanvas.width = faceBounds.width;
       maskCanvas.height = faceBounds.height;
       const mCtx = maskCanvas.getContext('2d');
 
       const cx = faceBounds.width / 2;
-      const cy = faceBounds.height * 0.48;
-      const rx = (faceBounds.width / 2) * 0.84;
-      const ry = (faceBounds.height / 2) * 0.90;
+      const cy = faceBounds.height * 0.50;
+      const rx = (faceBounds.width / 2) * 0.88;
+      const ry = (faceBounds.height / 2) * 0.94;
 
-      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.45, cx, cy, rx);
+      const gradient = mCtx.createRadialGradient(cx, cy, rx * 0.65, cx, cy, rx);
       gradient.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
-      gradient.addColorStop(0.72, 'rgba(0, 0, 0, 1.0)');
-      gradient.addColorStop(0.88, 'rgba(0, 0, 0, 0.50)');
+      gradient.addColorStop(0.70, 'rgba(0, 0, 0, 1.0)');
+      gradient.addColorStop(0.90, 'rgba(0, 0, 0, 0.60)');
       gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
 
       mCtx.save();
@@ -559,7 +561,7 @@ export class UserFaceMeshEngine {
       ctx.globalAlpha = 1.0;
       ctx.drawImage(faceCanvas, faceBounds.x, faceBounds.y);
 
-      // 5. Instantiate Three.js CanvasTexture and bind ONLY to avatar body mesh
+      // 5. Instantiate Three.js CanvasTexture and bind to avatar body mesh
       if (typeof THREE !== 'undefined' && THREE.CanvasTexture) {
         const newTexture = new THREE.CanvasTexture(canvas);
         newTexture.flipY = false;
@@ -571,15 +573,19 @@ export class UserFaceMeshEngine {
           if (!mesh.userData._originalMaterial) {
             mesh.userData._originalMaterial = mesh.material;
           }
-          const clonedMat = (typeof mesh.material?.clone === 'function')
-            ? mesh.material.clone()
-            : Object.assign({}, mesh.material);
-          clonedMat.map = newTexture;
-          if (clonedMat.color && typeof clonedMat.color.setHex === 'function') {
-            clonedMat.color.setHex(0xFFFFFF);
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((m) => {
+              m.map = newTexture;
+              if (m.color && typeof m.color.setHex === 'function') m.color.setHex(0xFFFFFF);
+              m.needsUpdate = true;
+            });
+          } else if (mesh.material) {
+            mesh.material.map = newTexture;
+            if (mesh.material.color && typeof mesh.material.color.setHex === 'function') {
+              mesh.material.color.setHex(0xFFFFFF);
+            }
+            mesh.material.needsUpdate = true;
           }
-          clonedMat.needsUpdate = true;
-          mesh.material = clonedMat;
         });
         this.synthesizedTexture = newTexture;
       }

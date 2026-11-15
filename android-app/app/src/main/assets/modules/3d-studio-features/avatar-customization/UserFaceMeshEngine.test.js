@@ -100,18 +100,18 @@ console.log('  USER FACE MESH ENGINE — HYBRID 2 & 3 TESTS       ');
 console.log('==================================================');
 
 test('FACE_UV_BOUNDS matches avatar head coordinates', () => {
-  assert.strictEqual(FACE_UV_BOUNDS.x, 1100);
-  assert.strictEqual(FACE_UV_BOUNDS.y, 1340);
-  assert.strictEqual(FACE_UV_BOUNDS.width, 500);
-  assert.strictEqual(FACE_UV_BOUNDS.height, 440);
+  assert.strictEqual(FACE_UV_BOUNDS.x, 1160);
+  assert.strictEqual(FACE_UV_BOUNDS.y, 1380);
+  assert.strictEqual(FACE_UV_BOUNDS.width, 360);
+  assert.strictEqual(FACE_UV_BOUNDS.height, 360);
   assert.ok(FACE_UV_BOUNDS.uMin >= 0 && FACE_UV_BOUNDS.uMax <= 1);
   assert.ok(FACE_UV_BOUNDS.vMin >= 0 && FACE_UV_BOUNDS.vMax <= 1);
   
   // Male Face UV Bounds
-  assert.strictEqual(MALE_FACE_UV_BOUNDS.x, 1250);
-  assert.strictEqual(MALE_FACE_UV_BOUNDS.y, 1360);
-  assert.strictEqual(MALE_FACE_UV_BOUNDS.width, 500);
-  assert.strictEqual(MALE_FACE_UV_BOUNDS.height, 460);
+  assert.strictEqual(MALE_FACE_UV_BOUNDS.x, 1360);
+  assert.strictEqual(MALE_FACE_UV_BOUNDS.y, 1500);
+  assert.strictEqual(MALE_FACE_UV_BOUNDS.width, 360);
+  assert.strictEqual(MALE_FACE_UV_BOUNDS.height, 360);
   assert.ok(MALE_FACE_UV_BOUNDS.uMin >= 0 && MALE_FACE_UV_BOUNDS.uMax <= 1);
   assert.ok(MALE_FACE_UV_BOUNDS.vMin >= 0 && MALE_FACE_UV_BOUNDS.vMax <= 1);
 });

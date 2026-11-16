@@ -4538,7 +4538,7 @@
   let _userFaceFlipX = false;
   let _userFaceOffsetY = 0.0;
   let _userFaceOffsetX = 0.0;
-  let _userFaceScale = 1.0;
+  let _userFaceScale = 1.10;
   let _userFaceShowHair = true;
   let _userFaceCameraStream = null;
   let _isUserFaceCameraActive = false;

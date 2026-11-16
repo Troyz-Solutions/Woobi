@@ -39,6 +39,10 @@
   <script src="libs/DRACOLoader.js"></script>
   <script src="libs/GLTFLoader.js"></script>
 
+  <!-- Google MediaPipe Face Mesh for browser-native 3D face landmark anchoring -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css?v=20261114_light">
   <link rel="stylesheet" href="styles.css?v=20261115_faceplate_hd2">
@@ -837,9 +841,9 @@
                 <div class="user-face-slider-wrap">
                   <div class="slider-label-row">
                     <span class="slider-title">Face Size</span>
-                    <span class="slider-val" id="userFaceScaleVal">100%</span>
+                    <span class="slider-val" id="userFaceScaleVal">110%</span>
                   </div>
-                  <input type="range" id="userFaceScaleRange" min="80" max="130" step="2" value="100" class="user-face-range" oninput="app.updateUserFaceScale(this.value)">
+                  <input type="range" id="userFaceScaleRange" min="80" max="140" step="2" value="110" class="user-face-range" oninput="app.updateUserFaceScale(this.value)">
                 </div>
 
                 <div class="user-face-slider-wrap">

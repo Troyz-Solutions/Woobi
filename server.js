@@ -31,7 +31,7 @@ function loadEnv() {
 }
 loadEnv();
 
-const PORTS = [8085, 8080, 5000, 3000];
+const PORTS = [5173, 8085, 8080, 5000, 3000];
 const BASE_DIR = __dirname;
 
 const MIME_TYPES = {

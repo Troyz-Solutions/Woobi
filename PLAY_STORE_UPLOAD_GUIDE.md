@@ -19,8 +19,8 @@ This folder contains all required production-ready binaries, keys, and metadata 
 
 - **Application ID / Package Name:** `com.woobi.fashion`
 - **App Name:** Woobi (Fashion Studio & 3D Fitting Room)
-- **Version Code:** `2`
-- **Version Name:** `1.0.1`
+- **Version Code:** `3`
+- **Version Name:** `1.0.2`
 - **Minimum Android SDK:** API 24 (Android 7.0 Nougat)
 - **Target Android SDK:** API 36 (Android 16 / Android 15+ compatible)
 - **Build Timestamp:** November 4, 2026

@@ -102,18 +102,9 @@ class MainActivity : ComponentActivity() {
         val initBg = Color.parseColor(if (isSystemDark) DARK_BG else LIGHT_BG)
         window.decorView.setBackgroundColor(initBg)
 
-        // Request runtime Camera and Media permissions for outfit photos & virtual try-on
-        val requiredPerms = mutableListOf<String>()
+        // Request runtime Camera permission if needed for taking photos
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requiredPerms.add(android.Manifest.permission.CAMERA)
-        }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                requiredPerms.add(android.Manifest.permission.READ_MEDIA_IMAGES)
-            }
-        }
-        if (requiredPerms.isNotEmpty()) {
-            cameraPermissionLauncher.launch(requiredPerms.toTypedArray())
+            cameraPermissionLauncher.launch(arrayOf(android.Manifest.permission.CAMERA))
         }
 
         // Enable Chrome remote debugging: open chrome://inspect in desktop Chrome

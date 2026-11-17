@@ -25,7 +25,7 @@ export class PlatformDetector {
   }
 
   static getAndroidPackageId() {
-    return 'com.example.aurawardrobe'; // Preserved canonical Android package ID
+    return 'com.woobi.fashion'; // Official Woobi Android package ID for Play Store
   }
 
   static isAndroidWebView() {

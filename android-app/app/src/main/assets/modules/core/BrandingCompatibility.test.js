@@ -35,12 +35,12 @@ describe('Hardening - Branding & Compatibility Verification', () => {
     assert.ok(stringsContent.includes('<string name="app_name">Woobi</string>'));
   });
 
-  // 4. Critical Compatibility - Android Application ID / Namespace Preserved
-  it('4. strictly preserves existing Android namespace and applicationId to avoid data loss', () => {
+  // 4. Critical Compatibility - Android Application ID Standardized to Woobi
+  it('4. strictly configures official Google Play applicationId com.woobi.fashion', () => {
     const gradlePath = path.join(repoRoot, 'android-app/app/build.gradle.kts');
     const content = fs.readFileSync(gradlePath, 'utf8');
     assert.ok(content.includes('namespace = "com.example.aurawardrobe"'));
-    assert.ok(content.includes('applicationId = "com.example.aurawardrobe"'));
+    assert.ok(content.includes('applicationId = "com.woobi.fashion"'));
   });
 
   // 5. Critical Compatibility - 3D GLB Asset Filenames Preserved

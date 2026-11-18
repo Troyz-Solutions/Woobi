@@ -58,6 +58,9 @@ export class CameraTransitions {
   update(camera, aspect) {
     if (!camera) return;
 
+    if (!this._scratchPos) this._scratchPos = { x: 0, y: 0, z: 0 };
+    if (!this._scratchLookAt) this._scratchLookAt = { x: 0, y: 0, z: 0 };
+
     // 1. Smooth Camera Position & LookAt Lerp
     // Zooming in (zoomFactor < 1.0) dollys closer towards the avatar for outfit inspection
     // Clamped so camera never dollys further back than the baseline studio overview
@@ -69,21 +72,19 @@ export class CameraTransitions {
       const dy = this.targetCameraPos.y - this.targetCameraLookAt.y;
       const dz = this.targetCameraPos.z - this.targetCameraLookAt.z;
       const len = Math.hypot(dx, dy, dz) || 1.0;
-      effectivePos = {
-        x: this.targetCameraPos.x + (dx / len) * dollyOffset,
-        y: this.targetCameraPos.y + (dy / len) * dollyOffset,
-        z: this.targetCameraPos.z + (dz / len) * dollyOffset
-      };
+      this._scratchPos.x = this.targetCameraPos.x + (dx / len) * dollyOffset;
+      this._scratchPos.y = this.targetCameraPos.y + (dy / len) * dollyOffset;
+      this._scratchPos.z = this.targetCameraPos.z + (dz / len) * dollyOffset;
+      effectivePos = this._scratchPos;
     }
 
     let effectiveLookAt = this.targetCameraLookAt;
     const isPortrait = (aspect || camera.aspect) < 0.75;
     if (isPortrait && this.currentPreset === 'STUDIO_OVERVIEW' && this.targetCameraLookAt) {
-      effectiveLookAt = {
-        x: this.targetCameraLookAt.x,
-        y: this.targetCameraLookAt.y - 0.16,
-        z: this.targetCameraLookAt.z
-      };
+      this._scratchLookAt.x = this.targetCameraLookAt.x;
+      this._scratchLookAt.y = this.targetCameraLookAt.y - 0.16;
+      this._scratchLookAt.z = this.targetCameraLookAt.z;
+      effectiveLookAt = this._scratchLookAt;
     }
 
     camera.position.lerp(effectivePos, this.positionLerpSpeed);

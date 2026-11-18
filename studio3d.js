@@ -4110,18 +4110,26 @@
           const dy = this.targetCameraPos.y - this.currentCameraLookAt.y;
           const dz = this.targetCameraPos.z - this.currentCameraLookAt.z;
           const len = Math.hypot(dx, dy, dz) || 1.0;
-          effectivePos = new THREE.Vector3(
-            this.targetCameraPos.x + (dx / len) * dollyOffset,
-            this.targetCameraPos.y + (dy / len) * dollyOffset,
-            this.targetCameraPos.z + (dz / len) * dollyOffset
-          );
+          if (!this._tempEffectivePos && typeof THREE !== 'undefined') this._tempEffectivePos = new THREE.Vector3();
+          if (this._tempEffectivePos) {
+            this._tempEffectivePos.set(
+              this.targetCameraPos.x + (dx / len) * dollyOffset,
+              this.targetCameraPos.y + (dy / len) * dollyOffset,
+              this.targetCameraPos.z + (dz / len) * dollyOffset
+            );
+            effectivePos = this._tempEffectivePos;
+          }
         }
         const aspect = this.camera.aspect;
         const isPortrait = aspect < 0.75;
         let lookAtTarget = this.targetCameraLookAt;
         if (isPortrait && this.currentCameraState === 'STUDIO_OVERVIEW' && this.targetCameraLookAt) {
           // Compensate for mobile bottom navigation bar (80px), framing the mannequin completely from head to toe
-          lookAtTarget = new THREE.Vector3(this.targetCameraLookAt.x, this.targetCameraLookAt.y - 0.16, this.targetCameraLookAt.z);
+          if (!this._tempLookAtTarget && typeof THREE !== 'undefined') this._tempLookAtTarget = new THREE.Vector3();
+          if (this._tempLookAtTarget) {
+            this._tempLookAtTarget.set(this.targetCameraLookAt.x, this.targetCameraLookAt.y - 0.16, this.targetCameraLookAt.z);
+            lookAtTarget = this._tempLookAtTarget;
+          }
         }
         this.camera.position.lerp(effectivePos, 0.075);
         this.currentCameraLookAt.lerp(lookAtTarget, 0.075);
@@ -4144,11 +4152,15 @@
         this.updateStudioClock();
       }
 
-      // 6. Real-time Optical Planar Mirror Rendering (True Physical Reflector)
+      // 6. Optimized Real-time Optical Planar Mirror Rendering
+      // If user is directly in MIRROR_VIEW, render continuously at high frame rate.
+      // If in STUDIO_OVERVIEW / WARDROBE, render once upon entry and throttle background updates
+      // to eliminate dual-render pass overhead and guarantee fluid 60+ FPS on mobile!
       this._mirrorFrameCount = (this._mirrorFrameCount || 0) + 1;
-      const shouldRenderMirror = (this.currentCameraState === 'MIRROR_VIEW') ||
-        (this._mirrorFrameCount < 20) ||
-        (!isMobileDevice ? (this._mirrorFrameCount % 2 === 0) : (this._mirrorFrameCount % 3 === 0));
+      const isMirrorMode = (this.currentCameraState === 'MIRROR_VIEW');
+      const shouldRenderMirror = isMirrorMode
+        ? (!isMobileDevice || (this._mirrorFrameCount % 2 === 0))
+        : (this._mirrorFrameCount <= 3 || (this._mirrorFrameCount % (isMobileDevice ? 90 : 45) === 0));
 
       const activeMirrorMesh = (this.vanityModel && this.vanityModel.mirrorGlassMesh) ? this.vanityModel.mirrorGlassMesh : this.mirrorGlassMesh;
       if (shouldRenderMirror) {

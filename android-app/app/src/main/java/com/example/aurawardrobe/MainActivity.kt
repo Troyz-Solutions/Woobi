@@ -150,6 +150,8 @@ class MainActivity : ComponentActivity() {
             )
             setBackgroundColor(initBg)
             overScrollMode = View.OVER_SCROLL_NEVER
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
 
             settings.apply {
                 javaScriptEnabled = true

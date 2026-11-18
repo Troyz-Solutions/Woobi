@@ -184,6 +184,7 @@
       this.targetRotationY = 0;
       this.hasDragged = false;
       this.pinchStartDist = 0;
+      this.rotationVelocityY = 0;
 
       // Animation Loop & Morphing
       this.clock = null;
@@ -256,10 +257,16 @@
           initialPreset: 'STUDIO_OVERVIEW',
           maxZoomFactor: 1.0,
           onPointerDown: (clientX, clientY) => {
+            this.rotationVelocityY = 0;
+            this.isPointerDown = true;
             return this.handlePointerDown(clientX, clientY);
+          },
+          onPointerUp: () => {
+            this.isPointerDown = false;
           },
           onRotate: (delta) => {
             this.targetRotationY += delta;
+            this.rotationVelocityY = delta;
           },
           onClick: (clientX, clientY) => {
             this.handleCanvasClick(clientX, clientY);
@@ -281,17 +288,23 @@
         this.camera.lookAt(this.currentCameraLookAt);
       }
 
-      // 3. WebGL Renderer with Tone Mapping and Soft Shadows
+      // 3. High-Performance WebGL Renderer with Tone Mapping and Adaptive Shadows
       this.renderer = new THREE.WebGLRenderer({
         canvas: this.canvas,
         antialias: !isMobileDevice,
         alpha: false,
+        stencil: false,
+        precision: isMobileDevice ? 'mediump' : 'highp',
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(width, height);
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.25 : 2));
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = isMobileDevice ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+      if (isMobileDevice) {
+        this.renderer.shadowMap.autoUpdate = false;
+        this.renderer.shadowMap.needsUpdate = true;
+      }
       if (THREE.ACESFilmicToneMapping) {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 0.88; // Calibrated exposure preventing washed-out overly bright appearance and preserving rich contrast
@@ -1131,6 +1144,24 @@
         fgFoliageGroup.add(fgLeaf);
       }
       this.scene.add(fgFoliageGroup);
+
+      // Freeze static architectural elements to eliminate per-frame scene graph traversal overhead
+      [floor, backWall, frontWall, ceiling, baseboard, windowShadowGroup, studioLightGroup, fgFoliageGroup].forEach(o => this.freezeStaticObject(o));
+    }
+
+    /**
+     * Freezes transformation matrices on immutable scene objects to bypass recursive Three.js recalculations
+     */
+    freezeStaticObject(obj) {
+      if (!obj) return;
+      obj.matrixAutoUpdate = false;
+      if (typeof obj.updateMatrix === 'function') obj.updateMatrix();
+      if (typeof obj.traverse === 'function') {
+        obj.traverse((child) => {
+          child.matrixAutoUpdate = false;
+          if (typeof child.updateMatrix === 'function') child.updateMatrix();
+        });
+      }
     }
 
     /**
@@ -1141,6 +1172,7 @@
       if (typeof window !== 'undefined' && window.WoobiStage && typeof window.WoobiStage.createStage === 'function') {
         this.stageModel = window.WoobiStage.createStage(this.scene, this.textures, THREE);
         this.stageGroup = this.stageModel.group;
+        this.freezeStaticObject(this.stageGroup);
         return;
       }
 
@@ -1210,6 +1242,7 @@
 
       this.scene.add(rugGroup);
       this.stageGroup = rugGroup;
+      this.freezeStaticObject(rugGroup);
     }
 
     /**
@@ -1939,6 +1972,7 @@
       }
 
       this.scene.add(vanityGroup);
+      this.freezeStaticObject(vanityGroup);
     }
 
     /**
@@ -3064,6 +3098,7 @@
           this.pointerStartY = e.touches[0].clientY;
           this.lastPointerX = e.touches[0].clientX;
           this.lastPointerY = e.touches[0].clientY;
+          this.rotationVelocityY = 0;
         } else if (e.touches.length === 2) {
           const dx = e.touches[0].clientX - e.touches[1].clientX;
           const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -3080,7 +3115,9 @@
             this.hasDragged = true;
           }
 
-          this.targetRotationY += deltaX * 0.012;
+          const rotStep = deltaX * 0.012;
+          this.targetRotationY += rotStep;
+          this.rotationVelocityY = rotStep;
           this.lastPointerX = e.touches[0].clientX;
           this.lastPointerY = e.touches[0].clientY;
         } else if (e.touches.length === 2) {
@@ -4017,6 +4054,22 @@
 
       const delta = this.clock.getDelta();
       const time = this.clock.getElapsedTime();
+
+      // 0. Smooth Mannequin Rotation Inertia (Tactile Physics Simulation)
+      if (Math.abs(this.rotationVelocityY || 0) > 0.0001 && !this.isPointerDown) {
+        this.targetRotationY += this.rotationVelocityY;
+        this.rotationVelocityY *= 0.92; // Natural rotational friction decay
+      } else if (!this.isPointerDown) {
+        this.rotationVelocityY = 0;
+      }
+
+      // On mobile devices, update shadows every other frame instead of every frame to save GPU draw calls
+      if (isMobileDevice && this.renderer.shadowMap && !this.renderer.shadowMap.autoUpdate) {
+        this._shadowFrameCount = (this._shadowFrameCount || 0) + 1;
+        if (this._shadowFrameCount % 2 === 0) {
+          this.renderer.shadowMap.needsUpdate = true;
+        }
+      }
 
       // 1. Smooth Avatar Rotation Damping & Animations
       if (this.avatarModel && typeof this.avatarModel.update === 'function') {

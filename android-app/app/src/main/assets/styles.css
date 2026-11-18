@@ -7311,6 +7311,11 @@ body.theme-dark.high-contrast,
   background: #EFE7DA;
   user-select: none;
   -webkit-user-select: none;
+  contain: layout paint size;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .seren-3d-canvas {

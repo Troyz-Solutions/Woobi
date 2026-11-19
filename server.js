@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 // Load .env configuration
 function loadEnv() {
   const envPath = path.join(__dirname, '.env');
@@ -99,6 +100,14 @@ const server = http.createServer(async (req, res) => {
   let reqUrl = req.url.split('?')[0];
   if (reqUrl === '/' || !reqUrl) reqUrl = '/index.html';
 
+  if (reqUrl === '/favicon.ico') {
+    const favPath = path.join(BASE_DIR, 'favicon.ico');
+    if (!fs.existsSync(favPath)) {
+      res.writeHead(204, { 'Content-Type': 'image/x-icon', 'Cache-Control': 'public, max-age=604800' });
+      return res.end();
+    }
+  }
+
   const cleanPath = decodeURIComponent(reqUrl.replace(/^\/+/, ''));
   const loginPath = cleanPath === 'login' || cleanPath.startsWith('login/');
   const loginRelativePath = cleanPath === 'login' ? '' : cleanPath.slice('login/'.length);
@@ -111,6 +120,8 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(403, { 'Content-Type': 'text/plain' });
     return res.end('Forbidden');
   }
+
+  const COMPRESSIBLE_EXTS = new Set(['.html', '.htm', '.css', '.js', '.mjs', '.json', '.svg', '.txt']);
 
   fs.stat(filePath, (err, stats) => {
     if (err) {
@@ -129,17 +140,50 @@ const server = http.createServer(async (req, res) => {
 
     const ext = path.extname(finalPath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const etag = `W/"${stats.size.toString(16)}-${Math.floor(stats.mtimeMs).toString(16)}"`;
 
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'no-cache'
-    });
+    const isAppCode = (ext === '.html' || ext === '.js' || ext === '.css');
+    const cacheHeader = isAppCode
+      ? 'no-cache'
+      : 'public, max-age=86400, stale-while-revalidate=604800';
 
-    if (req.method === 'HEAD') {
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, {
+        'ETag': etag,
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': cacheHeader
+      });
       return res.end();
     }
 
+    const headers = {
+      'Content-Type': contentType,
+      'Access-Control-Allow-Origin': '*',
+      'ETag': etag,
+      'Last-Modified': stats.mtime.toUTCString(),
+      'Cache-Control': cacheHeader
+    };
+
+    if (req.method === 'HEAD') {
+      res.writeHead(200, headers);
+      return res.end();
+    }
+
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+    if (COMPRESSIBLE_EXTS.has(ext) && stats.size > 256) {
+      headers['Vary'] = 'Accept-Encoding';
+      if (acceptEncoding.includes('gzip')) {
+        headers['Content-Encoding'] = 'gzip';
+        res.writeHead(200, headers);
+        return fs.createReadStream(finalPath).pipe(zlib.createGzip({ level: 6 })).pipe(res);
+      } else if (acceptEncoding.includes('deflate')) {
+        headers['Content-Encoding'] = 'deflate';
+        res.writeHead(200, headers);
+        return fs.createReadStream(finalPath).pipe(zlib.createDeflate()).pipe(res);
+      }
+    }
+
+    res.writeHead(200, headers);
     fs.createReadStream(finalPath).pipe(res);
   });
 });

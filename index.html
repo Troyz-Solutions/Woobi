@@ -13,12 +13,11 @@
       window.studioErrorLogs.push(e.message + ' at ' + e.filename + ':' + e.lineno);
       document.title = 'ERR: ' + e.message;
     });
-    // Flag mobile application runtime immediately
+    // Flag native Android application wrapper runtime
     (function() {
       var isNative = !!(window.AndroidBridge || navigator.userAgent.indexOf('wv') !== -1 || window.location.hostname === 'appassets.androidplatform.net');
-      var isMobile = isNative || window.innerWidth <= 1024 || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-      if (isMobile) {
-        document.documentElement.classList.add('is-mobile-app');
+      if (isNative) {
+        document.documentElement.classList.add('is-native-app');
       }
     })();
   </script>

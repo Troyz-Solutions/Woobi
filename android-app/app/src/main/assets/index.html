@@ -24,9 +24,7 @@
   </script>
 
   <meta charset="UTF-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,6 +37,11 @@
   <meta name="description"
     content="Personal digital wardrobe for India. Choose what to wear from your own wardrobe. Built for Chennai & Indian climates. Complete 32-Screen UI Replica.">
 
+  <!-- Critical Resource Preloading & Module Preloading -->
+  <link rel="preload" href="styles.css?v=20261115_faceplate_hd2" as="style">
+  <link rel="preload" href="modules/core/shared-ui/tokens.css?v=20261114_light" as="style">
+  <link rel="modulepreload" href="modules/core/index.js">
+
   <!-- Premium Editorial Serif & Modern Sans Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,12 +49,12 @@
     href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap"
     rel="stylesheet">
 
-  <!-- Three.js 3D WebGL Engine, OrbitControls, MeshoptDecoder, DRACOLoader & GLTFLoader -->
-  <script src="libs/three.min.js"></script>
-  <script src="libs/OrbitControls.js"></script>
-  <script src="libs/meshopt_decoder.js"></script>
-  <script src="libs/DRACOLoader.js"></script>
-  <script src="libs/GLTFLoader.js"></script>
+  <!-- Three.js 3D WebGL Engine, OrbitControls, MeshoptDecoder, DRACOLoader & GLTFLoader (Deferred for fast paint) -->
+  <script src="libs/three.min.js" defer></script>
+  <script src="libs/OrbitControls.js" defer></script>
+  <script src="libs/meshopt_decoder.js" defer></script>
+  <script src="libs/DRACOLoader.js" defer></script>
+  <script src="libs/GLTFLoader.js" defer></script>
 
   <!-- Google MediaPipe Face Mesh for browser-native 3D face landmark anchoring -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -275,7 +278,7 @@
              =================================================================== -->
         <section class="phone-screen" id="screen-welcome">
           <div class="welcome-hero-media">
-            <img src="assets/welcome_hero.jpg" alt="Curated wardrobe essentials" class="welcome-hero-img">
+            <img loading="lazy" decoding="async" src="assets/welcome_hero.jpg" alt="Curated wardrobe essentials" class="welcome-hero-img">
           </div>
           <div class="welcome-content-body">
             <div class="welcome-text-block">
@@ -320,7 +323,7 @@
             <div class="style-choice-grid">
               <div class="style-card selected" onclick="app.toggleStyleChoice(this)">
                 <div class="style-thumb-wrap">
-                  <img src="assets/style_casual.jpg" alt="Casual style">
+                  <img loading="lazy" decoding="async" src="assets/style_casual.jpg" alt="Casual style">
                   <div class="choice-checkbox checked">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
                       <polyline points="20 6 9 17 4 12" />
@@ -332,7 +335,7 @@
 
               <div class="style-card" onclick="app.toggleStyleChoice(this)">
                 <div class="style-thumb-wrap">
-                  <img src="assets/minimal_style.jpg" alt="Minimal style">
+                  <img loading="lazy" decoding="async" src="assets/minimal_style.jpg" alt="Minimal style">
                   <div class="choice-checkbox"></div>
                 </div>
                 <span class="style-name-label">Minimal</span>
@@ -340,7 +343,7 @@
 
               <div class="style-card" onclick="app.toggleStyleChoice(this)">
                 <div class="style-thumb-wrap">
-                  <img src="assets/smart_blazer.jpg" alt="Smart style">
+                  <img loading="lazy" decoding="async" src="assets/smart_blazer.jpg" alt="Smart style">
                   <div class="choice-checkbox"></div>
                 </div>
                 <span class="style-name-label">Smart</span>
@@ -348,7 +351,7 @@
 
               <div class="style-card" onclick="app.toggleStyleChoice(this)">
                 <div class="style-thumb-wrap">
-                  <img src="assets/traditional_kurta.jpg" alt="Traditional style">
+                  <img loading="lazy" decoding="async" src="assets/traditional_kurta.jpg" alt="Traditional style">
                   <div class="choice-checkbox"></div>
                 </div>
                 <span class="style-name-label">Traditional</span>
@@ -411,7 +414,7 @@
 
             <div class="mini-garments-grid" id="starterGrid">
               <div class="mini-garment-card" onclick="app.goToScreen('review-item')">
-                <div class="garment-pic-wrap"><img src="assets/navy_shirt.jpg" alt="Shirt"></div>
+                <div class="garment-pic-wrap"><img loading="lazy" decoding="async" src="assets/navy_shirt.jpg" alt="Shirt"></div>
                 <div class="garment-card-footer">
                   <span>Shirt</span>
                   <button class="card-dots-btn">⋮</button>
@@ -419,7 +422,7 @@
               </div>
 
               <div class="mini-garment-card">
-                <div class="garment-pic-wrap"><img src="assets/beige_chinos.jpg" alt="Trousers"></div>
+                <div class="garment-pic-wrap"><img loading="lazy" decoding="async" src="assets/beige_chinos.jpg" alt="Trousers"></div>
                 <div class="garment-card-footer">
                   <span>Trousers</span>
                   <button class="card-dots-btn">⋮</button>
@@ -427,7 +430,7 @@
               </div>
 
               <div class="mini-garment-card">
-                <div class="garment-pic-wrap"><img src="assets/white_sneakers.jpg" alt="Sneakers"></div>
+                <div class="garment-pic-wrap"><img loading="lazy" decoding="async" src="assets/white_sneakers.jpg" alt="Sneakers"></div>
                 <div class="garment-card-footer">
                   <span>Sneakers</span>
                   <button class="card-dots-btn">⋮</button>
@@ -435,7 +438,7 @@
               </div>
 
               <div class="mini-garment-card">
-                <div class="garment-pic-wrap"><img src="assets/olive_kurta.jpg" alt="Kurta"></div>
+                <div class="garment-pic-wrap"><img loading="lazy" decoding="async" src="assets/olive_kurta.jpg" alt="Kurta"></div>
                 <div class="garment-card-footer">
                   <span>Kurta</span>
                   <button class="card-dots-btn">⋮</button>
@@ -489,7 +492,7 @@
 
           <div class="screen-body-padded">
             <div class="review-image-frame">
-              <img src="assets/navy_shirt.jpg" alt="Review Garment">
+              <img loading="lazy" decoding="async" src="assets/navy_shirt.jpg" alt="Review Garment">
               <button class="btn-pencil-edit" onclick="app.goToScreen('crop-photo')" title="Crop or rotate photo">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
@@ -1696,7 +1699,7 @@
 
               <!-- Main Model Try-On Frame -->
               <div class="stylist-model-frame">
-                <img id="stylistResultModelImg" src="assets/model_tryon_navy.jpg" alt="Model Try-On Preview">
+                <img loading="lazy" decoding="async" id="stylistResultModelImg" src="assets/model_tryon_navy.jpg" alt="Model Try-On Preview">
                 <div class="model-tryon-chip-tag" id="stylistModelTagText">
                   <span>👤</span> Styled on model (Full Look)
                 </div>
@@ -1717,21 +1720,21 @@
               <!-- Wardrobe Garments Used -->
               <div class="garment-breakdown-list" style="margin-top: 16px;">
                 <div class="breakdown-row">
-                  <img class="breakdown-thumb" id="stylistThumbTop" src="assets/navy_shirt.jpg" alt="Top">
+                  <img loading="lazy" decoding="async" class="breakdown-thumb" id="stylistThumbTop" src="assets/navy_shirt.jpg" alt="Top">
                   <div class="breakdown-meta-col">
                     <span class="breakdown-name" id="stylistNameTop">Navy shirt</span>
                     <span class="badge-status clean">✨ Clean</span>
                   </div>
                 </div>
                 <div class="breakdown-row">
-                  <img class="breakdown-thumb" id="stylistThumbBot" src="assets/beige_chinos.jpg" alt="Bottom">
+                  <img loading="lazy" decoding="async" class="breakdown-thumb" id="stylistThumbBot" src="assets/beige_chinos.jpg" alt="Bottom">
                   <div class="breakdown-meta-col">
                     <span class="breakdown-name" id="stylistNameBot">Beige chinos</span>
                     <span class="badge-status clean">✨ Clean</span>
                   </div>
                 </div>
                 <div class="breakdown-row">
-                  <img class="breakdown-thumb" id="stylistThumbShoe" src="assets/white_sneakers.jpg" alt="Footwear">
+                  <img loading="lazy" decoding="async" class="breakdown-thumb" id="stylistThumbShoe" src="assets/white_sneakers.jpg" alt="Footwear">
                   <div class="breakdown-meta-col">
                     <span class="breakdown-name" id="stylistNameShoe">White sneakers</span>
                     <span class="badge-status clean">✨ Clean</span>
@@ -1820,15 +1823,15 @@
                 </div>
                 <div class="tray-slots-row">
                   <div class="tray-slot" id="traySlotTop">
-                    <div class="slot-thumb"><img id="trayThumbTop" src="assets/navy_shirt.jpg" alt="Top"></div>
+                    <div class="slot-thumb"><img loading="lazy" decoding="async" id="trayThumbTop" src="assets/navy_shirt.jpg" alt="Top"></div>
                     <span class="slot-label" id="trayLabelTop">Navy shirt</span>
                   </div>
                   <div class="tray-slot" id="traySlotBot">
-                    <div class="slot-thumb"><img id="trayThumbBot" src="assets/beige_chinos.jpg" alt="Bottom"></div>
+                    <div class="slot-thumb"><img loading="lazy" decoding="async" id="trayThumbBot" src="assets/beige_chinos.jpg" alt="Bottom"></div>
                     <span class="slot-label" id="trayLabelBot">Beige chinos</span>
                   </div>
                   <div class="tray-slot" id="traySlotShoe">
-                    <div class="slot-thumb"><img id="trayThumbShoe" src="assets/white_sneakers.jpg" alt="Shoes"></div>
+                    <div class="slot-thumb"><img loading="lazy" decoding="async" id="trayThumbShoe" src="assets/white_sneakers.jpg" alt="Shoes"></div>
                     <span class="slot-label" id="trayLabelShoe">White sneakers</span>
                   </div>
                 </div>
@@ -1849,7 +1852,7 @@
 
               <!-- Try on image -->
               <div class="stylist-model-frame">
-                <img id="builderPreviewModelImg" src="assets/model_tryon_navy.jpg" alt="Custom Model Try-On">
+                <img loading="lazy" decoding="async" id="builderPreviewModelImg" src="assets/model_tryon_navy.jpg" alt="Custom Model Try-On">
                 <div class="model-tryon-chip-tag">
                   <span>👤</span> Styled on model
                 </div>
@@ -1858,21 +1861,21 @@
               <!-- Selected Pieces List -->
               <div class="garment-breakdown-list" style="margin-top: 16px;">
                 <div class="breakdown-row">
-                  <img class="breakdown-thumb" id="customThumbTop" src="assets/navy_shirt.jpg" alt="Top">
+                  <img loading="lazy" decoding="async" class="breakdown-thumb" id="customThumbTop" src="assets/navy_shirt.jpg" alt="Top">
                   <div class="breakdown-meta-col">
                     <span class="breakdown-name" id="customNameTop">Navy shirt</span>
                     <span class="badge-status clean">✨ Clean</span>
                   </div>
                 </div>
                 <div class="breakdown-row">
-                  <img class="breakdown-thumb" id="customThumbBot" src="assets/beige_chinos.jpg" alt="Bottom">
+                  <img loading="lazy" decoding="async" class="breakdown-thumb" id="customThumbBot" src="assets/beige_chinos.jpg" alt="Bottom">
                   <div class="breakdown-meta-col">
                     <span class="breakdown-name" id="customNameBot">Beige chinos</span>
                     <span class="badge-status clean">✨ Clean</span>
                   </div>
                 </div>
                 <div class="breakdown-row">
-                  <img class="breakdown-thumb" id="customThumbShoe" src="assets/white_sneakers.jpg" alt="Shoes">
+                  <img loading="lazy" decoding="async" class="breakdown-thumb" id="customThumbShoe" src="assets/white_sneakers.jpg" alt="Shoes">
                   <div class="breakdown-meta-col">
                     <span class="breakdown-name" id="customNameShoe">White sneakers</span>
                     <span class="badge-status clean">✨ Clean</span>
@@ -1914,10 +1917,10 @@
             <h2 class="screen-headline-serif center-text" id="detailsOutfitTitle">Easy everyday</h2>
 
             <div class="outfit-board-card">
-              <div class="quad-item top-left"><img id="detImgTop" src="assets/navy_shirt.jpg" alt="Shirt"></div>
-              <div class="quad-item top-right"><img id="detImgBot" src="assets/beige_chinos.jpg" alt="Chinos"></div>
-              <div class="quad-item bot-left"><img id="detImgShoe" src="assets/white_sneakers.jpg" alt="Sneakers"></div>
-              <div class="quad-item bot-right"><img id="detImgAcc" src="assets/leather_watch.jpg" alt="Watch"></div>
+              <div class="quad-item top-left"><img loading="lazy" decoding="async" id="detImgTop" src="assets/navy_shirt.jpg" alt="Shirt"></div>
+              <div class="quad-item top-right"><img loading="lazy" decoding="async" id="detImgBot" src="assets/beige_chinos.jpg" alt="Chinos"></div>
+              <div class="quad-item bot-left"><img loading="lazy" decoding="async" id="detImgShoe" src="assets/white_sneakers.jpg" alt="Sneakers"></div>
+              <div class="quad-item bot-right"><img loading="lazy" decoding="async" id="detImgAcc" src="assets/leather_watch.jpg" alt="Watch"></div>
             </div>
 
             <p class="outfit-editorial-caption" id="detailsCaptionText">
@@ -1926,19 +1929,19 @@
 
             <div class="garment-breakdown-list">
               <div class="breakdown-row">
-                <img class="breakdown-thumb" id="rowThumbTop" src="assets/navy_shirt.jpg" alt="Navy shirt">
+                <img loading="lazy" decoding="async" class="breakdown-thumb" id="rowThumbTop" src="assets/navy_shirt.jpg" alt="Navy shirt">
                 <span class="breakdown-name" id="rowNameTop">Navy shirt</span>
                 <button class="btn-swap-pill" onclick="app.openSwapScreen('top')">Swap</button>
               </div>
 
               <div class="breakdown-row">
-                <img class="breakdown-thumb" id="rowThumbBot" src="assets/beige_chinos.jpg" alt="Beige trousers">
+                <img loading="lazy" decoding="async" class="breakdown-thumb" id="rowThumbBot" src="assets/beige_chinos.jpg" alt="Beige trousers">
                 <span class="breakdown-name" id="rowNameBot">Beige trousers</span>
                 <button class="btn-swap-pill" onclick="app.openSwapScreen('bottom')">Swap</button>
               </div>
 
               <div class="breakdown-row">
-                <img class="breakdown-thumb" id="rowThumbShoe" src="assets/white_sneakers.jpg" alt="White sneakers">
+                <img loading="lazy" decoding="async" class="breakdown-thumb" id="rowThumbShoe" src="assets/white_sneakers.jpg" alt="White sneakers">
                 <span class="breakdown-name" id="rowNameShoe">White sneakers</span>
                 <button class="btn-swap-pill" onclick="app.openSwapScreen('footwear')">Swap</button>
               </div>
@@ -1997,10 +2000,10 @@
             <h1 class="screen-headline-serif center-text" style="margin-top: 10px;">Your outfit is ready</h1>
 
             <div class="outfit-board-card" style="margin-top: 14px;">
-              <div class="quad-item top-left"><img id="readyImgTop" src="assets/navy_shirt.jpg" alt="Shirt"></div>
-              <div class="quad-item top-right"><img id="readyImgBot" src="assets/beige_chinos.jpg" alt="Chinos"></div>
-              <div class="quad-item bot-left"><img id="readyImgShoe" src="assets/tan_loafers.jpg" alt="Loafers"></div>
-              <div class="quad-item bot-right"><img id="readyImgAcc" src="assets/leather_watch.jpg" alt="Watch"></div>
+              <div class="quad-item top-left"><img loading="lazy" decoding="async" id="readyImgTop" src="assets/navy_shirt.jpg" alt="Shirt"></div>
+              <div class="quad-item top-right"><img loading="lazy" decoding="async" id="readyImgBot" src="assets/beige_chinos.jpg" alt="Chinos"></div>
+              <div class="quad-item bot-left"><img loading="lazy" decoding="async" id="readyImgShoe" src="assets/tan_loafers.jpg" alt="Loafers"></div>
+              <div class="quad-item bot-right"><img loading="lazy" decoding="async" id="readyImgAcc" src="assets/leather_watch.jpg" alt="Watch"></div>
             </div>
 
             <!-- Streak Camera Upload Action Card -->
@@ -2088,7 +2091,7 @@
           <div id="wZoomedCard" class="w-zoomed-card">
             <button class="w-zoomed-close" onclick="app.wardrobeCloseZoom()">✕</button>
             <div class="w-zoomed-img-wrap">
-              <img id="wZoomedImg" src="" alt="" />
+              <img loading="lazy" decoding="async" id="wZoomedImg" src="" alt="" />
               <div class="w-zoomed-shine"></div>
             </div>
             <div class="w-zoomed-info">
@@ -2111,7 +2114,7 @@
 
           <!-- Drag Ghost Entity for Wardrobe Screen & Global Screen -->
           <div id="wDragGhost" class="w-drag-ghost">
-            <img id="wGhostImg" src="" alt="" />
+            <img loading="lazy" decoding="async" id="wGhostImg" src="" alt="" />
           </div>
 
           <!-- Global Interactive Mannequin Drop Target Portal -->
@@ -2309,9 +2312,9 @@
                 </div>
                 <div class="hist-card-row" onclick="app.goToScreen('outfit-details')">
                   <div class="hist-collage-mini">
-                    <img src="assets/navy_shirt.jpg">
-                    <img src="assets/beige_chinos.jpg">
-                    <img src="assets/white_sneakers.jpg">
+                    <img loading="lazy" decoding="async" src="assets/navy_shirt.jpg">
+                    <img loading="lazy" decoding="async" src="assets/beige_chinos.jpg">
+                    <img loading="lazy" decoding="async" src="assets/white_sneakers.jpg">
                   </div>
                   <span class="hist-look-title">Easy everyday</span>
                   <span class="hist-chevron">›</span>
@@ -2325,9 +2328,9 @@
                 </div>
                 <div class="hist-card-row">
                   <div class="hist-collage-mini">
-                    <img src="assets/olive_kurta.jpg">
-                    <img src="assets/cream_palazzo.jpg">
-                    <img src="assets/tan_loafers.jpg">
+                    <img loading="lazy" decoding="async" src="assets/olive_kurta.jpg">
+                    <img loading="lazy" decoding="async" src="assets/cream_palazzo.jpg">
+                    <img loading="lazy" decoding="async" src="assets/tan_loafers.jpg">
                   </div>
                   <span class="hist-look-title">Office ready</span>
                   <span class="hist-chevron">›</span>
@@ -3540,7 +3543,7 @@
             <!-- Upload items status list -->
             <div class="upload-status-list">
               <div class="status-item-row">
-                <img src="assets/navy_shirt.jpg" class="status-thumb">
+                <img loading="lazy" decoding="async" src="assets/navy_shirt.jpg" class="status-thumb">
                 <div class="status-meta">
                   <strong>Navy shirt</strong>
                   <span class="text-uploaded">Uploaded</span>
@@ -3549,7 +3552,7 @@
               </div>
 
               <div class="status-item-row">
-                <img src="assets/beige_chinos.jpg" class="status-thumb">
+                <img loading="lazy" decoding="async" src="assets/beige_chinos.jpg" class="status-thumb">
                 <div class="status-meta">
                   <strong>Beige trousers</strong>
                   <span class="text-uploaded">Uploaded</span>
@@ -3558,7 +3561,7 @@
               </div>
 
               <div class="status-item-row failed-row">
-                <img src="assets/white_sneakers.jpg" class="status-thumb">
+                <img loading="lazy" decoding="async" src="assets/white_sneakers.jpg" class="status-thumb">
                 <div class="status-meta">
                   <strong>White sneakers</strong>
                   <span class="text-failed">Failed</span>
@@ -3598,8 +3601,8 @@
             <h1 class="screen-headline-serif center-text" style="margin: 10px 0 16px;">Almost ready</h1>
 
             <div class="almost-ready-board">
-              <div class="ready-piece"><img src="assets/navy_shirt.jpg"></div>
-              <div class="ready-piece"><img src="assets/beige_chinos.jpg"></div>
+              <div class="ready-piece"><img loading="lazy" decoding="async" src="assets/navy_shirt.jpg"></div>
+              <div class="ready-piece"><img loading="lazy" decoding="async" src="assets/beige_chinos.jpg"></div>
               <div class="dashed-missing-slot">
                 <div class="missing-shoe-icon">👟</div>
               </div>
@@ -3672,10 +3675,10 @@
             <div class="wardrobe-2col-grid">
               <div class="saved-look-tile">
                 <div class="saved-preview-box">
-                  <div class="quad-item top-left"><img src="assets/navy_shirt.jpg"></div>
-                  <div class="quad-item top-right"><img src="assets/beige_chinos.jpg"></div>
-                  <div class="quad-item bot-left"><img src="assets/white_sneakers.jpg"></div>
-                  <div class="quad-item bot-right"><img src="assets/leather_watch.jpg"></div>
+                  <div class="quad-item top-left"><img loading="lazy" decoding="async" src="assets/navy_shirt.jpg"></div>
+                  <div class="quad-item top-right"><img loading="lazy" decoding="async" src="assets/beige_chinos.jpg"></div>
+                  <div class="quad-item bot-left"><img loading="lazy" decoding="async" src="assets/white_sneakers.jpg"></div>
+                  <div class="quad-item bot-right"><img loading="lazy" decoding="async" src="assets/leather_watch.jpg"></div>
                 </div>
                 <div class="saved-tile-footer">
                   <div>
@@ -3688,10 +3691,10 @@
 
               <div class="saved-look-tile">
                 <div class="saved-preview-box">
-                  <div class="quad-item top-left"><img src="assets/white_linen_shirt.jpg"></div>
-                  <div class="quad-item top-right"><img src="assets/dark_denim.jpg"></div>
-                  <div class="quad-item bot-left"><img src="assets/white_sneakers.jpg"></div>
-                  <div class="quad-item bot-right"><img src="assets/leather_watch.jpg"></div>
+                  <div class="quad-item top-left"><img loading="lazy" decoding="async" src="assets/white_linen_shirt.jpg"></div>
+                  <div class="quad-item top-right"><img loading="lazy" decoding="async" src="assets/dark_denim.jpg"></div>
+                  <div class="quad-item bot-left"><img loading="lazy" decoding="async" src="assets/white_sneakers.jpg"></div>
+                  <div class="quad-item bot-right"><img loading="lazy" decoding="async" src="assets/leather_watch.jpg"></div>
                 </div>
                 <div class="saved-tile-footer">
                   <div>
@@ -3872,9 +3875,9 @@
             <h1 class="screen-headline-serif">Choose your clothing photos</h1>
 
             <div class="photo-access-fan-cards">
-              <div class="fan-card c-left"><img src="assets/olive_kurta.jpg"></div>
-              <div class="fan-card c-center"><img src="assets/dark_denim.jpg"></div>
-              <div class="fan-card c-right"><img src="assets/white_sneakers.jpg"></div>
+              <div class="fan-card c-left"><img loading="lazy" decoding="async" src="assets/olive_kurta.jpg"></div>
+              <div class="fan-card c-center"><img loading="lazy" decoding="async" src="assets/dark_denim.jpg"></div>
+              <div class="fan-card c-right"><img loading="lazy" decoding="async" src="assets/white_sneakers.jpg"></div>
             </div>
 
             <strong style="font-size: 0.95rem; display: block; margin-top: 24px;">Photo access is turned off.</strong>
@@ -4330,10 +4333,10 @@
 
             <!-- Outfit mini board preview -->
             <div class="outfit-board-card" style="max-width: 240px; margin: 0 auto 16px;">
-              <div class="quad-item top-left"><img src="assets/navy_shirt.jpg"></div>
-              <div class="quad-item top-right"><img src="assets/beige_chinos.jpg"></div>
-              <div class="quad-item bot-left"><img src="assets/white_sneakers.jpg"></div>
-              <div class="quad-item bot-right"><img src="assets/leather_watch.jpg"></div>
+              <div class="quad-item top-left"><img loading="lazy" decoding="async" src="assets/navy_shirt.jpg"></div>
+              <div class="quad-item top-right"><img loading="lazy" decoding="async" src="assets/beige_chinos.jpg"></div>
+              <div class="quad-item bot-left"><img loading="lazy" decoding="async" src="assets/white_sneakers.jpg"></div>
+              <div class="quad-item bot-right"><img loading="lazy" decoding="async" src="assets/leather_watch.jpg"></div>
             </div>
 
             <!-- Feedback reason options -->
@@ -4523,7 +4526,7 @@
 
             <!-- Interactive Cropping Box with Grid Overlay -->
             <div class="crop-editor-container">
-              <img src="assets/navy_shirt.jpg" class="crop-target-img" id="cropTargetImg">
+              <img loading="lazy" decoding="async" src="assets/navy_shirt.jpg" class="crop-target-img" id="cropTargetImg">
               <div class="crop-grid-overlay">
                 <div class="grid-line v1"></div>
                 <div class="grid-line v2"></div>
@@ -4589,7 +4592,7 @@
 
           <div class="screen-body-padded">
             <div class="review-image-frame" style="max-width: 140px; margin: 0 auto 16px;">
-              <img src="assets/navy_shirt.jpg" alt="Edit Garment">
+              <img loading="lazy" decoding="async" src="assets/navy_shirt.jpg" alt="Edit Garment">
             </div>
 
             <div class="review-form-fields">
@@ -5657,7 +5660,7 @@
   <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
   <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
   <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261115_personalized_head9"></script>
+  <script src="studio3d.js?v=20261119_smooth_mirror"></script>
   <script src="modules/core/state/StorageService.js"></script>
   <script src="app.js?v=20261115_personalized_head9"></script>
   <script>

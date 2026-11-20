@@ -4205,15 +4205,12 @@
         this.updateStudioClock();
       }
 
-      // 6. Optimized Real-time Optical Planar Mirror Rendering
-      // If user is directly in MIRROR_VIEW, render continuously at high frame rate.
-      // If in STUDIO_OVERVIEW / WARDROBE, render once upon entry and throttle background updates
-      // to eliminate dual-render pass overhead and guarantee fluid 60+ FPS on mobile!
+      // 6. Fluid Real-time Optical Planar Mirror Rendering
+      // Render continuous high-framerate mirror reflections in real-time so character movement,
+      // rotation, breathing, and styling reflect seamlessly without lag or stutter.
       this._mirrorFrameCount = (this._mirrorFrameCount || 0) + 1;
-      const isMirrorMode = (this.currentCameraState === 'MIRROR_VIEW');
-      const shouldRenderMirror = isMirrorMode
-        ? (!isMobileDevice || (this._mirrorFrameCount % 2 === 0))
-        : (this._mirrorFrameCount <= 3 || (this._mirrorFrameCount % (isMobileDevice ? 90 : 45) === 0));
+      const isReflectionsDisabled = (this.vanityModel && this.vanityModel.reflection && this.vanityModel.reflection.enabled === false);
+      const shouldRenderMirror = !isReflectionsDisabled;
 
       const activeMirrorMesh = (this.vanityModel && this.vanityModel.mirrorGlassMesh) ? this.vanityModel.mirrorGlassMesh : this.mirrorGlassMesh;
       if (shouldRenderMirror) {

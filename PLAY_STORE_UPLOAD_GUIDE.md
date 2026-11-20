@@ -17,10 +17,10 @@ This folder contains all required production-ready binaries, keys, and metadata 
 
 ## 2. App & Package Metadata
 
-- **Application ID / Package Name:** `com.example.aurawardrobe`
+- **Application ID / Package Name:** `com.woobi.fashion`
 - **App Name:** Woobi (Fashion Studio & 3D Fitting Room)
-- **Version Code:** `1`
-- **Version Name:** `1.0.0`
+- **Version Code:** `3`
+- **Version Name:** `1.0.2`
 - **Minimum Android SDK:** API 24 (Android 7.0 Nougat)
 - **Target Android SDK:** API 36 (Android 16 / Android 15+ compatible)
 - **Build Timestamp:** November 4, 2026
@@ -52,18 +52,17 @@ This folder contains all required production-ready binaries, keys, and metadata 
 1. **Log in to Google Play Console:**
    - Go to [https://play.google.com/console](https://play.google.com/console).
 2. **Select or Create App:**
-   - Open your existing Woobi app or click **"Create app"** (Package Name: `com.example.aurawardrobe`).
+   - Open your existing Woobi app (Package Name: `com.woobi.fashion`).
 3. **Choose Release Track:**
    - On the left sidebar, navigate to:
-     - **Production** (for live release to public users), OR
-     - **Testing** > **Internal testing** (recommended first to test on your own devices).
+     - **Testing** > **Closed testing** (or Internal testing).
 4. **Create New Release:**
    - Click **"Create new release"** in the top-right corner.
 5. **Upload the Bundle:**
    - Under **"App bundles"**, drag and drop:
-     `S:\Fashion_App\play-store-release\woobi.aab`
+     `S:\Fashion_App\woobi.aab` (or `S:\Fashion_App\play-store-release\woobi.aab`)
 6. **Enter Release Notes:**
-   - In **"Release name"**, enter `1.0.0` (or `1.0.0 - Production Launch`).
+   - In **"Release name"**, enter `1.0.1` (Version code 2).
    - Under **"Release notes"**, paste:
      ```
      Initial release of Woobi 3D Fashion Studio:
@@ -75,3 +74,4 @@ This folder contains all required production-ready binaries, keys, and metadata 
 7. **Review and Rollout:**
    - Click **"Next"** / **"Save and review release"**.
    - Review any warnings, then click **"Start rollout to Production"** (or **"Save"** for Internal Testing).
+

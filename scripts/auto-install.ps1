@@ -6,6 +6,6 @@ Write-Host "Monitoring for Motorola phone connection..."
 Write-Host "Device detected! Installing woobi.apk..."
 $res = & $adb install -r -d $apk
 Write-Host "Install output: $res"
-& $adb shell am start -n com.example.aurawardrobe/.MainActivity
+& $adb shell am start -n com.woobi.fashion/com.example.aurawardrobe.MainActivity
 Write-Host "Woobi launched on device successfully!"
 

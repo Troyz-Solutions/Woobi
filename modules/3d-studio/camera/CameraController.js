@@ -23,6 +23,7 @@ export class CameraController {
     // 3. Initialize Interactions
     this.interactions = new CameraInteractions({
       onPointerDown: options.onPointerDown || null,
+      onPointerUp: options.onPointerUp || null,
       onRotate: options.onRotate || null,
       onZoom: (delta) => this.addZoomDelta(delta),
       onClick: options.onClick || null,

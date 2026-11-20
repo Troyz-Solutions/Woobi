@@ -10,6 +10,7 @@ export class CameraInteractions {
 
     // Callbacks
     this.onPointerDown = options.onPointerDown || null; // (clientX, clientY) => boolean (true to cancel rotate/drag)
+    this.onPointerUp = options.onPointerUp || null;     // (event) => {}
     this.onRotate = options.onRotate || null; // (deltaRotationY) => {}
     this.onZoom = options.onZoom || null;     // (deltaZoomFactor) => {}
     this.onClick = options.onClick || null;   // (clientX, clientY) => {}
@@ -122,6 +123,9 @@ export class CameraInteractions {
   _handleMouseUp(e) {
     if (!this.isPointerDown) return;
     this.isPointerDown = false;
+    if (typeof this.onPointerUp === 'function') {
+      this.onPointerUp(e);
+    }
     if (!this.hasDragged && typeof this.onClick === 'function') {
       this.onClick(e.clientX, e.clientY);
     }
@@ -180,6 +184,9 @@ export class CameraInteractions {
   _handleTouchEnd(e) {
     if (!this.isPointerDown) return;
     this.isPointerDown = false;
+    if (typeof this.onPointerUp === 'function') {
+      this.onPointerUp(e);
+    }
     if (!this.hasDragged && e.changedTouches && e.changedTouches.length > 0) {
       if (typeof this.onClick === 'function') {
         this.onClick(e.changedTouches[0].clientX, e.changedTouches[0].clientY);

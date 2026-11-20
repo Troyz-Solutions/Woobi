@@ -102,18 +102,9 @@ class MainActivity : ComponentActivity() {
         val initBg = Color.parseColor(if (isSystemDark) DARK_BG else LIGHT_BG)
         window.decorView.setBackgroundColor(initBg)
 
-        // Request runtime Camera and Media permissions for outfit photos & virtual try-on
-        val requiredPerms = mutableListOf<String>()
+        // Request runtime Camera permission if needed for taking photos
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requiredPerms.add(android.Manifest.permission.CAMERA)
-        }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                requiredPerms.add(android.Manifest.permission.READ_MEDIA_IMAGES)
-            }
-        }
-        if (requiredPerms.isNotEmpty()) {
-            cameraPermissionLauncher.launch(requiredPerms.toTypedArray())
+            cameraPermissionLauncher.launch(arrayOf(android.Manifest.permission.CAMERA))
         }
 
         // Enable Chrome remote debugging: open chrome://inspect in desktop Chrome
@@ -122,6 +113,14 @@ class MainActivity : ComponentActivity() {
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         )
+
+        // Request maximum display refresh rate (90Hz / 120Hz) for ultra-fluid 3D studio rendering
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val maxMode = display?.supportedModes?.maxByOrNull { it.refreshRate }
+            if (maxMode != null) {
+                window.attributes.preferredDisplayModeId = maxMode.modeId
+            }
+        }
 
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
@@ -151,6 +150,8 @@ class MainActivity : ComponentActivity() {
             )
             setBackgroundColor(initBg)
             overScrollMode = View.OVER_SCROLL_NEVER
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
 
             settings.apply {
                 javaScriptEnabled = true

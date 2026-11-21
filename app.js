@@ -357,6 +357,19 @@
   // =========================================================================
   // 2. SCREEN ROUTER & NAVIGATION
   // =========================================================================
+  const _appScreenCache = new Map();
+  let _appActiveScreenEl = null;
+  let _cachedAppNavTabs = null;
+
+  function getAppScreenElement(screenId) {
+    let el = _appScreenCache.get(screenId);
+    if (!el) {
+      el = document.getElementById(`screen-${screenId}`);
+      if (el) _appScreenCache.set(screenId, el);
+    }
+    return el;
+  }
+
   function goToScreen(screenId) {
     state.currentScreen = screenId;
     if (typeof window !== 'undefined' && window.navigationRouter) {
@@ -369,13 +382,25 @@
       select.value = screenId;
     }
 
-    // Hide all phone screens
-    document.querySelectorAll('.phone-screen').forEach(el => el.classList.remove('active'));
-
-    // Show target screen
-    const target = document.getElementById(`screen-${screenId}`);
+    // Fast O(1) screen toggle using cached elements
+    if (!_appActiveScreenEl) {
+      _appActiveScreenEl = document.querySelector('.phone-screen.active');
+    }
+    const target = getAppScreenElement(screenId);
     if (target) {
+      if (_appActiveScreenEl && _appActiveScreenEl !== target) {
+        _appActiveScreenEl.classList.remove('active');
+      }
       target.classList.add('active');
+      _appActiveScreenEl = target;
+    } else {
+      document.querySelectorAll('.phone-screen').forEach(el => el.classList.remove('active'));
+    }
+
+    // 3D Engine Adaptive Lifecycle: Pause Three.js render loop on 2D pages to eliminate lag & reduce CPU/GPU load
+    const is3DScreen = (screenId === 'today' || screenId === 'virtual-studio' || screenId === 'wardrobe');
+    if (window.Studio3D && window.Studio3D.isInitialized && typeof window.Studio3D.setRenderingPaused === 'function') {
+      window.Studio3D.setRenderingPaused(!is3DScreen);
     }
 
     // Specific screen entry triggers
@@ -406,7 +431,7 @@
       switchPlanView('pro');
       initPlanSwipeGestures();
       const screenPremium = document.getElementById('screen-premium');
-      if (screenPremium) {
+      if (screenPremium && screenPremium.scrollTop !== 0) {
         screenPremium.scrollTop = 0;
       }
     }
@@ -414,14 +439,16 @@
     // Update Bottom Nav active tab indicator if applicable
     updateBottomNav(screenId);
 
-    // Scroll phone screen container to top and manage screen overflow
+    // Scroll phone screen container to top and manage screen overflow only when necessary
     const container = document.getElementById('phoneScreenContainer');
     if (container) {
-      container.scrollTop = 0;
-      container.classList.remove('premium-mode');
-      document.body.classList.remove('premium-mode');
-      container.style.overflow = '';
-      container.style.overflowY = '';
+      if (container.scrollTop !== 0) container.scrollTop = 0;
+      if (container.classList.contains('premium-mode')) {
+        container.classList.remove('premium-mode');
+        document.body.classList.remove('premium-mode');
+        container.style.overflow = '';
+        container.style.overflowY = '';
+      }
     }
   }
 
@@ -467,18 +494,25 @@
     };
 
     const targetTab = navMapping[screenId] || 'today';
-    document.querySelectorAll('.phone-bottom-nav .nav-tab').forEach(btn => {
-      const text = btn.textContent.toLowerCase();
+    if (!_cachedAppNavTabs || _cachedAppNavTabs.length === 0) {
+      _cachedAppNavTabs = Array.from(document.querySelectorAll('.phone-bottom-nav .nav-tab')).map(btn => ({
+        btn,
+        text: btn.textContent.toLowerCase()
+      }));
+    }
+
+    for (let i = 0; i < _cachedAppNavTabs.length; i++) {
+      const entry = _cachedAppNavTabs[i];
       let isMatch = false;
       if (targetTab === 'pro') {
-        isMatch = text.includes('pro') || text.includes('premium');
+        isMatch = entry.text.includes('pro') || entry.text.includes('premium');
       } else if (targetTab === 'hint') {
-        isMatch = text.includes('hint') || text.includes('style');
+        isMatch = entry.text.includes('hint') || entry.text.includes('style');
       } else {
-        isMatch = text.includes(targetTab);
+        isMatch = entry.text.includes(targetTab);
       }
-      btn.classList.toggle('active', isMatch);
-    });
+      entry.btn.classList.toggle('active', isMatch);
+    }
 
     // Also update Seren floating pill bar tabs if on today screen
     const serenHint = document.getElementById('serenTabHint');
@@ -1327,6 +1361,10 @@
     goToScreen('today');
   }
 
+  let _wardrobeGridDirty = true;
+  let _lastRenderedWardrobeCat = null;
+  let _lastRenderedWardrobeQuery = null;
+
   function renderWardrobeGrid(category = state.wardrobeActiveCategory, query = '') {
     const containers = [
       document.getElementById('wardrobeCardsGrid'),
@@ -1337,6 +1375,15 @@
     const activeCat = category || 'All';
     const normCat = activeCat.toLowerCase().trim();
     const q = (query || '').toLowerCase().trim();
+
+    // Fast path: skip DOM rebuild if contents and filters have not changed
+    if (!_wardrobeGridDirty && _lastRenderedWardrobeCat === normCat && _lastRenderedWardrobeQuery === q && containers[0] && containers[0].children.length > 0) {
+      _wardrobeGridDirty = false;
+      _lastRenderedWardrobeCat = normCat;
+      _lastRenderedWardrobeQuery = q;
+      updateWardrobeCounts();
+      return;
+    }
 
     // 1. FULL OUTFIT COMBINATIONS VIEW
     if (normCat === 'full outfit' || normCat === 'full outfits' || normCat === 'outfit' || normCat === 'outfits') {
@@ -1423,6 +1470,9 @@
         containers.forEach(c => { c.innerHTML = cardsHtml; });
       }
 
+      _wardrobeGridDirty = false;
+      _lastRenderedWardrobeCat = normCat;
+      _lastRenderedWardrobeQuery = q;
       updateWardrobeCounts();
       return;
     }
@@ -1493,6 +1543,9 @@
       containers.forEach(c => { c.innerHTML = itemsHtml; });
     }
 
+    _wardrobeGridDirty = false;
+    _lastRenderedWardrobeCat = normCat;
+    _lastRenderedWardrobeQuery = q;
     updateWardrobeCounts();
   }
 
@@ -1845,7 +1898,7 @@
     }
 
     persistWardrobe();
-
+    _wardrobeGridDirty = true;
     renderWardrobeGrid();
     updateStylistWardrobeStats();
 }
@@ -1915,6 +1968,7 @@
       showToast(`Updated "${item.name}": ${item.condition === 'clean' ? '✨ Clean' : '🧺 In Laundry'}, ${item.fit} fit`);
     }
     closeConditionModal();
+    _wardrobeGridDirty = true;
     renderWardrobeGrid();
     updateStylistWardrobeStats();
   }
@@ -2201,6 +2255,7 @@
   }
 
   function saveReviewedItem() {
+    _wardrobeGridDirty = true;
     showToast('✓ Navy shirt added to your wardrobe!');
     setTimeout(() => {
       goToScreen('today');
@@ -4538,7 +4593,7 @@
   let _userFaceFlipX = false;
   let _userFaceOffsetY = 0.0;
   let _userFaceOffsetX = 0.0;
-  let _userFaceScale = 1.0;
+  let _userFaceScale = 1.10;
   let _userFaceShowHair = true;
   let _userFaceCameraStream = null;
   let _isUserFaceCameraActive = false;
@@ -7540,6 +7595,7 @@
   }
 
   async function saveCapturedClothingToWardrobe() {
+    _wardrobeGridDirty = true;
     const engine = getClothingCaptureEngine();
     const newItems = engine.exportToWardrobeItems();
 
@@ -8187,6 +8243,45 @@
     } else {
       // Default to Sérén 3D Virtual Studio on Today Homepage
       goToScreen('today');
+    }
+
+    // Schedule speculative idle preloading for high-frequency secondary screens
+    scheduleIdlePreload();
+  }
+
+  function scheduleIdlePreload() {
+    const runPreload = () => {
+      try {
+        if (typeof renderSavedLooks === 'function') {
+          renderSavedLooks();
+        }
+        if (typeof renderWeeklyCalendar === 'function') {
+          renderWeeklyCalendar();
+        }
+        if (typeof renderSwapGrid === 'function') {
+          const swapGrid = document.getElementById('swapOptionsGrid');
+          if (swapGrid && !swapGrid.hasChildNodes()) {
+            renderSwapGrid(state.activeSwapSlot || 'footwear');
+          }
+        }
+        if (typeof updateProfileScreenData === 'function') {
+          updateProfileScreenData();
+        }
+        if (typeof updateSubscriptionUI === 'function') {
+          updateSubscriptionUI();
+        }
+        if (typeof updateStylistWardrobeStats === 'function') {
+          updateStylistWardrobeStats();
+        }
+      } catch (err) {
+        console.warn('Preload idle task warning:', err);
+      }
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(runPreload, { timeout: 1500 });
+    } else {
+      setTimeout(runPreload, 300);
     }
   }
 

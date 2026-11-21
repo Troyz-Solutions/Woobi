@@ -193,6 +193,18 @@ export class StageModel {
       loadStageGLB(0);
     }
 
+    // Freeze static transformation matrices to eliminate per-frame scene graph traversal overhead
+    if (this.group) {
+      this.group.matrixAutoUpdate = false;
+      if (typeof this.group.updateMatrix === 'function') this.group.updateMatrix();
+      if (typeof this.group.traverse === 'function') {
+        this.group.traverse((c) => {
+          c.matrixAutoUpdate = false;
+          if (typeof c.updateMatrix === 'function') c.updateMatrix();
+        });
+      }
+    }
+
     scene.add(this.group);
     return this.group;
   }

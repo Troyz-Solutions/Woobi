@@ -77,6 +77,48 @@ body.theme-dark,
   --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
+/* Mobile Application First-Class Ergonomics */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+html, body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+button, a, input, select, textarea, [role="button"], .pill-btn, .sub-tab-chip {
+  touch-action: manipulation;
+}
+
+/* Tactile mobile tap responsiveness */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled),
+.sub-tab-chip:active,
+.pill-btn:active,
+.bottom-nav-item:active,
+.wardrobe-item-card:active {
+  transform: scale(0.965);
+  opacity: 0.90;
+  transition: transform 0.08s ease, opacity 0.08s ease;
+}
+
+/* Prevent accidental text selection and callouts on interactive app chrome */
+.phone-bottom-nav,
+.seren-bottom-bar,
+.studio-top-bar,
+.wardrobe-header,
+.sub-tab-chip,
+.pill-btn,
+img,
+svg {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* High Contrast Accessibility Mode */
 body.high-contrast {
   --text-main: #000000;
@@ -116,45 +158,222 @@ body.theme-dark.high-contrast,
   box-shadow: none;
 }
 
-@media (min-width: 768px) {
-  body {
+/* ==========================================================================
+   UNIFIED DEVICE-ADAPTIVE ARCHITECTURE (PERFECT FIT ON EVERY DEVICE)
+   ========================================================================== */
+
+/* 1. Base Mobile & Native App Core (< 768px and Native App) */
+html.is-native-app,
+body.is-native-app {
+  width: 100vw !important;
+  max-width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: var(--bg-phone) !important;
+  overscroll-behavior: none !important;
+}
+
+html.is-native-app .desktop-editorial-frame,
+body.is-native-app .desktop-editorial-frame {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  background: transparent !important;
+}
+
+html.is-native-app .desktop-editorial-left,
+html.is-native-app .desktop-editorial-right,
+body.is-native-app .desktop-editorial-left,
+body.is-native-app .desktop-editorial-right {
+  display: none !important;
+}
+
+html.is-native-app .app-viewport,
+body.is-native-app .app-viewport {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  border: none !important;
+  inset: 0 !important;
+}
+
+html.is-native-app .phone-screen-container,
+body.is-native-app .phone-screen-container {
+  border-radius: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+html.is-native-app .phone-bottom-nav,
+body.is-native-app .phone-bottom-nav {
+  border-radius: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* 2. Tablet & Medium Screens (768px - 1199px) in Web Browser */
+@media (min-width: 768px) and (max-width: 1199px) {
+  html:not(.is-native-app) body {
     background: radial-gradient(130% 100% at 50% 0%, #FFFFFF 0%, #FAF8F5 40%, #EFE9DE 100%) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 18px 0;
+    box-sizing: border-box;
+  }
+
+  html:not(.is-native-app) body.theme-dark,
+  html:not(.is-native-app) body[data-theme="dark"] {
+    background: radial-gradient(130% 100% at 50% 0%, #1E231C 0%, #151814 50%, #0D0F0C 100%) !important;
+  }
+
+  html:not(.is-native-app) .desktop-editorial-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: transparent;
+  }
+
+  html:not(.is-native-app) .desktop-editorial-left,
+  html:not(.is-native-app) .desktop-editorial-right {
+    display: none !important;
+  }
+
+  html:not(.is-native-app) .app-viewport {
+    width: min(440px, 92vw);
+    max-width: 440px;
+    height: min(92vh, 880px);
+    max-height: calc(100vh - 36px);
+    border-radius: 44px;
+    box-shadow:
+      0 0 0 10px #1E221C,
+      0 0 0 12px rgba(220, 210, 195, 0.45),
+      0 30px 80px -15px rgba(26, 31, 25, 0.35);
+    margin: auto;
+    position: relative;
+    transform: translateZ(0);
+  }
+
+  html:not(.is-native-app) .phone-screen-container {
+    border-radius: 36px;
+  }
+
+  html:not(.is-native-app) .phone-home-indicator {
+    display: block !important;
+  }
+}
+
+/* 3. Desktop Haute Couture 3-Column Experience (>= 1200px) */
+@media (min-width: 1200px) {
+  html:not(.is-native-app) body {
+    background: radial-gradient(130% 100% at 50% 0%, #FFFFFF 0%, #FAF8F5 40%, #EFE9DE 100%) !important;
+    overflow-x: hidden;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  body.theme-dark,
-  body[data-theme="dark"] {
+  html:not(.is-native-app) body.theme-dark,
+  html:not(.is-native-app) body[data-theme="dark"] {
     background: radial-gradient(130% 100% at 50% 0%, #1E231C 0%, #151814 50%, #0D0F0C 100%) !important;
   }
 
-  .app-viewport {
+  html:not(.is-native-app) .desktop-editorial-frame {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: clamp(20px, 2.5vw, 40px) !important;
+    padding: 24px 32px !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    background: transparent !important;
+    box-sizing: border-box;
+  }
+
+  html:not(.is-native-app) .desktop-editorial-left {
+    display: flex !important;
+    flex-direction: column;
+    width: 280px;
+    gap: 20px;
+    color: var(--text-main);
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  html:not(.is-native-app) .desktop-editorial-right {
+    display: flex !important;
+    flex-direction: column;
+    width: 290px;
+    gap: 16px;
+    color: var(--text-main);
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  html:not(.is-native-app) .app-viewport {
     width: 420px;
     max-width: 420px;
-    height: 94vh;
-    max-height: 890px;
+    height: min(92vh, 880px);
+    max-height: calc(100vh - 40px);
     border-radius: 48px;
     box-shadow:
       0 0 0 10px #1E221C,
-      0 0 0 11px rgba(232, 227, 216, 0.45),
+      0 0 0 12px rgba(220, 210, 195, 0.45),
       0 35px 90px -15px rgba(26, 31, 25, 0.35);
-    margin: auto;
+    margin: 0;
     position: relative;
     transform: translateZ(0);
-    /* Establishes containing block for fixed/absolute descendants */
+    flex-shrink: 0;
   }
 
-  body.theme-dark .app-viewport,
-  body[data-theme="dark"] .app-viewport {
-    box-shadow:
-      0 0 0 10px #121410,
-      0 0 0 11px rgba(80, 85, 75, 0.45),
-      0 35px 90px -15px rgba(0, 0, 0, 0.75);
-  }
-
-  .phone-screen-container {
+  html:not(.is-native-app) .phone-screen-container {
     border-radius: 40px;
+  }
+
+  html:not(.is-native-app) .phone-home-indicator {
+    display: block !important;
+  }
+}
+
+/* 4. Short Viewport Heights (< 800px) on Laptops & Desktops */
+@media (min-width: 768px) and (max-height: 800px) {
+  html:not(.is-native-app) .app-viewport {
+    height: min(90vh, 720px);
+    max-height: calc(100vh - 24px);
+    border-radius: 38px;
+  }
+  html:not(.is-native-app) .phone-screen-container {
+    border-radius: 32px;
+  }
+  html:not(.is-native-app) .desktop-brand-title {
+    font-size: 2rem;
+  }
+  html:not(.is-native-app) .desktop-editorial-decor {
+    display: none;
+  }
+  html:not(.is-native-app) .desktop-feat-item {
+    padding: 7px 12px;
   }
 }
 
@@ -531,7 +750,8 @@ body.theme-dark.high-contrast,
   left: 0;
   right: 0;
   width: 100%;
-  height: 64px;
+  min-height: calc(64px + max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 0px));
+  height: auto;
   background: rgba(250, 249, 246, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -539,14 +759,14 @@ body.theme-dark.high-contrast,
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 6px 14px max(env(safe-area-inset-bottom, 0px), 8px) 14px;
+  padding: 6px 14px max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) 14px;
   z-index: 1000;
   box-shadow: 0 -4px 20px rgba(26, 31, 25, 0.04);
   box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
-  .phone-bottom-nav {
+  body:not(.is-mobile-app) .phone-bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -564,11 +784,9 @@ body.theme-dark.high-contrast,
 .phone-bottom-nav.floating-pill-nav {
   position: absolute;
   bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 10px) + 12px);
-  left: 18px;
-  right: 18px;
-  width: calc(100% - 36px);
-  max-width: 420px;
-  margin: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px), 396px);
   height: 62px;
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(20px) saturate(1.2);
@@ -579,22 +797,18 @@ body.theme-dark.high-contrast,
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 0 12px;
+  padding: 0 10px;
   z-index: 1000;
   box-sizing: border-box;
 }
 
-@media (min-width: 768px) {
+@media (max-width: 360px) {
   #screen-today .phone-bottom-nav,
   .phone-bottom-nav.floating-pill-nav {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    width: 396px;
-    border-radius: 9999px;
-    padding-bottom: 0;
+    width: calc(100% - 16px);
+    height: 56px;
+    padding: 0 4px;
+    bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 8px);
   }
 }
 
@@ -7330,6 +7544,11 @@ body.theme-dark.high-contrast,
   background: #EFE7DA;
   user-select: none;
   -webkit-user-select: none;
+  contain: layout paint size;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .seren-3d-canvas {
@@ -8862,23 +9081,23 @@ body.theme-dark.high-contrast,
   display: none;
 }
 
-@media (min-width: 1080px) {
-  body {
+@media (min-width: 1200px) {
+  html:not(.is-native-app) body {
     background: radial-gradient(130% 100% at 50% 0%, #FFFFFF 0%, #FAF8F5 40%, #EFE9DE 100%) !important;
     overflow-x: hidden;
   }
 
-  .desktop-editorial-frame {
+  html:not(.is-native-app) .desktop-editorial-frame {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 36px;
+    gap: clamp(16px, 2.5vw, 36px);
     padding: 24px 32px;
   }
 
   /* Left Editorial Banner */
-  .desktop-editorial-left {
+  html:not(.is-native-app) .desktop-editorial-left {
     display: flex;
     flex-direction: column;
     width: 280px;
@@ -9036,7 +9255,7 @@ body.theme-dark.high-contrast,
   }
 
   /* Right Editorial Companion Aside */
-  .desktop-editorial-right {
+  html:not(.is-native-app) .desktop-editorial-right {
     display: flex !important;
     flex-direction: column;
     width: 290px;
@@ -9275,7 +9494,7 @@ body.theme-dark .desktop-editorial-frame,
   background: radial-gradient(130% 100% at 50% 0%, #FAF8F5 0%, #F5F1EA 50%, #ECE7DD 100%);
 }
 
-@media (min-width: 1080px) {
+@media (min-width: 1200px) {
   body.theme-dark,
   [data-theme="dark"] {
     background: radial-gradient(130% 100% at 50% 0%, #FAF8F5 0%, #F5F1EA 50%, #ECE7DD 100%) !important;

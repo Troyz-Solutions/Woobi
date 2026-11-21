@@ -114,6 +114,14 @@ class MainActivity : ComponentActivity() {
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         )
 
+        // Request maximum display refresh rate (90Hz / 120Hz) for ultra-fluid 3D studio rendering
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val maxMode = display?.supportedModes?.maxByOrNull { it.refreshRate }
+            if (maxMode != null) {
+                window.attributes.preferredDisplayModeId = maxMode.modeId
+            }
+        }
+
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
@@ -142,6 +150,8 @@ class MainActivity : ComponentActivity() {
             )
             setBackgroundColor(initBg)
             overScrollMode = View.OVER_SCROLL_NEVER
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
 
             settings.apply {
                 javaScriptEnabled = true

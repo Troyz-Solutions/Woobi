@@ -4,7 +4,11 @@
  */
 
 import assert from 'assert';
-import { PersonalizedAvatarManager, DEFAULT_HEAD_CONFIG } from './PersonalizedAvatarManager.js';
+import {
+  PersonalizedAvatarManager,
+  DEFAULT_HEAD_CONFIG,
+  MIXAMO_HEAD_UV_TARGETS
+} from './PersonalizedAvatarManager.js';
 
 // Mock Three.js for Node test environment
 class MockVector3 {
@@ -224,6 +228,172 @@ test('8. disposePersonalizedAvatar releases all allocations', () => {
   manager.disposePersonalizedAvatar();
   assert.strictEqual(manager.isPersonalized, false);
   assert.strictEqual(manager.currentPersonalizedHead, null);
+  assert.strictEqual(manager.activeLandmarks, null);
+});
+
+test('9. MIXAMO_HEAD_UV_TARGETS accurately anchors head and protects torso (>1560 Y)', () => {
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.male, 'Male targets must exist');
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.female, 'Female targets must exist');
+
+  // Verify coordinates are strictly above torso boundary (torso is V: 1381-1553)
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.male.bounds.y >= 1565, 'Male Y boundary must be >= 1565');
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.female.bounds.y >= 1565, 'Female Y boundary must be >= 1565');
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.male.chin.y >= 1565, 'Male chin must be above torso');
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.female.chin.y >= 1565, 'Female chin must be above torso');
+
+  // Verify anatomical vertical progression on canvas (chin is lower Y than forehead on texture)
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.male.forehead.y > MIXAMO_HEAD_UV_TARGETS.male.chin.y);
+  assert.ok(MIXAMO_HEAD_UV_TARGETS.female.forehead.y > MIXAMO_HEAD_UV_TARGETS.female.chin.y);
+});
+
+test('10. extractFallbackLandmarks extracts valid facial keypoints and contour', () => {
+  const manager = new PersonalizedAvatarManager(null, MockTHREE);
+  const mockImg = { naturalWidth: 640, naturalHeight: 800 };
+  const lm = manager.extractFallbackLandmarks(mockImg);
+
+  assert.ok(lm, 'Landmarks object must exist');
+  assert.ok(lm.leftEye && lm.rightEye, 'Eye landmarks must exist');
+  assert.ok(lm.chin && lm.forehead, 'Chin and forehead must exist');
+  assert.ok(lm.noseTip && lm.mouth, 'Nose tip and mouth must exist');
+  assert.ok(Array.isArray(lm.faceOval) && lm.faceOval.length >= 16, 'Face oval contour must have points');
+  assert.strictEqual(lm.isFallback, true);
+});
+
+test('11. _computeAffineMatrix accurately maps source points to target landmarks', () => {
+  const manager = new PersonalizedAvatarManager(null, MockTHREE);
+  const src = [
+    { x: 100, y: 100 },
+    { x: 200, y: 100 },
+    { x: 150, y: 250 }
+  ];
+  const dst = [
+    { x: 300, y: 400 },
+    { x: 500, y: 400 },
+    { x: 400, y: 700 }
+  ];
+  const M = manager._computeAffineMatrix(src, dst);
+  assert.ok(M !== null, 'Matrix must be computed');
+  assert.strictEqual(M.length, 6);
+
+  // Helper to apply matrix
+  const transform = (p) => ({
+    x: Math.round(M[0] * p.x + M[2] * p.y + M[4]),
+    y: Math.round(M[1] * p.x + M[3] * p.y + M[5])
+  });
+
+  const p0 = transform(src[0]);
+  const p1 = transform(src[1]);
+  const p2 = transform(src[2]);
+
+  assert.strictEqual(p0.x, dst[0].x);
+  assert.strictEqual(p0.y, dst[0].y);
+  assert.strictEqual(p1.x, dst[1].x);
+  assert.strictEqual(p1.y, dst[1].y);
+  assert.strictEqual(p2.x, dst[2].x);
+  assert.strictEqual(p2.y, dst[2].y);
+});
+
+test('12. processFaceImage attaches active landmarks to result', () => {
+  const manager = new PersonalizedAvatarManager(null, MockTHREE);
+  const mockImg = { naturalWidth: 800, naturalHeight: 800 };
+  const res = manager.processFaceImage(mockImg);
+
+  assert.ok(res.landmarks, 'Processed face must contain landmarks');
+  assert.ok(res.landmarks.leftEye && res.landmarks.rightEye);
+  assert.ok(manager.activeLandmarks !== null, 'activeLandmarks must be retained on manager');
+});
+
+test('13. _computeAffineMatrix maps eyes and mouth with correct vertical orientation (d < 0)', () => {
+  const manager = new PersonalizedAvatarManager(null, MockTHREE);
+  const targets = MIXAMO_HEAD_UV_TARGETS.male;
+
+  // Photo landmarks (image coords: eyes at y=200, mouth at y=350 below eyes)
+  const photo = {
+    leftEye: { x: 350, y: 200 },
+    rightEye: { x: 150, y: 200 },
+    mouth: { x: 250, y: 350 }
+  };
+
+  const targetX = targets.bounds.x;
+  const targetY = targets.bounds.y;
+  const qLeftEye = { x: targets.leftEye.x - targetX, y: targets.leftEye.y - targetY };
+  const qRightEye = { x: targets.rightEye.x - targetX, y: targets.rightEye.y - targetY };
+  const qMouth = { x: targets.mouth.x - targetX, y: targets.mouth.y - targetY };
+
+  const M = manager._computeAffineMatrix(
+    [photo.leftEye, photo.rightEye, photo.mouth],
+    [qLeftEye, qRightEye, qMouth]
+  );
+
+  assert.ok(M !== null, 'Affine matrix should exist');
+  assert.ok(M[3] < 0, `d component (${M[3]}) must be negative to naturally invert orientation for 3D right-side-up`);
+
+  const transform = (p) => ({
+    x: M[0] * p.x + M[2] * p.y + M[4],
+    y: M[1] * p.x + M[3] * p.y + M[5]
+  });
+
+  const photoForehead = { x: 250, y: 100 }; // above eyes in photo
+  const mappedForehead = transform(photoForehead);
+  const mappedEyes = transform(photo.leftEye);
+  const mappedMouth = transform(photo.mouth);
+
+  assert.ok(mappedForehead.y > mappedEyes.y, 'Forehead must have larger Y than eyes on atlas');
+  assert.ok(mappedEyes.y > mappedMouth.y, 'Eyes must have larger Y than mouth on atlas');
+  assert.ok(targetY + mappedMouth.y >= 1565, 'Mouth on atlas must remain above torso boundary');
+});
+
+test('14. extractFallbackLandmarks maintains viewer-right leftEye and calibrated pupil spacing', () => {
+  const manager = new PersonalizedAvatarManager(null, MockTHREE);
+  const mockImg = { naturalWidth: 1000, naturalHeight: 1000 };
+  const lm = manager.extractFallbackLandmarks(mockImg);
+
+  assert.ok(lm.leftEye.x > lm.rightEye.x, 'leftEye (viewer right) must have larger X than rightEye (viewer left)');
+  const pupilDist = lm.leftEye.x - lm.rightEye.x;
+  assert.ok(pupilDist > 150, 'Pupil distance should reflect natural anatomical spacing (~44% face width)');
+  assert.ok(lm.mouth.y > lm.noseTip.y, 'Mouth must be below nose tip');
+  assert.ok(lm.chin.y > lm.mouth.y, 'Chin must be below mouth');
+});
+
+test('15. MediaPipe async integration preloads and falls back gracefully', async () => {
+  const manager = new PersonalizedAvatarManager(null, MockTHREE);
+  assert.strictEqual(manager.isProcessing, false);
+
+  // Calling extractFacialLandmarks in Node environment gracefully returns fallback
+  const mockImg = { naturalWidth: 800, naturalHeight: 800 };
+  const lm = await manager.extractFacialLandmarks(mockImg);
+  assert.ok(lm !== null);
+  assert.strictEqual(lm.isFallback, true);
+});
+
+test('16. Eyebrow landmarks (midBrow, leftEyebrow, rightEyebrow) are anchored 1:1 on 3D brow ridge', () => {
+  const manager = new PersonalizedAvatarManager(null, MockTHREE);
+  const male = MIXAMO_HEAD_UV_TARGETS.male;
+  const female = MIXAMO_HEAD_UV_TARGETS.female;
+
+  // Eyebrows exist on both male and female
+  assert.ok(male.leftEyebrow && male.rightEyebrow && male.midBrow, 'Male eyebrow targets must exist');
+  assert.ok(female.leftEyebrow && female.rightEyebrow && female.midBrow, 'Female eyebrow targets must exist');
+
+  // Eyebrows are above eye sockets on texture atlas (Y_brow > Y_eye)
+  assert.ok(male.leftEyebrow.y > male.leftEye.y, 'Male eyebrows must be above eyes on atlas');
+  assert.ok(female.leftEyebrow.y > female.leftEye.y, 'Female eyebrows must be above eyes on atlas');
+
+  // Eyebrows are below forehead hairline on texture atlas (Y_forehead > Y_brow)
+  assert.ok(male.forehead.y > male.leftEyebrow.y, 'Male forehead must be above eyebrows on atlas');
+  assert.ok(female.forehead.y > female.leftEyebrow.y, 'Female forehead must be above eyebrows on atlas');
+
+  // Viewer-right orientation: leftEyebrow (viewer right) has larger X than rightEyebrow (viewer left)
+  assert.ok(male.leftEyebrow.x > male.rightEyebrow.x, 'leftEyebrow must be viewer-right (larger X)');
+  assert.ok(female.leftEyebrow.x > female.rightEyebrow.x, 'female leftEyebrow must be viewer-right (larger X)');
+
+  // Fallback landmarks include valid eyebrow anchors
+  const mockImg = { naturalWidth: 1000, naturalHeight: 1000 };
+  const lm = manager.extractFallbackLandmarks(mockImg);
+  assert.ok(lm.leftEyebrow && lm.rightEyebrow && lm.midBrow, 'Fallback landmarks must provide eyebrows');
+  assert.ok(lm.leftEyebrow.y < lm.leftEye.y, 'In photo coordinates, eyebrows must be above eyes (y_brow < y_eye)');
+  assert.ok(lm.forehead.y < lm.leftEyebrow.y, 'In photo coordinates, forehead must be above eyebrows (y_forehead < y_brow)');
+  assert.ok(lm.leftEyebrow.x > lm.rightEyebrow.x, 'Fallback leftEyebrow must be viewer-right (larger X)');
 });
 
 console.log('--------------------------------------------------');

@@ -939,66 +939,6 @@
             </div>
           </div>
 
-          <!-- Floating Bottom Navigation Bar -->
-          <div class="seren-bottom-bar-wrap">
-            <nav class="seren-bottom-bar" aria-label="Studio navigation">
-              <!-- Tab 1: Wardrobe (Clothes Hanger Icon) -->
-              <button type="button" class="seren-bar-tab" id="serenTabWardrobe" onclick="app.openStudioWardrobe()" title="Wardrobe" aria-label="Wardrobe">
-                <div class="seren-tab-icon" aria-hidden="true">
-                  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3a2.2 2.2 0 0 0-2 2.2c0 .9.6 1.7 1.5 2V8.5L3.8 15.2a1.8 1.8 0 0 0 1.2 3h14a1.8 1.8 0 0 0 1.2-3L12.5 8.5V7.2c.9-.3 1.5-1.1 1.5-2A2.2 2.2 0 0 0 12 3z" />
-                  </svg>
-                </div>
-                <span class="seren-tab-label">Wardrobe</span>
-                <span class="seren-tab-dot"></span>
-              </button>
-
-              <!-- Tab 2: Today's AI Recommendation (Magic Wand / Sparkle Icon) -->
-              <button type="button" class="seren-bar-tab" id="serenTabRecommendation" onclick="app.openDailyRecommendation()" title="Today's Recommendation" aria-label="Today's Outfit Recommendation">
-                <div class="seren-tab-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>
-                    <path d="M19 3v4"/>
-                    <path d="M21 5h-4"/>
-                  </svg>
-                </div>
-                <span class="seren-tab-label">Recommend</span>
-                <span class="seren-tab-dot"></span>
-              </button>
-
-              <!-- Center Elevated Botanical Olive Plus Button -->
-              <button type="button" class="seren-center-plus" onclick="app.serenCenterAction()" title="Quick Action" aria-label="Add garment or quick action">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" aria-hidden="true">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              </button>
-
-              <!-- Tab 3: Style Hint (4-Point Sparkle Icon) -->
-              <button type="button" class="seren-bar-tab" id="serenTabHint" onclick="app.openStyleHint()" title="Style Hint">
-                <div class="seren-tab-icon" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m12 2-2.3 6.9a2 2 0 0 1-1.3 1.3L1.5 12.5l6.9 2.3a2 2 0 0 1 1.3 1.3l2.3 6.9 2.3-6.9a2 2 0 0 1 1.3-1.3l6.9-2.3-6.9-2.3a2 2 0 0 1-1.3-1.3L12 2Z"/>
-                  </svg>
-                </div>
-                <span class="seren-tab-label">Style Hint</span>
-                <span class="seren-tab-dot"></span>
-              </button>
-
-              <!-- Tab 4: Pro (Crown Icon) -->
-              <button type="button" class="seren-bar-tab" id="serenTabPro" onclick="app.goToScreen('premium')" title="Pro">
-                <div class="seren-tab-icon" aria-hidden="true">
-                  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m2 5 3.5 11h13L22 5l-5.5 5.5L12 3l-4.5 7.5L2 5z"/>
-                    <path d="M5 19h14"/>
-                  </svg>
-                </div>
-                <span class="seren-tab-label">Pro</span>
-                <span class="seren-tab-dot"></span>
-              </button>
-            </nav>
-          </div>
-
           <!-- 3D Studio Interactive Wardrobe Card Sheet -->
           <div class="seren-wardrobe-sheet hidden" id="serenWardrobeSheet">
             <div class="seren-sheet-backdrop" onclick="app.serenToggleWardrobe(false)"></div>

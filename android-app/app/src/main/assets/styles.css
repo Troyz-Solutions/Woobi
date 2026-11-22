@@ -19319,6 +19319,8 @@ body.theme-dark .woobi-silk-bg,
 
 /* Completely hidden on PC / Desktop */
 @media (min-width: 1024px) {
+  #woobiMobileVideoIntro,
+  .woobi-mobile-video-intro,
   #mobileCurtainIntro,
   .mobile-curtain-intro {
     display: none !important;
@@ -19327,6 +19329,58 @@ body.theme-dark .woobi-silk-bg,
 
 /* Active on Mobile & Native Android Wrapper */
 @media (max-width: 1023px) {
+  .woobi-mobile-video-intro {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1000000;
+    background: #000000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  .woobi-intro-video-player {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  .video-intro-controls {
+    position: absolute;
+    top: calc(max(env(safe-area-inset-top, 0px), var(--android-inset-top, 0px), 12px) + 12px);
+    right: 18px;
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .btn-video-skip {
+    background: rgba(0, 0, 0, 0.50);
+    border: 1px solid rgba(255, 255, 255, 0.40);
+    color: #FFFFFF;
+    font-family: var(--font-sans, -apple-system, sans-serif);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 7px 15px;
+    border-radius: 9999px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+
+  .btn-video-skip:active {
+    transform: scale(0.95);
+    background: rgba(0, 0, 0, 0.75);
+  }
   .mobile-curtain-intro {
     position: fixed;
     inset: 0;

@@ -530,6 +530,31 @@
   }
 
   // =========================================================================
+  // AUTHENTICATION & ONBOARDING ROUTING
+  // =========================================================================
+  function submitSignIn() {
+    try {
+      localStorage.setItem('woobi_user_registered', 'true');
+    } catch (e) {}
+    const done = (function() {
+      try {
+        return localStorage.getItem('woobi_onboarding_completed') === 'true';
+      } catch (e) {
+        return false;
+      }
+    })();
+    goToScreen(done ? 'today' : 'welcome');
+  }
+
+  function enterWoobi() {
+    try {
+      localStorage.setItem('woobi_user_registered', 'true');
+      localStorage.setItem('woobi_onboarding_completed', 'true');
+    } catch (e) {}
+    goToScreen('today');
+  }
+
+  // =========================================================================
   // 3. DAILY OUTFIT CAROUSEL & PREVIEW TOGGLE
   // =========================================================================
   function setTodayCanvasMode(mode) {
@@ -8607,7 +8632,11 @@
 
     // 3D Studio Direct Wardrobe Drag API
     start3DGarmentDrag,
-    equip3DGarmentToMannequin
+    equip3DGarmentToMannequin,
+
+    // Auth & Onboarding Flow API
+    submitSignIn,
+    enterWoobi
   };
 
   window.app = Object.assign(window.app || {}, appExports);

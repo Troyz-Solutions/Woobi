@@ -21,25 +21,25 @@
         android:windowSoftInputMode="adjustResize"
         android:theme="@style/Theme.AuraWardrobe">
         
-        <!-- Intro video activity - launches first -->
-        <activity
-            android:name=".IntroActivity"
-            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-            android:exported="true"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        
-        <!-- Main WebView activity -->
+        <!-- Main WebView activity - launches directly with HTML5 video & velvet curtain reveal -->
         <activity
             android:name=".MainActivity"
             android:hardwareAccelerated="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:windowSoftInputMode="adjustResize"
-            android:exported="false">
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Legacy Intro video activity -->
+        <activity
+            android:name=".IntroActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         </activity>
     </application>
 

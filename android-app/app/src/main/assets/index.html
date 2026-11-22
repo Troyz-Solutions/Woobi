@@ -5714,15 +5714,26 @@
     window.woobiAdvanceToCurtains = null;
 
     (function initMobileAppIntroSequence() {
+      var urlParams = new URLSearchParams(window.location.search);
+      var forceIntro = urlParams.has('intro') ||
+                       urlParams.has('preview') ||
+                       urlParams.has('mobile') ||
+                       window.location.hash.indexOf('intro') !== -1;
+
       var isMobile = (window.innerWidth < 1024) ||
                      document.documentElement.classList.contains('is-native-app') ||
-                     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+                     forceIntro;
+
+      if (forceIntro) {
+        document.documentElement.classList.add('force-mobile-intro');
+      }
 
       var videoOverlay = document.getElementById('woobiMobileVideoIntro');
       var curtainOverlay = document.getElementById('mobileCurtainIntro');
       var videoPlayer = document.getElementById('woobiIntroVideoPlayer');
 
-      // On PC / Desktop, skip all intro overlays and show desktop layout immediately
+      // On PC / Desktop, skip all intro overlays and show desktop layout immediately (unless forced via ?intro=1)
       if (!isMobile) {
         if (videoOverlay) videoOverlay.style.display = 'none';
         if (curtainOverlay) curtainOverlay.style.display = 'none';
@@ -5730,11 +5741,17 @@
       }
 
       var isReturningUser = false;
-      try {
-        isReturningUser = (localStorage.getItem('woobi_user_registered') === 'true' ||
-                           localStorage.getItem('woobi_onboarding_completed') === 'true');
-      } catch (e) {
+      if (urlParams.get('user') === 'first' || urlParams.has('first') || urlParams.get('first_time') === '1') {
         isReturningUser = false;
+      } else if (urlParams.get('user') === 'returning' || urlParams.has('returning') || urlParams.get('return') === '1') {
+        isReturningUser = true;
+      } else {
+        try {
+          isReturningUser = (localStorage.getItem('woobi_user_registered') === 'true' ||
+                             localStorage.getItem('woobi_onboarding_completed') === 'true');
+        } catch (e) {
+          isReturningUser = false;
+        }
       }
 
       // Step 2: Theatrical Red Velvet Curtain Reveal

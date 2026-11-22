@@ -19317,19 +19317,18 @@ body.theme-dark .woobi-silk-bg,
    RONI SHANKAR'S THEATRICAL VELVET CURTAIN INTRO (MOBILE ONLY)
    ========================================================================== */
 
-/* Completely hidden on PC / Desktop */
+/* Completely hidden on PC / Desktop unless forced via ?intro=1 or preview */
 @media (min-width: 1024px) {
-  #woobiMobileVideoIntro,
-  .woobi-mobile-video-intro,
-  #mobileCurtainIntro,
-  .mobile-curtain-intro {
+  html:not(.force-mobile-intro) #woobiMobileVideoIntro,
+  html:not(.force-mobile-intro) .woobi-mobile-video-intro,
+  html:not(.force-mobile-intro) #mobileCurtainIntro,
+  html:not(.force-mobile-intro) .mobile-curtain-intro {
     display: none !important;
   }
 }
 
-/* Active on Mobile & Native Android Wrapper */
-@media (max-width: 1023px) {
-  .woobi-mobile-video-intro {
+/* Active on Mobile & Native Android Wrapper & Force-Preview */
+.woobi-mobile-video-intro {
     position: fixed;
     inset: 0;
     width: 100vw;
@@ -19522,7 +19521,6 @@ body.theme-dark .woobi-silk-bg,
     0%, 100% { transform: scale(1); opacity: 0.9; }
     50% { transform: scale(1.15); opacity: 1; }
   }
-}
 
 .simple-app-footer {
   text-align: center;

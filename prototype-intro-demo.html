@@ -422,17 +422,14 @@
             <div class="device-screen">
                 <!-- Intro Screen -->
                 <div class="screen-content intro-screen" id="introScreen">
-                    <div class="video-placeholder">
-                        <div class="video-overlay"></div>
-                        <div class="video-content">
-                            <div class="woobi-logo logo-animation">WOOBI</div>
-                            <div class="video-tagline">Your Virtual Fashion Studio</div>
+                    <div class="video-placeholder" style="position: relative; overflow: hidden;">
+                        <video id="woobiRealVideo" src="modules/core/app/intro/media/woobi-intro-mobile.mp4" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; z-index: 10;"></video>
+                        <div class="video-overlay" style="z-index: 15; pointer-events: none;"></div>
+                        <div class="mute-indicator" id="muteIndicator" onclick="toggleMute()" style="z-index: 20; cursor: pointer;">
+                            🔇 Muted (Click to Unmute)
                         </div>
-                        <div class="mute-indicator">
-                            🔇 Muted
-                        </div>
-                        <div class="skip-hint">← Press back to skip</div>
-                        <div class="progress-bar">
+                        <div class="skip-hint" onclick="skipIntro()" style="z-index: 20; cursor: pointer;">Skip intro →</div>
+                        <div class="progress-bar" style="z-index: 20;">
                             <div class="progress-fill" id="progressFill"></div>
                         </div>
                     </div>
@@ -536,6 +533,16 @@
     <script>
         let videoTimeout;
         let isAnimating = false;
+        const videoEl = document.getElementById('woobiRealVideo');
+        const muteIndicator = document.getElementById('muteIndicator');
+
+        function toggleMute() {
+            if (!videoEl) return;
+            videoEl.muted = !videoEl.muted;
+            if (muteIndicator) {
+                muteIndicator.textContent = videoEl.muted ? '🔇 Muted (Click to Unmute)' : '🔊 Audio Active (Click to Mute)';
+            }
+        }
 
         function launchApp() {
             if (isAnimating) return;
@@ -551,19 +558,34 @@
             introScreen.classList.remove('hidden');
             introScreen.classList.add('visible');
 
-            // Reset progress
-            progressFill.style.animation = 'none';
-            setTimeout(() => {
-                progressFill.style.animation = 'progressFill 8s linear forwards';
-            }, 10);
+            if (videoEl) {
+                videoEl.currentTime = 0;
+                videoEl.play().catch(() => {});
+            }
 
-            // Auto-transition to home after 8 seconds
+            // Fallback timeout in case video stalls
+            if (videoTimeout) clearTimeout(videoTimeout);
             videoTimeout = setTimeout(() => {
                 transitionToHome();
-            }, 8000);
+            }, 6000);
+        }
+
+        if (videoEl) {
+            videoEl.addEventListener('timeupdate', () => {
+                const progressFill = document.getElementById('progressFill');
+                if (progressFill && videoEl.duration) {
+                    const pct = (videoEl.currentTime / videoEl.duration) * 100;
+                    progressFill.style.width = pct + '%';
+                }
+            });
+
+            videoEl.addEventListener('ended', () => {
+                transitionToHome();
+            });
         }
 
         function transitionToHome() {
+            if (videoTimeout) clearTimeout(videoTimeout);
             const introScreen = document.getElementById('introScreen');
             const homeScreen = document.getElementById('homeScreen');
 
@@ -576,20 +598,17 @@
                 homeScreen.classList.remove('hidden');
                 homeScreen.classList.add('visible');
                 isAnimating = false;
-            }, 500);
+            }, 450);
         }
 
         function skipIntro() {
-            if (videoTimeout) {
-                clearTimeout(videoTimeout);
-            }
+            if (videoEl) videoEl.pause();
             transitionToHome();
         }
 
         function showHome() {
-            if (videoTimeout) {
-                clearTimeout(videoTimeout);
-            }
+            if (videoEl) videoEl.pause();
+            if (videoTimeout) clearTimeout(videoTimeout);
             const introScreen = document.getElementById('introScreen');
             const homeScreen = document.getElementById('homeScreen');
             
@@ -600,8 +619,10 @@
         }
 
         function resetDemo() {
-            if (videoTimeout) {
-                clearTimeout(videoTimeout);
+            if (videoTimeout) clearTimeout(videoTimeout);
+            if (videoEl) {
+                videoEl.currentTime = 0;
+                videoEl.pause();
             }
             
             const introScreen = document.getElementById('introScreen');
@@ -612,13 +633,13 @@
             homeScreen.style.display = 'none';
             introScreen.classList.remove('hidden', 'visible');
             homeScreen.classList.remove('visible');
-            progressFill.style.animation = 'none';
+            if (progressFill) progressFill.style.width = '0%';
             isAnimating = false;
         }
 
         // Auto-launch on page load
         window.addEventListener('load', () => {
-            setTimeout(launchApp, 500);
+            setTimeout(launchApp, 300);
         });
     </script>
 </body>

@@ -64,6 +64,33 @@
 
 <body>
 
+  <!-- Step 1: Woobi Mobile Intro Video (Mobile Only) -->
+  <div id="woobiMobileVideoIntro" class="woobi-mobile-video-intro" aria-hidden="true">
+    <video id="woobiIntroVideoPlayer" class="woobi-intro-video-player" playsinline webkit-playsinline muted preload="auto">
+      <source src="assets/woobi-intro-mobile.mp4" type="video/mp4">
+      <source src="modules/core/app/intro/media/woobi-intro-mobile.mp4" type="video/mp4">
+    </video>
+    <div class="video-intro-controls">
+      <button type="button" class="btn-video-skip" id="btnSkipIntroVideo" onclick="if(window.woobiAdvanceToCurtains)window.woobiAdvanceToCurtains()">
+        Skip <span aria-hidden="true">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Roni Shankar's Theatrical Velvet Curtain Intro (Mobile Only) -->
+  <div id="mobileCurtainIntro" class="mobile-curtain-intro" aria-hidden="true">
+    <div class="curtain-stage">
+      <div class="curtain-drape curtain-left"></div>
+      <div class="curtain-drape curtain-right"></div>
+      <div class="curtain-brand-crest">
+        <span class="crest-star">✧</span>
+        <h1 class="crest-title">WOOBI</h1>
+        <span class="crest-sub">ATELIER STUDIO</span>
+      </div>
+      <div class="curtain-tap-hint">Tap to enter</div>
+    </div>
+  </div>
+
   <!-- PR #45: Fluid Silk Wave Organic Backdrop -->
   <div class="woobi-silk-bg" aria-hidden="true">
     <svg class="woobi-silk-bg__svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"
@@ -286,8 +313,8 @@
               <button class="btn-olive-primary" onclick="app.goToScreen('style-pref')">
                 Get started <span class="arrow-right">→</span>
               </button>
-              <button class="btn-link-simple" onclick="app.goToScreen('signin')">
-                Sign in
+              <button class="btn-link-simple" onclick="app.enterWoobi()">
+                Enter Woobi →
               </button>
             </div>
             <div class="phone-home-indicator"></div>
@@ -2631,14 +2658,14 @@
                   password?</a>
               </div>
 
-              <button class="btn-olive-primary" onclick="app.goToScreen('today')">
+              <button class="btn-olive-primary" onclick="app.submitSignIn()">
                 Sign in
               </button>
             </div>
 
             <div class="auth-divider-or"><span>or</span></div>
 
-            <button class="btn-google-oauth" onclick="app.goToScreen('today')">
+            <button class="btn-google-oauth" onclick="app.submitSignIn()">
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -2650,6 +2677,10 @@
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
               <span>Continue with Google</span>
+            </button>
+
+            <button type="button" class="btn-link-simple" onclick="app.submitSignIn()" style="margin-top: 14px; width: 100%; text-align: center; font-size: 0.92rem;">
+              Continue as Guest →
             </button>
 
             <div class="auth-bottom-link">
@@ -5660,6 +5691,123 @@
         window.Studio3D.init('seren3dContainer', 'seren3dCanvas');
       }
     };
+
+    // =========================================================================
+    // MOBILE INTRO SEQUENCE: Video -> Red Velvet Curtains -> Home / Login
+    // (Mobile Only - Runs Every Fresh Open of the Mobile App)
+    // =========================================================================
+    window.woobiAdvanceToCurtains = null;
+
+    (function initMobileAppIntroSequence() {
+      var isMobile = (window.innerWidth < 1024) ||
+                     document.documentElement.classList.contains('is-native-app') ||
+                     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      var videoOverlay = document.getElementById('woobiMobileVideoIntro');
+      var curtainOverlay = document.getElementById('mobileCurtainIntro');
+      var videoPlayer = document.getElementById('woobiIntroVideoPlayer');
+
+      // On PC / Desktop, skip all intro overlays and show desktop layout immediately
+      if (!isMobile) {
+        if (videoOverlay) videoOverlay.style.display = 'none';
+        if (curtainOverlay) curtainOverlay.style.display = 'none';
+        return;
+      }
+
+      var isReturningUser = false;
+      try {
+        isReturningUser = (localStorage.getItem('woobi_user_registered') === 'true' ||
+                           localStorage.getItem('woobi_onboarding_completed') === 'true');
+      } catch (e) {
+        isReturningUser = false;
+      }
+
+      // Step 2: Theatrical Red Velvet Curtain Reveal
+      var curtainsTriggered = false;
+      function showRedCurtains() {
+        if (curtainsTriggered) return;
+        curtainsTriggered = true;
+
+        // Ensure video is cleanly paused and hidden to save 100% GPU memory
+        if (videoPlayer) {
+          try { videoPlayer.pause(); } catch (e) {}
+        }
+        if (videoOverlay) {
+          videoOverlay.style.display = 'none';
+        }
+
+        if (!curtainOverlay) {
+          routeTargetScreen();
+          return;
+        }
+
+        // Display curtains in closed state
+        curtainOverlay.style.display = 'flex';
+        curtainOverlay.classList.remove('is-opening', 'curtain-dismissed');
+        curtainOverlay.classList.add('curtain-closed');
+
+        // Route to target screen behind the closed curtains
+        routeTargetScreen();
+
+        var curtainsOpened = false;
+        function openCurtains() {
+          if (curtainsOpened) return;
+          curtainsOpened = true;
+          curtainOverlay.classList.add('is-opening');
+
+          setTimeout(function() {
+            curtainOverlay.classList.add('curtain-dismissed');
+            setTimeout(function() {
+              curtainOverlay.style.display = 'none';
+            }, 500);
+          }, 1400);
+        }
+
+        curtainOverlay.addEventListener('click', openCurtains);
+        curtainOverlay.addEventListener('touchstart', openCurtains, { passive: true });
+
+        // Auto-open curtains smoothly
+        setTimeout(openCurtains, 600);
+      }
+
+      function routeTargetScreen() {
+        if (typeof window.app !== 'undefined' && typeof window.app.goToScreen === 'function') {
+          if (isReturningUser) {
+            window.app.goToScreen('today');
+          } else {
+            window.app.goToScreen('signin');
+          }
+        }
+      }
+
+      window.woobiAdvanceToCurtains = showRedCurtains;
+
+      // Step 1: Play Mobile Woobi Intro Video
+      if (videoOverlay && videoPlayer) {
+        videoOverlay.style.display = 'flex';
+        videoPlayer.muted = true;
+        videoPlayer.currentTime = 0;
+
+        var playPromise = videoPlayer.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function(err) {
+            console.warn('Video autoplay prevented, advancing to curtains:', err);
+            setTimeout(showRedCurtains, 800);
+          });
+        }
+
+        videoPlayer.onended = function() {
+          showRedCurtains();
+        };
+
+        // Safety fallback timer if video fails or hangs
+        setTimeout(function() {
+          if (!curtainsTriggered) showRedCurtains();
+        }, 5500);
+      } else {
+        showRedCurtains();
+      }
+    })();
   </script>
 </body>
 

@@ -7054,25 +7054,27 @@ body.is-native-app .phone-bottom-nav {
   transform: scale(0.94);
 }
 
-/* Sliding Wardrobe Sheet (Step 2) */
+/* Wardrobe Sheet (Full Screen) */
 .seren-wardrobe-sheet {
   position: absolute;
   inset: 0;
   z-index: 70;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: stretch;
+  background: var(--bg-phone, #FAF9F6);
 }
 
 .seren-wardrobe-sheet.hidden {
+  display: none !important;
+}
+
+.seren-wardrobe-sheet .seren-sheet-backdrop {
   display: none;
 }
 
-.seren-sheet-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(35, 30, 24, 0.45);
-  backdrop-filter: blur(5px);
+.seren-wardrobe-sheet .sheet-drag-handle {
+  display: none;
 }
 
 .seren-sheet-card {
@@ -7091,10 +7093,27 @@ body.is-native-app .phone-bottom-nav {
   -ms-overflow-style: none;
 }
 
+.seren-sheet-card.studio-wardrobe-card,
 .studio-wardrobe-card {
-  max-height: 72%;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100% !important;
+  max-height: 100% !important;
+  flex: 1 1 100%;
+  border-radius: 0 !important;
+  border-top: none !important;
+  padding: max(env(safe-area-inset-top, 0px), 18px) 20px max(32px, calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px)) + 24px)) 20px;
+  box-shadow: none !important;
+  animation: slideUpSheet 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   display: flex;
   flex-direction: column;
+  background: var(--bg-phone, #FAF9F6);
+  box-sizing: border-box;
 }
 
 .studio-wardrobe-title-wrap {

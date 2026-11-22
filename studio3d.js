@@ -321,6 +321,7 @@
       this.buildWardrobeFurniture();
       this.buildDressingVanity();
       this.buildHumanoidAvatar();
+      this.setupMannequinBodyPartHitBoxes();
       this.loadRiggedAvatarGLB(); // Asynchronously attempt Ready Player Me / external model
       this.setupMirrorRenderPipeline();
 
@@ -2384,6 +2385,40 @@
     }
 
     /**
+     * Sets up tactile raycasting hit zones for mannequin body regions:
+     * - Accessories (Head / Neck / Hat / Glasses): Y >= 1.40
+     * - Tops (Neck to Hip / Torso / Arms): 0.80 <= Y < 1.40
+     * - Bottoms (Hip to Ankles / Legs / Pants): 0.22 <= Y < 0.80
+     * - Shoes (Feet / Footwear / Sneakers): Y < 0.22
+     */
+    setupMannequinBodyPartHitBoxes() {
+      if (!this.avatarRoot || this.mannequinHitZonesSetup) return;
+      this.mannequinHitZonesSetup = true;
+
+      const zones = [
+        { zone: 'accessories', y: 1.60, height: 0.40, radius: 0.38, name: 'Accessories & Details' },
+        { zone: 'tops', y: 1.10, height: 0.58, radius: 0.46, name: 'Tops (Neck to Hip)' },
+        { zone: 'bottoms', y: 0.52, height: 0.58, radius: 0.42, name: 'Bottoms (Hip to Ankle)' },
+        { zone: 'shoes', y: 0.08, height: 0.24, radius: 0.38, name: 'Shoes & Footwear' }
+      ];
+
+      zones.forEach(cfg => {
+        const geom = new THREE.CylinderGeometry(cfg.radius, cfg.radius, cfg.height, 16);
+        const mat = new THREE.MeshBasicMaterial({ visible: false, wireframe: false });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.position.set(0, cfg.y, 0);
+        mesh.name = `hitbox_${cfg.zone}`;
+        mesh.userData = {
+          interactiveType: 'mannequin_zone',
+          zone: cfg.zone,
+          name: cfg.name
+        };
+        this.avatarRoot.add(mesh);
+        this.interactiveObjects.push(mesh);
+      });
+    }
+
+    /**
      * HIGH-FIDELITY STYLIZED FEMALE CHARACTER SCULPT
      * Faithfully matching Target Reference:
      * Stylized anime/Disney beauty proportions, expressive almond eyes with catchlights,
@@ -3205,6 +3240,12 @@
             }
             return;
           }
+          if (type === 'mannequin_zone') {
+            if (window.app && typeof window.app.openBodyPartWardrobeCard === 'function') {
+              window.app.openBodyPartWardrobeCard(userData?.zone || 'tops');
+            }
+            return;
+          }
           if (typeof this.onObjectClick === 'function') {
             this.onObjectClick(type, userData);
           } else if (window.app && typeof window.app.serenInteract === 'function') {
@@ -3262,11 +3303,43 @@
             }
             return;
           }
+          if (type === 'mannequin_zone') {
+            if (window.app && typeof window.app.openBodyPartWardrobeCard === 'function') {
+              window.app.openBodyPartWardrobeCard(chosenObj.userData?.zone || 'tops');
+            }
+            return;
+          }
           if (typeof this.onObjectClick === 'function') {
             this.onObjectClick(type, chosenObj.userData);
           } else if (window.app && typeof window.app.serenInteract === 'function') {
             window.app.serenInteract(type, chosenObj.userData);
           }
+        }
+
+        // Direct Mannequin Mesh Tap Fallback
+        let hitAvatar = false;
+        let testObj = intersects[0].object;
+        while (testObj) {
+          if (testObj === this.avatarRoot || testObj === this.gltfAvatarGroup || testObj === this.sculptedAvatarGroup) {
+            hitAvatar = true;
+            break;
+          }
+          testObj = testObj.parent;
+        }
+
+        if (hitAvatar) {
+          const hitPt = intersects[0].point;
+          const localY = this.avatarRoot ? this.avatarRoot.worldToLocal(hitPt.clone()).y : hitPt.y;
+          let zone = 'tops';
+          if (localY >= 1.40) zone = 'accessories';
+          else if (localY >= 0.80) zone = 'tops';
+          else if (localY >= 0.22) zone = 'bottoms';
+          else zone = 'shoes';
+
+          if (window.app && typeof window.app.openBodyPartWardrobeCard === 'function') {
+            window.app.openBodyPartWardrobeCard(zone);
+          }
+          return;
         }
       }
     }

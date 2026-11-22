@@ -19544,5 +19544,281 @@ body.theme-dark .woobi-silk-bg,
   color: #94a3b8;
 }
 
+/* ==========================================================================
+   FROSTED GLOSSY QUICK-PICKER CARD FOR 3D MANNEQUIN BODY PART TAPS
+   ========================================================================== */
+
+.mannequin-quick-picker-card {
+  position: absolute;
+  z-index: 950;
+  pointer-events: auto;
+  box-sizing: border-box;
+
+  /* Ultra-Luxury Haute Couture Frosted Glassmorphism */
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 
+    0 20px 48px -10px rgba(29, 32, 28, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.90) inset;
+  border-radius: 26px;
+
+  /* Smooth Entrance / Exit Motion */
+  opacity: 0;
+  transform: translateY(24px) scale(0.97);
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+body.theme-dark .mannequin-quick-picker-card,
+[data-theme="dark"] .mannequin-quick-picker-card {
+  background: rgba(26, 31, 26, 0.82);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 20px 48px -10px rgba(0, 0, 0, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+
+.mannequin-quick-picker-card.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.mannequin-quick-picker-card.hidden {
+  display: none !important;
+}
+
+/* Mobile & Small Screens: Bottom horizontal floating dock (leaving mannequin body 100% visible) */
+@media (max-width: 767px) {
+  .mannequin-quick-picker-card {
+    left: 12px;
+    right: 12px;
+    bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 72px);
+    height: 185px;
+    padding: 10px 14px 12px;
+  }
+}
+
+/* Desktop & Tablet: Floating right-side dock (leaving center 3D mannequin 100% open) */
+@media (min-width: 768px) {
+  .mannequin-quick-picker-card {
+    right: 20px;
+    top: 90px;
+    width: 320px;
+    max-height: calc(100vh - 180px);
+    padding: 14px 16px;
+  }
+}
+
+/* Glass Header */
+.picker-glass-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.picker-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.picker-category-badge {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #3F4C39;
+  background: rgba(82, 99, 75, 0.15);
+  border: 1px solid rgba(82, 99, 75, 0.25);
+  padding: 3px 9px;
+  border-radius: 9999px;
+}
+
+body.theme-dark .picker-category-badge {
+  color: #A3E635;
+  background: rgba(163, 230, 53, 0.15);
+  border-color: rgba(163, 230, 53, 0.3);
+}
+
+.picker-item-count {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.btn-picker-close {
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-picker-close:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: var(--text-main);
+}
+
+/* Scroll Track */
+.picker-scroll-track {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+@media (min-width: 768px) {
+  .picker-scroll-track {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 480px;
+  }
+}
+
+.picker-scroll-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Frosted Garment Tile */
+.picker-garment-tile {
+  flex: 0 0 102px;
+  width: 102px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(228, 222, 212, 0.80);
+  border-radius: 16px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  user-select: none;
+}
+
+body.theme-dark .picker-garment-tile {
+  background: rgba(35, 42, 34, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+@media (min-width: 768px) {
+  .picker-garment-tile {
+    flex: 0 0 auto;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+  }
+}
+
+.picker-garment-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+  border-color: var(--olive-primary, #52634B);
+}
+
+.picker-garment-tile:active {
+  transform: scale(0.96);
+}
+
+.picker-garment-tile.is-equipped {
+  border-color: #52634B;
+  background: rgba(82, 99, 75, 0.12);
+  box-shadow: 0 0 0 1.5px #52634B, 0 6px 16px rgba(82, 99, 75, 0.25);
+}
+
+.picker-garment-thumb-wrap {
+  position: relative;
+  width: 100%;
+  height: 72px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #F2EFEB;
+  margin-bottom: 5px;
+}
+
+@media (min-width: 768px) {
+  .picker-garment-thumb-wrap {
+    width: 54px;
+    height: 54px;
+    flex-shrink: 0;
+    margin-bottom: 0;
+  }
+}
+
+.picker-garment-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.picker-equipped-badge {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  right: 3px;
+  background: rgba(26, 31, 26, 0.78);
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+  padding: 2px 0;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(4px);
+}
+
+.picker-garment-tile.is-equipped .picker-equipped-badge {
+  background: #3F4C39;
+  color: #FFFFFF;
+}
+
+.picker-garment-meta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.picker-garment-title {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.picker-garment-sub {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
 
 

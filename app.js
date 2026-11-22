@@ -1845,6 +1845,131 @@
     }, 350);
   }
 
+  // =========================================================================
+  // FROSTED GLOSSY QUICK-PICKER CARD FOR 3D MANNEQUIN BODY PART TAPS
+  // =========================================================================
+  function openBodyPartWardrobeCard(zone = 'tops') {
+    const card = document.getElementById('mannequinQuickPickerCard');
+    if (!card) return;
+
+    let categoryKey = 'tops';
+    let badgeText = 'Tops (Neck to Hip)';
+
+    const z = (zone || '').toLowerCase();
+    if (z.includes('top') || z.includes('shirt') || z.includes('jacket') || z.includes('torso')) {
+      categoryKey = 'tops';
+      badgeText = 'Tops (Neck to Hip)';
+    } else if (z.includes('bottom') || z.includes('pant') || z.includes('skirt') || z.includes('trouser')) {
+      categoryKey = 'bottoms';
+      badgeText = 'Bottoms (Hip to Ankle)';
+    } else if (z.includes('shoe') || z.includes('feet') || z.includes('footwear')) {
+      categoryKey = 'shoes';
+      badgeText = 'Shoes & Footwear';
+    } else if (z.includes('acc') || z.includes('head') || z.includes('hat') || z.includes('watch')) {
+      categoryKey = 'accessories';
+      badgeText = 'Accessories & Details';
+    }
+
+    const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
+    const pool = [...userWardrobe, ...WARDROBE_ITEMS.filter(item => !userWardrobe.some(u => u.id === item.id))];
+
+    const categoryItems = pool.filter(item => {
+      const c = (item.category || '').toLowerCase().trim();
+      if (categoryKey === 'tops') return c === 'tops' || c === 'top' || (typeof isShirt === 'function' && isShirt(item));
+      if (categoryKey === 'bottoms') return c === 'bottoms' || c === 'bottom' || (typeof isPant === 'function' && isPant(item));
+      if (categoryKey === 'shoes') return c === 'shoes' || c === 'shoe' || (typeof isSho === 'function' && isSho(item));
+      if (categoryKey === 'accessories') return c === 'accessories' || c === 'accessory' || (typeof isAcc === 'function' && isAcc(item));
+      return false;
+    });
+
+    const badgeEl = document.getElementById('pickerCategoryBadge');
+    const countEl = document.getElementById('pickerItemCount');
+    if (badgeEl) badgeEl.textContent = badgeText;
+    if (countEl) countEl.textContent = `${categoryItems.length} available`;
+
+    const track = document.getElementById('pickerScrollTrack');
+    if (track) {
+      if (categoryItems.length === 0) {
+        track.innerHTML = `
+          <div style="padding: 18px 24px; text-align: center; color: var(--text-muted); font-size: 11px;">
+            No ${badgeText.toLowerCase()} found in wardrobe.
+          </div>
+        `;
+      } else {
+        track.innerHTML = categoryItems.map(item => {
+          const photo = item.photoFront || item.photo || 'assets/placeholder_outfit.jpg';
+          const isEquipped = (state.activeLook && (
+            (categoryKey === 'tops' && state.activeLook.top === item.name) ||
+            (categoryKey === 'bottoms' && state.activeLook.bottom === item.name) ||
+            (categoryKey === 'shoes' && state.activeLook.shoes === item.name)
+          ));
+
+          return `
+            <div class="picker-garment-tile ${isEquipped ? 'is-equipped' : ''}" 
+                 id="pickerTile_${item.id}"
+                 onclick="app.selectQuickPickerGarment('${item.id}')"
+                 role="button"
+                 tabindex="0"
+                 aria-label="Equip ${item.name}">
+              <div class="picker-garment-thumb-wrap">
+                <img src="${photo}" alt="${item.name}" class="picker-garment-img" loading="lazy">
+                <div class="picker-equipped-badge">${isEquipped ? '✓ Worn' : 'Tap to wear'}</div>
+              </div>
+              <div class="picker-garment-meta">
+                <span class="picker-garment-title" title="${item.name}">${item.name}</span>
+                <span class="picker-garment-sub">${item.subCategory || item.category || ''}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    card.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      card.classList.add('visible');
+    });
+
+    if (navigator.vibrate) {
+      try { navigator.vibrate(25); } catch (e) {}
+    }
+  }
+
+  function selectQuickPickerGarment(itemId) {
+    const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
+    const pool = [...userWardrobe, ...WARDROBE_ITEMS];
+    const item = pool.find(i => i.id === itemId);
+    if (!item) return;
+
+    wardrobeEquipToMannequin(item);
+
+    document.querySelectorAll('.picker-garment-tile').forEach(tile => {
+      tile.classList.remove('is-equipped');
+      const badge = tile.querySelector('.picker-equipped-badge');
+      if (badge) badge.textContent = 'Tap to wear';
+    });
+    const selectedTile = document.getElementById(`pickerTile_${itemId}`);
+    if (selectedTile) {
+      selectedTile.classList.add('is-equipped');
+      const badge = selectedTile.querySelector('.picker-equipped-badge');
+      if (badge) badge.textContent = '✓ Worn';
+    }
+
+    const sparkles = document.getElementById('serenSparkles');
+    if (sparkles) {
+      sparkles.classList.add('active');
+      setTimeout(() => sparkles.classList.remove('active'), 1200);
+    }
+  }
+
+  function closeMannequinQuickPicker() {
+    const card = document.getElementById('mannequinQuickPickerCard');
+    if (card) {
+      card.classList.remove('visible');
+      setTimeout(() => card.classList.add('hidden'), 220);
+    }
+  }
+
   function filterWardrobeCategory(cat, btn) {
     state.wardrobeActiveCategory = cat;
     if (btn) {
@@ -8636,7 +8761,12 @@
 
     // Auth & Onboarding Flow API
     submitSignIn,
-    enterWoobi
+    enterWoobi,
+
+    // Mannequin Body Part Quick-Picker API
+    openBodyPartWardrobeCard,
+    selectQuickPickerGarment,
+    closeMannequinQuickPicker
   };
 
   window.app = Object.assign(window.app || {}, appExports);

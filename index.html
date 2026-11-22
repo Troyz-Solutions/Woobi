@@ -1507,20 +1507,19 @@
              SCREEN: TODAY'S OUTFIT RECOMMENDATION (AI STYLIST)
              =================================================================== -->
         <section class="phone-screen" id="screen-today-recommendation" style="overflow-y: auto;">
-          <!-- Top Sub-Header with Clear Exit Buttons -->
+          <!-- Top Sub-Header with Back & Save Action -->
           <div class="screen-sub-header rec-header-bar">
-            <button type="button" class="nav-back-arrow rec-exit-btn" onclick="app.exitDailyRecommendation()" aria-label="Exit">
+            <button type="button" class="nav-back-arrow rec-exit-btn" onclick="app.exitDailyRecommendation()" aria-label="Back to Studio">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m15 18-6-6 6-6" />
               </svg>
             </button>
             <div class="rec-header-center">
-              <span class="rec-badge-pill">AI PERSONAL STYLIST</span>
+              <span class="rec-badge-pill">AI STYLIST CURATION</span>
             </div>
-            <button type="button" class="rec-exit-x" onclick="app.exitDailyRecommendation()" title="Exit" aria-label="Exit">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+            <button type="button" class="rec-action-icon-btn" onclick="app.saveRecommendedLook()" title="Save Look to Lookbook" aria-label="Save Look">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
               </svg>
             </button>
           </div>
@@ -1531,10 +1530,17 @@
             <div class="rec-headline-block">
               <h1 class="rec-main-title">Today's Outfit Recommendation</h1>
               <div class="rec-date-row">
-                <span class="rec-calendar-icon">📅</span>
+                <span class="rec-calendar-icon" aria-hidden="true">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                    <line x1="16" x2="16" y1="2" y2="6"/>
+                    <line x1="8" x2="8" y1="2" y2="6"/>
+                    <line x1="3" x2="21" y1="10" y2="10"/>
+                  </svg>
+                </span>
                 <span class="rec-date-text" id="recTodayDate">Friday, Nov 14, 2026</span>
               </div>
-              <p class="rec-main-subtitle">Your personal AI stylist has selected an outfit for today.</p>
+              <p class="rec-main-subtitle">Curated from your clean wardrobe for effortless, balanced style.</p>
             </div>
 
             <!-- Day Selector Chips (Allows testing/exploring variety across days) -->
@@ -5165,27 +5171,6 @@
           </div>
         </div>
       </div>
-
-<!-- 4. Photo Preview Lightbox Modal -->
-<div class="clothing-lightbox-modal hidden" id="clothingPreviewLightbox" onclick="if(event.target === this) app.closeClothingLightbox()">
-  <div class="clothing-lightbox-card">
-    <div class="clothing-lightbox-header">
-      <h4 class="clothing-lightbox-title" id="lightboxTitle">Garment Preview</h4>
-      <button type="button" class="clothing-lightbox-close" onclick="app.closeClothingLightbox()">✕</button>
-    </div>
-    <div class="clothing-lightbox-img-wrap">
-      <img id="lightboxImg" class="clothing-lightbox-img" src="" alt="Enlarged Garment" />
-    </div>
-    <div class="clothing-lightbox-actions">
-      <button type="button" class="btn-outline-white" style="font-size: 0.8rem; padding: 8px 14px;" onclick="app.closeClothingLightbox()">
-        Back
-      </button>
-      <button type="button" class="btn-outline-white" style="font-size: 0.8rem; padding: 8px 14px; color: #FF6B6B; border-color: rgba(255, 107, 107, 0.4);" id="lightboxRemoveBtn">
-        Remove Photo 🗑️
-      </button>
-    </div>
-  </div>
-</div>
     </div>
   </div>
 

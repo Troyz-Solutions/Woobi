@@ -17326,16 +17326,6 @@ body.theme-dark .woobi-silk-bg,
   text-align: center;
   transition: all var(--transition-fast);
 }
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all var(--transition-fast);
-}
 
 .cat-pill-modern:hover {
   border-color: var(--olive-primary);
@@ -18251,7 +18241,7 @@ body.theme-dark .woobi-silk-bg,
 }
 
 
-========================================================
+/* ==========================================================================
    TODAY'S OUTFIT RECOMMENDATION (AI STYLIST) & 3D STUDIO TRY-ON
    Authentic Woobi Upstream Minimalist Luxury Theme
    ========================================================================== */
@@ -18430,6 +18420,52 @@ body.theme-dark .woobi-silk-bg,
   margin-bottom: 14px;
 }
 
+.rec-look-vibe-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-subtle, #FAF8F5);
+  border: 1px solid var(--bg-border, #E8E3D8);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.rec-vibe-sparkle {
+  color: var(--olive-primary, #52634B);
+  font-size: 0.75rem;
+}
+
+.rec-theme-text {
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: var(--text-main, #1D201C);
+  letter-spacing: -0.2px;
+}
+
+.rec-harmony-score-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  background: rgba(78, 135, 82, 0.10);
+  border: 1px solid rgba(78, 135, 82, 0.30);
+  padding: 5px 12px;
+  border-radius: 16px;
+}
+
+.rec-score-num {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-success, #4E8752);
+}
+
+.rec-score-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-success, #4E8752);
+}
+
 .rec-theme-pill {
   display: flex;
   align-items: center;
@@ -18438,12 +18474,6 @@ body.theme-dark .woobi-silk-bg,
   border: 1px solid var(--olive-border, rgba(82, 99, 75, 0.25));
   padding: 5px 12px;
   border-radius: 12px;
-}
-
-.rec-theme-text {
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--olive-primary, #52634B);
 }
 
 .rec-score-pill {
@@ -18517,55 +18547,123 @@ body.theme-dark .woobi-silk-bg,
   border-radius: 10px;
 }
 
-/* Outfit Preview Collage */
+/* Outfit Preview Collage - Elevated Proportional Cards with Direct Swap */
 .rec-preview-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .rec-preview-slot {
   position: relative;
-  height: 124px;
-  border-radius: 14px;
+  height: 156px;
+  border-radius: 16px;
   overflow: hidden;
-  background: var(--bg-subtle, #F3EFE8);
+  background: #FFFFFF;
   border: 1px solid var(--bg-border, #E8E3D8);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-fast, 0.15s ease), box-shadow var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease);
 }
 
-.rec-preview-slot img {
+.rec-preview-slot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(82, 99, 75, 0.14);
+  border-color: rgba(82, 99, 75, 0.40);
+}
+
+.rec-preview-slot:active {
+  transform: scale(0.98);
+}
+
+.rec-slot-img-wrap {
+  width: 100%;
+  flex-grow: 1;
+  background: var(--bg-subtle, #FAF9F6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.rec-slot-img-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
+  transition: transform 0.25s ease;
 }
 
-.rec-slot-badge {
+.rec-preview-slot:hover .rec-slot-img-wrap img {
+  transform: scale(1.05);
+}
+
+.rec-slot-header-row {
   position: absolute;
-  top: 7px;
-  left: 7px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(4px);
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.rec-slot-tag {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(82, 99, 75, 0.22);
   color: var(--olive-primary, #52634B);
-  border: 1px solid rgba(82, 99, 75, 0.2);
   font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  padding: 2px 7px;
+  letter-spacing: 0.6px;
+  padding: 3px 7px;
   border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.rec-slot-swap-btn {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--bg-border, #E8E3D8);
+  color: var(--text-main, #1D201C);
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.rec-slot-swap-btn:hover {
+  background: var(--olive-primary, #52634B);
+  color: #FFFFFF;
+  border-color: var(--olive-primary, #52634B);
+}
+
+.rec-slot-info-bar {
+  background: #FFFFFF;
+  border-top: 1px solid var(--bg-border-light, #EFECE6);
+  padding: 8px 10px;
+  z-index: 2;
 }
 
 .rec-slot-name {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(29, 32, 28, 0.88) 0%, rgba(29, 32, 28, 0.4) 70%, transparent 100%);
-  color: #FFFFFF;
-  font-size: 0.74rem;
-  font-weight: 500;
-  padding: 12px 8px 6px 8px;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-main, #1D201C);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -18790,6 +18888,176 @@ body.theme-dark .woobi-silk-bg,
 
 .rec-subscore-fill.season {
   background: linear-gradient(90deg, #B5843E, #D4A35B);
+}
+
+/* Action CTA Group & Secondary Buttons */
+.rec-action-cta-group {
+  margin-top: 4px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-secondary-actions-bar {
+  display: flex;
+  gap: 10px;
+}
+
+.rec-sec-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: var(--bg-card, #FFFFFF);
+  border: 1px solid var(--bg-border, #E8E3D8);
+  color: var(--text-main, #1D201C);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.rec-sec-action-btn:hover {
+  background: var(--bg-subtle, #FAF8F5);
+  border-color: var(--olive-primary, #52634B);
+  color: var(--olive-primary, #52634B);
+  box-shadow: 0 2px 8px rgba(82, 99, 75, 0.15);
+}
+
+.rec-sec-action-btn:active {
+  transform: scale(0.97);
+}
+
+.rec-action-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--bg-border, #E8E3D8);
+  background: var(--bg-card, #FFFFFF);
+  color: var(--olive-primary, #52634B);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.rec-action-icon-btn:hover {
+  background: var(--olive-soft, rgba(82, 99, 75, 0.10));
+  border-color: var(--olive-primary, #52634B);
+  transform: scale(1.06);
+}
+
+.rec-action-icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* Collapsible Stylist Notes & Harmony Science Accordion */
+.rec-analysis-accordion {
+  background: var(--bg-subtle, #FAF8F5);
+  border: 1px solid var(--bg-border, #E8E3D8);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 10px;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.rec-analysis-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.rec-analysis-summary::-webkit-details-marker {
+  display: none;
+}
+
+.rec-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rec-analysis-sparkle {
+  color: var(--olive-primary, #52634B);
+  font-size: 0.85rem;
+}
+
+.rec-summary-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-main, #1D201C);
+  letter-spacing: -0.2px;
+}
+
+.rec-summary-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rec-summary-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--olive-soft, rgba(82, 99, 75, 0.10));
+  color: var(--olive-primary, #52634B);
+  padding: 3px 9px;
+  border-radius: 10px;
+  border: 1px solid rgba(82, 99, 75, 0.18);
+}
+
+.rec-summary-chevron {
+  font-size: 0.80rem;
+  color: var(--text-muted, #7A8174);
+  transition: transform 0.2s ease;
+}
+
+.rec-analysis-accordion[open] .rec-summary-chevron {
+  transform: rotate(180deg);
+}
+
+.rec-analysis-content {
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid var(--bg-border-light, #EFECE6);
+  margin-top: 2px;
+}
+
+.rec-harmony-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 10px 0;
+}
+
+.rec-harmony-tag-item {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--bg-border, #E8E3D8);
+  color: var(--olive-primary, #52634B);
+}
+
+.rec-harmony-tag-item.contrast {
+  color: #4A5147;
+}
+
+.rec-harmony-tag-item.tier {
+  background: rgba(78, 135, 82, 0.12);
+  color: #2E5C32;
+  border-color: rgba(78, 135, 82, 0.30);
+  font-weight: 700;
 }
 
 /* Large TRY ON Button */

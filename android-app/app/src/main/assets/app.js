@@ -3674,167 +3674,251 @@
 
     container.innerHTML = `
       <div class="rec-fashion-card">
-        <!-- Top Banner: Theme & Harmony Score -->
+        <!-- Top Editorial Header: Look Vibe & Harmony Score -->
         <div class="rec-card-top-bar">
-          <div class="rec-theme-pill">
+          <div class="rec-look-vibe-pill">
+            <span class="rec-vibe-sparkle">✦</span>
             <span class="rec-theme-text">${rec.title || "Today's Curated Look"}</span>
           </div>
-          <div class="rec-tier-pill">
-            <span class="rec-tier-text">${tierBadge}</span>
-          </div>
-          <div class="rec-score-pill">
-            <span class="rec-score-value">${rec.harmonyScore || 96}%</span>
-            <span class="rec-score-sub">Synergy</span>
+          <div class="rec-harmony-score-badge" title="Engine Harmony Synergy">
+            <span class="rec-score-num">${rec.harmonyScore || 96}%</span>
+            <span class="rec-score-label">Harmony</span>
           </div>
         </div>
 
-        <!-- Engine Harmony Scheme Banner -->
-        <div class="rec-harmony-banner">
-          <span class="rec-harmony-scheme">${harmonySchemeLabel}</span>
-          <span class="rec-contrast-badge">Tonal Contrast: Balanced</span>
-        </div>
-
-        <!-- Outfit Collage Preview Grid -->
+        <!-- Curated Outfit Collage Preview Grid with Direct Swap -->
         <div class="rec-preview-grid">
-          <div class="rec-preview-slot rec-slot-top" title="${top.name}">
-            <img src="${topPhoto}" alt="${top.name}" onerror="this.src='assets/navy_shirt.jpg'" />
-            <div class="rec-slot-badge">TOPWEAR</div>
-            <div class="rec-slot-name">${top.name}</div>
-          </div>
-          <div class="rec-preview-slot rec-slot-bottom" title="${bottom.name}">
-            <img src="${bottomPhoto}" alt="${bottom.name}" onerror="this.src='assets/beige_chinos.jpg'" />
-            <div class="rec-slot-badge">BOTTOMWEAR</div>
-            <div class="rec-slot-name">${bottom.name}</div>
-          </div>
-          ${shoes ? `
-          <div class="rec-preview-slot rec-slot-shoes" title="${shoes.name}">
-            <img src="${shoePhoto}" alt="${shoes.name}" onerror="this.src='assets/white_sneakers.jpg'" />
-            <div class="rec-slot-badge">FOOTWEAR</div>
-            <div class="rec-slot-name">${shoes.name}</div>
-          </div>` : ''}
-          ${accessory ? `
-          <div class="rec-preview-slot rec-slot-acc" title="${accessory.name}">
-            <img src="${accPhoto}" alt="${accessory.name}" onerror="this.src='assets/leather_watch.jpg'" />
-            <div class="rec-slot-badge">ACCESSORY</div>
-            <div class="rec-slot-name">${accessory.name}</div>
-          </div>` : ''}
-        </div>
-
-        <!-- Engine Harmony Stylist Rationale & Multi-Factor Breakdown -->
-        <div class="rec-rationale-box">
-          <div class="rec-rationale-title-row">
-            <span class="rec-rationale-icon">✨</span>
-            <span class="rec-rationale-title">Engine Harmony Stylist Analysis</span>
-          </div>
-          <p class="rec-rationale-text">${rec.explanation}</p>
-
-          <div class="rec-harmony-strengths">
-            ${strengthsHtml}
-          </div>
-
-          <div class="rec-subscores-grid">
-            <div class="rec-subscore-item">
-              <div class="rec-subscore-label-row">
-                <span class="rec-subscore-label">Color Science</span>
-                <span class="rec-subscore-val">${colorScore}%</span>
-              </div>
-              <div class="rec-subscore-bar"><div class="rec-subscore-fill color" style="width: ${colorScore}%"></div></div>
-            </div>
-            <div class="rec-subscore-item">
-              <div class="rec-subscore-label-row">
-                <span class="rec-subscore-label">Formality & Style</span>
-                <span class="rec-subscore-val">${formalityScore}%</span>
-              </div>
-              <div class="rec-subscore-bar"><div class="rec-subscore-fill formality" style="width: ${formalityScore}%"></div></div>
-            </div>
-            <div class="rec-subscore-item">
-              <div class="rec-subscore-label-row">
-                <span class="rec-subscore-label">Silhouette & Fit</span>
-                <span class="rec-subscore-val">${silhouetteScore}%</span>
-              </div>
-              <div class="rec-subscore-bar"><div class="rec-subscore-fill silhouette" style="width: ${silhouetteScore}%"></div></div>
-            </div>
-            <div class="rec-subscore-item">
-              <div class="rec-subscore-label-row">
-                <span class="rec-subscore-label">Season & Fabric</span>
-                <span class="rec-subscore-val">${seasonScore}%</span>
-              </div>
-              <div class="rec-subscore-bar"><div class="rec-subscore-fill season" style="width: ${seasonScore}%"></div></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Wardrobe Item Breakdown Rows with Change Option -->
-        <div class="rec-garments-list">
-          <div class="rec-list-header">
-            <span>CLOTHING BREAKDOWN</span>
-            <span class="rec-list-count">${(shoes ? 3 : 2) + (accessory ? 1 : 0)} Pieces</span>
-          </div>
-
-          <div class="rec-garment-row">
-            <div class="rec-row-thumb">
+          <div class="rec-preview-slot rec-slot-top" onclick="app.openChangeGarmentModal('top')" title="Tap to change topwear">
+            <div class="rec-slot-img-wrap">
               <img src="${topPhoto}" alt="${top.name}" onerror="this.src='assets/navy_shirt.jpg'" />
             </div>
-            <div class="rec-row-details">
-              <div class="rec-row-headline">
-                <span class="rec-row-name">${top.name}</span>
-                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('top')" aria-label="Change Topwear">Change</button>
-              </div>
-              <span class="rec-row-category">${top.subCategory || top.category || 'Tops'} · Fit: ${top.fit || 'perfect'}</span>
+            <div class="rec-slot-header-row">
+              <span class="rec-slot-tag">TOPWEAR</span>
+              <button type="button" class="rec-slot-swap-btn" onclick="event.stopPropagation(); app.openChangeGarmentModal('top')" aria-label="Change Topwear" title="Change Topwear">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+                </svg>
+                <span>Swap</span>
+              </button>
+            </div>
+            <div class="rec-slot-info-bar">
+              <span class="rec-slot-name">${top.name}</span>
             </div>
           </div>
 
-          <div class="rec-garment-row">
-            <div class="rec-row-thumb">
+          <div class="rec-preview-slot rec-slot-bottom" onclick="app.openChangeGarmentModal('bottom')" title="Tap to change bottomwear">
+            <div class="rec-slot-img-wrap">
               <img src="${bottomPhoto}" alt="${bottom.name}" onerror="this.src='assets/beige_chinos.jpg'" />
             </div>
-            <div class="rec-row-details">
-              <div class="rec-row-headline">
-                <span class="rec-row-name">${bottom.name}</span>
-                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('bottom')" aria-label="Change Bottomwear">Change</button>
-              </div>
-              <span class="rec-row-category">${bottom.subCategory || bottom.category || 'Bottoms'} · Fit: ${bottom.fit || 'perfect'}</span>
+            <div class="rec-slot-header-row">
+              <span class="rec-slot-tag">BOTTOMWEAR</span>
+              <button type="button" class="rec-slot-swap-btn" onclick="event.stopPropagation(); app.openChangeGarmentModal('bottom')" aria-label="Change Bottomwear" title="Change Bottomwear">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+                </svg>
+                <span>Swap</span>
+              </button>
+            </div>
+            <div class="rec-slot-info-bar">
+              <span class="rec-slot-name">${bottom.name}</span>
             </div>
           </div>
 
           ${shoes ? `
-          <div class="rec-garment-row">
-            <div class="rec-row-thumb">
+          <div class="rec-preview-slot rec-slot-shoes" onclick="app.openChangeGarmentModal('shoes')" title="Tap to change footwear">
+            <div class="rec-slot-img-wrap">
               <img src="${shoePhoto}" alt="${shoes.name}" onerror="this.src='assets/white_sneakers.jpg'" />
             </div>
-            <div class="rec-row-details">
-              <div class="rec-row-headline">
-                <span class="rec-row-name">${shoes.name}</span>
-                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('shoes')" aria-label="Change Footwear">Change</button>
-              </div>
-              <span class="rec-row-category">${shoes.subCategory || shoes.category || 'Footwear'} · Coordinated</span>
+            <div class="rec-slot-header-row">
+              <span class="rec-slot-tag">FOOTWEAR</span>
+              <button type="button" class="rec-slot-swap-btn" onclick="event.stopPropagation(); app.openChangeGarmentModal('shoes')" aria-label="Change Footwear" title="Change Footwear">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+                </svg>
+                <span>Swap</span>
+              </button>
+            </div>
+            <div class="rec-slot-info-bar">
+              <span class="rec-slot-name">${shoes.name}</span>
             </div>
           </div>` : ''}
 
           ${accessory ? `
-          <div class="rec-garment-row">
-            <div class="rec-row-thumb">
+          <div class="rec-preview-slot rec-slot-acc" onclick="app.openChangeGarmentModal('accessory')" title="Tap to change accessory">
+            <div class="rec-slot-img-wrap">
               <img src="${accPhoto}" alt="${accessory.name}" onerror="this.src='assets/leather_watch.jpg'" />
             </div>
-            <div class="rec-row-details">
-              <div class="rec-row-headline">
-                <span class="rec-row-name">${accessory.name}</span>
-                <button type="button" class="rec-change-btn" onclick="app.openChangeGarmentModal('accessory')" aria-label="Change Accessory">Change</button>
-              </div>
-              <span class="rec-row-category">${accessory.subCategory || accessory.category || 'Accessories'} · Accent</span>
+            <div class="rec-slot-header-row">
+              <span class="rec-slot-tag">ACCESSORY</span>
+              <button type="button" class="rec-slot-swap-btn" onclick="event.stopPropagation(); app.openChangeGarmentModal('accessory')" aria-label="Change Accessory" title="Change Accessory">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+                </svg>
+                <span>Swap</span>
+              </button>
+            </div>
+            <div class="rec-slot-info-bar">
+              <span class="rec-slot-name">${accessory.name}</span>
             </div>
           </div>` : ''}
         </div>
 
-        <!-- Action Section: Large TRY ON Button -->
-        <button type="button" class="rec-tryon-action-btn" id="recTryOnBtn" onclick="app.tryOnRecommendedOutfit()" aria-label="Try On Outfit in 3D Studio">
-          <span class="rec-tryon-btn-glow"></span>
-          <span class="rec-tryon-btn-icon">✨</span>
-          <span class="rec-tryon-btn-label">TRY ON</span>
-          <span class="rec-tryon-btn-arrow">→</span>
-        </button>
+        <!-- Immediate Actions (Prominent TRY ON placed directly under preview) -->
+        <div class="rec-action-cta-group">
+          <button type="button" class="rec-tryon-action-btn" id="recTryOnBtn" onclick="app.tryOnRecommendedOutfit()" aria-label="Try On Outfit in 3D Studio">
+            <span class="rec-tryon-btn-glow"></span>
+            <span class="rec-tryon-btn-icon">✨</span>
+            <span class="rec-tryon-btn-label">Try On in 3D Studio</span>
+            <span class="rec-tryon-btn-arrow">→</span>
+          </button>
+          <div class="rec-secondary-actions-bar">
+            <button type="button" class="rec-sec-action-btn" onclick="app.shuffleDailyRecommendation()" aria-label="Shuffle Alternative Look">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>Shuffle Look</span>
+            </button>
+            <button type="button" class="rec-sec-action-btn" onclick="app.saveRecommendedLook()" aria-label="Save to Lookbook">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              <span>Save Look</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Stylist Rationale & Harmony Science Analysis -->
+        <details class="rec-analysis-accordion" open>
+          <summary class="rec-analysis-summary">
+            <div class="rec-summary-left">
+              <span class="rec-analysis-sparkle">✦</span>
+              <span class="rec-summary-title">Stylist Notes & Harmony Science</span>
+            </div>
+            <div class="rec-summary-right">
+              <span class="rec-summary-chip">${harmonySchemeLabel.replace('🎨 ', '')}</span>
+              <span class="rec-summary-chevron">▾</span>
+            </div>
+          </summary>
+          <div class="rec-analysis-content">
+            <div class="rec-harmony-tags-row">
+              <span class="rec-harmony-tag-item">${harmonySchemeLabel}</span>
+              <span class="rec-harmony-tag-item contrast">Tonal Contrast: Balanced</span>
+              <span class="rec-harmony-tag-item tier">${tierBadge}</span>
+            </div>
+            <p class="rec-rationale-text">${rec.explanation}</p>
+            <div class="rec-harmony-strengths">
+              ${strengthsHtml}
+            </div>
+            <div class="rec-subscores-grid">
+              <div class="rec-subscore-item">
+                <div class="rec-subscore-label-row">
+                  <span class="rec-subscore-label">Color Science</span>
+                  <span class="rec-subscore-val">${colorScore}%</span>
+                </div>
+                <div class="rec-subscore-bar"><div class="rec-subscore-fill color" style="width: ${colorScore}%"></div></div>
+              </div>
+              <div class="rec-subscore-item">
+                <div class="rec-subscore-label-row">
+                  <span class="rec-subscore-label">Formality & Style</span>
+                  <span class="rec-subscore-val">${formalityScore}%</span>
+                </div>
+                <div class="rec-subscore-bar"><div class="rec-subscore-fill formality" style="width: ${formalityScore}%"></div></div>
+              </div>
+              <div class="rec-subscore-item">
+                <div class="rec-subscore-label-row">
+                  <span class="rec-subscore-label">Silhouette & Fit</span>
+                  <span class="rec-subscore-val">${silhouetteScore}%</span>
+                </div>
+                <div class="rec-subscore-bar"><div class="rec-subscore-fill silhouette" style="width: ${silhouetteScore}%"></div></div>
+              </div>
+              <div class="rec-subscore-item">
+                <div class="rec-subscore-label-row">
+                  <span class="rec-subscore-label">Season & Fabric</span>
+                  <span class="rec-subscore-val">${seasonScore}%</span>
+                </div>
+                <div class="rec-subscore-bar"><div class="rec-subscore-fill season" style="width: ${seasonScore}%"></div></div>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     `;
+  }
+
+  let _recommendationShuffleSeed = 0;
+
+  function shuffleDailyRecommendation() {
+    _recommendationShuffleSeed++;
+    const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
+    const wardrobePool = userWardrobe.length > 0
+      ? [...userWardrobe, ...WARDROBE_ITEMS.filter(item => !userWardrobe.some(u => u.id === item.id))]
+      : WARDROBE_ITEMS;
+
+    const cleanTops = wardrobePool.filter(i => (i.category === 'Tops' || i.category === 'top') && i.condition !== 'dirty');
+    const cleanBottoms = wardrobePool.filter(i => (i.category === 'Bottoms' || i.category === 'bottom') && i.condition !== 'dirty');
+    const cleanShoes = wardrobePool.filter(i => (i.category === 'Shoes' || i.category === 'shoes' || i.category === 'Footwear'));
+    const cleanAccs = wardrobePool.filter(i => (i.category === 'Accessories' || i.category === 'accessory'));
+
+    if (cleanTops.length === 0 || cleanBottoms.length === 0) {
+      showToast('⚠️ Need more wardrobe items to shuffle');
+      return;
+    }
+
+    const nextTop = cleanTops[_recommendationShuffleSeed % cleanTops.length];
+    const nextBottom = cleanBottoms[(_recommendationShuffleSeed * 2 + 1) % cleanBottoms.length];
+    const nextShoe = cleanShoes.length > 0 ? cleanShoes[_recommendationShuffleSeed % cleanShoes.length] : null;
+    const nextAcc = cleanAccs.length > 0 ? cleanAccs[_recommendationShuffleSeed % cleanAccs.length] : null;
+
+    if (_activeDailyRecommendation) {
+      _activeDailyRecommendation.top = nextTop;
+      _activeDailyRecommendation.bottom = nextBottom;
+      if (nextShoe) _activeDailyRecommendation.shoes = nextShoe;
+      if (nextAcc) _activeDailyRecommendation.accessory = nextAcc;
+
+      // Rescore via Engine Harmony if present
+      if (typeof window !== 'undefined' && window.engineHarmonyInstance && typeof window.engineHarmonyInstance.scoreOutfit === 'function') {
+        try {
+          const report = window.engineHarmonyInstance.scoreOutfit({
+            top: nextTop,
+            bottom: nextBottom,
+            shoes: nextShoe,
+            accessories: nextAcc ? [nextAcc] : []
+          }, { occasion: 'smart_casual' });
+          if (report && typeof report.score === 'number') {
+            _activeDailyRecommendation.harmonyScore = report.score;
+            _activeDailyRecommendation.subScores = report.subScores;
+            _activeDailyRecommendation.dominantHarmony = report.dominantHarmony;
+            _activeDailyRecommendation.explanation = report.explanation;
+            _activeDailyRecommendation.badge = report.badge;
+          }
+        } catch (e) {}
+      }
+
+      renderDailyRecommendationCard(_activeDailyRecommendation);
+      showToast('✨ Shuffled: new curated combination');
+    }
+  }
+
+  function saveRecommendedLook() {
+    const rec = _activeDailyRecommendation;
+    if (!rec || !rec.isAvailable) {
+      showToast('⚠️ No active outfit to save');
+      return;
+    }
+    const items = [rec.top, rec.bottom, rec.shoes, rec.accessory].filter(Boolean);
+    const lookName = rec.title || "Curated Daily Look";
+
+    if (savedLooksManager && typeof savedLooksManager.saveLook === 'function') {
+      try {
+        savedLooksManager.saveLook({
+          name: lookName,
+          items: items.map(i => i.id || i),
+          harmonyScore: rec.harmonyScore || 96,
+          date: rec.date || new Date().toISOString()
+        });
+        showToast('✓ Look saved to your Lookbook');
+        return;
+      } catch (e) {
+        console.warn('Could not save via savedLooksManager', e);
+      }
+    }
+    showToast('✓ Look saved to your Lookbook');
   }
 
   // =========================================================================
@@ -8396,6 +8480,8 @@
     selectRecommendationDate,
     renderDailyRecommendationCard,
     tryOnRecommendedOutfit,
+    shuffleDailyRecommendation,
+    saveRecommendedLook,
     openChangeGarmentModal,
     closeChangeGarmentModal,
     selectReplacementGarment,

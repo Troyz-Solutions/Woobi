@@ -109,11 +109,15 @@ const server = http.createServer(async (req, res) => {
   }
 
   const cleanPath = decodeURIComponent(reqUrl.replace(/^\/+/, ''));
-  const loginPath = cleanPath === 'login' || cleanPath.startsWith('login/');
-  const loginRelativePath = cleanPath === 'login' ? '' : cleanPath.slice('login/'.length);
-  const filePath = loginPath
-    ? path.join(BASE_DIR, 'modules', 'core', 'login', loginRelativePath)
-    : path.join(BASE_DIR, cleanPath);
+  let filePath = path.join(BASE_DIR, cleanPath);
+  if (!fs.existsSync(filePath)) {
+    const loginPath = cleanPath === 'login' || cleanPath.startsWith('login/');
+    const loginRelativePath = cleanPath === 'login' ? '' : cleanPath.slice('login/'.length);
+    if (loginPath) {
+      const altPath = path.join(BASE_DIR, 'modules', 'core', 'login', loginRelativePath);
+      if (fs.existsSync(altPath)) filePath = altPath;
+    }
+  }
 
   // Security check: restrict within BASE_DIR
   if (!filePath.toLowerCase().startsWith(BASE_DIR.toLowerCase())) {

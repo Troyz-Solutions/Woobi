@@ -398,9 +398,17 @@
     }
 
     // 3D Engine Adaptive Lifecycle: Pause Three.js render loop on 2D pages to eliminate lag & reduce CPU/GPU load
-    const is3DScreen = (screenId === 'today' || screenId === 'virtual-studio' || screenId === 'wardrobe');
+    const is3DScreen = (screenId === 'today' || screenId === 'virtual-studio');
     if (window.Studio3D && window.Studio3D.isInitialized && typeof window.Studio3D.setRenderingPaused === 'function') {
       window.Studio3D.setRenderingPaused(!is3DScreen);
+    }
+
+    // Persist onboarding completion once user transitions to core app experience
+    if (screenId === 'today') {
+      try {
+        localStorage.setItem('woobi_welcome_seen', 'true');
+        localStorage.setItem('woobi_onboarding_completed', 'true');
+      } catch (e) {}
     }
 
     // Specific screen entry triggers
@@ -8319,13 +8327,25 @@
       serenUpdateTesterPills();
     }, 200);
 
-    // Check URL parameters for direct screen access
+    // Check URL parameters for direct screen access or first-time launch flow
     const params = new URLSearchParams(window.location.search);
     const requestedScreen = params.get('screen');
+
+    let hasCompletedWelcome = false;
+    try {
+      hasCompletedWelcome = (localStorage.getItem('woobi_welcome_seen') === 'true' ||
+                             localStorage.getItem('woobi_onboarding_completed') === 'true');
+    } catch (e) {
+      hasCompletedWelcome = false;
+    }
+
     if (requestedScreen) {
       goToScreen(requestedScreen === 'virtual-studio' ? 'today' : requestedScreen);
+    } else if (!hasCompletedWelcome) {
+      // First-time app open: always display clean Welcome intro page first
+      goToScreen('welcome');
     } else {
-      // Default to Sérén 3D Virtual Studio on Today Homepage
+      // Returning user: go straight to 3D Virtual Studio / Today
       goToScreen('today');
     }
 

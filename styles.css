@@ -219,8 +219,8 @@ body.is-native-app .phone-screen-container {
   height: 100% !important;
 }
 
-html.is-native-app .phone-bottom-nav,
-body.is-native-app .phone-bottom-nav {
+html.is-native-app .phone-bottom-nav:not(.floating-pill-nav),
+body.is-native-app .phone-bottom-nav:not(.floating-pill-nav) {
   border-radius: 0 !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -450,9 +450,11 @@ body.is-native-app .phone-bottom-nav {
   display: none;
   flex-direction: column;
   padding-bottom: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   background: var(--bg-phone);
+  -webkit-overflow-scrolling: touch;
 }
 
 #screen-welcome.active {
@@ -460,8 +462,9 @@ body.is-native-app .phone-bottom-nav {
 }
 
 .welcome-hero-media {
-  flex: 1.4;
-  min-height: 0;
+  flex: 1.25;
+  min-height: 220px;
+  max-height: 52dvh;
   width: 100%;
   overflow: hidden;
   position: relative;
@@ -473,9 +476,9 @@ body.is-native-app .phone-bottom-nav {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 36%;
-  transform: scale(1.08);
-  transform-origin: center 40%;
+  object-position: center 30%;
+  transform: scale(1.04);
+  transform-origin: center 35%;
   display: block;
 }
 
@@ -485,7 +488,7 @@ body.is-native-app .phone-bottom-nav {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px)) 24px;
+  padding: 20px 24px calc(20px + max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px)) 24px;
   background: #FAF8F5;
   box-sizing: border-box;
   position: relative;
@@ -498,17 +501,17 @@ body.is-native-app .phone-bottom-nav {
 
 .welcome-content-body .editorial-title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 2.45rem;
+  font-size: clamp(1.85rem, 6.2vw, 2.45rem);
   font-weight: 700;
   line-height: 1.14;
   color: #111410;
-  letter-spacing: -0.6px;
+  letter-spacing: -0.5px;
   margin: 0 0 6px 0;
 }
 
 .welcome-content-body .welcome-sub {
   font-family: var(--font-sans);
-  font-size: 0.98rem;
+  font-size: clamp(0.9rem, 2.8vw, 0.98rem);
   font-weight: 400;
   color: #4A5147;
   line-height: 1.38;
@@ -520,7 +523,8 @@ body.is-native-app .phone-bottom-nav {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  margin-top: 26px;
+  margin-top: 18px;
+  gap: 10px;
 }
 
 .welcome-actions-wrap .btn-olive-primary {
@@ -785,61 +789,77 @@ body.is-native-app .phone-bottom-nav {
   position: absolute;
   bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 10px) + 12px);
   left: 50%;
-  transform: translateX(-50%);
-  width: min(calc(100% - 24px), 396px);
-  height: 62px;
+  transform: translateX(-50%) translateZ(0);
+  width: min(calc(100% - 20px), 396px);
+  height: 60px;
   background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
   border: 1px solid rgba(228, 222, 212, 0.92);
   border-radius: 9999px;
-  box-shadow: 0 10px 30px rgba(32, 28, 24, 0.10);
+  box-shadow: 0 8px 24px rgba(32, 28, 24, 0.09);
   display: flex;
   align-items: center;
-  justify-content: space-around;
-  padding: 0 10px;
+  justify-content: space-between;
+  padding: 0 6px;
   z-index: 1000;
   box-sizing: border-box;
+  will-change: transform;
 }
 
 @media (max-width: 360px) {
   #screen-today .phone-bottom-nav,
   .phone-bottom-nav.floating-pill-nav {
-    width: calc(100% - 16px);
-    height: 56px;
+    width: calc(100% - 12px);
+    height: 54px;
     padding: 0 4px;
-    bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 8px) + 8px);
+    bottom: calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px), 6px) + 6px);
   }
 }
 
 .floating-pill-nav .nav-tab {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   background: transparent;
   border: none;
   color: #55524B;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 4px 1px !important;
   border-radius: 12px;
   transition: color 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .floating-pill-nav .nav-tab span {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: clamp(8.5px, 2.4vw, 10.5px);
   font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
+  letter-spacing: -0.2px;
+  line-height: 1.15;
   color: inherit;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 1px;
+  box-sizing: border-box;
 }
 
 .floating-pill-nav .nav-tab svg {
   color: inherit;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
   transition: transform 0.18s ease;
 }
 
@@ -857,17 +877,19 @@ body.is-native-app .phone-bottom-nav {
 
 /* Elevated Center Action Button (+) */
 .nav-tab-center-elevated {
-  flex: 0 0 52px;
-  width: 52px;
-  height: 52px;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  margin: 0 2px;
   border-radius: 50%;
   background: #4E5D47;
   color: #FFFFFF;
-  border: 3.5px solid rgba(255, 255, 255, 0.96);
+  border: 3px solid rgba(255, 255, 255, 0.96);
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translateY(-13px);
+  transform: translateY(-11px);
   box-shadow: 0 6px 18px rgba(78, 93, 71, 0.40);
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
@@ -878,16 +900,18 @@ body.is-native-app .phone-bottom-nav {
 
 .nav-tab-center-elevated svg {
   stroke: #FFFFFF;
+  width: 22px;
+  height: 22px;
 }
 
 .nav-tab-center-elevated:hover {
   background: #3F4C39;
-  transform: translateY(-15px) scale(1.05);
+  transform: translateY(-13px) scale(1.05);
   box-shadow: 0 8px 24px rgba(78, 93, 71, 0.48);
 }
 
 .nav-tab-center-elevated:active {
-  transform: translateY(-11px) scale(0.96);
+  transform: translateY(-9px) scale(0.96);
 }
 
 .nav-tab {
@@ -897,16 +921,19 @@ body.is-native-app .phone-bottom-nav {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 4px 2px;
   border-radius: 12px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   max-width: 80px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .nav-tab:hover {
@@ -916,6 +943,9 @@ body.is-native-app .phone-bottom-nav {
 
 .nav-tab svg {
   stroke: var(--text-muted);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 
@@ -938,9 +968,18 @@ body.is-native-app .phone-bottom-nav {
 }
 
 .nav-tab span {
-  font-size: 0.72rem;
+  font-size: clamp(8.5px, 2.4vw, 10.5px);
   font-weight: 600;
-  letter-spacing: -0.1px;
+  letter-spacing: -0.2px;
+  line-height: 1.15;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 .phone-home-indicator {
@@ -7054,25 +7093,27 @@ body.is-native-app .phone-bottom-nav {
   transform: scale(0.94);
 }
 
-/* Sliding Wardrobe Sheet (Step 2) */
+/* Wardrobe Sheet (Full Screen) */
 .seren-wardrobe-sheet {
   position: absolute;
   inset: 0;
   z-index: 70;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: stretch;
+  background: var(--bg-phone, #FAF9F6);
 }
 
 .seren-wardrobe-sheet.hidden {
+  display: none !important;
+}
+
+.seren-wardrobe-sheet .seren-sheet-backdrop {
   display: none;
 }
 
-.seren-sheet-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(35, 30, 24, 0.45);
-  backdrop-filter: blur(5px);
+.seren-wardrobe-sheet .sheet-drag-handle {
+  display: none;
 }
 
 .seren-sheet-card {
@@ -7091,10 +7132,27 @@ body.is-native-app .phone-bottom-nav {
   -ms-overflow-style: none;
 }
 
+.seren-sheet-card.studio-wardrobe-card,
 .studio-wardrobe-card {
-  max-height: 72%;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100% !important;
+  max-height: 100% !important;
+  flex: 1 1 100%;
+  border-radius: 0 !important;
+  border-top: none !important;
+  padding: max(env(safe-area-inset-top, 0px), 18px) 20px max(32px, calc(max(env(safe-area-inset-bottom, 0px), var(--android-inset-bottom, 0px)) + 24px)) 20px;
+  box-shadow: none !important;
+  animation: slideUpSheet 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   display: flex;
   flex-direction: column;
+  background: var(--bg-phone, #FAF9F6);
+  box-sizing: border-box;
 }
 
 .studio-wardrobe-title-wrap {

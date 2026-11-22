@@ -11,8 +11,8 @@ android {
         applicationId = "com.woobi.fashion"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.4"
+        versionCode = 8
+        versionName = "1.0.7"
     }
 
     signingConfigs {

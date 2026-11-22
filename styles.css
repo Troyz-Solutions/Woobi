@@ -19313,6 +19313,163 @@ body.theme-dark .woobi-silk-bg,
   font-weight: 400;
 }
 
+/* ==========================================================================
+   RONI SHANKAR'S THEATRICAL VELVET CURTAIN INTRO (MOBILE ONLY)
+   ========================================================================== */
+
+/* Completely hidden on PC / Desktop */
+@media (min-width: 1024px) {
+  #mobileCurtainIntro,
+  .mobile-curtain-intro {
+    display: none !important;
+  }
+}
+
+/* Active on Mobile & Native Android Wrapper */
+@media (max-width: 1023px) {
+  .mobile-curtain-intro {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 999999;
+    overflow: hidden;
+    pointer-events: auto;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-curtain-intro.curtain-closed {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-curtain-intro.curtain-dismissed {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .curtain-stage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Velvet Curtains (Roni Shankar's Haute Couture Pleats) */
+  .curtain-drape {
+    position: absolute;
+    top: -4%;
+    bottom: -4%;
+    width: calc(54% + 2px);
+    height: 108%;
+    z-index: 10;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.85);
+    background:
+      linear-gradient(170deg, rgba(255, 213, 172, 0.16), transparent 45%, rgba(34, 6, 18, 0.40)),
+      repeating-linear-gradient(0deg, transparent 0 2px, rgba(255, 197, 189, 0.05) 2px 3px),
+      repeating-linear-gradient(92deg, #460914 0%, #680d20 4%, #9b192b 8%, #b82a38 11%, #881426 15%, #460914 18%, #2d040b 21%);
+    transition: transform 1.5s cubic-bezier(0.42, 0, 0.24, 1), opacity 0.4s ease;
+    will-change: transform;
+  }
+
+  .curtain-drape.curtain-left {
+    left: -4%;
+    transform-origin: left center;
+    border-right: 2px solid rgba(218, 178, 110, 0.65);
+  }
+
+  .curtain-drape.curtain-right {
+    right: -4%;
+    transform-origin: right center;
+    border-left: 2px solid rgba(218, 178, 110, 0.65);
+  }
+
+  /* Theatrical Opening Motion */
+  .mobile-curtain-intro.is-opening .curtain-left {
+    transform: translateX(-102%) skewX(-2deg);
+  }
+
+  .mobile-curtain-intro.is-opening .curtain-right {
+    transform: translateX(102%) skewX(2deg);
+  }
+
+  /* Center Brand Crest */
+  .curtain-brand-crest {
+    position: absolute;
+    top: 46%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #FAF6EF;
+    pointer-events: none;
+    transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .curtain-brand-crest .crest-star {
+    font-size: 28px;
+    color: #E2C288;
+    margin-bottom: 6px;
+    animation: crest-pulse 2s ease-in-out infinite;
+  }
+
+  .curtain-brand-crest .crest-title {
+    font-family: 'DM Serif Display', 'Playfair Display', Georgia, serif;
+    font-size: 2.2rem;
+    font-weight: 500;
+    letter-spacing: 5px;
+    color: #FFFDF9;
+    text-shadow: 0 4px 18px rgba(0, 0, 0, 0.60);
+    margin: 0;
+  }
+
+  .curtain-brand-crest .crest-sub {
+    font-family: var(--font-sans, -apple-system, sans-serif);
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 3.5px;
+    color: #E2C288;
+    margin-top: 6px;
+  }
+
+  .curtain-tap-hint {
+    position: absolute;
+    bottom: calc(max(env(safe-area-inset-bottom, 0px), 16px) + 30px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    color: rgba(255, 253, 249, 0.75);
+    font-family: var(--font-sans, -apple-system, sans-serif);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .mobile-curtain-intro.is-opening .curtain-brand-crest,
+  .mobile-curtain-intro.is-opening .curtain-tap-hint {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.92);
+  }
+
+  @keyframes crest-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+}
+
 .simple-app-footer {
   text-align: center;
   padding: 14px 0 28px 0;

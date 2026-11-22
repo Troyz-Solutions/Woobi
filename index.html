@@ -64,6 +64,20 @@
 
 <body>
 
+  <!-- Roni Shankar's Theatrical Velvet Curtain Intro (Mobile Only) -->
+  <div id="mobileCurtainIntro" class="mobile-curtain-intro" aria-hidden="true">
+    <div class="curtain-stage">
+      <div class="curtain-drape curtain-left"></div>
+      <div class="curtain-drape curtain-right"></div>
+      <div class="curtain-brand-crest">
+        <span class="crest-star">✧</span>
+        <h1 class="crest-title">WOOBI</h1>
+        <span class="crest-sub">ATELIER STUDIO</span>
+      </div>
+      <div class="curtain-tap-hint">Tap to enter</div>
+    </div>
+  </div>
+
   <!-- PR #45: Fluid Silk Wave Organic Backdrop -->
   <div class="woobi-silk-bg" aria-hidden="true">
     <svg class="woobi-silk-bg__svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"
@@ -5675,6 +5689,40 @@
         window.Studio3D.init('seren3dContainer', 'seren3dCanvas');
       }
     };
+
+    // Roni Shankar's Mobile Velvet Curtain Reveal (Mobile Only - Runs Every App Open)
+    (function initMobileCurtains() {
+      var isMobile = (window.innerWidth < 1024) ||
+                     document.documentElement.classList.contains('is-native-app') ||
+                     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      var curtainEl = document.getElementById('mobileCurtainIntro');
+      if (!curtainEl) return;
+
+      if (!isMobile) {
+        curtainEl.style.display = 'none';
+        return;
+      }
+
+      curtainEl.style.display = 'flex';
+      curtainEl.classList.add('curtain-closed');
+
+      var opened = false;
+      function openCurtains() {
+        if (opened) return;
+        opened = true;
+        curtainEl.classList.add('is-opening');
+        setTimeout(function() {
+          curtainEl.classList.add('curtain-dismissed');
+          setTimeout(function() {
+            curtainEl.style.display = 'none';
+          }, 500);
+        }, 1200);
+      }
+
+      curtainEl.addEventListener('click', openCurtains);
+      curtainEl.addEventListener('touchstart', openCurtains, { passive: true });
+      setTimeout(openCurtains, 600);
+    })();
   </script>
 </body>
 

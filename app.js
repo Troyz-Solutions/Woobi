@@ -1872,15 +1872,10 @@
   let pickerTouchStartY = 0;
   let pickerTouchEventsAttached = false;
   let pickerAutoSwipeTimer = null;
-  let pickerAutoSwipeActive = true;
+  let pickerAutoSwipeActive = false;
 
   function startPickerAutoSwipe() {
     stopPickerAutoSwipe();
-    pickerAutoSwipeActive = true;
-    updatePickerAutoSwipeUI();
-    pickerAutoSwipeTimer = setInterval(() => {
-      pickerGoNext();
-    }, 2800);
   }
 
   function stopPickerAutoSwipe() {
@@ -1889,32 +1884,10 @@
       clearInterval(pickerAutoSwipeTimer);
       pickerAutoSwipeTimer = null;
     }
-    updatePickerAutoSwipeUI();
   }
 
-  function togglePickerAutoSwipe() {
-    if (pickerAutoSwipeActive) {
-      stopPickerAutoSwipe();
-    } else {
-      startPickerAutoSwipe();
-    }
-  }
-
-  function updatePickerAutoSwipeUI() {
-    const btn = document.getElementById('pickerAutoSwipeBtn');
-    if (!btn) return;
-    const iconPause = btn.querySelector('.icon-pause');
-    const iconPlay = btn.querySelector('.icon-play');
-    if (pickerAutoSwipeActive) {
-      btn.classList.add('is-active');
-      if (iconPause) iconPause.classList.remove('hidden');
-      if (iconPlay) iconPlay.classList.add('hidden');
-    } else {
-      btn.classList.remove('is-active');
-      if (iconPause) iconPause.classList.add('hidden');
-      if (iconPlay) iconPlay.classList.remove('hidden');
-    }
-  }
+  function togglePickerAutoSwipe() {}
+  function updatePickerAutoSwipeUI() {}
 
   function getZoneCategoryKey(zone) {
     const z = (zone || '').toLowerCase();
@@ -1959,19 +1932,6 @@
     const titleText = getZoneTitle(categoryKey);
     let items = getZoneItems(categoryKey);
 
-    // Apply quick search query if active
-    if (pickerSearchQuery && pickerSearchQuery.trim()) {
-      const q = pickerSearchQuery.trim().toLowerCase();
-      items = items.filter(it => (it.name || '').toLowerCase().includes(q) || (it.subCategory || '').toLowerCase().includes(q));
-    }
-
-    // Apply quick filter mode if active
-    if (pickerFilterMode === 'clean') {
-      items = items.filter(it => (it.condition || 'clean').toLowerCase() === 'clean');
-    } else if (pickerFilterMode === 'favorites') {
-      items = items.filter(it => it.favorite || it.fit === 'perfect');
-    }
-
     pickerFilteredItems = items;
 
     // Ensure hero index is clamped within bounds
@@ -1986,160 +1946,112 @@
     const catIconEl = document.getElementById('pickerCatIcon');
     if (catIconEl) {
       if (categoryKey === 'tops') {
-        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>`;
+        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>`;
       } else if (categoryKey === 'bottoms') {
-        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l1 18H5L6 3z"/><path d="M12 9v12"/></svg>`;
+        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l1 18H5L6 3z"/><path d="M12 9v12"/></svg>`;
       } else if (categoryKey === 'shoes') {
-        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20v2H2z"/><path d="M4 18V8a2 2 0 0 1 2-2h3l4 6h7a2 2 0 0 1 2 2v4"/></svg>`;
+        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20v2H2z"/><path d="M4 18V8a2 2 0 0 1 2-2h3l4 6h7a2 2 0 0 1 2 2v4"/></svg>`;
       } else {
-        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
       }
     }
 
     const titleEl = document.getElementById('pickerMainTitle');
     if (titleEl) titleEl.textContent = titleText;
-    updatePickerAutoSwipeUI();
+
+    const countEl = document.getElementById('pickerItemCount');
+    if (countEl) countEl.textContent = `${items.length} styles`;
 
     const stageMount = document.getElementById('pickerCarouselStage') || document.getElementById('pickerHeroStage');
     if (stageMount) {
       if (pickerFilteredItems.length === 0) {
         stageMount.innerHTML = `
-          <div style="grid-column: 1 / -1; padding: 20px 12px; text-align: center; color: var(--text-muted); font-size: 11.5px; width: 100%;">
+          <div style="padding: 24px 12px; text-align: center; color: var(--text-muted); font-size: 12px; width: 100%;">
             No ${titleText.toLowerCase()} found in wardrobe.
           </div>
         `;
       } else {
-        const total = pickerFilteredItems.length;
-        const prevIdx = (pickerHeroIndex - 1 + total) % total;
-        const currIdx = pickerHeroIndex;
-        const nextIdx = (pickerHeroIndex + 1) % total;
-
-        const prevItem = pickerFilteredItems[prevIdx];
-        const currItem = pickerFilteredItems[currIdx];
-        const nextItem = pickerFilteredItems[nextIdx];
-
-        const prevPhoto = prevItem.photoFront || prevItem.photo || 'assets/placeholder_outfit.jpg';
-        const currPhoto = currItem.photoFront || currItem.photo || 'assets/placeholder_outfit.jpg';
-        const nextPhoto = nextItem.photoFront || nextItem.photo || 'assets/placeholder_outfit.jpg';
-
-        const prevEquipped = (state.activeLook && (
-          (categoryKey === 'tops' && state.activeLook.top === prevItem.name) ||
-          (categoryKey === 'bottoms' && state.activeLook.bottom === prevItem.name) ||
-          (categoryKey === 'shoes' && state.activeLook.shoes === prevItem.name)
-        ));
-        const currEquipped = (state.activeLook && (
-          (categoryKey === 'tops' && state.activeLook.top === currItem.name) ||
-          (categoryKey === 'bottoms' && state.activeLook.bottom === currItem.name) ||
-          (categoryKey === 'shoes' && state.activeLook.shoes === currItem.name)
-        ));
-        const nextEquipped = (state.activeLook && (
-          (categoryKey === 'tops' && state.activeLook.top === nextItem.name) ||
-          (categoryKey === 'bottoms' && state.activeLook.bottom === nextItem.name) ||
-          (categoryKey === 'shoes' && state.activeLook.shoes === nextItem.name)
-        ));
-
-        stageMount.innerHTML = `
-          <!-- Left Card (Previous item) -->
-          <div class="picker-item-card picker-item-prev" onclick="app.pickerGoPrev && app.pickerGoPrev()" role="button" tabindex="0" title="${prevItem.name}">
-            ${prevEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
-            <div class="picker-item-thumb-box">
-              <img src="${prevPhoto}" alt="${prevItem.name}" class="picker-item-img" loading="eager">
+        stageMount.innerHTML = pickerFilteredItems.map((item, idx) => {
+          const photo = item.photoFront || item.photo || 'assets/placeholder_outfit.jpg';
+          const isEquipped = (state.activeLook && (
+            (categoryKey === 'tops' && state.activeLook.top === item.name) ||
+            (categoryKey === 'bottoms' && state.activeLook.bottom === item.name) ||
+            (categoryKey === 'shoes' && state.activeLook.shoes === item.name)
+          ));
+          const isSelected = (idx === pickerHeroIndex);
+          return `
+            <div class="picker-item-card ${isSelected ? 'is-active' : ''}" 
+                 data-picker-index="${idx}" 
+                 onclick="app.selectQuickPickerGarment('${item.id}', ${idx})" 
+                 role="button" 
+                 tabindex="0" 
+                 title="${item.name}">
+              ${isEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
+              <div class="picker-item-thumb-box">
+                <img src="${photo}" alt="${item.name}" class="picker-item-img" loading="lazy">
+              </div>
+              <div class="picker-item-name">${item.name}</div>
             </div>
-            <div class="picker-item-name">${prevItem.name}</div>
-          </div>
+          `;
+        }).join('');
 
-          <!-- Center Card (Current Active Item with Haute Couture Golden Frame) -->
-          <div class="picker-item-card picker-item-center is-active" onclick="app.toggleWearCurrentHeroItem && app.toggleWearCurrentHeroItem()" role="button" tabindex="0" title="${currItem.name} (${currEquipped ? 'Equipped' : 'Tap to toggle'})">
-            ${currEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
-            <div class="picker-item-thumb-box">
-              <img src="${currPhoto}" alt="${currItem.name}" class="picker-item-img" loading="eager">
-            </div>
-            <div class="picker-item-name">${currItem.name}</div>
-          </div>
+        // Smoothly scroll active card to center
+        requestAnimationFrame(() => {
+          const activeCard = stageMount.querySelector(`[data-picker-index="${pickerHeroIndex}"]`);
+          if (activeCard) {
+            activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        });
 
-          <!-- Right Card (Next item with peek indicator) -->
-          <div class="picker-item-card picker-item-next" onclick="app.pickerGoNext && app.pickerGoNext()" role="button" tabindex="0" title="${nextItem.name}">
-            ${nextEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
-            <div class="picker-item-thumb-box">
-              <img src="${nextPhoto}" alt="${nextItem.name}" class="picker-item-img" loading="eager">
-              <span class="picker-item-peek-arrow" aria-hidden="true">›</span>
-            </div>
-            <div class="picker-item-name">${nextItem.name}</div>
-          </div>
-        `;
+        // Attach native scroll/swipe detection: snaps to nearest item and equips it
+        if (!stageMount._scrollListenerAttached) {
+          let scrollDebounce = null;
+          stageMount.addEventListener('scroll', () => {
+            if (scrollDebounce) clearTimeout(scrollDebounce);
+            scrollDebounce = setTimeout(() => {
+              const containerRect = stageMount.getBoundingClientRect();
+              const centerX = containerRect.left + containerRect.width / 2;
+              const cards = stageMount.querySelectorAll('.picker-item-card');
+              let closestIdx = -1;
+              let minDistance = Infinity;
+
+              cards.forEach((card) => {
+                const rect = card.getBoundingClientRect();
+                const cardCenter = rect.left + rect.width / 2;
+                const dist = Math.abs(cardCenter - centerX);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  closestIdx = parseInt(card.getAttribute('data-picker-index'), 10);
+                }
+              });
+
+              if (closestIdx !== -1 && closestIdx !== pickerHeroIndex && pickerFilteredItems[closestIdx]) {
+                pickerHeroIndex = closestIdx;
+                cards.forEach(c => c.classList.remove('is-active'));
+                const newActive = stageMount.querySelector(`[data-picker-index="${closestIdx}"]`);
+                if (newActive) newActive.classList.add('is-active');
+                autoEquipCurrentHeroGarment();
+              }
+            }, 120);
+          }, { passive: true });
+          stageMount._scrollListenerAttached = true;
+        }
       }
     }
-
-    // Attach touch swiping on the carousel stage (one by one swipe)
-    if (stageMount && !pickerTouchEventsAttached) {
-      stageMount.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches[0]) {
-          pickerTouchStartX = e.touches[0].clientX;
-          pickerTouchStartY = e.touches[0].clientY;
-        }
-      }, { passive: true });
-
-      stageMount.addEventListener('touchend', (e) => {
-        if (e.changedTouches && e.changedTouches[0]) {
-          const diffX = e.changedTouches[0].clientX - pickerTouchStartX;
-          const diffY = e.changedTouches[0].clientY - pickerTouchStartY;
-          if (Math.abs(diffX) > 28 && Math.abs(diffX) > Math.abs(diffY)) {
-            if (diffX < 0) {
-              pickerGoNext();
-            } else {
-              pickerGoPrev();
-            }
-          }
-        }
-      }, { passive: true });
-
-      pickerTouchEventsAttached = true;
-    }
-
-    updatePickerPaginationDots();
   }
 
-  function updatePickerPaginationDots() {
-    const dotsWrap = document.getElementById('pickerDotsIndicator');
-    if (!dotsWrap) return;
+  function updatePickerPaginationDots() {}
 
-    const total = pickerFilteredItems.length;
-    if (total === 0) {
-      dotsWrap.innerHTML = '';
-      return;
-    }
-
-    const dotCount = Math.min(total, 6);
-    let activeDotIdx = 0;
-    if (total > 1) {
-      activeDotIdx = Math.min(dotCount - 1, Math.floor((pickerHeroIndex / total) * dotCount));
-    }
-
-    let dotsHtml = '';
-    for (let i = 0; i < dotCount; i++) {
-      dotsHtml += `<span class="p-dot ${i === activeDotIdx ? 'active' : ''}"></span>`;
-    }
-    dotsWrap.innerHTML = dotsHtml;
-  }
-
-  function pickerGoNext(isManual = false) {
+  function pickerGoNext() {
     if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
-    pickerHeroIndex = (pickerHeroIndex + 1) % pickerFilteredItems.length;
-    renderQuickPickerContent();
-    autoEquipCurrentHeroGarment();
-    if (isManual && pickerAutoSwipeActive) {
-      startPickerAutoSwipe();
-    }
+    const nextIdx = (pickerHeroIndex + 1) % pickerFilteredItems.length;
+    selectQuickPickerGarment(pickerFilteredItems[nextIdx].id, nextIdx);
   }
 
-  function pickerGoPrev(isManual = false) {
+  function pickerGoPrev() {
     if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
-    pickerHeroIndex = (pickerHeroIndex - 1 + pickerFilteredItems.length) % pickerFilteredItems.length;
-    renderQuickPickerContent();
-    autoEquipCurrentHeroGarment();
-    if (isManual && pickerAutoSwipeActive) {
-      startPickerAutoSwipe();
-    }
+    const prevIdx = (pickerHeroIndex - 1 + pickerFilteredItems.length) % pickerFilteredItems.length;
+    selectQuickPickerGarment(pickerFilteredItems[prevIdx].id, prevIdx);
   }
 
   function autoEquipCurrentHeroGarment() {
@@ -2151,57 +2063,36 @@
   }
 
   function toggleWearCurrentHeroItem() {
-    if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
-    const item = pickerFilteredItems[pickerHeroIndex];
-    if (item) {
-      wardrobeEquipToMannequin(item);
-      renderQuickPickerContent();
-    }
+    autoEquipCurrentHeroGarment();
   }
 
   // Compatibility aliases
   function pickerScrollNext() { pickerGoNext(); }
   function pickerScrollPrev() { pickerGoPrev(); }
-  function selectQuickPickerGarment(itemId) {
-    const idx = pickerFilteredItems.findIndex(i => i.id === itemId);
-    if (idx !== -1) {
-      pickerHeroIndex = idx;
-      renderQuickPickerContent();
+  function selectQuickPickerGarment(itemId, idx) {
+    let targetIdx = idx;
+    if (typeof targetIdx !== 'number') {
+      targetIdx = pickerFilteredItems.findIndex(i => i.id === itemId);
+    }
+    if (targetIdx !== -1 && targetIdx < pickerFilteredItems.length) {
+      pickerHeroIndex = targetIdx;
+      const stageMount = document.getElementById('pickerCarouselStage');
+      if (stageMount) {
+        const cards = stageMount.querySelectorAll('.picker-item-card');
+        cards.forEach(c => c.classList.remove('is-active'));
+        const activeCard = stageMount.querySelector(`[data-picker-index="${targetIdx}"]`);
+        if (activeCard) {
+          activeCard.classList.add('is-active');
+          activeCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
       autoEquipCurrentHeroGarment();
     }
   }
 
-  function togglePickerFilter() {
-    const modes = ['all', 'clean', 'favorites'];
-    const nextIdx = (modes.indexOf(pickerFilterMode) + 1) % modes.length;
-    pickerFilterMode = modes[nextIdx];
-    const labels = { all: 'All items', clean: 'Clean garments only', favorites: 'Favorites only' };
-    showToast(`Filtering: ${labels[pickerFilterMode]}`);
-    pickerHeroIndex = 0;
-    renderQuickPickerContent();
-  }
-
-  function togglePickerSearch() {
-    const bar = document.getElementById('pickerSearchBar');
-    const inp = document.getElementById('pickerSearchInput');
-    if (bar) {
-      bar.classList.toggle('hidden');
-      if (!bar.classList.contains('hidden') && inp) {
-        inp.focus();
-      } else if (inp) {
-        inp.value = '';
-        pickerSearchQuery = '';
-        pickerHeroIndex = 0;
-        renderQuickPickerContent();
-      }
-    }
-  }
-
-  function filterPickerItems(query) {
-    pickerSearchQuery = query || '';
-    pickerHeroIndex = 0;
-    renderQuickPickerContent();
-  }
+  function togglePickerFilter() {}
+  function togglePickerSearch() {}
+  function filterPickerItems(query) {}
 
   function openBodyPartWardrobeCard(zone = 'tops') {
     const card = document.getElementById('mannequinQuickPickerCard');
@@ -2230,9 +2121,6 @@
     requestAnimationFrame(() => {
       card.classList.add('visible');
     });
-
-    // Start live auto-swipe runway mode
-    startPickerAutoSwipe();
 
     if (navigator.vibrate) {
       try { navigator.vibrate(25); } catch (e) {}

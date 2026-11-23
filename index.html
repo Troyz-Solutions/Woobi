@@ -939,23 +939,33 @@
             </div>
           </div>
 
-          <!-- Frosted Haute Couture Single-Card Runway Swiper for Mannequin Body Part Taps -->
+          <!-- Frosted Haute Couture Quick-Picker Runway Card for Mannequin Body Part Taps -->
           <div id="mannequinQuickPickerCard" class="mannequin-quick-picker-card single-card-swiper hidden" role="region" aria-label="Body Part Clothes Picker">
             <!-- Top Drag Handle Pill -->
             <div class="picker-drag-handle"></div>
 
-            <!-- Header: Category Title, Item Counter Badge, Action Buttons -->
+            <!-- Visual Luxury Header: Category Icon, Title, and Visual Action Controls -->
             <div class="picker-glass-header">
-              <div class="picker-title-col">
-                <div class="picker-header-title-row">
-                  <h2 class="picker-main-title" id="pickerMainTitle">Bottoms</h2>
-                  <span class="picker-counter-badge" id="pickerCounterPill">1 / 8</span>
-                </div>
-                <div class="picker-subtitle">
-                  <span id="pickerItemCount">8 Available</span> • <span id="pickerSubText">Swipe to browse & fit</span>
-                </div>
+              <div class="picker-visual-brand">
+                <span class="picker-cat-icon" id="pickerCatIcon" aria-hidden="true">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+                  </svg>
+                </span>
+                <h2 class="picker-main-title" id="pickerMainTitle">Bottoms</h2>
               </div>
+
               <div class="picker-actions-row">
+                <!-- Auto-Swipe Runway Button (Play/Pause Toggle with Glowing Pulse) -->
+                <button type="button" class="btn-picker-action btn-picker-autoswipe is-active" id="pickerAutoSwipeBtn" onclick="app.togglePickerAutoSwipe && app.togglePickerAutoSwipe()" title="Toggle Auto-Runway Fit" aria-label="Toggle Auto-Runway Fit">
+                  <svg class="icon-pause" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16" rx="1"/>
+                    <rect x="14" y="4" width="4" height="16" rx="1"/>
+                  </svg>
+                  <svg class="icon-play hidden" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                </button>
                 <button type="button" class="btn-picker-action" onclick="app.togglePickerFilter && app.togglePickerFilter()" title="Filter styles" aria-label="Filter styles">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <line x1="4" y1="6" x2="20" y2="6"/>
@@ -980,12 +990,12 @@
 
             <!-- Quick Search Input (Toggled) -->
             <div class="picker-search-bar hidden" id="pickerSearchBar">
-              <input type="text" id="pickerSearchInput" placeholder="Search styles..." oninput="app.filterPickerItems && app.filterPickerItems(this.value)">
+              <input type="text" id="pickerSearchInput" placeholder="Search..." oninput="app.filterPickerItems && app.filterPickerItems(this.value)">
             </div>
 
-            <!-- 3-Item Carousel Stage (Swiping 1-by-1) matching Haute Couture reference -->
+            <!-- 3-Item Visual Runway Stage (Swiping 1-by-1 with Auto-Glide) -->
             <div class="picker-carousel-stage" id="pickerCarouselStage" role="region" aria-label="Garment Carousel">
-              <!-- Rendered dynamically via JS: Left Card (prev), Center Card (gold active), Right Card (next with >) -->
+              <!-- Rendered dynamically via JS: Left, Center (Gold Active), Right (with > peek) -->
             </div>
 
             <!-- Bottom Pagination Row: < [===] • • • > -->
@@ -5806,12 +5816,8 @@
       var curtainOverlay = document.getElementById('mobileCurtainIntro');
       var videoPlayer = document.getElementById('woobiIntroVideoPlayer');
 
-      // On PC / Desktop, skip all intro overlays and show desktop layout immediately (unless forced via ?intro=1)
-      if (!isMobile) {
-        if (videoOverlay) videoOverlay.style.display = 'none';
-        if (curtainOverlay) curtainOverlay.style.display = 'none';
-        return;
-      }
+      // Theatrical intro runs on EVERY fresh open across all devices (PC & Mobile)
+      document.documentElement.classList.add('force-mobile-intro');
 
       var isReturningUser = false;
       if (urlParams.get('user') === 'first' || urlParams.has('first') || urlParams.get('first_time') === '1') {

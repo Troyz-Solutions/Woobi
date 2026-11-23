@@ -1859,6 +1859,50 @@
   let pickerTouchStartX = 0;
   let pickerTouchStartY = 0;
   let pickerTouchEventsAttached = false;
+  let pickerAutoSwipeTimer = null;
+  let pickerAutoSwipeActive = true;
+
+  function startPickerAutoSwipe() {
+    stopPickerAutoSwipe();
+    pickerAutoSwipeActive = true;
+    updatePickerAutoSwipeUI();
+    pickerAutoSwipeTimer = setInterval(() => {
+      pickerGoNext();
+    }, 2800);
+  }
+
+  function stopPickerAutoSwipe() {
+    pickerAutoSwipeActive = false;
+    if (pickerAutoSwipeTimer) {
+      clearInterval(pickerAutoSwipeTimer);
+      pickerAutoSwipeTimer = null;
+    }
+    updatePickerAutoSwipeUI();
+  }
+
+  function togglePickerAutoSwipe() {
+    if (pickerAutoSwipeActive) {
+      stopPickerAutoSwipe();
+    } else {
+      startPickerAutoSwipe();
+    }
+  }
+
+  function updatePickerAutoSwipeUI() {
+    const btn = document.getElementById('pickerAutoSwipeBtn');
+    if (!btn) return;
+    const iconPause = btn.querySelector('.icon-pause');
+    const iconPlay = btn.querySelector('.icon-play');
+    if (pickerAutoSwipeActive) {
+      btn.classList.add('is-active');
+      if (iconPause) iconPause.classList.remove('hidden');
+      if (iconPlay) iconPlay.classList.add('hidden');
+    } else {
+      btn.classList.remove('is-active');
+      if (iconPause) iconPause.classList.add('hidden');
+      if (iconPlay) iconPlay.classList.remove('hidden');
+    }
+  }
 
   function getZoneCategoryKey(zone) {
     const z = (zone || '').toLowerCase();
@@ -1926,23 +1970,23 @@
       pickerHeroIndex = 0;
     }
 
-    const titleEl = document.getElementById('pickerMainTitle');
-    const counterPillEl = document.getElementById('pickerCounterPill');
-    const countEl = document.getElementById('pickerItemCount');
-    const subTextEl = document.getElementById('pickerSubText');
+    // Visual Category Icon Mapping
+    const catIconEl = document.getElementById('pickerCatIcon');
+    if (catIconEl) {
+      if (categoryKey === 'tops') {
+        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>`;
+      } else if (categoryKey === 'bottoms') {
+        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l1 18H5L6 3z"/><path d="M12 9v12"/></svg>`;
+      } else if (categoryKey === 'shoes') {
+        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20v2H2z"/><path d="M4 18V8a2 2 0 0 1 2-2h3l4 6h7a2 2 0 0 1 2 2v4"/></svg>`;
+      } else {
+        catIconEl.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+      }
+    }
 
+    const titleEl = document.getElementById('pickerMainTitle');
     if (titleEl) titleEl.textContent = titleText;
-    if (counterPillEl) {
-      counterPillEl.textContent = pickerFilteredItems.length > 0 
-        ? `${pickerHeroIndex + 1} / ${pickerFilteredItems.length}`
-        : '0 / 0';
-    }
-    if (countEl) countEl.textContent = `${pickerFilteredItems.length} Available`;
-    if (subTextEl) {
-      if (pickerFilterMode === 'clean') subTextEl.textContent = 'Clean only';
-      else if (pickerFilterMode === 'favorites') subTextEl.textContent = 'Favorites';
-      else subTextEl.textContent = 'Swipe to browse & fit';
-    }
+    updatePickerAutoSwipeUI();
 
     const stageMount = document.getElementById('pickerCarouselStage') || document.getElementById('pickerHeroStage');
     if (stageMount) {
@@ -1966,15 +2010,26 @@
         const currPhoto = currItem.photoFront || currItem.photo || 'assets/placeholder_outfit.jpg';
         const nextPhoto = nextItem.photoFront || nextItem.photo || 'assets/placeholder_outfit.jpg';
 
+        const prevEquipped = (state.activeLook && (
+          (categoryKey === 'tops' && state.activeLook.top === prevItem.name) ||
+          (categoryKey === 'bottoms' && state.activeLook.bottom === prevItem.name) ||
+          (categoryKey === 'shoes' && state.activeLook.shoes === prevItem.name)
+        ));
         const currEquipped = (state.activeLook && (
           (categoryKey === 'tops' && state.activeLook.top === currItem.name) ||
           (categoryKey === 'bottoms' && state.activeLook.bottom === currItem.name) ||
           (categoryKey === 'shoes' && state.activeLook.shoes === currItem.name)
         ));
+        const nextEquipped = (state.activeLook && (
+          (categoryKey === 'tops' && state.activeLook.top === nextItem.name) ||
+          (categoryKey === 'bottoms' && state.activeLook.bottom === nextItem.name) ||
+          (categoryKey === 'shoes' && state.activeLook.shoes === nextItem.name)
+        ));
 
         stageMount.innerHTML = `
           <!-- Left Card (Previous item) -->
           <div class="picker-item-card picker-item-prev" onclick="app.pickerGoPrev && app.pickerGoPrev()" role="button" tabindex="0" title="${prevItem.name}">
+            ${prevEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
             <div class="picker-item-thumb-box">
               <img src="${prevPhoto}" alt="${prevItem.name}" class="picker-item-img" loading="eager">
             </div>
@@ -1983,6 +2038,7 @@
 
           <!-- Center Card (Current Active Item with Haute Couture Golden Frame) -->
           <div class="picker-item-card picker-item-center is-active" onclick="app.toggleWearCurrentHeroItem && app.toggleWearCurrentHeroItem()" role="button" tabindex="0" title="${currItem.name} (${currEquipped ? 'Equipped' : 'Tap to toggle'})">
+            ${currEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
             <div class="picker-item-thumb-box">
               <img src="${currPhoto}" alt="${currItem.name}" class="picker-item-img" loading="eager">
             </div>
@@ -1991,6 +2047,7 @@
 
           <!-- Right Card (Next item with peek indicator) -->
           <div class="picker-item-card picker-item-next" onclick="app.pickerGoNext && app.pickerGoNext()" role="button" tabindex="0" title="${nextItem.name}">
+            ${nextEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
             <div class="picker-item-thumb-box">
               <img src="${nextPhoto}" alt="${nextItem.name}" class="picker-item-img" loading="eager">
               <span class="picker-item-peek-arrow" aria-hidden="true">›</span>
@@ -2053,18 +2110,24 @@
     dotsWrap.innerHTML = dotsHtml;
   }
 
-  function pickerGoNext() {
+  function pickerGoNext(isManual = false) {
     if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
     pickerHeroIndex = (pickerHeroIndex + 1) % pickerFilteredItems.length;
     renderQuickPickerContent();
     autoEquipCurrentHeroGarment();
+    if (isManual && pickerAutoSwipeActive) {
+      startPickerAutoSwipe();
+    }
   }
 
-  function pickerGoPrev() {
+  function pickerGoPrev(isManual = false) {
     if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
     pickerHeroIndex = (pickerHeroIndex - 1 + pickerFilteredItems.length) % pickerFilteredItems.length;
     renderQuickPickerContent();
     autoEquipCurrentHeroGarment();
+    if (isManual && pickerAutoSwipeActive) {
+      startPickerAutoSwipe();
+    }
   }
 
   function autoEquipCurrentHeroGarment() {
@@ -2156,12 +2219,18 @@
       card.classList.add('visible');
     });
 
+    // Start live auto-swipe runway mode
+    startPickerAutoSwipe();
+
     if (navigator.vibrate) {
       try { navigator.vibrate(25); } catch (e) {}
     }
   }
 
   function closeMannequinQuickPicker() {
+    // Stop auto-swipe timer immediately
+    stopPickerAutoSwipe();
+
     const card = document.getElementById('mannequinQuickPickerCard');
     if (card) {
       card.classList.remove('visible');
@@ -8979,7 +9048,10 @@
     pickerScrollNext,
     togglePickerFilter,
     togglePickerSearch,
-    filterPickerItems
+    filterPickerItems,
+    togglePickerAutoSwipe,
+    startPickerAutoSwipe,
+    stopPickerAutoSwipe
   };
 
   window.app = Object.assign(window.app || {}, appExports);

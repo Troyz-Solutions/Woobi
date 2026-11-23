@@ -1,76 +1,83 @@
 (() => {
   const standalone = document.body.hasAttribute('data-app-launch');
-  const android = document.body.hasAttribute('data-android-app');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const welcomeSeenKey = 'woobi_welcome_seen';
 
   function hasSeenWelcome() {
-    try { return localStorage.getItem(welcomeSeenKey) === 'true'; }
-    catch { return false; }
+    try {
+      return (localStorage.getItem('woobi_welcome_seen') === 'true' &&
+              localStorage.getItem('woobi_user_registered') === 'true' &&
+              localStorage.getItem('woobi_onboarding_completed') === 'true');
+    } catch (e) {
+      return false;
+    }
   }
 
   function markWelcomeSeen() {
-    // Storage may be unavailable in private browsing or a restricted WebView.
     try {
       localStorage.setItem(welcomeSeenKey, 'true');
       localStorage.setItem('woobi_user_registered', 'true');
       localStorage.setItem('woobi_onboarding_completed', 'true');
-    }
-    catch { /* The welcome remains usable without persistent storage. */ }
+    } catch (e) {}
   }
 
-  function animateWelcome(welcome, onComplete) {
-    const canvas = welcome.querySelector('.welcome-carpet canvas');
+  function animateWelcomeCarpet(canvas, onComplete) {
     if (!canvas) {
-      onComplete();
+      if (onComplete) onComplete();
       return () => {};
     }
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext('2d', { alpha: true });
     if (!context) {
-      onComplete();
+      if (onComplete) onComplete();
       return () => {};
     }
-    const buttonDelay = 750;
-    const buttonDuration = 550;
-    const carpetDelay = 250;
-    const carpetDuration = 2200;
-    const duration = carpetDelay + carpetDuration;
-    const entrance = [
-      { selector: '.welcome-arch', delay: 0, duration: 1200, lift: 0, scale: .97 },
-      { selector: '.welcome-star', delay: 150, duration: 650, lift: 8, scale: .92 },
-      { selector: '.welcome-eyebrow', delay: 300, duration: 650, lift: 8 },
-      { selector: '.welcome-copy h1', delay: 450, duration: 800, lift: 16, scale: .97 },
-      { selector: '.welcome-skip', delay: buttonDelay, duration: buttonDuration, lift: 10, scale: .97 }
-    ].map(({ selector, delay, duration: revealDuration, lift, scale = 1 }) => {
-      const el = welcome.querySelector(selector);
-      if (!el) return null;
-      const animation = el.animate([
-        { opacity: 0, transform: `translateY(${lift}px) scale(${scale})` },
-        { opacity: 1, transform: 'translateY(0) scale(1)' }
-      ], { delay, duration: revealDuration, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both' });
-      // One clock drives both the fabric and the welcome elements, even after a slow frame.
-      animation.pause();
-      animation.currentTime = 0;
-      return animation;
-    }).filter(Boolean);
-    let elapsed = reduced.matches ? duration : 0;
-    let previousTime = null;
-    let frame = 0;
+
     let width = 0;
     let height = 0;
     let gold, velvet, sheen;
+    let animFrame = 0;
+    let startTime = null;
+    const duration = 1800; // 1.8s silky smooth unroll
 
-    function draw() {
-      entrance.forEach(animation => { animation.currentTime = elapsed; });
+    function updateGradients() {
+      if (!width || !height) return;
+      gold = context.createLinearGradient(0, 0, 0, height);
+      gold.addColorStop(0, '#e5c694');
+      gold.addColorStop(1, '#9b6a3b');
+
+      velvet = context.createLinearGradient(0, 0, 0, height);
+      velvet.addColorStop(0, '#651b2a');
+      velvet.addColorStop(0.55, '#ac263c');
+      velvet.addColorStop(1, '#791426');
+
+      sheen = context.createLinearGradient(0, 0, width, 0);
+      sheen.addColorStop(0, 'rgba(48, 7, 19, 0.5)');
+      sheen.addColorStop(0.5, 'rgba(255, 183, 165, 0.12)');
+      sheen.addColorStop(1, 'rgba(48, 7, 19, 0.5)');
+    }
+
+    function resize() {
+      const bounds = canvas.getBoundingClientRect();
+      const density = Math.min(window.devicePixelRatio || 1, 2);
+      width = bounds.width;
+      height = bounds.height;
+      if (width === 0 || height === 0) return;
+      canvas.width = Math.round(width * density);
+      canvas.height = Math.round(height * density);
+      context.setTransform(density, 0, 0, density, 0, 0);
+      updateGradients();
+    }
+
+    resize();
+
+    function draw(progress) {
       if (!width || !height) return;
       context.clearRect(0, 0, width, height);
-      const progress = Math.max(0, Math.min((elapsed - carpetDelay) / carpetDuration, 1));
-      // Let the entry elements begin appearing before carpet is drawn.
-      if (progress === 0) return;
-      const travel = .5 - Math.cos(progress * Math.PI) / 2;
-      // The roll travels beyond the viewport, leaving the same flat carpet behind.
+
+      // Smooth cosine easing
+      const travel = 0.5 - Math.cos(progress * Math.PI) / 2;
       const front = -14 + (height + 54) * travel;
-      const halfWidth = y => width * (.10 + .40 * y / height);
+      const halfWidth = y => width * (0.10 + 0.40 * y / height);
       const center = width / 2;
 
       function fabric(inset, fill) {
@@ -86,20 +93,21 @@
 
       if (front > 0) {
         fabric(0, gold);
-        fabric(width * .007, velvet);
-        fabric(width * .007, sheen);
+        fabric(Math.max(2, width * 0.007), velvet);
+        fabric(Math.max(2, width * 0.007), sheen);
       }
 
       const radius = 3 + 9 * Math.max(0, Math.min(front / height, 1));
-      if (front - radius < height) {
+      if (front - radius < height && progress < 1) {
         const left = center - halfWidth(front);
         const right = center + halfWidth(front);
-        const cap = radius * .7;
+        const cap = radius * 0.7;
         const roll = context.createLinearGradient(0, front - radius, 0, front + radius);
         roll.addColorStop(0, '#882237');
-        roll.addColorStop(.28, '#d2616b');
-        roll.addColorStop(.52, '#b5384d');
+        roll.addColorStop(0.28, '#d2616b');
+        roll.addColorStop(0.52, '#b5384d');
         roll.addColorStop(1, '#651526');
+
         context.beginPath();
         context.moveTo(left + cap, front - radius);
         context.lineTo(right - cap, front - radius);
@@ -108,99 +116,46 @@
         context.bezierCurveTo(left - cap, front + radius, left - cap, front - radius, left + cap, front - radius);
         context.fillStyle = roll;
         context.fill();
-        // Gold binding curves around the ends of the fabric roll.
+
         context.fillStyle = '#c49b65';
-        for (const x of [left + cap * .3, right - cap * .3]) {
+        for (const x of [left + cap * 0.3, right - cap * 0.3]) {
           context.beginPath();
-          context.ellipse(x, front, cap * .6, radius * .88, 0, 0, Math.PI * 2);
+          context.ellipse(x, front, cap * 0.6, radius * 0.88, 0, 0, Math.PI * 2);
           context.fill();
         }
       }
     }
 
-    function resize() {
-      const bounds = canvas.getBoundingClientRect();
-      const density = Math.min(window.devicePixelRatio || 1, 2);
-      width = bounds.width;
-      height = bounds.height;
-      canvas.width = Math.round(width * density);
-      canvas.height = Math.round(height * density);
-      context.setTransform(density, 0, 0, density, 0, 0);
-      gold = context.createLinearGradient(0, 0, 0, height);
-      gold.addColorStop(0, '#e5c694');
-      gold.addColorStop(1, '#9b6a3b');
-      velvet = context.createLinearGradient(0, 0, 0, height);
-      velvet.addColorStop(0, '#651b2a');
-      velvet.addColorStop(.55, '#ac263c');
-      velvet.addColorStop(1, '#791426');
-      sheen = context.createLinearGradient(0, 0, width, 0);
-      sheen.addColorStop(0, '#30071399');
-      sheen.addColorStop(.5, '#ffb7a51f');
-      sheen.addColorStop(1, '#30071399');
-      draw();
+    if (reduced.matches) {
+      draw(1);
+      if (onComplete) onComplete();
+      return () => {};
     }
 
-    function tick(time) {
-      frame = 0;
-      if (document.hidden) { previousTime = null; return; }
-      // Bound the step so a busy startup frame cannot teleport the leading edge.
-      if (previousTime !== null) elapsed = Math.min(duration, elapsed + Math.min(time - previousTime, 40));
-      previousTime = time;
-      draw();
-      if (elapsed < duration) frame = requestAnimationFrame(tick);
-      else onComplete();
-    }
-
-    function resume() {
-      previousTime = null;
-      cancelAnimationFrame(frame);
-      frame = 0;
-      if (reduced.matches) {
-        elapsed = duration;
-        draw();
-        onComplete();
-      } else if (!document.hidden && elapsed < duration) {
-        frame = requestAnimationFrame(tick);
+    function tick(now) {
+      if (!startTime) startTime = now;
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      draw(progress);
+      if (progress < 1) {
+        animFrame = requestAnimationFrame(tick);
+      } else {
+        // Unroll complete: render clean final frame and end loop permanently
+        draw(1);
+        if (onComplete) onComplete();
       }
     }
 
-    const observer = new ResizeObserver(resize);
-    resize();
-    observer.observe(canvas);
-    document.addEventListener('visibilitychange', resume);
-    reduced.addEventListener('change', resume);
-    resume();
+    animFrame = requestAnimationFrame(tick);
+
     return () => {
-      cancelAnimationFrame(frame);
-      observer.disconnect();
-      document.removeEventListener('visibilitychange', resume);
-      reduced.removeEventListener('change', resume);
-      entrance.forEach(animation => animation.cancel());
+      cancelAnimationFrame(animFrame);
     };
   }
 
   function revealDashboard() {
     window.app?.goToScreen?.('today');
     window.Studio3D?.setRenderingPaused?.(false);
-    if (reduced.matches) return;
-    const groups = [
-      { selector: '#screen-today .seren-stage-viewport', delay: 0, duration: 1200, lift: 0, scale: .96, opacity: 1 },
-      { selector: '#screen-today .seren-header', delay: 250, duration: 650, lift: -10, scale: 1 },
-      { selector: '#screen-today .seren-bottom-bar > *', delay: 80, duration: 500, lift: 18, scale: 1 }
-    ];
-    groups.forEach(group => {
-      document.querySelectorAll(group.selector).forEach((element, index) => {
-        element.animate([
-          { opacity: group.opacity ?? 0, translate: `0 ${group.lift}px`, scale: String(group.scale) },
-          { opacity: 1, translate: '0 0', scale: '1' }
-        ], {
-          duration: group.duration,
-          delay: group.delay + index * 45,
-          easing: 'cubic-bezier(.35,.05,.3,1)',
-          fill: 'backwards'
-        });
-      });
-    });
   }
 
   // The standalone preview hands off to the actual app after Enter is pressed.
@@ -213,34 +168,14 @@
     return;
   }
 
-  // Skip welcome only if explicit skip flag is present
-  if (address.searchParams.get('skip_intro') === '1') {
-    return;
-  }
-
-  let releaseEntrance;
-  let entranceFinished = false;
-  const entranceComplete = new Promise(resolve => {
-    releaseEntrance = () => {
-      if (entranceFinished) return;
-      entranceFinished = true;
-      requestAnimationFrame(() => setTimeout(() => {
-        document.body.classList.remove('welcome-intro');
-        resolve();
-      }, 0));
-    };
-  });
-  window.woobiWelcomeEntrance = entranceComplete;
-
-  function initRedCarpet() {
-    // Pause 3D background rendering during intro to ensure silky smooth 60fps canvas animation
+  function initRedCarpet(onFinishedCallback) {
+    // Pause 3D background rendering during intro to guarantee 60fps canvas unroll
     if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
       window.Studio3D.setRenderingPaused(true);
     }
 
     document.body.classList.add('welcome-intro');
 
-    // Use existing DOM container or create one
     let welcome = document.getElementById('woobiRedCarpetIntro') || document.querySelector('.app-welcome');
     if (!welcome) {
       welcome = document.createElement('div');
@@ -260,26 +195,40 @@
         </div>
         <div class="welcome-carpet" aria-hidden="true"><canvas></canvas></div>`;
       document.body.append(welcome);
-    } else {
-      welcome.style.display = 'block';
-      welcome.style.opacity = '1';
-      welcome.style.pointerEvents = 'auto';
     }
+
+    welcome.style.display = 'block';
+    welcome.style.opacity = '1';
+    welcome.style.pointerEvents = 'auto';
+
+    let canvas = welcome.querySelector('.welcome-carpet canvas');
+    let stopCarpetAnim = animateWelcomeCarpet(canvas);
 
     let entering = false;
     const finish = () => {
-      stopEntrance();
+      stopCarpetAnim();
       document.body.classList.remove('welcome-intro');
+      welcome.style.transition = 'opacity 0.4s ease';
       welcome.style.opacity = '0';
       welcome.style.pointerEvents = 'none';
       setTimeout(() => {
         welcome.style.display = 'none';
-      }, 350);
+        welcome.style.clipPath = '';
+      }, 400);
+
       markWelcomeSeen();
+
       if (standalone) {
         location.replace(location.protocol === 'file:' ? '../index.html?welcome=entered' : '/?welcome=entered');
         return;
       }
+
+      revealDashboard();
+
+      if (typeof onFinishedCallback === 'function') {
+        onFinishedCallback();
+      }
+
       const dashboard = document.querySelector('.app-viewport');
       if (dashboard) {
         dashboard.setAttribute('tabindex', '-1');
@@ -289,88 +238,70 @@
 
     const enterButton = welcome.querySelector('button');
     if (enterButton) {
-      enterButton.addEventListener('click', async () => {
+      enterButton.onclick = async () => {
         if (entering) return;
         entering = true;
         enterButton.disabled = true;
-        if (!standalone) {
-          enterButton.setAttribute('aria-busy', 'true');
-          enterButton.firstChild.textContent = 'Opening Woobi ';
-          await entranceComplete;
-          if (window.app?.prepareVirtualStudio) {
-            await window.app.prepareVirtualStudio();
-          }
-          enterButton.removeAttribute('aria-busy');
-        }
-        if (!standalone) revealDashboard();
+
         if (reduced.matches || standalone) {
           finish();
           return;
         }
-        const bounds = welcome.getBoundingClientRect();
-        const button = enterButton.getBoundingClientRect();
-        const centerX = button.left + button.width / 2 - bounds.left;
-        const centerY = button.top + button.height / 2 - bounds.top;
-        const radius = Math.hypot(
-          Math.max(centerX, bounds.width - centerX),
-          Math.max(centerY, bounds.height - centerY)
-        ) * 1.05;
 
-        // Expanding aperture opening from the tapped button reveals the studio room underneath
-        function aperture(size) {
-          const points = ['0px 0px', '100% 0px', '100% 100%', '0px 100%', '0px 0px'];
-          for (let step = 0; step <= 64; step++) {
-            const angle = step / 64 * Math.PI * 2;
-            points.push(`${centerX + Math.cos(angle) * size}px ${centerY + Math.sin(angle) * size}px`);
-          }
-          points.push('0px 0px');
-          return `polygon(evenodd, ${points.join(',')})`;
-        }
-        welcome.querySelectorAll('.welcome-header, .welcome-copy').forEach(element => {
-          element.animate([
-            { opacity: getComputedStyle(element).opacity },
-            { opacity: 0 }
-          ], { duration: 240, fill: 'forwards' });
+        // Smooth hardware-accelerated aperture / fade transition
+        welcome.querySelectorAll('.welcome-header, .welcome-copy').forEach(el => {
+          el.style.transition = 'opacity 0.25s ease';
+          el.style.opacity = '0';
         });
+
         try {
+          const bounds = welcome.getBoundingClientRect();
+          const btnBounds = enterButton.getBoundingClientRect();
+          const centerX = btnBounds.left + btnBounds.width / 2 - bounds.left;
+          const centerY = btnBounds.top + btnBounds.height / 2 - bounds.top;
+          const radius = Math.hypot(
+            Math.max(centerX, bounds.width - centerX),
+            Math.max(centerY, bounds.height - centerY)
+          ) * 1.05;
+
+          function aperture(size) {
+            const points = ['0px 0px', '100% 0px', '100% 100%', '0px 100%', '0px 0px'];
+            for (let step = 0; step <= 32; step++) {
+              const angle = step / 32 * Math.PI * 2;
+              points.push(`${centerX + Math.cos(angle) * size}px ${centerY + Math.sin(angle) * size}px`);
+            }
+            points.push('0px 0px');
+            return `polygon(evenodd, ${points.join(',')})`;
+          }
+
           const departure = welcome.animate([
             { clipPath: aperture(0) },
             { clipPath: aperture(radius) }
-          ], { duration: 850, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+          ], { duration: 750, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
           departure.finished.then(finish, finish);
         } catch (e) {
-          // Fallback smooth fade if polygon clipPath is unsupported
-          const fade = welcome.animate([
-            { opacity: 1 },
-            { opacity: 0 }
-          ], { duration: 500, easing: 'ease', fill: 'forwards' });
-          fade.finished.then(finish, finish);
+          finish();
         }
-      });
+      };
     }
 
-    // Keyboard support: Enter key triggers entry
-    window.addEventListener('keydown', function onIntroKey(e) {
+    // Keyboard support: Enter key
+    const onKey = (e) => {
       if (!entering && (e.key === 'Enter' || e.key === ' ')) {
-        if (welcome && welcome.style.display !== 'none' && enterButton) {
-          window.removeEventListener('keydown', onIntroKey);
-          enterButton.click();
-        }
+        window.removeEventListener('keydown', onKey);
+        if (enterButton) enterButton.click();
       }
-    });
-
-    let stopEntrance = () => {};
-    try { stopEntrance = animateWelcome(welcome, releaseEntrance); }
-    catch (e) {
-      releaseEntrance();
-    }
+    };
+    window.addEventListener('keydown', onKey);
   }
 
-  // Auto-run if standalone or on initial page load
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initRedCarpet);
-  } else {
-    initRedCarpet();
+  // Only auto-run if standalone preview page
+  if (standalone) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => initRedCarpet());
+    } else {
+      initRedCarpet();
+    }
   }
 
   window.woobiShowRedCarpetIntro = initRedCarpet;

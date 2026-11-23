@@ -546,13 +546,25 @@
         return false;
       }
     })();
-    goToScreen(done ? 'today' : 'welcome');
+    if (done) {
+      goToScreen('today');
+    } else {
+      // First-time user signing in: launch Woobi Red Carpet Enter Page
+      if (typeof window.woobiShowRedCarpetIntro === 'function') {
+        window.woobiShowRedCarpetIntro(function() {
+          goToScreen('today');
+        });
+      } else {
+        goToScreen('welcome');
+      }
+    }
   }
 
   function enterWoobi() {
     try {
       localStorage.setItem('woobi_user_registered', 'true');
       localStorage.setItem('woobi_onboarding_completed', 'true');
+      localStorage.setItem('woobi_welcome_seen', 'true');
     } catch (e) {}
     goToScreen('today');
   }
@@ -8673,7 +8685,8 @@
 
     let hasCompletedWelcome = false;
     try {
-      hasCompletedWelcome = (localStorage.getItem('woobi_welcome_seen') === 'true' ||
+      hasCompletedWelcome = (localStorage.getItem('woobi_welcome_seen') === 'true' &&
+                             localStorage.getItem('woobi_user_registered') === 'true' &&
                              localStorage.getItem('woobi_onboarding_completed') === 'true');
     } catch (e) {
       hasCompletedWelcome = false;
@@ -8682,8 +8695,8 @@
     if (requestedScreen) {
       goToScreen(requestedScreen === 'virtual-studio' ? 'today' : requestedScreen);
     } else if (!hasCompletedWelcome) {
-      // First-time app open: always display clean Welcome intro page first
-      goToScreen('welcome');
+      // First-time app open: route to Atelier Login screen
+      goToScreen('signin');
     } else {
       // Returning user: go straight to 3D Virtual Studio / Today
       goToScreen('today');

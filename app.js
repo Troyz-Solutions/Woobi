@@ -404,6 +404,9 @@
     }
 
     // Persist onboarding completion once user transitions to core app experience
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.toggle('on-screen-signin', screenId === 'signin');
+    }
     if (screenId === 'today') {
       try {
         localStorage.setItem('woobi_welcome_seen', 'true');
@@ -1941,56 +1944,77 @@
       else subTextEl.textContent = 'Swipe to browse & fit';
     }
 
-    const heroCardMount = document.getElementById('pickerHeroCard');
-    if (heroCardMount) {
+    const stageMount = document.getElementById('pickerCarouselStage') || document.getElementById('pickerHeroStage');
+    if (stageMount) {
       if (pickerFilteredItems.length === 0) {
-        heroCardMount.innerHTML = `
-          <div style="padding: 16px 12px; text-align: center; color: var(--text-muted); font-size: 11px; width: 100%;">
+        stageMount.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 20px 12px; text-align: center; color: var(--text-muted); font-size: 11.5px; width: 100%;">
             No ${titleText.toLowerCase()} found in wardrobe.
           </div>
         `;
       } else {
-        const item = pickerFilteredItems[pickerHeroIndex];
-        const photo = item.photoFront || item.photo || 'assets/placeholder_outfit.jpg';
-        const isEquipped = (state.activeLook && (
-          (categoryKey === 'tops' && state.activeLook.top === item.name) ||
-          (categoryKey === 'bottoms' && state.activeLook.bottom === item.name) ||
-          (categoryKey === 'shoes' && state.activeLook.shoes === item.name)
+        const total = pickerFilteredItems.length;
+        const prevIdx = (pickerHeroIndex - 1 + total) % total;
+        const currIdx = pickerHeroIndex;
+        const nextIdx = (pickerHeroIndex + 1) % total;
+
+        const prevItem = pickerFilteredItems[prevIdx];
+        const currItem = pickerFilteredItems[currIdx];
+        const nextItem = pickerFilteredItems[nextIdx];
+
+        const prevPhoto = prevItem.photoFront || prevItem.photo || 'assets/placeholder_outfit.jpg';
+        const currPhoto = currItem.photoFront || currItem.photo || 'assets/placeholder_outfit.jpg';
+        const nextPhoto = nextItem.photoFront || nextItem.photo || 'assets/placeholder_outfit.jpg';
+
+        const currEquipped = (state.activeLook && (
+          (categoryKey === 'tops' && state.activeLook.top === currItem.name) ||
+          (categoryKey === 'bottoms' && state.activeLook.bottom === currItem.name) ||
+          (categoryKey === 'shoes' && state.activeLook.shoes === currItem.name)
         ));
 
-        heroCardMount.innerHTML = `
-          <div class="hero-card-inner ${isEquipped ? 'is-active' : ''}">
-            <div class="hero-card-thumb-frame">
-              <img src="${photo}" alt="${item.name}" class="hero-card-img" loading="eager">
+        stageMount.innerHTML = `
+          <!-- Left Card (Previous item) -->
+          <div class="picker-item-card picker-item-prev" onclick="app.pickerGoPrev && app.pickerGoPrev()" role="button" tabindex="0" title="${prevItem.name}">
+            <div class="picker-item-thumb-box">
+              <img src="${prevPhoto}" alt="${prevItem.name}" class="picker-item-img" loading="eager">
             </div>
-            <div class="hero-card-body">
-              <div class="hero-card-header-badge">${titleText.toUpperCase()} • ${item.subCategory || 'STYLE'}</div>
-              <div class="hero-card-title">${item.name}</div>
-              <div class="hero-card-sub">${item.condition === 'clean' ? '✨ Ready to wear' : 'In Wardrobe'}</div>
-              <div class="hero-card-pill ${isEquipped ? 'is-equipped' : ''}">
-                ${isEquipped ? '✓ Worn on Mannequin' : 'Tap to Wear'}
-              </div>
+            <div class="picker-item-name">${prevItem.name}</div>
+          </div>
+
+          <!-- Center Card (Current Active Item with Haute Couture Golden Frame) -->
+          <div class="picker-item-card picker-item-center is-active" onclick="app.toggleWearCurrentHeroItem && app.toggleWearCurrentHeroItem()" role="button" tabindex="0" title="${currItem.name} (${currEquipped ? 'Equipped' : 'Tap to toggle'})">
+            <div class="picker-item-thumb-box">
+              <img src="${currPhoto}" alt="${currItem.name}" class="picker-item-img" loading="eager">
             </div>
+            <div class="picker-item-name">${currItem.name}</div>
+          </div>
+
+          <!-- Right Card (Next item with peek indicator) -->
+          <div class="picker-item-card picker-item-next" onclick="app.pickerGoNext && app.pickerGoNext()" role="button" tabindex="0" title="${nextItem.name}">
+            <div class="picker-item-thumb-box">
+              <img src="${nextPhoto}" alt="${nextItem.name}" class="picker-item-img" loading="eager">
+              <span class="picker-item-peek-arrow" aria-hidden="true">›</span>
+            </div>
+            <div class="picker-item-name">${nextItem.name}</div>
           </div>
         `;
       }
     }
 
-    // Attach touch swiping on the hero stage (one by one swipe)
-    const heroStage = document.getElementById('pickerHeroStage');
-    if (heroStage && !pickerTouchEventsAttached) {
-      heroStage.addEventListener('touchstart', (e) => {
+    // Attach touch swiping on the carousel stage (one by one swipe)
+    if (stageMount && !pickerTouchEventsAttached) {
+      stageMount.addEventListener('touchstart', (e) => {
         if (e.touches && e.touches[0]) {
           pickerTouchStartX = e.touches[0].clientX;
           pickerTouchStartY = e.touches[0].clientY;
         }
       }, { passive: true });
 
-      heroStage.addEventListener('touchend', (e) => {
+      stageMount.addEventListener('touchend', (e) => {
         if (e.changedTouches && e.changedTouches[0]) {
           const diffX = e.changedTouches[0].clientX - pickerTouchStartX;
           const diffY = e.changedTouches[0].clientY - pickerTouchStartY;
-          if (Math.abs(diffX) > 30 && Math.abs(diffX) > Math.abs(diffY)) {
+          if (Math.abs(diffX) > 28 && Math.abs(diffX) > Math.abs(diffY)) {
             if (diffX < 0) {
               pickerGoNext();
             } else {

@@ -61,8 +61,8 @@
         fovPortrait: 46
       },
       MANNEQUIN_FULL_BODY_FIT: {
-        position: new THREE.Vector3(-0.05, 1.40, 5.15),
-        target: new THREE.Vector3(-0.05, 0.70, -0.15),
+        position: new THREE.Vector3(-0.05, 1.35, 5.25),
+        target: new THREE.Vector3(-0.05, 0.72, -0.15),
         fovLandscape: 38,
         fovPortrait: 50
       }

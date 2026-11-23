@@ -19638,13 +19638,32 @@ body.welcome-intro #desktopEditorialFrame { display: none !important; }
   .woobi-intro-video-player {
     width: 100%;
     height: 100%;
-    object-fit: contain !important;
+    object-fit: cover !important;
     background: #000000;
     display: block;
     transform: translate3d(0, 0, 0);
     -webkit-transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
-    will-change: transform;
+    will-change: transform, opacity;
+    opacity: 0;
+    transition: opacity 0.28s ease-in;
+  }
+
+  .woobi-intro-video-player.is-playing {
+    opacity: 1 !important;
+  }
+
+  /* Suppress default native play button / media overlays on mobile WebViews & browsers */
+  .woobi-intro-video-player::-webkit-media-controls,
+  .woobi-intro-video-player::-webkit-media-controls-play-button,
+  .woobi-intro-video-player::-webkit-media-controls-start-playback-button,
+  .woobi-intro-video-player::-webkit-media-controls-enclosure,
+  .woobi-intro-video-player::-webkit-media-controls-panel {
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   .video-intro-controls {
@@ -19689,6 +19708,8 @@ body.welcome-intro #desktopEditorialFrame { display: none !important; }
     display: none;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    touch-action: manipulation;
     transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 

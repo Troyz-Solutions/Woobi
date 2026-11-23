@@ -68,7 +68,7 @@
 
   <!-- Step 1: Woobi Intro Video (Every Launch) -->
   <div id="woobiMobileVideoIntro" class="woobi-mobile-video-intro" aria-hidden="true" style="display: flex;">
-    <video id="woobiIntroVideoPlayer" class="woobi-intro-video-player" playsinline webkit-playsinline muted preload="auto">
+    <video id="woobiIntroVideoPlayer" class="woobi-intro-video-player" autoplay muted playsinline webkit-playsinline disablePictureInPicture disableremoteplayback preload="auto">
       <source src="assets/woobi-intro-mobile.mp4" type="video/mp4">
       <source src="modules/core/app/intro/media/woobi-intro-mobile.mp4" type="video/mp4">
     </video>
@@ -5900,9 +5900,9 @@
           }, 2400);
         }
 
+        // Curtains wait for user tap/click to enter (no premature auto-open)
         curtainOverlay.addEventListener('click', openCurtains);
         curtainOverlay.addEventListener('touchstart', openCurtains, { passive: true });
-        setTimeout(openCurtains, 1200);
       }
 
       function routeTargetScreen() {
@@ -5926,6 +5926,17 @@
         videoOverlay.style.display = 'flex';
         videoPlayer.muted = true;
         videoPlayer.playbackRate = 1.0;
+
+        function markVideoPlaying() {
+          videoPlayer.classList.add('is-playing');
+        }
+        videoPlayer.addEventListener('playing', markVideoPlaying, { once: true });
+        videoPlayer.addEventListener('timeupdate', function onTime() {
+          if (videoPlayer.currentTime > 0.05) {
+            markVideoPlaying();
+            videoPlayer.removeEventListener('timeupdate', onTime);
+          }
+        });
 
         function startVideoSafely() {
           var playPromise = videoPlayer.play();
@@ -5953,7 +5964,7 @@
         // Safety fallback timer if video fails or hangs
         setTimeout(function() {
           if (!curtainsTriggered) showRedCurtains();
-        }, 4500);
+        }, 8000);
       } else {
         showRedCurtains();
       }

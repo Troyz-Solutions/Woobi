@@ -5767,13 +5767,13 @@
   <script type="module" src="modules/3d-studio-features/avatar-customization/UserFaceMeshEngine.js?v=20261115_personalized_head9"></script>
   <script type="module" src="modules/3d-studio-features/index.js"></script>
   <script type="module" src="modules/settings/index.js"></script>
-  <script src="assets/brick-wall-data.js?v=20261105_v1"></script>
-  <script src="assets/studio-textures-data.js?v=20261106_v1"></script>
-  <script src="wardrobe-astra-material.js?v=20261105_v1"></script>
-  <script src="wardrobe3d.js?v=20261105_v1"></script>
-  <script src="studio3d.js?v=20261119_smooth_mirror"></script>
-  <script src="modules/core/state/StorageService.js"></script>
-  <script src="app.js?v=20261115_personalized_head9"></script>
+  <script src="assets/brick-wall-data.js?v=20261105_v1" defer></script>
+  <script src="assets/studio-textures-data.js?v=20261106_v1" defer></script>
+  <script src="wardrobe-astra-material.js?v=20261105_v1" defer></script>
+  <script src="wardrobe3d.js?v=20261105_v1" defer></script>
+  <script src="studio3d.js?v=20261119_smooth_mirror" defer></script>
+  <script src="modules/core/state/StorageService.js" defer></script>
+  <script src="app.js?v=20261115_personalized_head9" defer></script>
   <script>
     window.showStudio3DFallback = function (message) {
       var fallback = document.getElementById('seren3dFallback');
@@ -5903,7 +5903,7 @@
 
       window.woobiAdvanceToCurtains = showRedCurtains;
 
-      // Step 1: Play Woobi Intro Video
+      // Step 1: Play Woobi Intro Video with zero-latency hardware buffer
       if (videoOverlay && videoPlayer) {
         // Pause 3D rendering during intro video to give 100% GPU to video decode
         if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
@@ -5912,14 +5912,25 @@
 
         videoOverlay.style.display = 'flex';
         videoPlayer.muted = true;
-        videoPlayer.currentTime = 0;
+        videoPlayer.playbackRate = 1.0;
 
-        var playPromise = videoPlayer.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(function(err) {
-            console.warn('Video autoplay prevented, advancing to curtains:', err);
-            setTimeout(showRedCurtains, 800);
-          });
+        function startVideoSafely() {
+          var playPromise = videoPlayer.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(function(err) {
+              console.warn('Video autoplay prevented, advancing to curtains:', err);
+              setTimeout(showRedCurtains, 400);
+            });
+          }
+        }
+
+        if (videoPlayer.readyState >= 2) {
+          startVideoSafely();
+        } else {
+          videoPlayer.addEventListener('canplay', function onCanPlay() {
+            videoPlayer.removeEventListener('canplay', onCanPlay);
+            startVideoSafely();
+          }, { once: true });
         }
 
         videoPlayer.onended = function() {
@@ -5929,7 +5940,7 @@
         // Safety fallback timer if video fails or hangs
         setTimeout(function() {
           if (!curtainsTriggered) showRedCurtains();
-        }, 5500);
+        }, 4500);
       } else {
         showRedCurtains();
       }

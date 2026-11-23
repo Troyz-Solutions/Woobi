@@ -173,8 +173,8 @@ body.theme-dark.high-contrast,
    UNIFIED DEVICE-ADAPTIVE ARCHITECTURE (PERFECT FIT ON EVERY DEVICE)
    ========================================================================== */
 
-/* 1. Base Mobile & Native App Core (< 768px and Native App) */
-@media (max-width: 767px) {
+/* 1. Base Mobile & Native App Core (<= 1024px and Native App) */
+@media (max-width: 1024px) {
   html,
   body {
     width: 100vw !important;

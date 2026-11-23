@@ -11,12 +11,23 @@
       window.studioErrorLogs.push(e.message + ' at ' + e.filename + ':' + e.lineno);
       document.title = 'ERR: ' + e.message;
     });
-    // Flag native Android application wrapper runtime
+    // Flag mobile application runtime universally
     (function() {
-      var isNative = !!(window.AndroidBridge || navigator.userAgent.indexOf('wv') !== -1 || window.location.hostname === 'appassets.androidplatform.net');
-      if (isNative) {
-        document.documentElement.classList.add('is-native-app');
+      function detectMobile() {
+        var isMobile = !!(
+          window.AndroidBridge || 
+          navigator.userAgent.indexOf('wv') !== -1 || 
+          window.location.hostname === 'appassets.androidplatform.net' ||
+          /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+          window.location.search.indexOf('mobile=1') !== -1 ||
+          (typeof window !== 'undefined' && window.innerWidth <= 1024)
+        );
+        if (isMobile) {
+          document.documentElement.classList.add('is-native-app');
+        }
       }
+      detectMobile();
+      window.addEventListener('resize', detectMobile);
     })();
   </script>
 
@@ -2699,99 +2710,69 @@
         </section>
 
         <!-- ===================================================================
-             SCREEN 13: SIGN IN (HAUTE COUTURE PC CUSTOMIZED ATELIER LOGIN)
+             SCREEN 13: SIGN IN (PURE NATIVE MOBILE EXPERIENCE)
              =================================================================== -->
-        <section class="phone-screen pc-login-screen" id="screen-signin">
-          <div class="pc-login-shell">
-            <!-- Left Garden Studio Portrait (Desktop / PC Atelier Experience) -->
-            <aside class="pc-login-garden" aria-label="Woobi virtual styling studio">
-              <div class="pc-studio-portrait-wrap">
-                <img src="assets/seren_studio_room.jpg" alt="Woobi Studio" class="pc-studio-portrait-img">
-                <div class="pc-garden-vignette"></div>
-                <div class="pc-studio-label">
-                  <span class="pc-label-brand">woobi</span>
-                  <span class="pc-label-sub">ATELIER STUDIO</span>
-                </div>
-              </div>
-            </aside>
-
-            <!-- Right Form Panel (Haute Couture Editorial Experience) -->
-            <section class="pc-form-panel" aria-labelledby="pc-form-title">
-              <div class="pc-topline">
-                <div class="pc-brand-group">
-                  <span class="pc-brand-title">woobi</span>
-                  <span class="pc-brand-tag">VIRTUAL STYLING</span>
-                </div>
-                <button type="button" class="btn-pc-explore" onclick="app.submitSignIn()">
-                  Explore Woobi <span aria-hidden="true">↗</span>
-                </button>
-              </div>
-
-              <div class="pc-form-content">
-                <span class="pc-small-flower" aria-hidden="true">✧</span>
-                <p class="pc-eyebrow">MAKE YOURSELF AT HOME</p>
-                <h2 class="pc-headline" id="pc-form-title">Welcome back.</h2>
-                <p class="pc-intro">Your wardrobe is waiting. Let’s make it a good day.</p>
-
-                <form class="pc-auth-form" onsubmit="event.preventDefault(); app.submitSignIn();" novalidate>
-                  <div class="pc-field">
-                    <label for="pc-email">Email address</label>
-                    <input id="pc-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" value="suriya@example.com" required>
-                  </div>
-
-                  <div class="pc-field" id="pc-password-field">
-                    <div class="pc-label-row">
-                      <label for="pc-password">Password</label>
-                      <button class="pc-text-button" type="button" onclick="app.goToScreen('reset-password')">Forgot password?</button>
-                    </div>
-                    <div class="pc-password-wrap">
-                      <input id="pc-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" value="••••••••••••" required>
-                      <button id="pc-toggle-password" type="button" aria-label="Show password" onclick="const p = document.getElementById('pc-password'); p.type = p.type === 'password' ? 'text' : 'password';">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/>
-                          <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-
-                  <button class="pc-btn-primary" id="pc-submit" type="submit">
-                    <span>Log in</span>
-                    <span aria-hidden="true">↗</span>
-                  </button>
-                </form>
-
-                <div class="pc-social-section">
-                  <div class="pc-divider"><span>or continue with</span></div>
-                  <button class="pc-btn-google" type="button" onclick="app.submitSignIn()">
-                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z"/>
-                      <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.07v2.59A10 10 0 0 0 12 22Z"/>
-                      <path fill="#FBBC05" d="M6.41 13.92A6 6 0 0 1 6.1 12c0-.67.11-1.32.31-1.92V7.49H3.07A10 10 0 0 0 2 12c0 1.61.39 3.14 1.07 4.51l3.34-2.59Z"/>
-                      <path fill="#EA4335" d="M12 5.96c1.47 0 2.79.51 3.82 1.51l2.87-2.87A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.93 5.49l3.34 2.59A6 6 0 0 1 12 5.96Z"/>
-                    </svg>
-                    Continue with Google
-                  </button>
-                </div>
-
-                <button type="button" class="pc-btn-guest" onclick="app.submitSignIn()">
-                  Continue as Guest →
-                </button>
-
-                <p class="pc-switch-copy">
-                  <span>New to Woobi?</span>
-                  <button class="pc-text-button" type="button" onclick="app.goToScreen('create-account')">
-                    Create an account <span aria-hidden="true">↗</span>
-                  </button>
-                </p>
-              </div>
-
-              <footer class="pc-login-footer">
-                <span>A little less “what to wear?”</span>
-                <span>A little more you. <span aria-hidden="true">✳</span></span>
-              </footer>
-            </section>
+        <section class="phone-screen" id="screen-signin">
+          <div class="screen-sub-header">
+            <button class="nav-back-arrow" onclick="app.goToScreen('welcome')" aria-label="Back">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <div style="width: 20px;"></div>
           </div>
+
+          <div class="screen-body-padded">
+            <h1 class="screen-headline-serif">Welcome back</h1>
+            <p class="screen-caption-sub" style="margin-bottom: 24px;">Your wardrobe is waiting. Let’s make it a good day.</p>
+
+            <form class="signin-form-box" onsubmit="event.preventDefault(); app.submitSignIn();" novalidate>
+              <div class="signin-input-wrap">
+                <span class="input-icon">✉️</span>
+                <input type="email" id="signin-email" placeholder="Email address" value="suriya@example.com" autocomplete="email" required>
+              </div>
+
+              <div class="signin-input-wrap">
+                <span class="input-icon">🔒</span>
+                <input type="password" id="signin-pwd-input" placeholder="Password" value="••••••••••••" autocomplete="current-password" required>
+                <button class="btn-pwd-eye" type="button" aria-label="Toggle password visibility" onclick="const p = document.getElementById('signin-pwd-input'); p.type = p.type === 'password' ? 'text' : 'password';">👁️</button>
+              </div>
+
+              <div class="forgot-pwd-wrap">
+                <a href="#forgot" onclick="event.preventDefault(); app.goToScreen('reset-password');">Forgot password?</a>
+              </div>
+
+              <button class="btn-olive-primary" type="submit">
+                Sign in
+              </button>
+            </form>
+
+            <div class="auth-divider-or"><span>or</span></div>
+
+            <button class="btn-google-oauth" type="button" onclick="app.submitSignIn()">
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                <path fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <button type="button" class="btn-link-simple" onclick="app.submitSignIn()" style="margin-top: 14px; width: 100%; text-align: center; font-size: 0.92rem;">
+              Continue as Guest →
+            </button>
+
+            <div class="auth-bottom-link">
+              Don't have an account? <a href="#create"
+                onclick="event.preventDefault(); app.goToScreen('create-account');">Create account</a>
+            </div>
+          </div>
+          <div class="phone-home-indicator"></div>
         </section>
 
         <!-- ===================================================================
@@ -5885,11 +5866,14 @@
           curtainsOpened = true;
           curtainOverlay.classList.add('is-opening');
 
-          // If returning user directly entering Today, unpause 3D studio now
+          // If returning user directly entering Today, unpause 3D studio with slight easing delay
+          // so the hardware compositor runs the curtain-opening keyframes at full 60fps without GPU contention
           if (isReturningUser) {
-            if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
-              window.Studio3D.setRenderingPaused(false);
-            }
+            setTimeout(function() {
+              if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
+                window.Studio3D.setRenderingPaused(false);
+              }
+            }, 400);
           }
 
           setTimeout(function() {

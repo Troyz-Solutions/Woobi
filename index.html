@@ -64,8 +64,8 @@
 
 <body>
 
-  <!-- Step 1: Woobi Mobile Intro Video (Mobile Only) -->
-  <div id="woobiMobileVideoIntro" class="woobi-mobile-video-intro" aria-hidden="true">
+  <!-- Step 1: Woobi Mobile Intro Video -->
+  <div id="woobiMobileVideoIntro" class="woobi-mobile-video-intro" aria-hidden="true" style="display: flex;">
     <video id="woobiIntroVideoPlayer" class="woobi-intro-video-player" playsinline webkit-playsinline muted preload="auto">
       <source src="assets/woobi-intro-mobile.mp4" type="video/mp4">
       <source src="modules/core/app/intro/media/woobi-intro-mobile.mp4" type="video/mp4">
@@ -77,8 +77,8 @@
     </div>
   </div>
 
-  <!-- Step 2: Roni Shankar's Theatrical Velvet Curtain Intro (Mobile Only) -->
-  <div id="mobileCurtainIntro" class="mobile-curtain-intro" aria-hidden="true">
+  <!-- Step 2: Roni Shankar's Theatrical Velvet Curtain Intro -->
+  <div id="mobileCurtainIntro" class="mobile-curtain-intro" aria-hidden="true" style="display: none;">
     <div class="curtain-stage">
       <div class="curtain-drape curtain-left"></div>
       <div class="curtain-drape curtain-right"></div>
@@ -5839,9 +5839,13 @@
         if (curtainsTriggered) return;
         curtainsTriggered = true;
 
-        // Ensure video is cleanly paused and hidden to save 100% GPU memory
+        // Ensure video is cleanly paused, unloaded and hidden to save 100% GPU memory
         if (videoPlayer) {
-          try { videoPlayer.pause(); } catch (e) {}
+          try {
+            videoPlayer.pause();
+            videoPlayer.removeAttribute('src');
+            videoPlayer.load();
+          } catch (e) {}
         }
         if (videoOverlay) {
           videoOverlay.style.display = 'none';
@@ -5866,20 +5870,25 @@
           curtainsOpened = true;
           curtainOverlay.classList.add('is-opening');
 
-          // Very slow, stately cinematic opening transition
+          // Resume 3D studio rendering smoothly now that the app is opening
+          if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
+            window.Studio3D.setRenderingPaused(false);
+          }
+
+          // Smooth cinematic opening transition
           setTimeout(function() {
             curtainOverlay.classList.add('curtain-dismissed');
             setTimeout(function() {
               curtainOverlay.style.display = 'none';
-            }, 600);
-          }, 3800);
+            }, 500);
+          }, 2400);
         }
 
         curtainOverlay.addEventListener('click', openCurtains);
         curtainOverlay.addEventListener('touchstart', openCurtains, { passive: true });
 
-        // Auto-open curtains after a stately 1.8s hold on the golden crest
-        setTimeout(openCurtains, 1800);
+        // Auto-open curtains after a stately 1.2s hold on the golden crest
+        setTimeout(openCurtains, 1200);
       }
 
       function routeTargetScreen() {
@@ -5894,8 +5903,13 @@
 
       window.woobiAdvanceToCurtains = showRedCurtains;
 
-      // Step 1: Play Mobile Woobi Intro Video
+      // Step 1: Play Woobi Intro Video
       if (videoOverlay && videoPlayer) {
+        // Pause 3D rendering during intro video to give 100% GPU to video decode
+        if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
+          window.Studio3D.setRenderingPaused(true);
+        }
+
         videoOverlay.style.display = 'flex';
         videoPlayer.muted = true;
         videoPlayer.currentTime = 0;

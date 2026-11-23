@@ -1848,32 +1848,40 @@
   // =========================================================================
   // FROSTED GLOSSY QUICK-PICKER CARD FOR 3D MANNEQUIN BODY PART TAPS
   // =========================================================================
-  function openBodyPartWardrobeCard(zone = 'tops') {
-    const card = document.getElementById('mannequinQuickPickerCard');
-    if (!card) return;
+  let pickerCurrentZone = 'bottoms';
+  let pickerSearchQuery = '';
+  let pickerFilterMode = 'all'; // 'all', 'clean', 'favorites'
+  let pickerScrollListenerAttached = false;
 
-    let categoryKey = 'tops';
-    let badgeText = 'Tops (Neck to Hip)';
-
+  function getZoneCategoryKey(zone) {
     const z = (zone || '').toLowerCase();
     if (z.includes('top') || z.includes('shirt') || z.includes('jacket') || z.includes('torso')) {
-      categoryKey = 'tops';
-      badgeText = 'Tops (Neck to Hip)';
+      return 'tops';
     } else if (z.includes('bottom') || z.includes('pant') || z.includes('skirt') || z.includes('trouser')) {
-      categoryKey = 'bottoms';
-      badgeText = 'Bottoms (Hip to Ankle)';
+      return 'bottoms';
     } else if (z.includes('shoe') || z.includes('feet') || z.includes('footwear')) {
-      categoryKey = 'shoes';
-      badgeText = 'Shoes & Footwear';
+      return 'shoes';
     } else if (z.includes('acc') || z.includes('head') || z.includes('hat') || z.includes('watch')) {
-      categoryKey = 'accessories';
-      badgeText = 'Accessories & Details';
+      return 'accessories';
     }
+    return 'tops';
+  }
 
+  function getZoneTitle(categoryKey) {
+    switch (categoryKey) {
+      case 'tops': return 'Tops';
+      case 'bottoms': return 'Bottoms';
+      case 'shoes': return 'Shoes';
+      case 'accessories': return 'Accessories';
+      default: return 'Garments';
+    }
+  }
+
+  function getZoneItems(categoryKey) {
     const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
     const pool = [...userWardrobe, ...WARDROBE_ITEMS.filter(item => !userWardrobe.some(u => u.id === item.id))];
 
-    const categoryItems = pool.filter(item => {
+    return pool.filter(item => {
       const c = (item.category || '').toLowerCase().trim();
       if (categoryKey === 'tops') return c === 'tops' || c === 'top' || (typeof isShirt === 'function' && isShirt(item));
       if (categoryKey === 'bottoms') return c === 'bottoms' || c === 'bottom' || (typeof isPant === 'function' && isPant(item));
@@ -1881,22 +1889,48 @@
       if (categoryKey === 'accessories') return c === 'accessories' || c === 'accessory' || (typeof isAcc === 'function' && isAcc(item));
       return false;
     });
+  }
 
-    const badgeEl = document.getElementById('pickerCategoryBadge');
+  function renderQuickPickerContent() {
+    const categoryKey = pickerCurrentZone;
+    const titleText = getZoneTitle(categoryKey);
+    let items = getZoneItems(categoryKey);
+
+    // Apply quick search query if active
+    if (pickerSearchQuery && pickerSearchQuery.trim()) {
+      const q = pickerSearchQuery.trim().toLowerCase();
+      items = items.filter(it => (it.name || '').toLowerCase().includes(q) || (it.subCategory || '').toLowerCase().includes(q));
+    }
+
+    // Apply quick filter mode if active
+    if (pickerFilterMode === 'clean') {
+      items = items.filter(it => (it.condition || 'clean').toLowerCase() === 'clean');
+    } else if (pickerFilterMode === 'favorites') {
+      items = items.filter(it => it.favorite || it.fit === 'perfect');
+    }
+
+    const titleEl = document.getElementById('pickerMainTitle');
     const countEl = document.getElementById('pickerItemCount');
-    if (badgeEl) badgeEl.textContent = badgeText;
-    if (countEl) countEl.textContent = `${categoryItems.length} available`;
+    const subTextEl = document.getElementById('pickerSubText');
+
+    if (titleEl) titleEl.textContent = titleText;
+    if (countEl) countEl.textContent = `${items.length} Items`;
+    if (subTextEl) {
+      if (pickerFilterMode === 'clean') subTextEl.textContent = 'Clean only';
+      else if (pickerFilterMode === 'favorites') subTextEl.textContent = 'Favorites';
+      else subTextEl.textContent = 'Browse styles';
+    }
 
     const track = document.getElementById('pickerScrollTrack');
     if (track) {
-      if (categoryItems.length === 0) {
+      if (items.length === 0) {
         track.innerHTML = `
-          <div style="padding: 18px 24px; text-align: center; color: var(--text-muted); font-size: 11px;">
-            No ${badgeText.toLowerCase()} found in wardrobe.
+          <div style="padding: 24px 18px; text-align: center; color: var(--text-muted); font-size: 11px; width: 100%;">
+            No ${titleText.toLowerCase()} found in your collection.
           </div>
         `;
       } else {
-        track.innerHTML = categoryItems.map(item => {
+        track.innerHTML = items.map(item => {
           const photo = item.photoFront || item.photo || 'assets/placeholder_outfit.jpg';
           const isEquipped = (state.activeLook && (
             (categoryKey === 'tops' && state.activeLook.top === item.name) ||
@@ -1905,25 +1939,110 @@
           ));
 
           return `
-            <div class="picker-garment-tile ${isEquipped ? 'is-equipped' : ''}" 
-                 id="pickerTile_${item.id}"
+            <div class="picker-garment-card ${isEquipped ? 'is-active' : ''}" 
+                 id="pickerGarmentCard_${item.id}"
                  onclick="app.selectQuickPickerGarment('${item.id}')"
                  role="button"
                  tabindex="0"
                  aria-label="Equip ${item.name}">
-              <div class="picker-garment-thumb-wrap">
-                <img src="${photo}" alt="${item.name}" class="picker-garment-img" loading="lazy">
-                <div class="picker-equipped-badge">${isEquipped ? '✓ Worn' : 'Tap to wear'}</div>
-              </div>
-              <div class="picker-garment-meta">
-                <span class="picker-garment-title" title="${item.name}">${item.name}</span>
-                <span class="picker-garment-sub">${item.subCategory || item.category || ''}</span>
+              <div class="picker-card-inner">
+                <div class="picker-card-img-wrap">
+                  <img src="${photo}" alt="${item.name}" class="picker-card-img" loading="lazy">
+                </div>
+                <div class="picker-card-divider"></div>
+                <div class="picker-card-title">${item.name}</div>
               </div>
             </div>
           `;
         }).join('');
       }
+
+      // Re-attach scroll listener to update pagination dots dynamically
+      if (!pickerScrollListenerAttached) {
+        track.addEventListener('scroll', updatePickerPagination, { passive: true });
+        pickerScrollListenerAttached = true;
+      }
     }
+
+    updatePickerPagination();
+  }
+
+  function updatePickerPagination() {
+    const track = document.getElementById('pickerScrollTrack');
+    const dotsWrap = document.getElementById('pickerDotsIndicator');
+    if (!track || !dotsWrap) return;
+
+    const cards = track.querySelectorAll('.picker-garment-card');
+    const totalCards = cards.length;
+    if (totalCards === 0) {
+      dotsWrap.innerHTML = '';
+      return;
+    }
+
+    const dotCount = Math.max(3, Math.min(5, totalCards));
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    let activeIdx = 0;
+    if (maxScroll > 10) {
+      const progress = track.scrollLeft / maxScroll;
+      activeIdx = Math.min(dotCount - 1, Math.max(0, Math.round(progress * (dotCount - 1))));
+    }
+
+    let dotsHtml = '';
+    for (let i = 0; i < dotCount; i++) {
+      dotsHtml += `<span class="p-dot ${i === activeIdx ? 'active' : ''}"></span>`;
+    }
+    dotsWrap.innerHTML = dotsHtml;
+  }
+
+  function pickerScrollPrev() {
+    const track = document.getElementById('pickerScrollTrack');
+    if (track) {
+      track.scrollBy({ left: -114, behavior: 'smooth' });
+    }
+  }
+
+  function pickerScrollNext() {
+    const track = document.getElementById('pickerScrollTrack');
+    if (track) {
+      track.scrollBy({ left: 114, behavior: 'smooth' });
+    }
+  }
+
+  function togglePickerFilter() {
+    const modes = ['all', 'clean', 'favorites'];
+    const nextIdx = (modes.indexOf(pickerFilterMode) + 1) % modes.length;
+    pickerFilterMode = modes[nextIdx];
+    const labels = { all: 'All items', clean: 'Clean garments only', favorites: 'Favorites only' };
+    showToast(`Filtering: ${labels[pickerFilterMode]}`);
+    renderQuickPickerContent();
+  }
+
+  function togglePickerSearch() {
+    const bar = document.getElementById('pickerSearchBar');
+    const inp = document.getElementById('pickerSearchInput');
+    if (bar) {
+      bar.classList.toggle('hidden');
+      if (!bar.classList.contains('hidden') && inp) {
+        inp.focus();
+      } else if (inp) {
+        inp.value = '';
+        pickerSearchQuery = '';
+        renderQuickPickerContent();
+      }
+    }
+  }
+
+  function filterPickerItems(query) {
+    pickerSearchQuery = query || '';
+    renderQuickPickerContent();
+  }
+
+  function openBodyPartWardrobeCard(zone = 'tops') {
+    const card = document.getElementById('mannequinQuickPickerCard');
+    if (!card) return;
+
+    pickerCurrentZone = getZoneCategoryKey(zone);
+    renderQuickPickerContent();
 
     card.classList.remove('hidden');
     requestAnimationFrame(() => {
@@ -1941,18 +2060,17 @@
     const item = pool.find(i => i.id === itemId);
     if (!item) return;
 
+    // Equip directly onto the 3D mannequin model
     wardrobeEquipToMannequin(item);
 
-    document.querySelectorAll('.picker-garment-tile').forEach(tile => {
-      tile.classList.remove('is-equipped');
-      const badge = tile.querySelector('.picker-equipped-badge');
-      if (badge) badge.textContent = 'Tap to wear';
+    // Update active highlight across cards (warm golden border from user reference)
+    document.querySelectorAll('.picker-garment-card').forEach(c => {
+      c.classList.remove('is-active');
     });
-    const selectedTile = document.getElementById(`pickerTile_${itemId}`);
-    if (selectedTile) {
-      selectedTile.classList.add('is-equipped');
-      const badge = selectedTile.querySelector('.picker-equipped-badge');
-      if (badge) badge.textContent = '✓ Worn';
+    const selectedCard = document.getElementById(`pickerGarmentCard_${itemId}`);
+    if (selectedCard) {
+      selectedCard.classList.add('is-active');
+      selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
     const sparkles = document.getElementById('serenSparkles');
@@ -8766,7 +8884,12 @@
     // Mannequin Body Part Quick-Picker API
     openBodyPartWardrobeCard,
     selectQuickPickerGarment,
-    closeMannequinQuickPicker
+    closeMannequinQuickPicker,
+    pickerScrollPrev,
+    pickerScrollNext,
+    togglePickerFilter,
+    togglePickerSearch,
+    filterPickerItems
   };
 
   window.app = Object.assign(window.app || {}, appExports);

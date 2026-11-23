@@ -941,20 +941,70 @@
 
           <!-- Frosted Glossy Quick-Picker Card for Mannequin Body Part Taps -->
           <div id="mannequinQuickPickerCard" class="mannequin-quick-picker-card hidden" role="region" aria-label="Body Part Clothes Picker">
+            <!-- Top Drag Handle Pill -->
+            <div class="picker-drag-handle"></div>
+
+            <!-- Header: Category Title, Subtitle, Action Buttons -->
             <div class="picker-glass-header">
-              <div class="picker-title-row">
-                <span class="picker-category-badge" id="pickerCategoryBadge">Tops</span>
-                <span class="picker-item-count" id="pickerItemCount">8 in wardrobe</span>
+              <div class="picker-title-col">
+                <h2 class="picker-main-title" id="pickerMainTitle">Bottoms</h2>
+                <div class="picker-subtitle">
+                  <span id="pickerItemCount">84 Items</span> • <span id="pickerSubText">Browse styles</span>
+                </div>
               </div>
-              <button type="button" class="btn-picker-close" onclick="app.closeMannequinQuickPicker()" aria-label="Close Picker">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
+              <div class="picker-actions-row">
+                <button type="button" class="btn-picker-action" onclick="app.togglePickerFilter && app.togglePickerFilter()" title="Filter styles" aria-label="Filter styles">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <line x1="6" y1="12" x2="18" y2="12"/>
+                    <line x1="9" y1="18" x2="15" y2="18"/>
+                  </svg>
+                </button>
+                <button type="button" class="btn-picker-action" onclick="app.togglePickerSearch && app.togglePickerSearch()" title="Search items" aria-label="Search items">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <circle cx="11" cy="11" r="7"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                </button>
+                <button type="button" class="btn-picker-action btn-picker-close" onclick="app.closeMannequinQuickPicker()" title="Close" aria-label="Close">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Search Input (Toggled) -->
+            <div class="picker-search-bar hidden" id="pickerSearchBar">
+              <input type="text" id="pickerSearchInput" placeholder="Search styles..." oninput="app.filterPickerItems && app.filterPickerItems(this.value)">
+            </div>
+
+            <!-- Horizontal Garment Carousel Track -->
+            <div class="picker-carousel-container">
+              <div class="picker-carousel-track" id="pickerScrollTrack">
+                <!-- Dynamically populated cards matching reference image -->
+              </div>
+            </div>
+
+            <!-- Bottom Pagination Navigation (< • • • • >) -->
+            <div class="picker-pagination-row">
+              <button type="button" class="picker-page-nav picker-prev" onclick="app.pickerScrollPrev && app.pickerScrollPrev()" aria-label="Previous">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
-            </div>
-            <div class="picker-scroll-track" id="pickerScrollTrack">
-              <!-- Dynamically populated frosted wardrobe tiles -->
+              <div class="picker-dots-indicator" id="pickerDotsIndicator">
+                <span class="p-dot active"></span>
+                <span class="p-dot"></span>
+                <span class="p-dot"></span>
+                <span class="p-dot"></span>
+              </div>
+              <button type="button" class="picker-page-nav picker-next" onclick="app.pickerScrollNext && app.pickerScrollNext()" aria-label="Next">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
             </div>
           </div>
 

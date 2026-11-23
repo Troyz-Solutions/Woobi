@@ -939,29 +939,32 @@
             </div>
           </div>
 
-          <!-- Frosted Glossy Quick-Picker Card for Mannequin Body Part Taps -->
-          <div id="mannequinQuickPickerCard" class="mannequin-quick-picker-card hidden" role="region" aria-label="Body Part Clothes Picker">
+          <!-- Frosted Haute Couture Single-Card Runway Swiper for Mannequin Body Part Taps -->
+          <div id="mannequinQuickPickerCard" class="mannequin-quick-picker-card single-card-swiper hidden" role="region" aria-label="Body Part Clothes Picker">
             <!-- Top Drag Handle Pill -->
             <div class="picker-drag-handle"></div>
 
-            <!-- Header: Category Title, Subtitle, Action Buttons -->
+            <!-- Header: Category Title, Item Counter Badge, Action Buttons -->
             <div class="picker-glass-header">
               <div class="picker-title-col">
-                <h2 class="picker-main-title" id="pickerMainTitle">Bottoms</h2>
+                <div class="picker-header-title-row">
+                  <h2 class="picker-main-title" id="pickerMainTitle">Bottoms</h2>
+                  <span class="picker-counter-badge" id="pickerCounterPill">1 / 8</span>
+                </div>
                 <div class="picker-subtitle">
-                  <span id="pickerItemCount">84 Items</span> • <span id="pickerSubText">Browse styles</span>
+                  <span id="pickerItemCount">8 Available</span> • <span id="pickerSubText">Swipe to browse & fit</span>
                 </div>
               </div>
               <div class="picker-actions-row">
                 <button type="button" class="btn-picker-action" onclick="app.togglePickerFilter && app.togglePickerFilter()" title="Filter styles" aria-label="Filter styles">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <line x1="4" y1="6" x2="20" y2="6"/>
                     <line x1="6" y1="12" x2="18" y2="12"/>
                     <line x1="9" y1="18" x2="15" y2="18"/>
                   </svg>
                 </button>
                 <button type="button" class="btn-picker-action" onclick="app.togglePickerSearch && app.togglePickerSearch()" title="Search items" aria-label="Search items">
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                     <circle cx="11" cy="11" r="7"/>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                   </svg>
@@ -980,33 +983,67 @@
               <input type="text" id="pickerSearchInput" placeholder="Search styles..." oninput="app.filterPickerItems && app.filterPickerItems(this.value)">
             </div>
 
-            <!-- Horizontal Garment Carousel Track -->
-            <div class="picker-carousel-container">
-              <div class="picker-carousel-track" id="pickerScrollTrack">
-                <!-- Dynamically populated cards matching reference image -->
-              </div>
-            </div>
-
-            <!-- Bottom Pagination Navigation (< • • • • >) -->
-            <div class="picker-pagination-row">
-              <button type="button" class="picker-page-nav picker-prev" onclick="app.pickerScrollPrev && app.pickerScrollPrev()" aria-label="Previous">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <!-- Single Hero Card Stage with Prev/Next Navigation -->
+            <div class="picker-hero-stage" id="pickerHeroStage">
+              <button type="button" class="picker-nav-arrow picker-arrow-prev" onclick="app.pickerGoPrev && app.pickerGoPrev()" aria-label="Previous Garment">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
               </button>
-              <div class="picker-dots-indicator" id="pickerDotsIndicator">
-                <span class="p-dot active"></span>
-                <span class="p-dot"></span>
-                <span class="p-dot"></span>
-                <span class="p-dot"></span>
+
+              <div class="picker-single-hero-card" id="pickerHeroCard" onclick="app.toggleWearCurrentHeroItem && app.toggleWearCurrentHeroItem()" role="button" tabindex="0" aria-label="Toggle wear garment">
+                <!-- Populated dynamically via JS: photo, golden frame, title, subtitle, worn status -->
               </div>
-              <button type="button" class="picker-page-nav picker-next" onclick="app.pickerScrollNext && app.pickerScrollNext()" aria-label="Next">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+
+              <button type="button" class="picker-nav-arrow picker-arrow-next" onclick="app.pickerGoNext && app.pickerGoNext()" aria-label="Next Garment">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
               </button>
             </div>
+
+            <!-- Bottom Pagination Dots Indicator -->
+            <div class="picker-dots-indicator" id="pickerDotsIndicator">
+              <!-- Dynamically populated dots with active elongated pill -->
+            </div>
           </div>
+
+          <!-- Floating Bottom Navigation Bar (Floating Pill matching reference) -->
+          <nav class="phone-bottom-nav floating-pill-nav" id="studioBottomNav">
+            <button type="button" class="nav-tab" onclick="app.openStudioWardrobe()" aria-label="Wardrobe">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+              </svg>
+              <span>Wardrobe</span>
+            </button>
+            <button type="button" class="nav-tab" onclick="app.openDailyRecommendation()" aria-label="Recommend">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/>
+                <path d="M19 3v4"/>
+                <path d="M21 5h-4"/>
+              </svg>
+              <span>Recommend</span>
+            </button>
+            <button type="button" class="nav-tab-center-elevated" onclick="app.openCameraModal()" title="Add Clothes / Snap Outfit" aria-label="Add Clothes / Snap Outfit">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+            <button type="button" class="nav-tab" onclick="app.openStyleHint()" aria-label="Style Hint">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+              </svg>
+              <span>Style Hint</span>
+            </button>
+            <button type="button" class="nav-tab" onclick="app.goToScreen('premium')" aria-label="Pro">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
+                <path d="M5 19h14"/>
+              </svg>
+              <span>Pro</span>
+            </button>
+          </nav>
 
           <!-- 3D Studio Interactive Wardrobe Card Sheet -->
           <div class="seren-wardrobe-sheet hidden" id="serenWardrobeSheet">
@@ -2077,7 +2114,7 @@
           </div>
 
           <!-- Bottom Navigation Bar (Floating Pill matching reference) -->
-          <nav class="phone-bottom-nav floating-pill-nav" id="studioBottomNav">
+          <nav class="phone-bottom-nav floating-pill-nav" id="outfitConfirmBottomNav">
             <button type="button" class="nav-tab" onclick="app.goToScreen('wardrobe')" aria-label="Wardrobe">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />

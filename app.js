@@ -1846,12 +1846,16 @@
   }
 
   // =========================================================================
-  // FROSTED GLOSSY QUICK-PICKER CARD FOR 3D MANNEQUIN BODY PART TAPS
+  // FROSTED GLOSSY SINGLE-CARD RUNWAY SWIPER FOR 3D MANNEQUIN BODY PART TAPS
   // =========================================================================
   let pickerCurrentZone = 'bottoms';
   let pickerSearchQuery = '';
   let pickerFilterMode = 'all'; // 'all', 'clean', 'favorites'
-  let pickerScrollListenerAttached = false;
+  let pickerHeroIndex = 0;
+  let pickerFilteredItems = [];
+  let pickerTouchStartX = 0;
+  let pickerTouchStartY = 0;
+  let pickerTouchEventsAttached = false;
 
   function getZoneCategoryKey(zone) {
     const z = (zone || '').toLowerCase();
@@ -1909,102 +1913,162 @@
       items = items.filter(it => it.favorite || it.fit === 'perfect');
     }
 
+    pickerFilteredItems = items;
+
+    // Ensure hero index is clamped within bounds
+    if (pickerHeroIndex >= pickerFilteredItems.length) {
+      pickerHeroIndex = Math.max(0, pickerFilteredItems.length - 1);
+    }
+    if (pickerHeroIndex < 0) {
+      pickerHeroIndex = 0;
+    }
+
     const titleEl = document.getElementById('pickerMainTitle');
+    const counterPillEl = document.getElementById('pickerCounterPill');
     const countEl = document.getElementById('pickerItemCount');
     const subTextEl = document.getElementById('pickerSubText');
 
     if (titleEl) titleEl.textContent = titleText;
-    if (countEl) countEl.textContent = `${items.length} Items`;
+    if (counterPillEl) {
+      counterPillEl.textContent = pickerFilteredItems.length > 0 
+        ? `${pickerHeroIndex + 1} / ${pickerFilteredItems.length}`
+        : '0 / 0';
+    }
+    if (countEl) countEl.textContent = `${pickerFilteredItems.length} Available`;
     if (subTextEl) {
       if (pickerFilterMode === 'clean') subTextEl.textContent = 'Clean only';
       else if (pickerFilterMode === 'favorites') subTextEl.textContent = 'Favorites';
-      else subTextEl.textContent = 'Browse styles';
+      else subTextEl.textContent = 'Swipe to browse & fit';
     }
 
-    const track = document.getElementById('pickerScrollTrack');
-    if (track) {
-      if (items.length === 0) {
-        track.innerHTML = `
-          <div style="padding: 24px 18px; text-align: center; color: var(--text-muted); font-size: 11px; width: 100%;">
-            No ${titleText.toLowerCase()} found in your collection.
+    const heroCardMount = document.getElementById('pickerHeroCard');
+    if (heroCardMount) {
+      if (pickerFilteredItems.length === 0) {
+        heroCardMount.innerHTML = `
+          <div style="padding: 16px 12px; text-align: center; color: var(--text-muted); font-size: 11px; width: 100%;">
+            No ${titleText.toLowerCase()} found in wardrobe.
           </div>
         `;
       } else {
-        track.innerHTML = items.map(item => {
-          const photo = item.photoFront || item.photo || 'assets/placeholder_outfit.jpg';
-          const isEquipped = (state.activeLook && (
-            (categoryKey === 'tops' && state.activeLook.top === item.name) ||
-            (categoryKey === 'bottoms' && state.activeLook.bottom === item.name) ||
-            (categoryKey === 'shoes' && state.activeLook.shoes === item.name)
-          ));
+        const item = pickerFilteredItems[pickerHeroIndex];
+        const photo = item.photoFront || item.photo || 'assets/placeholder_outfit.jpg';
+        const isEquipped = (state.activeLook && (
+          (categoryKey === 'tops' && state.activeLook.top === item.name) ||
+          (categoryKey === 'bottoms' && state.activeLook.bottom === item.name) ||
+          (categoryKey === 'shoes' && state.activeLook.shoes === item.name)
+        ));
 
-          return `
-            <div class="picker-garment-card ${isEquipped ? 'is-active' : ''}" 
-                 id="pickerGarmentCard_${item.id}"
-                 onclick="app.selectQuickPickerGarment('${item.id}')"
-                 role="button"
-                 tabindex="0"
-                 aria-label="Equip ${item.name}">
-              <div class="picker-card-inner">
-                <div class="picker-card-img-wrap">
-                  <img src="${photo}" alt="${item.name}" class="picker-card-img" loading="lazy">
-                </div>
-                <div class="picker-card-divider"></div>
-                <div class="picker-card-title">${item.name}</div>
+        heroCardMount.innerHTML = `
+          <div class="hero-card-inner ${isEquipped ? 'is-active' : ''}">
+            <div class="hero-card-thumb-frame">
+              <img src="${photo}" alt="${item.name}" class="hero-card-img" loading="eager">
+            </div>
+            <div class="hero-card-body">
+              <div class="hero-card-header-badge">${titleText.toUpperCase()} • ${item.subCategory || 'STYLE'}</div>
+              <div class="hero-card-title">${item.name}</div>
+              <div class="hero-card-sub">${item.condition === 'clean' ? '✨ Ready to wear' : 'In Wardrobe'}</div>
+              <div class="hero-card-pill ${isEquipped ? 'is-equipped' : ''}">
+                ${isEquipped ? '✓ Worn on Mannequin' : 'Tap to Wear'}
               </div>
             </div>
-          `;
-        }).join('');
-      }
-
-      // Re-attach scroll listener to update pagination dots dynamically
-      if (!pickerScrollListenerAttached) {
-        track.addEventListener('scroll', updatePickerPagination, { passive: true });
-        pickerScrollListenerAttached = true;
+          </div>
+        `;
       }
     }
 
-    updatePickerPagination();
+    // Attach touch swiping on the hero stage (one by one swipe)
+    const heroStage = document.getElementById('pickerHeroStage');
+    if (heroStage && !pickerTouchEventsAttached) {
+      heroStage.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches[0]) {
+          pickerTouchStartX = e.touches[0].clientX;
+          pickerTouchStartY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      heroStage.addEventListener('touchend', (e) => {
+        if (e.changedTouches && e.changedTouches[0]) {
+          const diffX = e.changedTouches[0].clientX - pickerTouchStartX;
+          const diffY = e.changedTouches[0].clientY - pickerTouchStartY;
+          if (Math.abs(diffX) > 30 && Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX < 0) {
+              pickerGoNext();
+            } else {
+              pickerGoPrev();
+            }
+          }
+        }
+      }, { passive: true });
+
+      pickerTouchEventsAttached = true;
+    }
+
+    updatePickerPaginationDots();
   }
 
-  function updatePickerPagination() {
-    const track = document.getElementById('pickerScrollTrack');
+  function updatePickerPaginationDots() {
     const dotsWrap = document.getElementById('pickerDotsIndicator');
-    if (!track || !dotsWrap) return;
+    if (!dotsWrap) return;
 
-    const cards = track.querySelectorAll('.picker-garment-card');
-    const totalCards = cards.length;
-    if (totalCards === 0) {
+    const total = pickerFilteredItems.length;
+    if (total === 0) {
       dotsWrap.innerHTML = '';
       return;
     }
 
-    const dotCount = Math.max(3, Math.min(5, totalCards));
-    const maxScroll = track.scrollWidth - track.clientWidth;
-    let activeIdx = 0;
-    if (maxScroll > 10) {
-      const progress = track.scrollLeft / maxScroll;
-      activeIdx = Math.min(dotCount - 1, Math.max(0, Math.round(progress * (dotCount - 1))));
+    const dotCount = Math.min(total, 6);
+    let activeDotIdx = 0;
+    if (total > 1) {
+      activeDotIdx = Math.min(dotCount - 1, Math.floor((pickerHeroIndex / total) * dotCount));
     }
 
     let dotsHtml = '';
     for (let i = 0; i < dotCount; i++) {
-      dotsHtml += `<span class="p-dot ${i === activeIdx ? 'active' : ''}"></span>`;
+      dotsHtml += `<span class="p-dot ${i === activeDotIdx ? 'active' : ''}"></span>`;
     }
     dotsWrap.innerHTML = dotsHtml;
   }
 
-  function pickerScrollPrev() {
-    const track = document.getElementById('pickerScrollTrack');
-    if (track) {
-      track.scrollBy({ left: -114, behavior: 'smooth' });
+  function pickerGoNext() {
+    if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
+    pickerHeroIndex = (pickerHeroIndex + 1) % pickerFilteredItems.length;
+    renderQuickPickerContent();
+    autoEquipCurrentHeroGarment();
+  }
+
+  function pickerGoPrev() {
+    if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
+    pickerHeroIndex = (pickerHeroIndex - 1 + pickerFilteredItems.length) % pickerFilteredItems.length;
+    renderQuickPickerContent();
+    autoEquipCurrentHeroGarment();
+  }
+
+  function autoEquipCurrentHeroGarment() {
+    if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
+    const item = pickerFilteredItems[pickerHeroIndex];
+    if (item) {
+      wardrobeEquipToMannequin(item);
     }
   }
 
-  function pickerScrollNext() {
-    const track = document.getElementById('pickerScrollTrack');
-    if (track) {
-      track.scrollBy({ left: 114, behavior: 'smooth' });
+  function toggleWearCurrentHeroItem() {
+    if (!pickerFilteredItems || pickerFilteredItems.length === 0) return;
+    const item = pickerFilteredItems[pickerHeroIndex];
+    if (item) {
+      wardrobeEquipToMannequin(item);
+      renderQuickPickerContent();
+    }
+  }
+
+  // Compatibility aliases
+  function pickerScrollNext() { pickerGoNext(); }
+  function pickerScrollPrev() { pickerGoPrev(); }
+  function selectQuickPickerGarment(itemId) {
+    const idx = pickerFilteredItems.findIndex(i => i.id === itemId);
+    if (idx !== -1) {
+      pickerHeroIndex = idx;
+      renderQuickPickerContent();
+      autoEquipCurrentHeroGarment();
     }
   }
 
@@ -2014,6 +2078,7 @@
     pickerFilterMode = modes[nextIdx];
     const labels = { all: 'All items', clean: 'Clean garments only', favorites: 'Favorites only' };
     showToast(`Filtering: ${labels[pickerFilterMode]}`);
+    pickerHeroIndex = 0;
     renderQuickPickerContent();
   }
 
@@ -2027,6 +2092,7 @@
       } else if (inp) {
         inp.value = '';
         pickerSearchQuery = '';
+        pickerHeroIndex = 0;
         renderQuickPickerContent();
       }
     }
@@ -2034,6 +2100,7 @@
 
   function filterPickerItems(query) {
     pickerSearchQuery = query || '';
+    pickerHeroIndex = 0;
     renderQuickPickerContent();
   }
 
@@ -2042,6 +2109,22 @@
     if (!card) return;
 
     pickerCurrentZone = getZoneCategoryKey(zone);
+
+    // Frame the full mannequin from head to toe (face, tops, bottoms, shoes) above the card
+    const studio = window.Studio3D || window.studio3d;
+    if (studio && typeof studio.setCameraState === 'function') {
+      studio.setCameraState('MANNEQUIN_FULL_BODY_FIT');
+    }
+
+    // Default to the currently equipped item if one matches
+    const items = getZoneItems(pickerCurrentZone);
+    const eqIdx = items.findIndex(it => state.activeLook && (
+      (pickerCurrentZone === 'tops' && state.activeLook.top === it.name) ||
+      (pickerCurrentZone === 'bottoms' && state.activeLook.bottom === it.name) ||
+      (pickerCurrentZone === 'shoes' && state.activeLook.shoes === it.name)
+    ));
+    pickerHeroIndex = eqIdx !== -1 ? eqIdx : 0;
+
     renderQuickPickerContent();
 
     card.classList.remove('hidden');
@@ -2054,37 +2137,17 @@
     }
   }
 
-  function selectQuickPickerGarment(itemId) {
-    const userWardrobe = Array.isArray(state.wardrobe) ? state.wardrobe : [];
-    const pool = [...userWardrobe, ...WARDROBE_ITEMS];
-    const item = pool.find(i => i.id === itemId);
-    if (!item) return;
-
-    // Equip directly onto the 3D mannequin model
-    wardrobeEquipToMannequin(item);
-
-    // Update active highlight across cards (warm golden border from user reference)
-    document.querySelectorAll('.picker-garment-card').forEach(c => {
-      c.classList.remove('is-active');
-    });
-    const selectedCard = document.getElementById(`pickerGarmentCard_${itemId}`);
-    if (selectedCard) {
-      selectedCard.classList.add('is-active');
-      selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-
-    const sparkles = document.getElementById('serenSparkles');
-    if (sparkles) {
-      sparkles.classList.add('active');
-      setTimeout(() => sparkles.classList.remove('active'), 1200);
-    }
-  }
-
   function closeMannequinQuickPicker() {
     const card = document.getElementById('mannequinQuickPickerCard');
     if (card) {
       card.classList.remove('visible');
       setTimeout(() => card.classList.add('hidden'), 220);
+    }
+
+    // Smoothly restore overview camera framing
+    const studio = window.Studio3D || window.studio3d;
+    if (studio && typeof studio.setCameraState === 'function') {
+      studio.setCameraState('STUDIO_OVERVIEW');
     }
   }
 
@@ -8885,6 +8948,9 @@
     openBodyPartWardrobeCard,
     selectQuickPickerGarment,
     closeMannequinQuickPicker,
+    pickerGoNext,
+    pickerGoPrev,
+    toggleWearCurrentHeroItem,
     pickerScrollPrev,
     pickerScrollNext,
     togglePickerFilter,

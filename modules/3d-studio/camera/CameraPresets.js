@@ -45,6 +45,13 @@ export const CAMERA_PRESETS = {
     target: { x: 1.60, y: 1.20, z: -3.30 },
     fovLandscape: 38,
     fovPortrait: 46
+  },
+  MANNEQUIN_FULL_BODY_FIT: {
+    name: 'MANNEQUIN_FULL_BODY_FIT',
+    position: { x: -0.05, y: 1.40, z: 5.15 },
+    target: { x: -0.05, y: 0.70, z: -0.15 },
+    fovLandscape: 38,
+    fovPortrait: 50
   }
 };
 

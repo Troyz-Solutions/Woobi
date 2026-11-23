@@ -19,6 +19,7 @@ body.welcome-intro #desktopEditorialFrame { display: none !important; }
     radial-gradient(ellipse at 50% -10%, #ffffffcc, transparent 60%),
     #faf9f6;
   font-family: Georgia, serif;
+  z-index: 9999999;
 }
 .app-welcome::backdrop { background: transparent; }
 .welcome-stage {
@@ -38,7 +39,10 @@ body.welcome-intro #desktopEditorialFrame { display: none !important; }
 }
 .welcome-arch {
   position: absolute;
-  inset: 12% 12% 25%;
+  inset: 10% auto 22%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(540px, 86vw);
   border: 1.5px solid #b4a58b99;
   border-bottom: 0;
   border-radius: 50% 50% 0 0;
@@ -56,7 +60,10 @@ body.welcome-intro #desktopEditorialFrame { display: none !important; }
 }
 .welcome-header {
   position: absolute;
-  inset: max(28px, env(safe-area-inset-top)) 28px auto;
+  top: max(28px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1100px, calc(100% - 56px));
   display: flex;
   justify-content: space-between;
   align-items: start;
@@ -75,9 +82,10 @@ body.welcome-intro #desktopEditorialFrame { display: none !important; }
 }
 .welcome-copy {
   position: absolute;
-  top: 22%;
-  left: 0;
-  right: 0;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, 92vw);
   z-index: 2;
   padding: 0 20px;
   text-align: center;
@@ -123,8 +131,7 @@ body.welcome-intro #desktopEditorialFrame { display: none !important; }
   position: absolute;
   bottom: -2px;
   left: 50%;
-  width: 115%;
-  max-width: 640px;
+  width: min(640px, 100vw);
   height: 47%;
   transform: translateX(-50%);
   overflow: hidden;

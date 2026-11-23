@@ -59,35 +59,34 @@
 
   <!-- Woobi Core Shared Design Tokens -->
   <link rel="stylesheet" href="modules/core/shared-ui/tokens.css?v=20261114_light">
+  <link rel="stylesheet" href="modules/core/app/welcome/welcome.css?v=20261123_red_carpet">
   <link rel="stylesheet" href="styles.css?v=20261115_faceplate_hd2">
+  <script src="modules/core/app/welcome/welcome.js?v=20261123_red_carpet" defer></script>
 </head>
 
 <body>
 
-  <!-- Step 1: Woobi Mobile Intro Video -->
-  <div id="woobiMobileVideoIntro" class="woobi-mobile-video-intro" aria-hidden="true" style="display: flex;">
-    <video id="woobiIntroVideoPlayer" class="woobi-intro-video-player" playsinline webkit-playsinline muted preload="auto">
-      <source src="assets/woobi-intro-mobile.mp4" type="video/mp4">
-      <source src="modules/core/app/intro/media/woobi-intro-mobile.mp4" type="video/mp4">
-    </video>
-    <div class="video-intro-controls">
-      <button type="button" class="btn-video-skip" id="btnSkipIntroVideo" onclick="if(window.woobiAdvanceToCurtains)window.woobiAdvanceToCurtains()">
-        Skip <span aria-hidden="true">→</span>
+  <!-- Woobi Grand Red Carpet Intro & Enter Woobi Entrance -->
+  <div id="woobiRedCarpetIntro" class="app-welcome" aria-labelledby="app-welcome-title">
+    <div class="welcome-stage" aria-hidden="true"><span class="welcome-arch"></span></div>
+    <header class="welcome-header">
+      <div class="welcome-brand">woobi<span>YOUR STYLE, REMIXED.</span></div>
+    </header>
+    <div class="welcome-copy">
+      <span class="welcome-star" aria-hidden="true">✧</span>
+      <p class="welcome-eyebrow">A MOMENT, JUST FOR YOU</p>
+      <h1 id="app-welcome-title">Discover the art<br><em>of being you</em></h1>
+      <button class="welcome-skip" type="button" id="btnEnterWoobiIntro" autofocus>
+        Enter Woobi 
+        <span aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+            <path d="M5 12h14m-6-6 6 6-6 6"/>
+          </svg>
+        </span>
       </button>
     </div>
-  </div>
-
-  <!-- Step 2: Roni Shankar's Theatrical Velvet Curtain Intro -->
-  <div id="mobileCurtainIntro" class="mobile-curtain-intro" aria-hidden="true" style="display: none;">
-    <div class="curtain-stage">
-      <div class="curtain-drape curtain-left"></div>
-      <div class="curtain-drape curtain-right"></div>
-      <div class="curtain-brand-crest">
-        <span class="crest-star">✧</span>
-        <h1 class="crest-title">WOOBI</h1>
-        <span class="crest-sub">ATELIER STUDIO</span>
-      </div>
-      <div class="curtain-tap-hint">Tap to enter</div>
+    <div class="welcome-carpet" aria-hidden="true">
+      <canvas id="welcomeCarpetCanvas"></canvas>
     </div>
   </div>
 
@@ -5791,158 +5790,24 @@
     };
 
     // =========================================================================
-    // MOBILE INTRO SEQUENCE: Video -> Red Velvet Curtains -> Home / Login
-    // (Mobile Only - Runs Every Fresh Open of the Mobile App)
+    // THEATRICAL RED CARPET INTRO CONTROLLER: Enter Woobi Luxury Entrance
+    // (Active Across All Devices - Mobile, Tablet, and Desktop / PC)
     // =========================================================================
-    window.woobiAdvanceToCurtains = null;
+    window.woobiAdvanceToCurtains = function() {
+      if (typeof window.woobiShowRedCarpetIntro === 'function') {
+        window.woobiShowRedCarpetIntro();
+      }
+    };
 
-    (function initMobileAppIntroSequence() {
-      var urlParams = new URLSearchParams(window.location.search);
-      var forceIntro = urlParams.has('intro') ||
-                       urlParams.has('preview') ||
-                       urlParams.has('mobile') ||
-                       window.location.hash.indexOf('intro') !== -1;
-
-      var isMobile = (window.innerWidth < 1024) ||
-                     document.documentElement.classList.contains('is-native-app') ||
-                     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-                     forceIntro;
-
-      if (forceIntro) {
-        document.documentElement.classList.add('force-mobile-intro');
+    (function initWoobiRedCarpetEntrance() {
+      // Pause 3D studio background rendering during intro to ensure 100% GPU to 60fps canvas unroll
+      if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
+        window.Studio3D.setRenderingPaused(true);
       }
 
-      var videoOverlay = document.getElementById('woobiMobileVideoIntro');
-      var curtainOverlay = document.getElementById('mobileCurtainIntro');
-      var videoPlayer = document.getElementById('woobiIntroVideoPlayer');
-
-      // Theatrical intro runs on EVERY fresh open across all devices (PC & Mobile)
-      document.documentElement.classList.add('force-mobile-intro');
-
-      var isReturningUser = false;
-      if (urlParams.get('user') === 'first' || urlParams.has('first') || urlParams.get('first_time') === '1') {
-        isReturningUser = false;
-      } else if (urlParams.get('user') === 'returning' || urlParams.has('returning') || urlParams.get('return') === '1') {
-        isReturningUser = true;
-      } else {
-        try {
-          isReturningUser = (localStorage.getItem('woobi_user_registered') === 'true' ||
-                             localStorage.getItem('woobi_onboarding_completed') === 'true');
-        } catch (e) {
-          isReturningUser = false;
-        }
-      }
-
-      // Step 2: Theatrical Red Velvet Curtain Reveal
-      var curtainsTriggered = false;
-      function showRedCurtains() {
-        if (curtainsTriggered) return;
-        curtainsTriggered = true;
-
-        // Ensure video is cleanly paused, unloaded and hidden to save 100% GPU memory
-        if (videoPlayer) {
-          try {
-            videoPlayer.pause();
-            videoPlayer.removeAttribute('src');
-            videoPlayer.load();
-          } catch (e) {}
-        }
-        if (videoOverlay) {
-          videoOverlay.style.display = 'none';
-        }
-
-        if (!curtainOverlay) {
-          routeTargetScreen();
-          return;
-        }
-
-        // Display curtains in closed state
-        curtainOverlay.style.display = 'flex';
-        curtainOverlay.classList.remove('is-opening', 'curtain-dismissed');
-        curtainOverlay.classList.add('curtain-closed');
-
-        // Route to target screen behind the closed curtains
-        routeTargetScreen();
-
-        var curtainsOpened = false;
-        function openCurtains() {
-          if (curtainsOpened) return;
-          curtainsOpened = true;
-          curtainOverlay.classList.add('is-opening');
-
-          // Resume 3D studio rendering smoothly now that the app is opening
-          if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
-            window.Studio3D.setRenderingPaused(false);
-          }
-
-          // Smooth cinematic opening transition
-          setTimeout(function() {
-            curtainOverlay.classList.add('curtain-dismissed');
-            setTimeout(function() {
-              curtainOverlay.style.display = 'none';
-            }, 500);
-          }, 2400);
-        }
-
-        curtainOverlay.addEventListener('click', openCurtains);
-        curtainOverlay.addEventListener('touchstart', openCurtains, { passive: true });
-
-        // Auto-open curtains after a stately 1.2s hold on the golden crest
-        setTimeout(openCurtains, 1200);
-      }
-
-      function routeTargetScreen() {
-        if (typeof window.app !== 'undefined' && typeof window.app.goToScreen === 'function') {
-          if (isReturningUser) {
-            window.app.goToScreen('today');
-          } else {
-            window.app.goToScreen('signin');
-          }
-        }
-      }
-
-      window.woobiAdvanceToCurtains = showRedCurtains;
-
-      // Step 1: Play Woobi Intro Video with zero-latency hardware buffer
-      if (videoOverlay && videoPlayer) {
-        // Pause 3D rendering during intro video to give 100% GPU to video decode
-        if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
-          window.Studio3D.setRenderingPaused(true);
-        }
-
-        videoOverlay.style.display = 'flex';
-        videoPlayer.muted = true;
-        videoPlayer.playbackRate = 1.0;
-
-        function startVideoSafely() {
-          var playPromise = videoPlayer.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(function(err) {
-              console.warn('Video autoplay prevented, advancing to curtains:', err);
-              setTimeout(showRedCurtains, 400);
-            });
-          }
-        }
-
-        if (videoPlayer.readyState >= 2) {
-          startVideoSafely();
-        } else {
-          videoPlayer.addEventListener('canplay', function onCanPlay() {
-            videoPlayer.removeEventListener('canplay', onCanPlay);
-            startVideoSafely();
-          }, { once: true });
-        }
-
-        videoPlayer.onended = function() {
-          showRedCurtains();
-        };
-
-        // Safety fallback timer if video fails or hangs
-        setTimeout(function() {
-          if (!curtainsTriggered) showRedCurtains();
-        }, 4500);
-      } else {
-        showRedCurtains();
+      // If welcome script has loaded and exposed the intro function, invoke it
+      if (typeof window.woobiShowRedCarpetIntro === 'function') {
+        window.woobiShowRedCarpetIntro();
       }
     })();
   </script>

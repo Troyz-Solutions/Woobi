@@ -11,30 +11,40 @@
 
   function markWelcomeSeen() {
     // Storage may be unavailable in private browsing or a restricted WebView.
-    try { localStorage.setItem(welcomeSeenKey, 'true'); }
+    try {
+      localStorage.setItem(welcomeSeenKey, 'true');
+      localStorage.setItem('woobi_user_registered', 'true');
+      localStorage.setItem('woobi_onboarding_completed', 'true');
+    }
     catch { /* The welcome remains usable without persistent storage. */ }
   }
 
   function animateWelcome(welcome, onComplete) {
     const canvas = welcome.querySelector('.welcome-carpet canvas');
+    if (!canvas) {
+      onComplete();
+      return () => {};
+    }
     const context = canvas.getContext('2d');
     if (!context) {
       onComplete();
       return () => {};
     }
-    const buttonDelay = 1850;
+    const buttonDelay = 750;
     const buttonDuration = 550;
-    const carpetDelay = buttonDelay + buttonDuration + 150;
-    const carpetDuration = 2800;
+    const carpetDelay = 250;
+    const carpetDuration = 2200;
     const duration = carpetDelay + carpetDuration;
     const entrance = [
-      { selector: '.welcome-arch', delay: 0, duration: 1800, lift: 0, scale: .97 },
-      { selector: '.welcome-star', delay: 250, duration: 650, lift: 8, scale: .92 },
-      { selector: '.welcome-eyebrow', delay: 450, duration: 650, lift: 8 },
-      { selector: '.welcome-copy h1', delay: 650, duration: 850, lift: 16, scale: .97 },
+      { selector: '.welcome-arch', delay: 0, duration: 1200, lift: 0, scale: .97 },
+      { selector: '.welcome-star', delay: 150, duration: 650, lift: 8, scale: .92 },
+      { selector: '.welcome-eyebrow', delay: 300, duration: 650, lift: 8 },
+      { selector: '.welcome-copy h1', delay: 450, duration: 800, lift: 16, scale: .97 },
       { selector: '.welcome-skip', delay: buttonDelay, duration: buttonDuration, lift: 10, scale: .97 }
     ].map(({ selector, delay, duration: revealDuration, lift, scale = 1 }) => {
-      const animation = welcome.querySelector(selector).animate([
+      const el = welcome.querySelector(selector);
+      if (!el) return null;
+      const animation = el.animate([
         { opacity: 0, transform: `translateY(${lift}px) scale(${scale})` },
         { opacity: 1, transform: 'translateY(0) scale(1)' }
       ], { delay, duration: revealDuration, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'both' });
@@ -42,7 +52,7 @@
       animation.pause();
       animation.currentTime = 0;
       return animation;
-    });
+    }).filter(Boolean);
     let elapsed = reduced.matches ? duration : 0;
     let previousTime = null;
     let frame = 0;
@@ -55,7 +65,7 @@
       if (!width || !height) return;
       context.clearRect(0, 0, width, height);
       const progress = Math.max(0, Math.min((elapsed - carpetDelay) / carpetDuration, 1));
-      // Let the entry button finish appearing before any carpet is drawn.
+      // Let the entry elements begin appearing before carpet is drawn.
       if (progress === 0) return;
       const travel = .5 - Math.cos(progress * Math.PI) / 2;
       // The roll travels beyond the viewport, leaving the same flat carpet behind.
@@ -202,9 +212,11 @@
     revealDashboard();
     return;
   }
-  if (!standalone && !android && !matchMedia('(max-width: 700px)').matches) return;
-  // The standalone preview stays replayable; normal app loads are first-run only.
-  if (!standalone && hasSeenWelcome()) return;
+
+  // Skip welcome only if explicit skip flag is present
+  if (address.searchParams.get('skip_intro') === '1') {
+    return;
+  }
 
   let releaseEntrance;
   let entranceFinished = false;
@@ -218,95 +230,148 @@
       }, 0));
     };
   });
-  // This promise coordinates the overlay exit only; core app boot never waits for it.
   window.woobiWelcomeEntrance = entranceComplete;
-  document.body.classList.add('welcome-intro');
-  const welcome = document.createElement('dialog');
-  welcome.className = 'app-welcome';
-  welcome.setAttribute('aria-labelledby', 'app-welcome-title');
-  welcome.innerHTML = `
-    <div class="welcome-stage" aria-hidden="true"><span class="welcome-arch"></span></div>
-    <header class="welcome-header">
-      <div class="welcome-brand">woobi<span>YOUR STYLE, REMIXED.</span></div>
-    </header>
-    <div class="welcome-copy">
-      <span class="welcome-star" aria-hidden="true">✧</span>
-      <p class="welcome-eyebrow">A MOMENT, JUST FOR YOU</p>
-      <h1 id="app-welcome-title">Discover the art<br><em>of being you</em></h1>
-      <button class="welcome-skip" type="button" autofocus>Enter Woobi <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></button>
-    </div>
-    <div class="welcome-carpet" aria-hidden="true"><canvas></canvas></div>`;
-  document.body.append(welcome);
-  let entering = false;
-  const finish = () => {
-    stopEntrance();
-    document.body.classList.remove('welcome-intro');
-    welcome.close();
-    welcome.remove();
-    markWelcomeSeen();
-    if (standalone) {
-      location.replace(location.protocol === 'file:' ? '../index.html?welcome=entered' : '/?welcome=entered');
-      return;
+
+  function initRedCarpet() {
+    // Pause 3D background rendering during intro to ensure silky smooth 60fps canvas animation
+    if (window.Studio3D && typeof window.Studio3D.setRenderingPaused === 'function') {
+      window.Studio3D.setRenderingPaused(true);
     }
-    const dashboard = document.querySelector('.app-viewport');
-    if (dashboard) {
-      dashboard.setAttribute('tabindex', '-1');
-      dashboard.focus({ preventScroll: true });
+
+    document.body.classList.add('welcome-intro');
+
+    // Use existing DOM container or create one
+    let welcome = document.getElementById('woobiRedCarpetIntro') || document.querySelector('.app-welcome');
+    if (!welcome) {
+      welcome = document.createElement('div');
+      welcome.id = 'woobiRedCarpetIntro';
+      welcome.className = 'app-welcome';
+      welcome.setAttribute('aria-labelledby', 'app-welcome-title');
+      welcome.innerHTML = `
+        <div class="welcome-stage" aria-hidden="true"><span class="welcome-arch"></span></div>
+        <header class="welcome-header">
+          <div class="welcome-brand">woobi<span>YOUR STYLE, REMIXED.</span></div>
+        </header>
+        <div class="welcome-copy">
+          <span class="welcome-star" aria-hidden="true">✧</span>
+          <p class="welcome-eyebrow">A MOMENT, JUST FOR YOU</p>
+          <h1 id="app-welcome-title">Discover the art<br><em>of being you</em></h1>
+          <button class="welcome-skip" type="button" autofocus>Enter Woobi <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span></button>
+        </div>
+        <div class="welcome-carpet" aria-hidden="true"><canvas></canvas></div>`;
+      document.body.append(welcome);
+    } else {
+      welcome.style.display = 'block';
+      welcome.style.opacity = '1';
+      welcome.style.pointerEvents = 'auto';
     }
-  };
-  welcome.querySelector('button').addEventListener('click', async () => {
-    if (entering) return;
-    entering = true;
-    const enterButton = welcome.querySelector('button');
-    enterButton.disabled = true;
-    if (!standalone) {
-      enterButton.setAttribute('aria-busy', 'true');
-      enterButton.firstChild.textContent = 'Opening Woobi ';
-      await entranceComplete;
-      await window.app?.prepareVirtualStudio?.();
-      enterButton.removeAttribute('aria-busy');
-    }
-    if (!standalone) revealDashboard();
-    if (reduced.matches || standalone) {
-      finish();
-      return;
-    }
-    const bounds = welcome.getBoundingClientRect();
-    const button = welcome.querySelector('button').getBoundingClientRect();
-    const centerX = button.left + button.width / 2 - bounds.left;
-    const centerY = button.top + button.height / 2 - bounds.top;
-    const radius = Math.hypot(
-      Math.max(centerX, bounds.width - centerX),
-      Math.max(centerY, bounds.height - centerY)
-    ) * 1.01;
-    // An expanding opening from the tapped button reveals the room underneath.
-    function aperture(size) {
-      const points = ['0px 0px', '100% 0px', '100% 100%', '0px 100%', '0px 0px'];
-      for (let step = 0; step <= 64; step++) {
-        const angle = step / 64 * Math.PI * 2;
-        points.push(`${centerX + Math.cos(angle) * size}px ${centerY + Math.sin(angle) * size}px`);
+
+    let entering = false;
+    const finish = () => {
+      stopEntrance();
+      document.body.classList.remove('welcome-intro');
+      welcome.style.opacity = '0';
+      welcome.style.pointerEvents = 'none';
+      setTimeout(() => {
+        welcome.style.display = 'none';
+      }, 350);
+      markWelcomeSeen();
+      if (standalone) {
+        location.replace(location.protocol === 'file:' ? '../index.html?welcome=entered' : '/?welcome=entered');
+        return;
       }
-      points.push('0px 0px');
-      return `polygon(evenodd, ${points.join(',')})`;
+      const dashboard = document.querySelector('.app-viewport');
+      if (dashboard) {
+        dashboard.setAttribute('tabindex', '-1');
+        dashboard.focus({ preventScroll: true });
+      }
+    };
+
+    const enterButton = welcome.querySelector('button');
+    if (enterButton) {
+      enterButton.addEventListener('click', async () => {
+        if (entering) return;
+        entering = true;
+        enterButton.disabled = true;
+        if (!standalone) {
+          enterButton.setAttribute('aria-busy', 'true');
+          enterButton.firstChild.textContent = 'Opening Woobi ';
+          await entranceComplete;
+          if (window.app?.prepareVirtualStudio) {
+            await window.app.prepareVirtualStudio();
+          }
+          enterButton.removeAttribute('aria-busy');
+        }
+        if (!standalone) revealDashboard();
+        if (reduced.matches || standalone) {
+          finish();
+          return;
+        }
+        const bounds = welcome.getBoundingClientRect();
+        const button = enterButton.getBoundingClientRect();
+        const centerX = button.left + button.width / 2 - bounds.left;
+        const centerY = button.top + button.height / 2 - bounds.top;
+        const radius = Math.hypot(
+          Math.max(centerX, bounds.width - centerX),
+          Math.max(centerY, bounds.height - centerY)
+        ) * 1.05;
+
+        // Expanding aperture opening from the tapped button reveals the studio room underneath
+        function aperture(size) {
+          const points = ['0px 0px', '100% 0px', '100% 100%', '0px 100%', '0px 0px'];
+          for (let step = 0; step <= 64; step++) {
+            const angle = step / 64 * Math.PI * 2;
+            points.push(`${centerX + Math.cos(angle) * size}px ${centerY + Math.sin(angle) * size}px`);
+          }
+          points.push('0px 0px');
+          return `polygon(evenodd, ${points.join(',')})`;
+        }
+        welcome.querySelectorAll('.welcome-header, .welcome-copy').forEach(element => {
+          element.animate([
+            { opacity: getComputedStyle(element).opacity },
+            { opacity: 0 }
+          ], { duration: 240, fill: 'forwards' });
+        });
+        try {
+          const departure = welcome.animate([
+            { clipPath: aperture(0) },
+            { clipPath: aperture(radius) }
+          ], { duration: 850, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+          departure.finished.then(finish, finish);
+        } catch (e) {
+          // Fallback smooth fade if polygon clipPath is unsupported
+          const fade = welcome.animate([
+            { opacity: 1 },
+            { opacity: 0 }
+          ], { duration: 500, easing: 'ease', fill: 'forwards' });
+          fade.finished.then(finish, finish);
+        }
+      });
     }
-    welcome.querySelectorAll('.welcome-header, .welcome-copy').forEach(element => {
-      element.animate([
-        { opacity: getComputedStyle(element).opacity },
-        { opacity: 0 }
-      ], { duration: 240, fill: 'forwards' });
+
+    // Keyboard support: Enter key triggers entry
+    window.addEventListener('keydown', function onIntroKey(e) {
+      if (!entering && (e.key === 'Enter' || e.key === ' ')) {
+        if (welcome && welcome.style.display !== 'none' && enterButton) {
+          window.removeEventListener('keydown', onIntroKey);
+          enterButton.click();
+        }
+      }
     });
-    const departure = welcome.animate([
-      { clipPath: aperture(0) },
-      { clipPath: aperture(radius) }
-    ], { duration: 850, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
-    departure.finished.then(finish, finish);
-  });
-  welcome.addEventListener('cancel', event => event.preventDefault());
-  welcome.showModal();
-  let stopEntrance = () => {};
-  try { stopEntrance = animateWelcome(welcome, releaseEntrance); }
-  catch {
-    // A decorative animation failure must not strand the entry button.
-    releaseEntrance();
+
+    let stopEntrance = () => {};
+    try { stopEntrance = animateWelcome(welcome, releaseEntrance); }
+    catch (e) {
+      releaseEntrance();
+    }
   }
+
+  // Auto-run if standalone or on initial page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initRedCarpet);
+  } else {
+    initRedCarpet();
+  }
+
+  window.woobiShowRedCarpetIntro = initRedCarpet;
 })();

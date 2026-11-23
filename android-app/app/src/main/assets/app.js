@@ -1946,13 +1946,13 @@
     const catIconEl = document.getElementById('pickerCatIcon');
     if (catIconEl) {
       if (categoryKey === 'tops') {
-        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>`;
+        catIconEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>`;
       } else if (categoryKey === 'bottoms') {
-        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l1 18H5L6 3z"/><path d="M12 9v12"/></svg>`;
+        catIconEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="3.5" width="13" height="17" rx="2.5"/><line x1="12" y1="8" x2="12" y2="20.5"/></svg>`;
       } else if (categoryKey === 'shoes') {
-        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 18h20v2H2z"/><path d="M4 18V8a2 2 0 0 1 2-2h3l4 6h7a2 2 0 0 1 2 2v4"/></svg>`;
+        catIconEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17.5h20v2H2z"/><path d="M4 17.5V9a2 2 0 0 1 2-2h3l4 5.5h7a2 2 0 0 1 2 2v3"/></svg>`;
       } else {
-        catIconEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+        catIconEl.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
       }
     }
 
@@ -1973,11 +1973,6 @@
       } else {
         stageMount.innerHTML = pickerFilteredItems.map((item, idx) => {
           const photo = item.photoFront || item.photo || 'assets/placeholder_outfit.jpg';
-          const isEquipped = (state.activeLook && (
-            (categoryKey === 'tops' && state.activeLook.top === item.name) ||
-            (categoryKey === 'bottoms' && state.activeLook.bottom === item.name) ||
-            (categoryKey === 'shoes' && state.activeLook.shoes === item.name)
-          ));
           const isSelected = (idx === pickerHeroIndex);
           return `
             <div class="picker-item-card ${isSelected ? 'is-active' : ''}" 
@@ -1986,7 +1981,6 @@
                  role="button" 
                  tabindex="0" 
                  title="${item.name}">
-              ${isEquipped ? '<span class="picker-item-equipped-badge" aria-label="Equipped">✓</span>' : ''}
               <div class="picker-item-thumb-box">
                 <img src="${photo}" alt="${item.name}" class="picker-item-img" loading="lazy">
               </div>

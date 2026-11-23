@@ -297,20 +297,17 @@
       // 3. High-Performance WebGL Renderer with Tone Mapping and Adaptive Shadows
       this.renderer = new THREE.WebGLRenderer({
         canvas: this.canvas,
-        antialias: !isMobileDevice,
+        antialias: true,
         alpha: false,
         stencil: false,
-        precision: isMobileDevice ? 'mediump' : 'highp',
+        precision: 'highp',
         powerPreference: 'high-performance'
       });
-      this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.25 : 2));
+      this.renderer.setSize(width, height, false);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = isMobileDevice ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
-      if (isMobileDevice) {
-        this.renderer.shadowMap.autoUpdate = false;
-        this.renderer.shadowMap.needsUpdate = true;
-      }
+      this.renderer.shadowMap.autoUpdate = true;
       if (THREE.ACESFilmicToneMapping) {
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 0.88; // Calibrated exposure preventing washed-out overly bright appearance and preserving rich contrast
@@ -4088,8 +4085,13 @@
     onResize() {
       if (!this.container || !this.renderer || !this.camera) return;
       const rect = this.container.getBoundingClientRect();
-      const width = rect.width || this.container.clientWidth || 390;
-      const height = rect.height || this.container.clientHeight || 750;
+      const width = Math.round(rect.width || this.container.clientWidth || 390);
+      const height = Math.round(rect.height || this.container.clientHeight || 750);
+
+      // Debounce negligible resize fluctuations on mobile to prevent WebGL backbuffer thrashing
+      if (this._lastWidth === width && this._lastHeight === height) return;
+      this._lastWidth = width;
+      this._lastHeight = height;
 
       if (this.cameraController && typeof this.cameraController.resize === 'function') {
         this.cameraController.resize(width, height);
@@ -4105,8 +4107,8 @@
         this.camera.updateProjectionMatrix();
       }
 
-      this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobileDevice ? 1.25 : 2));
+      this.renderer.setSize(width, height, false);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     }
 
     /**
@@ -4140,14 +4142,6 @@
         this.rotationVelocityY *= 0.92; // Natural rotational friction decay
       } else if (!this.isPointerDown) {
         this.rotationVelocityY = 0;
-      }
-
-      // On mobile devices, update shadows every other frame instead of every frame to save GPU draw calls
-      if (isMobileDevice && this.renderer.shadowMap && !this.renderer.shadowMap.autoUpdate) {
-        this._shadowFrameCount = (this._shadowFrameCount || 0) + 1;
-        if (this._shadowFrameCount % 2 === 0) {
-          this.renderer.shadowMap.needsUpdate = true;
-        }
       }
 
       // 1. Smooth Avatar Rotation Damping & Animations

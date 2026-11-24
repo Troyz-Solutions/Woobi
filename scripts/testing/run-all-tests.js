@@ -68,7 +68,10 @@ const testSuites = [
   { name: 'Engine Harmony: Compatibility & Style Matching', path: 'engine-harmony/tests/compatibility.test.js', isNodeTest: true },
   { name: 'Engine Harmony: Outfit Generation & Diversity', path: 'engine-harmony/tests/generator.test.js', isNodeTest: true },
   { name: 'Engine Harmony: Multi-Factor Scoring & Explanations', path: 'engine-harmony/tests/scoring.test.js', isNodeTest: true },
-  { name: 'Engine Harmony: End-to-End Orchestration', path: 'engine-harmony/tests/engine-harmony.test.js', isNodeTest: true }
+  { name: 'Engine Harmony: End-to-End Orchestration', path: 'engine-harmony/tests/engine-harmony.test.js', isNodeTest: true },
+
+  // 9. AI Digital Wardrobe Engine - Asynchronous SAM 2 & Scoring Heuristics
+  { name: 'AI Digital Wardrobe Engine (10 Tests)', path: 'modules/backend/wardrobe-ai/WardrobeAiEngine.test.js', isNodeTest: true }
 ];
 
 console.log('======================================================');

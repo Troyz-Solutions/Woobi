@@ -23,6 +23,13 @@ export const API_ROUTES = {
   WARDROBE_ITEMS: '/api/wardrobe/items',
   WARDROBE_ITEM_DETAIL: '/api/wardrobe/items/:id',
 
+  // AI Digital Wardrobe Engine (Asynchronous Job Processing & Extraction)
+  WARDROBE_AI_UPLOAD: '/api/wardrobe/upload',
+  WARDROBE_AI_PROCESS: '/api/wardrobe/process',
+  WARDROBE_AI_JOB: '/api/wardrobe/jobs/:id',
+  WARDROBE_AI_TRIALS: '/api/wardrobe/trials',
+  OUTFITS_GENERATE: '/api/outfits/generate',
+
   // Saved Looks & Outfits
   SAVED_LOOKS: '/api/looks',
   SAVED_LOOK_DETAIL: '/api/looks/:id',

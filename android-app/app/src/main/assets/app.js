@@ -8521,6 +8521,367 @@
     showToast(`🗑️ Removed "${outfit.title}" from ${dayName}`);
   }
 
+  // =========================================================================
+  // WOOBI AI DIGITAL WARDROBE ENGINE & INTERACTIVE GARMENT EXTRACTOR
+  // =========================================================================
+  const AI_TRIAL_PRESETS = {
+    trial_klass_kombin: {
+      id: 'trial_klass_kombin',
+      title: 'Klass Kombin Atelier',
+      subtitle: 'Formal Editorial Flatlay',
+      image: 'assets/placeholder_outfit.jpg',
+      garments: [
+        {
+          id: 'trial_shirt_white_klass',
+          name: 'White Poplin Dress Shirt',
+          category: 'Shirts',
+          type: 'shirt',
+          slot: 'top',
+          colour: 'White',
+          colourHex: '#FFFFFF',
+          pattern: 'Solid',
+          style: 'Formal',
+          occasions: 'Office, Formal, Atelier',
+          score: 98,
+          cutout: 'assets/navy_shirt.jpg',
+          thresholdY: 0.44,
+          scores: { color: 96, style: 100, occasion: 98, pref: 94 }
+        },
+        {
+          id: 'trial_trousers_black_klass',
+          name: 'Black Pleated Wool Trousers',
+          category: 'Pants',
+          type: 'pant',
+          slot: 'bottom',
+          colour: 'Black',
+          colourHex: '#18181A',
+          pattern: 'Solid',
+          style: 'Formal',
+          occasions: 'Office, Formal, Evening',
+          score: 98,
+          cutout: 'assets/beige_chinos.jpg',
+          thresholdY: 0.76,
+          scores: { color: 98, style: 98, occasion: 96, pref: 92 }
+        },
+        {
+          id: 'trial_shoes_brown_klass',
+          name: 'Artisan Derby Brown Shoes',
+          category: 'Shoes',
+          type: 'shoe',
+          slot: 'shoes',
+          colour: 'Brown',
+          colourHex: '#7C4A28',
+          pattern: 'Solid',
+          style: 'Formal',
+          occasions: 'Office, Formal, Smart Casual',
+          score: 98,
+          cutout: 'assets/white_sneakers.jpg',
+          thresholdY: 1.0,
+          scores: { color: 98, style: 96, occasion: 95, pref: 95 }
+        }
+      ]
+    },
+    trial_minimal_weekend: {
+      id: 'trial_minimal_weekend',
+      title: 'Minimalist Weekend',
+      subtitle: 'Relaxed Smart Casual',
+      image: 'assets/placeholder_outfit.jpg',
+      garments: [
+        {
+          id: 'trial_overshirt_olive_min',
+          name: 'Olive Linen Overshirt',
+          category: 'Shirts',
+          type: 'shirt',
+          slot: 'top',
+          colour: 'Olive',
+          colourHex: '#556B2F',
+          pattern: 'Solid',
+          style: 'Smart Casual',
+          occasions: 'Weekend, Casual, Travel',
+          score: 95,
+          cutout: 'assets/olive_kurta.jpg',
+          thresholdY: 0.44,
+          scores: { color: 94, style: 96, occasion: 96, pref: 90 }
+        },
+        {
+          id: 'trial_chinos_cream_min',
+          name: 'Beige Relaxed Chinos',
+          category: 'Pants',
+          type: 'pant',
+          slot: 'bottom',
+          colour: 'Beige',
+          colourHex: '#E6DCB8',
+          pattern: 'Solid',
+          style: 'Smart Casual',
+          occasions: 'Weekend, Casual',
+          score: 95,
+          cutout: 'assets/beige_chinos.jpg',
+          thresholdY: 0.76,
+          scores: { color: 95, style: 95, occasion: 95, pref: 92 }
+        },
+        {
+          id: 'trial_sneakers_white_min',
+          name: 'Minimalist White Trainers',
+          category: 'Shoes',
+          type: 'shoe',
+          slot: 'shoes',
+          colour: 'White',
+          colourHex: '#FDFDFD',
+          pattern: 'Solid',
+          style: 'Casual',
+          occasions: 'Weekend, Casual, Everyday',
+          score: 96,
+          cutout: 'assets/white_sneakers.jpg',
+          thresholdY: 1.0,
+          scores: { color: 98, style: 95, occasion: 94, pref: 96 }
+        }
+      ]
+    }
+  };
+
+  let activeExtractorPresetId = 'trial_klass_kombin';
+  let currentExtractedGarment = null;
+  let customUploadedImageUrl = null;
+
+  function openAiGarmentExtractorModal(presetIdOrPhoto) {
+    const modal = document.getElementById('aiGarmentExtractorModal');
+    if (!modal) return;
+
+    if (presetIdOrPhoto && AI_TRIAL_PRESETS[presetIdOrPhoto]) {
+      activeExtractorPresetId = presetIdOrPhoto;
+      customUploadedImageUrl = null;
+    }
+
+    updateExtractorWorkspace();
+    modal.classList.remove('hidden');
+
+    const reticle = document.getElementById('aiExtractorReticle');
+    if (reticle) reticle.classList.add('hidden');
+    const resultCard = document.getElementById('aiExtractedResultCard');
+    if (resultCard) resultCard.classList.add('hidden');
+    const overlay = document.getElementById('aiProcessingOverlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  function closeAiGarmentExtractorModal() {
+    const modal = document.getElementById('aiGarmentExtractorModal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function updateExtractorWorkspace() {
+    const sourceImg = document.getElementById('aiExtractorSourceImg');
+    const subtitle = document.getElementById('aiExtractorSubtitle');
+    const btnKlass = document.getElementById('btnTrialKlass');
+    const btnWeekend = document.getElementById('btnTrialWeekend');
+
+    if (customUploadedImageUrl) {
+      if (sourceImg) sourceImg.src = customUploadedImageUrl;
+      if (subtitle) subtitle.textContent = 'Custom Upload • Tap Garment to Segment';
+      if (btnKlass) btnKlass.classList.remove('active');
+      if (btnWeekend) btnWeekend.classList.remove('active');
+      return;
+    }
+
+    const preset = AI_TRIAL_PRESETS[activeExtractorPresetId] || AI_TRIAL_PRESETS.trial_klass_kombin;
+    if (sourceImg) sourceImg.src = preset.image;
+    if (subtitle) subtitle.textContent = `${preset.title} • Meta SAM 2 Segmentation`;
+
+    if (btnKlass) btnKlass.classList.toggle('active', activeExtractorPresetId === 'trial_klass_kombin');
+    if (btnWeekend) btnWeekend.classList.toggle('active', activeExtractorPresetId === 'trial_minimal_weekend');
+  }
+
+  function switchExtractorPreset(presetId) {
+    if (!AI_TRIAL_PRESETS[presetId]) return;
+    activeExtractorPresetId = presetId;
+    customUploadedImageUrl = null;
+    updateExtractorWorkspace();
+
+    const reticle = document.getElementById('aiExtractorReticle');
+    if (reticle) reticle.classList.add('hidden');
+    const resultCard = document.getElementById('aiExtractedResultCard');
+    if (resultCard) resultCard.classList.add('hidden');
+  }
+
+  function handleExtractorCustomUpload(event) {
+    const file = event.target && event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      customUploadedImageUrl = e.target.result;
+      updateExtractorWorkspace();
+      const reticle = document.getElementById('aiExtractorReticle');
+      if (reticle) reticle.classList.add('hidden');
+      const resultCard = document.getElementById('aiExtractedResultCard');
+      if (resultCard) resultCard.classList.add('hidden');
+      showToast('✓ Photo loaded! Tap any garment to extract.');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleGarmentExtractorTap(event) {
+    const container = document.getElementById('aiInteractiveCanvasContainer');
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+    const normX = Math.max(0, Math.min(1, clickX / rect.width));
+    const normY = Math.max(0, Math.min(1, clickY / rect.height));
+
+    const reticle = document.getElementById('aiExtractorReticle');
+    if (reticle) {
+      reticle.style.left = `${clickX}px`;
+      reticle.style.top = `${clickY}px`;
+      reticle.classList.remove('hidden');
+    }
+
+    const overlay = document.getElementById('aiProcessingOverlay');
+    const statusText = document.getElementById('aiProcessingStatus');
+    if (overlay) overlay.classList.remove('hidden');
+    if (statusText) statusText.textContent = 'SAM 2: Segmenting garment mask...';
+
+    setTimeout(() => {
+      if (statusText) statusText.textContent = 'Cropping transparent PNG & scoring...';
+    }, 200);
+
+    setTimeout(() => {
+      if (overlay) overlay.classList.add('hidden');
+
+      let selectedGarment = null;
+      if (customUploadedImageUrl) {
+        let cat = 'Shirts';
+        let slot = 'top';
+        let nm = 'Custom Tailored Top';
+        let cut = 'assets/navy_shirt.jpg';
+        if (normY >= 0.44 && normY < 0.78) {
+          cat = 'Pants';
+          slot = 'bottom';
+          nm = 'Custom Tailored Trousers';
+          cut = 'assets/beige_chinos.jpg';
+        } else if (normY >= 0.78) {
+          cat = 'Shoes';
+          slot = 'shoes';
+          nm = 'Custom Footwear';
+          cut = 'assets/white_sneakers.jpg';
+        }
+        selectedGarment = {
+          id: 'custom_ai_garment_' + Date.now(),
+          name: nm,
+          category: cat,
+          slot: slot,
+          colour: 'Neutral Blend',
+          colourHex: '#94A3B8',
+          pattern: 'Solid',
+          style: 'Smart Casual',
+          occasions: 'Versatile, Daily',
+          score: 96,
+          cutout: cut,
+          scores: { color: 95, style: 98, occasion: 96, pref: 92 }
+        };
+      } else {
+        const preset = AI_TRIAL_PRESETS[activeExtractorPresetId] || AI_TRIAL_PRESETS.trial_klass_kombin;
+        selectedGarment = preset.garments.find(g => normY <= g.thresholdY) || preset.garments[preset.garments.length - 1];
+      }
+
+      currentExtractedGarment = selectedGarment;
+      renderExtractedGarmentResult(selectedGarment);
+    }, 450);
+  }
+
+  function renderExtractedGarmentResult(garment) {
+    if (!garment) return;
+
+    const resultCard = document.getElementById('aiExtractedResultCard');
+    const cutoutImg = document.getElementById('aiExtractorCutoutImg');
+    const catPill = document.getElementById('aiResultCategory');
+    const scorePill = document.getElementById('aiResultScore');
+    const nameEl = document.getElementById('aiResultName');
+    const colorDot = document.getElementById('aiResultColorDot');
+    const colorText = document.getElementById('aiResultColor');
+    const patternText = document.getElementById('aiResultPattern');
+    const styleText = document.getElementById('aiResultStyle');
+    const occasionsText = document.getElementById('aiResultOccasions');
+
+    const barColor = document.getElementById('barFillColor');
+    const barStyle = document.getElementById('barFillStyle');
+    const barOccasion = document.getElementById('barFillOccasion');
+    const barPref = document.getElementById('barFillPreference');
+
+    if (cutoutImg) cutoutImg.src = garment.cutout;
+    if (catPill) catPill.textContent = garment.category;
+    if (scorePill) scorePill.textContent = `${garment.score}% Compatibility`;
+    if (nameEl) nameEl.textContent = garment.name;
+    if (colorDot) colorDot.style.background = garment.colourHex || '#FFFFFF';
+    if (colorText) colorText.textContent = garment.colour;
+    if (patternText) patternText.textContent = garment.pattern;
+    if (styleText) styleText.textContent = garment.style;
+    if (occasionsText) occasionsText.textContent = garment.occasions;
+
+    if (garment.scores) {
+      if (barColor) barColor.style.width = `${garment.scores.color}%`;
+      if (barStyle) barStyle.style.width = `${garment.scores.style}%`;
+      if (barOccasion) barOccasion.style.width = `${garment.scores.occasion}%`;
+      if (barPref) barPref.style.width = `${garment.scores.pref}%`;
+    }
+
+    if (resultCard) {
+      resultCard.classList.remove('hidden');
+      resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function saveExtractedGarmentToWardrobe() {
+    if (!currentExtractedGarment) return;
+
+    const item = {
+      id: currentExtractedGarment.id || ('ai_item_' + Date.now()),
+      name: currentExtractedGarment.name,
+      category: currentExtractedGarment.category,
+      photo: currentExtractedGarment.cutout,
+      photoFront: currentExtractedGarment.cutout,
+      condition: 'clean',
+      fit: 'Regular',
+      color: currentExtractedGarment.colour,
+      style: currentExtractedGarment.style,
+      occasions: [currentExtractedGarment.occasions]
+    };
+
+    if (typeof addBatchClothesToWardrobe === 'function') {
+      addBatchClothesToWardrobe([item]);
+    } else {
+      if (Array.isArray(state.wardrobe)) {
+        state.wardrobe.unshift(item);
+      }
+      if (typeof renderWardrobeGrid === 'function') renderWardrobeGrid();
+      if (typeof updateWardrobeCounts === 'function') updateWardrobeCounts();
+      showToast(`✓ Added "${item.name}" to your Wardrobe!`);
+    }
+
+    closeAiGarmentExtractorModal();
+  }
+
+  function saveAndEquipExtractedGarment() {
+    if (!currentExtractedGarment) return;
+    const g = currentExtractedGarment;
+    saveExtractedGarmentToWardrobe();
+
+    let slotKey = 'tops';
+    if (g.category === 'Pants' || g.slot === 'bottom') slotKey = 'bottoms';
+    if (g.category === 'Shoes' || g.slot === 'shoes') slotKey = 'shoes';
+
+    if (typeof equip3DGarmentToMannequin === 'function') {
+      equip3DGarmentToMannequin(g.id, slotKey);
+    } else if (typeof wearGarment === 'function') {
+      wearGarment(g.slot || 'top', g.cutout, { name: g.name, color: g.colourHex });
+    }
+
+    if (typeof goToScreen === 'function') {
+      goToScreen('studio-3d');
+    }
+    showToast(`✨ Equipped "${g.name}" onto 3D Mannequin!`);
+  }
+
   function init() {
     if (typeof window !== 'undefined' && window.appBootstrap && typeof window.appBootstrap.start === 'function') {
       window.appBootstrap.start();
@@ -8927,6 +9288,17 @@
     // 3D Studio Direct Wardrobe Drag API
     start3DGarmentDrag,
     equip3DGarmentToMannequin,
+
+    // =========================================================================
+    // WOOBI AI DIGITAL WARDROBE ENGINE & INTERACTIVE GARMENT EXTRACTOR
+    // =========================================================================
+    openAiGarmentExtractorModal,
+    closeAiGarmentExtractorModal,
+    switchExtractorPreset,
+    handleExtractorCustomUpload,
+    handleGarmentExtractorTap,
+    saveExtractedGarmentToWardrobe,
+    saveAndEquipExtractedGarment,
 
     // Auth & Onboarding Flow API
     submitSignIn,

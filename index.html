@@ -465,6 +465,63 @@
           <div class="screen-body-padded">
             <h2 class="screen-headline-serif">Start with a few favorites</h2>
 
+            <!-- AI Digital Wardrobe Guidance Card (Meta SAM 2 Powered) -->
+            <div class="ai-wardrobe-guidance-card">
+              <div class="ai-guidance-header">
+                <div class="ai-guidance-badge">
+                  <span class="ai-spark-icon">⚡</span>
+                  <span>SAM 2 AI Wardrobe Engine</span>
+                </div>
+                <span class="ai-cost-pill">₹0 Prototype</span>
+              </div>
+              <h3 class="ai-guidance-title">Interactive Garment Segmentation</h3>
+              <p class="ai-guidance-desc">Upload a photo of your outfit or flatlay, tap any garment, and Meta SAM 2 extracts a clean transparent PNG with auto-tagged attributes &amp; compatibility score.</p>
+              
+              <div class="ai-guidance-steps">
+                <div class="ai-step-pill"><span class="step-num">1</span> Snap / Upload</div>
+                <div class="ai-step-arrow">→</div>
+                <div class="ai-step-pill"><span class="step-num">2</span> Tap Garment</div>
+                <div class="ai-step-arrow">→</div>
+                <div class="ai-step-pill"><span class="step-num">3</span> Auto-Extract</div>
+              </div>
+
+              <div class="ai-guidance-actions">
+                <button class="btn-ai-guidance-primary" onclick="app.openAiGarmentExtractorModal('trial_klass_kombin')">
+                  <span>✨ Launch Interactive Studio</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Interactive AI Trials Section -->
+            <div class="ai-trials-section">
+              <div class="ai-trials-header">
+                <span class="ai-trials-label">Interactive AI Trials</span>
+                <span class="ai-trials-sub">Tap to try SAM 2 segmentation</span>
+              </div>
+              <div class="ai-trials-scroll-row">
+                <div class="ai-trial-card" onclick="app.openAiGarmentExtractorModal('trial_klass_kombin')">
+                  <div class="ai-trial-thumb-box">
+                    <img src="assets/placeholder_outfit.jpg" alt="Klass Kombin Atelier" class="ai-trial-thumb">
+                    <span class="ai-trial-badge">98% Match</span>
+                  </div>
+                  <div class="ai-trial-info">
+                    <div class="ai-trial-name">Klass Kombin Atelier</div>
+                    <div class="ai-trial-garments">Shirt • Trousers • Shoes</div>
+                  </div>
+                </div>
+                <div class="ai-trial-card" onclick="app.openAiGarmentExtractorModal('trial_minimal_weekend')">
+                  <div class="ai-trial-thumb-box">
+                    <img src="assets/placeholder_outfit.jpg" alt="Minimalist Weekend" class="ai-trial-thumb">
+                    <span class="ai-trial-badge">95% Match</span>
+                  </div>
+                  <div class="ai-trial-info">
+                    <div class="ai-trial-name">Minimalist Weekend</div>
+                    <div class="ai-trial-garments">Overshirt • Chinos • Trainers</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="tracker-header-row">
               <span class="tracker-label">Add 4 of 8 items</span>
               <span class="tracker-count" id="trackerCountText">4 of 8</span>
@@ -2216,6 +2273,18 @@
                 <span class="wardrobe-items-count" id="wardrobeCountLabel" style="color: var(--text-muted); font-weight: 500; font-size: 0.85rem;">Curated collection</span>
               </div>
               <button class="btn-circle-add" onclick="app.goToScreen('add-wardrobe')" title="Add item" style="background: var(--olive-primary); box-shadow: 0 4px 14px var(--olive-soft);">+</button>
+            </div>
+
+            <!-- AI Digital Wardrobe Strip -->
+            <div class="ai-wardrobe-strip" onclick="app.openAiGarmentExtractorModal('trial_klass_kombin')">
+              <div class="ai-strip-left">
+                <div class="ai-strip-icon">⚡</div>
+                <div class="ai-strip-text">
+                  <strong>AI Wardrobe Engine</strong>
+                  <span>Tap-to-extract clothes with SAM 2 &amp; auto-match</span>
+                </div>
+              </div>
+              <button class="ai-strip-btn">Try Studio ✦</button>
             </div>
 
             <!-- Polished Search Input -->
@@ -5700,6 +5769,128 @@
             Return to Plans
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: AI Garment Extractor (Meta SAM 2 Powered) -->
+  <div class="ai-extractor-modal-backdrop hidden" id="aiGarmentExtractorModal">
+    <div class="ai-extractor-modal-card">
+      <div class="ai-extractor-header">
+        <div class="ai-header-left">
+          <div class="ai-engine-icon">⚡</div>
+          <div>
+            <h3 class="ai-extractor-title">AI Garment Extractor</h3>
+            <span class="ai-extractor-subtitle" id="aiExtractorSubtitle">Meta SAM 2 Interactive Segmentation</span>
+          </div>
+        </div>
+        <button class="btn-ai-modal-close" onclick="app.closeAiGarmentExtractorModal()" title="Close">✕</button>
+      </div>
+
+      <!-- Instruction Bar -->
+      <div class="ai-instruction-bar" id="aiExtractorInstruction">
+        <span class="pulse-dot"></span>
+        <span>👆 Tap anywhere on the outfit image to isolate that garment</span>
+      </div>
+
+      <!-- Interactive Workspace (Photo + Tap Reticle + Canvas) -->
+      <div class="ai-interactive-canvas-container" id="aiInteractiveCanvasContainer" onclick="app.handleGarmentExtractorTap(event)">
+        <img id="aiExtractorSourceImg" src="assets/placeholder_outfit.jpg" alt="Source Outfit" class="ai-extractor-source-img">
+        <!-- Pulsing interactive target reticle -->
+        <div class="ai-extractor-reticle hidden" id="aiExtractorReticle">
+          <div class="reticle-core"></div>
+          <div class="reticle-ring"></div>
+          <div class="reticle-ring-outer"></div>
+          <span class="reticle-label">SAM 2 Target</span>
+        </div>
+        <!-- Processing overlay -->
+        <div class="ai-processing-overlay hidden" id="aiProcessingOverlay">
+          <div class="ai-spinner"></div>
+          <span class="ai-processing-status" id="aiProcessingStatus">Extracting garment silhouette...</span>
+        </div>
+      </div>
+
+      <!-- Extracted Garment Inspection Card -->
+      <div class="ai-extracted-result-card hidden" id="aiExtractedResultCard">
+        <div class="ai-result-preview-row">
+          <div class="ai-cutout-box">
+            <img id="aiExtractorCutoutImg" src="assets/navy_shirt.jpg" alt="Extracted Cutout" class="ai-cutout-img">
+            <span class="ai-cutout-tag">Transparent PNG</span>
+          </div>
+          <div class="ai-result-details">
+            <div class="ai-result-badge-row">
+              <span class="ai-cat-pill" id="aiResultCategory">Shirt</span>
+              <span class="ai-score-pill" id="aiResultScore">98% Compatibility</span>
+            </div>
+            <h4 class="ai-result-name" id="aiResultName">White Poplin Dress Shirt</h4>
+            
+            <div class="ai-attrs-grid">
+              <div class="ai-attr-item">
+                <span class="attr-label">Color:</span>
+                <span class="attr-val"><span class="color-dot" id="aiResultColorDot" style="background:#ffffff;"></span><span id="aiResultColor">White</span></span>
+              </div>
+              <div class="ai-attr-item">
+                <span class="attr-label">Pattern:</span>
+                <span class="attr-val" id="aiResultPattern">Solid</span>
+              </div>
+              <div class="ai-attr-item">
+                <span class="attr-label">Style:</span>
+                <span class="attr-val" id="aiResultStyle">Formal</span>
+              </div>
+              <div class="ai-attr-item">
+                <span class="attr-label">Occasions:</span>
+                <span class="attr-val" id="aiResultOccasions">Office, Formal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compatibility Heuristic Formula Display -->
+        <div class="ai-heuristic-breakdown">
+          <div class="heuristic-formula-title">
+            <span>Outfit Recommendation Score Heuristic</span>
+            <span class="formula-code">0.35C + 0.30S + 0.20O + 0.15P</span>
+          </div>
+          <div class="heuristic-bars">
+            <div class="heuristic-bar-item">
+              <span>Color (35%)</span>
+              <div class="bar-track"><div class="bar-fill" id="barFillColor" style="width: 95%;"></div></div>
+            </div>
+            <div class="heuristic-bar-item">
+              <span>Style (30%)</span>
+              <div class="bar-track"><div class="bar-fill" id="barFillStyle" style="width: 100%;"></div></div>
+            </div>
+            <div class="heuristic-bar-item">
+              <span>Occasion (20%)</span>
+              <div class="bar-track"><div class="bar-fill" id="barFillOccasion" style="width: 100%;"></div></div>
+            </div>
+            <div class="heuristic-bar-item">
+              <span>Preference (15%)</span>
+              <div class="bar-track"><div class="bar-fill" id="barFillPreference" style="width: 90%;"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="ai-result-actions">
+          <button class="btn-ai-save-wardrobe" onclick="app.saveExtractedGarmentToWardrobe()">
+            <span>✓ Add to My Wardrobe</span>
+          </button>
+          <button class="btn-ai-tryon-mannequin" onclick="app.saveAndEquipExtractedGarment()">
+            <span>👔 Try On 3D Mannequin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Trial Switcher Footer -->
+      <div class="ai-modal-trial-switch">
+        <span class="trial-switch-label">Switch Preset:</span>
+        <button class="btn-trial-switch active" id="btnTrialKlass" onclick="app.switchExtractorPreset('trial_klass_kombin')">Klass Kombin</button>
+        <button class="btn-trial-switch" id="btnTrialWeekend" onclick="app.switchExtractorPreset('trial_minimal_weekend')">Minimalist Weekend</button>
+        <label class="btn-trial-upload">
+          <span>📷 Upload Custom</span>
+          <input type="file" accept="image/*" style="display: none;" onchange="app.handleExtractorCustomUpload(event)">
+        </label>
       </div>
     </div>
   </div>

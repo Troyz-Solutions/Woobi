@@ -5,6 +5,7 @@
 
 import { API_ROUTES, HTTP_STATUS, ApiContract } from './ApiContract.js';
 import { createRecommendationEngine } from '../../3d-studio-features/outfit-recommendations/index.js';
+import { createWardrobeAiEngine } from '../wardrobe-ai/index.js';
 
 export class ApiController {
   constructor(router, { security, auth, database, storage }) {
@@ -14,6 +15,7 @@ export class ApiController {
     this.db = database;
     this.storage = storage;
     this.recommendationEngine = createRecommendationEngine();
+    this.wardrobeAi = createWardrobeAiEngine();
 
     this.setupMiddlewares();
     this.setupRoutes();
@@ -220,6 +222,93 @@ export class ApiController {
         return this.router.sendJson(res, HTTP_STATUS.NOT_FOUND, ApiContract.createErrorEnvelope('Item not found or unauthorized'));
       }
       return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope({ deleted: true, id: itemId }));
+    });
+
+    // ------------------------------------------------------------------------
+    // 4B. AI DIGITAL WARDROBE (ASYNC JOBS, TAP-SEGMENTATION & HEURISTICS)
+    // ------------------------------------------------------------------------
+    this.router.get(API_ROUTES.WARDROBE_AI_TRIALS, async (req, res) => {
+      return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope(this.wardrobeAi.trialPresets));
+    });
+
+    this.router.post(API_ROUTES.WARDROBE_AI_UPLOAD, async (req, res) => {
+      const authUser = this.requireAuth(req, res);
+      if (!authUser) return;
+
+      const body = req.body || {};
+      const { imageUrl = 'assets/placeholder_outfit.jpg', metadata = {} } = body;
+
+      const job = this.wardrobeAi.queue.createJob(authUser.userId, imageUrl, metadata);
+      return this.router.sendJson(res, HTTP_STATUS.CREATED, ApiContract.createSuccessEnvelope({
+        jobId: job.jobId,
+        status: job.status,
+        createdAt: job.createdAt
+      }));
+    });
+
+    this.router.post(API_ROUTES.WARDROBE_AI_PROCESS, async (req, res) => {
+      const authUser = this.requireAuth(req, res);
+      if (!authUser) return;
+
+      const body = req.body || {};
+      const { jobId, tapCoordinates, targetZone, imageUrl } = body;
+
+      let job = jobId ? this.wardrobeAi.queue.getJob(jobId) : null;
+      if (!job && imageUrl) {
+        job = this.wardrobeAi.queue.createJob(authUser.userId, imageUrl);
+      }
+
+      if (!job) {
+        return this.router.sendJson(res, HTTP_STATUS.NOT_FOUND, ApiContract.createErrorEnvelope('Processing job not found.'));
+      }
+
+      this.wardrobeAi.queue.updateJob(job.jobId, { status: 'processing' });
+
+      // Run Garment Segmentation Engine
+      const tapX = tapCoordinates?.x ?? 0.5;
+      const tapY = tapCoordinates?.y ?? 0.5;
+      const extracted = await this.wardrobeAi.segmentation.segmentGarment({
+        imageUrl: job.imageUrl,
+        tapX,
+        tapY,
+        targetZone
+      });
+
+      this.wardrobeAi.queue.completeJob(job.jobId, [extracted]);
+
+      return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope({
+        jobId: job.jobId,
+        status: 'completed',
+        extractedGarment: extracted
+      }));
+    });
+
+    this.router.get(API_ROUTES.WARDROBE_AI_JOB, async (req, res) => {
+      const authUser = this.requireAuth(req, res);
+      if (!authUser) return;
+
+      const jobId = req.params.id;
+      const job = this.wardrobeAi.queue.getJob(jobId);
+      if (!job || job.userId !== authUser.userId) {
+        return this.router.sendJson(res, HTTP_STATUS.NOT_FOUND, ApiContract.createErrorEnvelope('Job not found or access denied.'));
+      }
+
+      return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope(job));
+    });
+
+    this.router.post(API_ROUTES.OUTFITS_GENERATE, async (req, res) => {
+      const body = req.body || {};
+      const { top, bottom, shoes, occasion = 'office', preferenceScore = 80 } = body;
+
+      const result = this.wardrobeAi.recommendations.scoreOutfit({
+        top,
+        bottom,
+        shoes,
+        occasion,
+        preferenceScore
+      });
+
+      return this.router.sendJson(res, HTTP_STATUS.OK, ApiContract.createSuccessEnvelope(result));
     });
 
     // ------------------------------------------------------------------------

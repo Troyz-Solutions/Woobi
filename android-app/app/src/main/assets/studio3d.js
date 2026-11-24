@@ -4144,10 +4144,11 @@
         this.renderer.shadowMap.autoUpdate = (this._shadowFrameThrottle % 3 === 0);
       }
 
-      // 0. Smooth Mannequin Rotation Inertia (Tactile Physics Simulation)
-      if (Math.abs(this.rotationVelocityY || 0) > 0.0001 && !this.isPointerDown) {
+      // 0. Stabilized Mannequin Rotation (Zero Dizzy Spinning Drift)
+      if (Math.abs(this.rotationVelocityY || 0) > 0.0005 && !this.isPointerDown) {
         this.targetRotationY += this.rotationVelocityY;
-        this.rotationVelocityY *= 0.92; // Natural rotational friction decay
+        this.rotationVelocityY *= 0.45; // Fast clean deceleration without perpetual spinning
+        if (Math.abs(this.rotationVelocityY) < 0.0008) this.rotationVelocityY = 0;
       } else if (!this.isPointerDown) {
         this.rotationVelocityY = 0;
       }
@@ -4175,39 +4176,25 @@
           this.avatarRoot.rotation.y = this.avatarRotationY;
         }
 
-        // 2. Continuous Organic Respiration & Living Postural Micro-Sway (Living Mannequin Presence)
-        const breathSpeed = 1.365; // Relaxed respiration: ~13 breaths/min, 4.6s full cycle
-        const breath = Math.sin(time * 1.6) * 0.003;
-        const breathCycle = (time * breathSpeed) % (Math.PI * 2);
-        // Asymmetric respiration waveform (active inhalation, smooth passive elastic recoil)
-        const breathNormalized = Math.sin(breathCycle - Math.sin(breathCycle) * 0.28);
-
-        // Biomechanical postural sway angles (inverted pendulum from ankle pivot)
-        const swayZ = Math.sin(time * 0.95) * 0.016; // Coronal lateral weight shift between feet (6.6s cycle, ~0.92 deg)
-        const swayX = Math.sin(time * 1.365 + 0.45) * 0.011 + Math.sin(time * 2.73) * 0.0025; // Sagittal postural lean synchronized with deep breath (~0.77 deg)
-        const swayY = Math.cos(time * 0.74) * 0.012; // Natural idle presence yaw drift (8.5s cycle, ~0.69 deg)
+        // 2. Stable Atelier Mannequin Presence (Eliminates Dizzying Tilt/Swaying)
+        const breath = Math.sin(time * 1.4) * 0.0015;
+        const swayZ = 0;
+        const swayX = 0;
+        const swayY = 0;
 
         if (this.chestGroup) {
           this.chestGroup.position.y = 1.22 + breath;
-          this.chestGroup.scale.set(1.0 + breathNormalized * 0.015, 1.0, 1.0 + breathNormalized * 0.025);
         }
         if (this.headGroup) {
-          this.headGroup.position.y = 1.54 + breath * 0.6;
-          this.headGroup.rotation.z = swayZ * 0.50;
-          this.headGroup.rotation.x = swayX * 0.50;
+          this.headGroup.position.y = 1.54 + breath * 0.5;
+          this.headGroup.rotation.z = 0;
+          this.headGroup.rotation.x = 0;
         }
 
-        // Animate loaded GLTF human mannequin (Organic breathing & living postural slow movements)
+        // Animate loaded GLTF human mannequin: Rock-solid poised stance
         if (this.gltfAvatarGroup) {
-          // Thoracic breathing: Ribcage expansion and vertical elevation anchored at feet (y=0)
-          this.gltfAvatarGroup.scale.set(
-            1.0 + breathNormalized * 0.018, // 1.8% lateral ribcage expansion
-            1.0 + breathNormalized * 0.012, // 1.2% (~2.1cm) vertical thoracic rise and fall
-            1.0 + breathNormalized * 0.034  // 3.4% chest and bust forward expansion
-          );
-          // Natural living slow movements: graceful postural sway & weight shift from ankle/hip pivot
-          this.gltfAvatarGroup.rotation.x = swayX;
-          this.gltfAvatarGroup.rotation.z = swayZ;
+          this.gltfAvatarGroup.rotation.x = 0;
+          this.gltfAvatarGroup.rotation.z = 0;
         }
 
         // 3. Natural Periodic Eyelid Blinking
@@ -4265,17 +4252,18 @@
             lookAtTarget = this._tempLookAtTarget;
           }
         }
-        this.camera.position.lerp(effectivePos, 0.075);
-        this.currentCameraLookAt.lerp(lookAtTarget, 0.075);
+        // Fast, responsive camera tracking (Eliminates sluggish floating & motion blur)
+        this.camera.position.lerp(effectivePos, 0.28);
+        this.currentCameraLookAt.lerp(lookAtTarget, 0.28);
         this.camera.lookAt(this.currentCameraLookAt);
 
-        // 5. Update FOV with zoom damping
+        // 5. Update FOV with responsive damping
         const baseFov = isPortrait ?
           this.cameraStates[this.currentCameraState].fovPortrait :
           this.cameraStates[this.currentCameraState].fovLandscape;
         const effectiveZoom = this.currentCameraState === 'STUDIO_OVERVIEW' ? Math.min(1.0, this.cameraZoomFactor) : this.cameraZoomFactor;
         const targetFov = Math.max(this.minFov, Math.min(this.maxFov, baseFov * effectiveZoom));
-        this.camera.fov += (targetFov - this.camera.fov) * 0.1;
+        this.camera.fov += (targetFov - this.camera.fov) * 0.28;
         this.camera.updateProjectionMatrix();
       }
 

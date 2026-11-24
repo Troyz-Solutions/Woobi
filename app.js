@@ -1801,7 +1801,26 @@
       'Brown sandals': 'brown_sandals',
       'Leather watch': 'leather_watch'
     };
+    const colorMap = {
+      'Navy shirt': 0x243242,
+      'White linen shirt': 0xF5F2EB,
+      'Cream kurta': 0xEDE3D0,
+      'Maroon top': 0x6E1D2D,
+      'Tailored blazer': 0x2D2E33,
+      'Terracotta tee': 0xBF5B3D,
+      'Indigo kurti': 0x20355B,
+      'Beige chinos': 0xC2B299,
+      'Dark denim': 0x1C2738,
+      'Dark skirt': 0x1E1E22,
+      'Cream palazzo': 0xF0E9DC,
+      'White sneakers': 0xF8F8F8,
+      'Tan loafers': 0x8C5432,
+      'Black trainers': 0x222225,
+      'Brown sandals': 0x6E543C,
+      'Leather watch': 0x3A2618
+    };
     const garmentId = idMap[item.name] || item.id || 'navy_shirt';
+    const garmentColor = item.color !== undefined ? item.color : colorMap[item.name];
 
     if (window.WoobiTryOn && typeof window.WoobiTryOn.registerDynamicGarment === 'function') {
       window.WoobiTryOn.registerDynamicGarment({
@@ -1812,7 +1831,7 @@
         photoFront: item.photoFront || item.photo,
         photoBack: item.photoBack || null,
         hdColor: item.hdColor || null,
-        color: item.color
+        color: garmentColor
       });
     }
 
@@ -1820,6 +1839,9 @@
     if (state.currentScreen !== 'today') {
       goToScreen('today');
     }
+
+    const pickerCard = document.getElementById('mannequinQuickPickerCard');
+    const isPickerActive = pickerCard && pickerCard.classList.contains('visible');
 
     const studio = window.Studio3D || window.studio3d;
     if (studio && typeof studio.equipGarment === 'function') {
@@ -1832,10 +1854,10 @@
           photoFront: item.photoFront || item.photo,
           photoBack: item.photoBack || null,
           hdColor: item.hdColor || null,
-          color: item.color
+          color: garmentColor
         });
         if (typeof studio.setCameraState === 'function') {
-          studio.setCameraState('STUDIO_OVERVIEW');
+          studio.setCameraState(isPickerActive ? 'MANNEQUIN_FULL_BODY_FIT' : 'STUDIO_OVERVIEW');
         }
       } catch (err) {
         console.warn('Could not equip garment:', err);
@@ -1850,14 +1872,16 @@
 
     showToast(`✦ ${item.name} fitted on your studio mannequin! ♡`);
 
-    // Smoothly dismiss wardrobe sheet so the newly styled mannequin is immediately visible center-stage
-    setTimeout(function() {
-      serenToggleWardrobe(false);
-      const studio = window.Studio3D || window.studio3d;
-      if (studio && typeof studio.setCameraState === 'function') {
-        studio.setCameraState('STUDIO_OVERVIEW');
-      }
-    }, 350);
+    // In Free Fire Vault mode (picker card open), keep the drawer open and camera framed head-to-toe
+    if (!isPickerActive) {
+      setTimeout(function() {
+        serenToggleWardrobe(false);
+        const studio = window.Studio3D || window.studio3d;
+        if (studio && typeof studio.setCameraState === 'function') {
+          studio.setCameraState('STUDIO_OVERVIEW');
+        }
+      }, 350);
+    }
   }
 
   // =========================================================================

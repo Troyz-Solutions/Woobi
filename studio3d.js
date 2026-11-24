@@ -1919,7 +1919,13 @@
                     child.geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
                   }
 
-                  if (this.mirrorRenderTarget) {
+                  if (isMobileDevice) {
+                    child.material = new THREE.MeshStandardMaterial({
+                      color: 0xECE5DC,
+                      roughness: 0.12,
+                      metalness: 0.82
+                    });
+                  } else if (this.mirrorRenderTarget) {
                     child.material = new THREE.MeshBasicMaterial({
                       map: this.mirrorRenderTarget.texture,
                       toneMapped: false
@@ -3070,10 +3076,18 @@
         this.scene.add(this.mirrorCamera);
 
         if (this.mirrorGlassMesh) {
-          this.mirrorGlassMesh.material = new THREE.MeshBasicMaterial({
-            map: this.mirrorRenderTarget.texture,
-            toneMapped: false
-          });
+          if (isMobileDevice) {
+            this.mirrorGlassMesh.material = new THREE.MeshStandardMaterial({
+              color: 0xECE5DC,
+              roughness: 0.18,
+              metalness: 0.75
+            });
+          } else {
+            this.mirrorGlassMesh.material = new THREE.MeshBasicMaterial({
+              map: this.mirrorRenderTarget.texture,
+              toneMapped: false
+            });
+          }
         }
         if (this.lowerMirrorGlassMesh && this.mirrorGlassMesh) {
           this.lowerMirrorGlassMesh.material = this.mirrorGlassMesh.material;

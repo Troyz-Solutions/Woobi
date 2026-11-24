@@ -349,6 +349,32 @@ export class VirtualTryOn {
               }
             }
 
+            // Free Fire Vault PBR System:
+            // For standard catalogue items (chinos, denim, skirts, shirts, blazers, sneakers),
+            // apply pristine tailored fabric PBR materials directly to genuine mannequin meshes
+            const catalogRec = getGarmentRecord(garmentRecord.id) || garmentRecord;
+            const targetColor = (catalogRec && catalogRec.color !== undefined) ? catalogRec.color : (
+              (garmentRecord && garmentRecord.color !== undefined) ? garmentRecord.color : (
+                garmentRecord.hdColor?.hex ? parseInt(garmentRecord.hdColor.hex.replace('#', '0x'), 16) : null
+              )
+            );
+            const isUserCutout = garmentRecord.isUserUploaded || (photoFront && (photoFront.startsWith('data:') || photoFront.includes('blob:')));
+
+            if (!isUserCutout && targetColor !== null) {
+              mat.map = null;
+              if (typeof mat.color?.setHex === 'function') {
+                mat.color.setHex(targetColor);
+              } else if (typeof window !== 'undefined' && window.THREE) {
+                mat.color = new window.THREE.Color(targetColor);
+              }
+              mat.roughness = (catalogRec && catalogRec.roughness !== undefined) ? catalogRec.roughness : 0.65;
+              mat.metalness = (catalogRec && catalogRec.metalness !== undefined) ? catalogRec.metalness : 0.02;
+              mat.onBeforeCompile = () => {};
+              mat.customProgramCacheKey = () => 'woobi_vault_pbr_' + (catalogRec?.id || 'std');
+              mat.needsUpdate = true;
+              return;
+            }
+
             if (photoFront && typeof window !== 'undefined' && window.THREE && window.THREE.TextureLoader) {
               try {
                 const texLoader = new window.THREE.TextureLoader();

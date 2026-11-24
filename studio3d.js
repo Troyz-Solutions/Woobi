@@ -304,7 +304,8 @@
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(width, height, false);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const maxPr = isMobileDevice ? 1.25 : 2.0;
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPr));
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = isMobileDevice ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
       this.renderer.shadowMap.autoUpdate = true;
@@ -4108,7 +4109,8 @@
       }
 
       this.renderer.setSize(width, height, false);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const maxPr = isMobileDevice ? 1.25 : 2.0;
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPr));
     }
 
     /**
@@ -4135,6 +4137,12 @@
 
       const delta = this.clock.getDelta();
       const time = this.clock.getElapsedTime();
+
+      // Adaptive Mobile GPU Optimization: Throttle shadow recalculation to save fill-rate & battery
+      if (isMobileDevice && this.renderer.shadowMap) {
+        this._shadowFrameThrottle = (this._shadowFrameThrottle || 0) + 1;
+        this.renderer.shadowMap.autoUpdate = (this._shadowFrameThrottle % 3 === 0);
+      }
 
       // 0. Smooth Mannequin Rotation Inertia (Tactile Physics Simulation)
       if (Math.abs(this.rotationVelocityY || 0) > 0.0001 && !this.isPointerDown) {

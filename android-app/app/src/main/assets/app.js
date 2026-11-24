@@ -2003,30 +2003,19 @@
           stageMount.addEventListener('scroll', () => {
             if (scrollDebounce) clearTimeout(scrollDebounce);
             scrollDebounce = setTimeout(() => {
-              const containerRect = stageMount.getBoundingClientRect();
-              const centerX = containerRect.left + containerRect.width / 2;
-              const cards = stageMount.querySelectorAll('.picker-item-card');
-              let closestIdx = -1;
-              let minDistance = Infinity;
+              // High-performance calculation without getBoundingClientRect layout thrashing
+              const cardStride = 126; // 114px card width + 12px gap
+              const closestIdx = Math.max(0, Math.min(pickerFilteredItems.length - 1, Math.round(stageMount.scrollLeft / cardStride)));
 
-              cards.forEach((card) => {
-                const rect = card.getBoundingClientRect();
-                const cardCenter = rect.left + rect.width / 2;
-                const dist = Math.abs(cardCenter - centerX);
-                if (dist < minDistance) {
-                  minDistance = dist;
-                  closestIdx = parseInt(card.getAttribute('data-picker-index'), 10);
-                }
-              });
-
-              if (closestIdx !== -1 && closestIdx !== pickerHeroIndex && pickerFilteredItems[closestIdx]) {
+              if (closestIdx !== pickerHeroIndex && pickerFilteredItems[closestIdx]) {
                 pickerHeroIndex = closestIdx;
+                const cards = stageMount.querySelectorAll('.picker-item-card');
                 cards.forEach(c => c.classList.remove('is-active'));
                 const newActive = stageMount.querySelector(`[data-picker-index="${closestIdx}"]`);
                 if (newActive) newActive.classList.add('is-active');
                 autoEquipCurrentHeroGarment();
               }
-            }, 120);
+            }, 60);
           }, { passive: true });
           stageMount._scrollListenerAttached = true;
         }

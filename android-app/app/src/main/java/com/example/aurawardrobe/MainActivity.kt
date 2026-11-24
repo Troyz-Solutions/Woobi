@@ -109,18 +109,11 @@ class MainActivity : ComponentActivity() {
 
         // Enable Chrome remote debugging: open chrome://inspect in desktop Chrome
         WebView.setWebContentsDebuggingEnabled(true)
+        // Hardware acceleration enabled for silky-smooth WebView rendering
         window.setFlags(
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         )
-
-        // Request maximum display refresh rate (90Hz / 120Hz) for ultra-fluid 3D studio rendering
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            val maxMode = display?.supportedModes?.maxByOrNull { it.refreshRate }
-            if (maxMode != null) {
-                window.attributes.preferredDisplayModeId = maxMode.modeId
-            }
-        }
 
         val assetLoader = WebViewAssetLoader.Builder()
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))

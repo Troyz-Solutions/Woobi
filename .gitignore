@@ -70,3 +70,6 @@ scratch_*.ps1
 
 __pycache__/
 *.pyc
+
+.chrome_cdp_profile*
+

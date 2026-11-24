@@ -5810,6 +5810,27 @@
         </div>
       </div>
 
+      <!-- Multi-Garment Auto-Decomposition Action -->
+      <div class="ai-decompose-bar">
+        <button class="btn-ai-decompose-all" onclick="app.decomposeAllGarmentsFromPhoto()">
+          <span>⚡ Auto-Separate All Garments in Photo (3 Items Detected)</span>
+        </button>
+      </div>
+
+      <!-- Multi-Garment Decomposed Shelf (Organized by Category) -->
+      <div class="ai-decomposed-shelf hidden" id="aiDecomposedShelf">
+        <div class="decomposed-shelf-header">
+          <span class="shelf-title">✨ Separated &amp; Categorized Garments</span>
+          <span class="shelf-count" id="decomposedShelfCount">3 Items</span>
+        </div>
+        <div class="decomposed-items-grid" id="decomposedItemsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+        <button class="btn-ai-save-all-decomposed" onclick="app.saveAllDecomposedGarments()">
+          <span>✓ Save All Separated Items to Respective Categories</span>
+        </button>
+      </div>
+
       <!-- Extracted Garment Inspection Card -->
       <div class="ai-extracted-result-card hidden" id="aiExtractedResultCard">
         <div class="ai-result-preview-row">

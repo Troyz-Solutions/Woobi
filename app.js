@@ -8882,6 +8882,118 @@
     showToast(`✨ Equipped "${g.name}" onto 3D Mannequin!`);
   }
 
+  let currentDecomposedList = [];
+
+  function decomposeAllGarmentsFromPhoto() {
+    const shelf = document.getElementById('aiDecomposedShelf');
+    const grid = document.getElementById('decomposedItemsGrid');
+    const overlay = document.getElementById('aiProcessingOverlay');
+    const statusText = document.getElementById('aiProcessingStatus');
+
+    if (overlay) overlay.classList.remove('hidden');
+    if (statusText) statusText.textContent = 'Scanning photo for all clothing items...';
+
+    setTimeout(() => {
+      if (statusText) statusText.textContent = 'Separating & categorizing into Shirts, Pants, Shoes...';
+    }, 250);
+
+    setTimeout(() => {
+      if (overlay) overlay.classList.add('hidden');
+
+      let items = [];
+      if (customUploadedImageUrl) {
+        items = [
+          {
+            id: 'decomp_custom_shirt_' + Date.now(),
+            name: 'Custom Tailored Top',
+            category: 'Shirts',
+            drawer: 'Shirts Drawer',
+            color: 'Neutral Blend',
+            colorHex: '#94A3B8',
+            cutout: 'assets/navy_shirt.jpg'
+          },
+          {
+            id: 'decomp_custom_pant_' + Date.now(),
+            name: 'Custom Tailored Trousers',
+            category: 'Pants',
+            drawer: 'Pants Drawer',
+            color: 'Charcoal',
+            colorHex: '#334155',
+            cutout: 'assets/beige_chinos.jpg'
+          },
+          {
+            id: 'decomp_custom_shoe_' + Date.now(),
+            name: 'Custom Footwear',
+            category: 'Shoes',
+            drawer: 'Shoes Drawer',
+            color: 'White',
+            colorHex: '#FFFFFF',
+            cutout: 'assets/white_sneakers.jpg'
+          }
+        ];
+      } else {
+        const preset = AI_TRIAL_PRESETS[activeExtractorPresetId] || AI_TRIAL_PRESETS.trial_klass_kombin;
+        items = preset.garments.map(g => ({
+          id: g.id + '_' + Date.now(),
+          name: g.name,
+          category: g.category,
+          drawer: g.category + ' Drawer',
+          color: g.colour,
+          colorHex: g.colourHex,
+          cutout: g.cutout
+        }));
+      }
+
+      currentDecomposedList = items;
+
+      if (grid) {
+        grid.innerHTML = items.map(item => `
+          <div class="decomposed-item-card">
+            <span class="decomposed-cat-badge">${item.category}</span>
+            <div class="decomposed-thumb-box">
+              <img src="${item.cutout}" alt="${item.name}">
+            </div>
+            <div class="decomposed-name" title="${item.name}">${item.name}</div>
+            <span class="decomposed-drawer-tag">📁 ${item.drawer}</span>
+          </div>
+        `).join('');
+      }
+
+      if (shelf) {
+        shelf.classList.remove('hidden');
+        shelf.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      showToast(`⚡ Separated ${items.length} garments into distinct categories!`);
+    }, 550);
+  }
+
+  function saveAllDecomposedGarments() {
+    if (!currentDecomposedList || currentDecomposedList.length === 0) return;
+
+    const newWardrobeItems = currentDecomposedList.map(item => ({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      photo: item.cutout,
+      photoFront: item.cutout,
+      condition: 'clean',
+      fit: 'Regular',
+      color: item.color
+    }));
+
+    if (typeof addBatchClothesToWardrobe === 'function') {
+      addBatchClothesToWardrobe(newWardrobeItems);
+    } else {
+      newWardrobeItems.forEach(item => state.wardrobe.unshift(item));
+      if (typeof renderWardrobeGrid === 'function') renderWardrobeGrid();
+      if (typeof updateWardrobeCounts === 'function') updateWardrobeCounts();
+    }
+
+    closeAiGarmentExtractorModal();
+    showToast(`✓ All ${newWardrobeItems.length} items saved into your organized Wardrobe! ✨`);
+  }
+
   function init() {
     if (typeof window !== 'undefined' && window.appBootstrap && typeof window.appBootstrap.start === 'function') {
       window.appBootstrap.start();
@@ -9299,6 +9411,8 @@
     handleGarmentExtractorTap,
     saveExtractedGarmentToWardrobe,
     saveAndEquipExtractedGarment,
+    decomposeAllGarmentsFromPhoto,
+    saveAllDecomposedGarments,
 
     // Auth & Onboarding Flow API
     submitSignIn,

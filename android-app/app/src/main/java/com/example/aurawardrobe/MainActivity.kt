@@ -71,6 +71,13 @@ class MainActivity : ComponentActivity() {
                 activity.applyTheme(theme)
             }
         }
+
+        @JavascriptInterface
+        fun exitApp() {
+            activity.runOnUiThread {
+                activity.finishAffinity()
+            }
+        }
     }
 
     fun applyTheme(theme: String) {
@@ -267,28 +274,16 @@ class MainActivity : ComponentActivity() {
     override fun onBackPressed() {
         val wv = webView
         if (wv != null) {
-            val closeJs = """
+            val backJs = """
                 (function(){
-                  var d = document;
-                  var openChecks = [
-                    { sel: '.w-zoomed-card.active, #wZoomedCard.active', fn: function(){ if (window.closeWardrobeZoom) window.closeWardrobeZoom(); } },
-                    { sel: '.pw-zoomed-card.pw-zoomed-card--visible', fn: function(){ var b = d.querySelector('.pw-zoomed-close'); if (b) b.click(); } },
-                    { sel: '.pw-drawer:not(.pw-drawer--hidden)', fn: function(){ var b = d.querySelector('.pw-close-btn'); if (b) b.click(); } },
-                    { sel: '#mannequinDropdownMenu.open, #atmosphereDropdownMenu.open, #mannequinDropdownMenu.show, #atmosphereDropdownMenu.show', fn: function(){ if (window.app && app.toggleMannequinDropdown) app.toggleMannequinDropdown(false); if (window.app && app.toggleAtmosphereDropdown) app.toggleAtmosphereDropdown(false); } },
-                    { sel: '.seren-sheet-backdrop:not(.hidden)', fn: function(){ var s = d.querySelector('.seren-sheet-backdrop:not(.hidden)'); if (s && window.app && app.closeSerenSheets) app.closeSerenSheets(); else if (s) s.classList.add('hidden'); } },
-                    { sel: '.streak-modal-backdrop:not(.hidden), .sub-modal-backdrop:not(.hidden)', fn: function(){ var b = d.querySelector('.streak-modal-backdrop:not(.hidden) .streak-modal-close, .sub-modal-backdrop:not(.hidden) .sub-modal-close'); if (b) b.click(); } }
-                  ];
-                  for (var i = 0; i < openChecks.length; i++) {
-                    if (d.querySelector(openChecks[i].sel)) {
-                      openChecks[i].fn();
-                      return 'closed';
-                    }
+                  if (window.app && typeof window.app.handleHardwareBack === 'function') {
+                    return window.app.handleHardwareBack();
                   }
-                  return 'none';
+                  return 'unhandled';
                 })();
             """.trimIndent()
-            wv.evaluateJavascript(closeJs) { result ->
-                if (result != null && result.contains("closed")) {
+            wv.evaluateJavascript(backJs) { result ->
+                if (result != null && result.contains("handled")) {
                     return@evaluateJavascript
                 }
                 if (wv.canGoBack()) {

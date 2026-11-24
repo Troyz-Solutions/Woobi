@@ -21,13 +21,13 @@ export class AvatarAnimations {
     this.breathingSpeed = 1.365;
     this.breathingAmplitude = 0.0035;
 
-    // Natural Postural Slow Movements & Sway Dynamics (Living human stabilometry)
-    this.swaySpeedCoronal = 0.95; // Graceful lateral weight shift (6.6s cycle)
-    this.swayAmplitudeCoronal = 0.016; // ~0.92 degrees sway (~2.9cm at head)
-    this.swaySpeedSagittal = 1.365; // Forward/back respiratory posture lean (4.6s cycle)
-    this.swayAmplitudeSagittal = 0.011; // ~0.63 degrees lean (~2.0cm at head)
-    this.microYawSpeed = 0.74; // Natural idle presence drift (8.5s cycle)
-    this.microYawAmplitude = 0.012; // ~0.69 degrees turn
+    // Natural Postural Movements (Calm, stable, zero-dizziness presence)
+    this.swaySpeedCoronal = 0.5;
+    this.swayAmplitudeCoronal = 0.001; // Stable, zero dizziness
+    this.swaySpeedSagittal = 0.5;
+    this.swayAmplitudeSagittal = 0.001;
+    this.microYawSpeed = 0.4;
+    this.microYawAmplitude = 0.001;
 
     // Blinking Dynamics
     this.blinkTimer = 0;
@@ -58,7 +58,7 @@ export class AvatarAnimations {
 
   update(delta, time) {
     // 1. Instant & Smooth Mannequin Rotation Tracking (Snappy, zero input-lag tracking)
-    const lerpSpeed = 26.0;
+    const lerpSpeed = 32.0;
     const factor = 1.0 - Math.exp(-lerpSpeed * Math.min(delta || 0.016, 0.1));
     this.avatarRotationY += (this.targetRotationY - this.avatarRotationY) * factor;
     if (this.avatarRoot) {

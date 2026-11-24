@@ -370,7 +370,16 @@
     return el;
   }
 
+  const _navigationHistory = [];
+
   function goToScreen(screenId) {
+    if (state.currentScreen && state.currentScreen !== screenId && screenId !== 'welcome' && screenId !== 'signin') {
+      if (_navigationHistory.length === 0 || _navigationHistory[_navigationHistory.length - 1] !== state.currentScreen) {
+        _navigationHistory.push(state.currentScreen);
+        if (_navigationHistory.length > 20) _navigationHistory.shift();
+      }
+    }
+
     state.currentScreen = screenId;
     if (typeof window !== 'undefined' && window.navigationRouter) {
       window.navigationRouter.currentScreen = screenId;
@@ -9110,6 +9119,180 @@
     }
   }
 
+  // =========================================================================
+  // HARDWARE BACK BUTTON & TWO-WAY PHONE CALL EXIT SLIDER
+  // =========================================================================
+  let _callSliderPuckBound = false;
+
+  function showExitCallModal() {
+    const modal = document.getElementById('exitCallSliderModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+
+    const puck = document.getElementById('callSliderPuck');
+    if (puck) {
+      puck.style.transform = 'translate(-50%, -50%)';
+      puck.style.background = '#FFFFFF';
+    }
+
+    if (!_callSliderPuckBound) {
+      _callSliderPuckBound = true;
+      initCallSliderInteraction();
+    }
+  }
+
+  function dismissExitCallModal() {
+    const modal = document.getElementById('exitCallSliderModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    const puck = document.getElementById('callSliderPuck');
+    if (puck) {
+      puck.style.transform = 'translate(-50%, -50%)';
+      puck.style.background = '#FFFFFF';
+    }
+  }
+
+  function exitAppConfirmed() {
+    dismissExitCallModal();
+    if (typeof window !== 'undefined' && window.AndroidThemeBridge && typeof window.AndroidThemeBridge.exitApp === 'function') {
+      window.AndroidThemeBridge.exitApp();
+    } else if (typeof window !== 'undefined' && typeof window.close === 'function') {
+      window.close();
+    } else {
+      showToast('Exiting Woobi Atelier...');
+    }
+  }
+
+  function initCallSliderInteraction() {
+    const puck = document.getElementById('callSliderPuck');
+    const track = document.getElementById('callSliderTrack');
+    if (!puck || !track) return;
+
+    let isDragging = false;
+    let startX = 0;
+    let currentDeltaX = 0;
+    const threshold = 70; // px distance to trigger action
+
+    function onPointerDown(clientX) {
+      isDragging = true;
+      startX = clientX;
+      currentDeltaX = 0;
+      puck.classList.add('dragging');
+    }
+
+    function onPointerMove(clientX) {
+      if (!isDragging) return;
+      currentDeltaX = clientX - startX;
+      // Clamp between -95px and +95px
+      const clampedX = Math.max(-95, Math.min(95, currentDeltaX));
+      puck.style.transform = `translate(calc(-50% + ${clampedX}px), -50%)`;
+
+      // Visual feedback: green on right (attend), red on left (cut)
+      if (clampedX > 15) {
+        const ratio = Math.min(1, clampedX / threshold);
+        puck.style.background = `rgb(${Math.round(255 - ratio * 203)}, ${Math.round(255 - ratio * 56)}, ${Math.round(255 - ratio * 166)})`;
+      } else if (clampedX < -15) {
+        const ratio = Math.min(1, Math.abs(clampedX) / threshold);
+        puck.style.background = `rgb(255, ${Math.round(255 - ratio * 186)}, ${Math.round(255 - ratio * 197)})`;
+      } else {
+        puck.style.background = '#FFFFFF';
+      }
+    }
+
+    function onPointerUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      puck.classList.remove('dragging');
+
+      if (currentDeltaX >= threshold) {
+        // Swiped RIGHT -> Attend / Stay (No Exit)
+        dismissExitCallModal();
+        showToast('✓ Resumed in Woobi Studio');
+      } else if (currentDeltaX <= -threshold) {
+        // Swiped LEFT -> Cut / Decline (Yes Exit)
+        exitAppConfirmed();
+      } else {
+        // Snap back to center
+        puck.style.transform = 'translate(-50%, -50%)';
+        puck.style.background = '#FFFFFF';
+      }
+    }
+
+    // Touch events
+    puck.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) onPointerDown(e.touches[0].clientX);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches.length === 1) onPointerMove(e.touches[0].clientX);
+    }, { passive: true });
+
+    window.addEventListener('touchend', onPointerUp, { passive: true });
+    window.addEventListener('touchcancel', onPointerUp, { passive: true });
+
+    // Mouse events
+    puck.addEventListener('mousedown', (e) => {
+      onPointerDown(e.clientX);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) onPointerMove(e.clientX);
+    });
+
+    window.addEventListener('mouseup', onPointerUp);
+  }
+
+  function handleHardwareBack() {
+    const d = document;
+
+    // 1. If Exit Call Slider Modal is open, dismiss it
+    const exitModal = d.getElementById('exitCallSliderModal');
+    if (exitModal && !exitModal.classList.contains('hidden')) {
+      dismissExitCallModal();
+      return 'handled';
+    }
+
+    // 2. Dismiss any open modals, sheets, drawers, or cards
+    const dismissChecks = [
+      { sel: '.w-zoomed-card.active, #wZoomedCard.active', fn: () => { if (window.closeWardrobeZoom) window.closeWardrobeZoom(); } },
+      { sel: '.pw-zoomed-card.pw-zoomed-card--visible', fn: () => { const b = d.querySelector('.pw-zoomed-close'); if (b) b.click(); } },
+      { sel: '.pw-drawer:not(.pw-drawer--hidden)', fn: () => { const b = d.querySelector('.pw-close-btn'); if (b) b.click(); } },
+      { sel: '#mannequinDropdownMenu.open, #atmosphereDropdownMenu.open, #mannequinDropdownMenu.show, #atmosphereDropdownMenu.show', fn: () => { if (app.toggleMannequinDropdown) app.toggleMannequinDropdown(false); if (app.toggleAtmosphereDropdown) app.toggleAtmosphereDropdown(false); } },
+      { sel: '.seren-sheet-backdrop:not(.hidden)', fn: () => { if (app.closeSerenSheets) app.closeSerenSheets(); else { const s = d.querySelector('.seren-sheet-backdrop:not(.hidden)'); if (s) s.classList.add('hidden'); } } },
+      { sel: '.streak-modal-backdrop:not(.hidden), .sub-modal-backdrop:not(.hidden)', fn: () => { const b = d.querySelector('.streak-modal-backdrop:not(.hidden) .streak-modal-close, .sub-modal-backdrop:not(.hidden) .sub-modal-close'); if (b) b.click(); } },
+      { sel: '.planner-modal-backdrop:not(.hidden)', fn: () => { if (app.closePlannerOutfitModal) app.closePlannerOutfitModal(); } },
+      { sel: '.condition-modal-backdrop:not(.hidden)', fn: () => { const b = d.getElementById('itemConditionModal'); if (b) b.classList.add('hidden'); } },
+      { sel: '.ai-extractor-modal-backdrop:not(.hidden)', fn: () => { if (app.closeAiExtractorModal) app.closeAiExtractorModal(); } }
+    ];
+
+    for (let i = 0; i < dismissChecks.length; i++) {
+      if (d.querySelector(dismissChecks[i].sel)) {
+        dismissChecks[i].fn();
+        return 'handled';
+      }
+    }
+
+    // 3. Sub-screen navigation: go back to previous screen or back to today
+    if (state.currentScreen !== 'today') {
+      let prev = _navigationHistory.pop();
+      while (prev && (prev === state.currentScreen || prev === 'welcome' || prev === 'signin')) {
+        prev = _navigationHistory.pop();
+      }
+      if (prev) {
+        goToScreen(prev);
+      } else {
+        goToScreen('today');
+      }
+      return 'handled';
+    }
+
+    // 4. On Home/Today screen: Show Two-Way Call Exit Slider
+    showExitCallModal();
+    return 'handled';
+  }
+
   // Expose public API to window for inline HTML onclick handlers
   const appExports = {
     prepareVirtualStudio,
@@ -9445,7 +9628,13 @@
     filterPickerItems,
     togglePickerAutoSwipe,
     startPickerAutoSwipe,
-    stopPickerAutoSwipe
+    stopPickerAutoSwipe,
+
+    // Hardware Back & Two-Way Call Exit Slider API
+    handleHardwareBack,
+    showExitCallModal,
+    dismissExitCallModal,
+    exitAppConfirmed
   };
 
   window.app = Object.assign(window.app || {}, appExports);

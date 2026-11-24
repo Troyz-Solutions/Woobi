@@ -1283,14 +1283,14 @@
       };
 
       // 1. Prepare Raycastable Bounding Box & Interactive wardrobe structure (authentically powered by 3D GLB model)
-      // Note: Legacy procedural wardrobe fallback eliminated in favor of PR #42 Authentic 3D Wardrobe GLB only
       const WardrobeClass = (typeof Wardrobe3D !== 'undefined') ? Wardrobe3D : (typeof window !== 'undefined' ? window.Wardrobe3D : null);
       if (WardrobeClass) {
         try {
           const wardrobeInstance = new WardrobeClass({ enableLights: true, width: 2.60, height: 3.65, depth: 0.80 });
           this.wardrobeInstance = wardrobeInstance;
           if (wardrobeInstance.group) {
-            wardrobeInstance.group.visible = false; // Kept strictly invisible so old procedural wardrobe never flashes
+            wardrobeInstance.group.visible = true; // Instant appearance: no 2-3s void while GLB decodes
+            wardrobeGroup.add(wardrobeInstance.group);
           }
         } catch (e) {
           console.warn('Wardrobe setup warning:', e);
@@ -1371,6 +1371,13 @@
             this.wardrobeInstance = null;
           }
 
+          // Smoothly retire procedural placeholder when authentic GLB arrives
+          if (this.wardrobeInstance && this.wardrobeInstance.group) {
+            this.wardrobeInstance.group.visible = false;
+            if (wardrobeGroup.children.includes(this.wardrobeInstance.group)) {
+              wardrobeGroup.remove(this.wardrobeInstance.group);
+            }
+          }
           wardrobeGroup.add(model);
           this.wardrobeGLB = model;
           this._markReady('wardrobe');
@@ -1563,9 +1570,9 @@
       }
 
       const mirrorMat = new THREE.MeshStandardMaterial({
-        color: 0xEAE6DE,
-        roughness: 0.04,
-        metalness: 0.94
+        color: 0xF2ECE4,
+        roughness: 0.08,
+        metalness: 0.88
       });
       this.mirrorGlassMesh = new THREE.Mesh(mirrorGlassGeo, mirrorMat);
       this.mirrorGlassMesh.position.set(0, 0, 0.002);
@@ -1921,14 +1928,20 @@
 
                   if (isMobileDevice) {
                     child.material = new THREE.MeshStandardMaterial({
-                      color: 0xECE5DC,
-                      roughness: 0.12,
-                      metalness: 0.82
+                      color: 0xF2ECE4,
+                      roughness: 0.10,
+                      metalness: 0.85
                     });
-                  } else if (this.mirrorRenderTarget) {
+                  } else if (this.mirrorRenderTarget && this.mirrorRenderTarget.texture) {
                     child.material = new THREE.MeshBasicMaterial({
                       map: this.mirrorRenderTarget.texture,
                       toneMapped: false
+                    });
+                  } else {
+                    child.material = new THREE.MeshStandardMaterial({
+                      color: 0xF2ECE4,
+                      roughness: 0.10,
+                      metalness: 0.85
                     });
                   }
                   this.mirrorGlassMesh = child;
@@ -3076,11 +3089,11 @@
         this.scene.add(this.mirrorCamera);
 
         if (this.mirrorGlassMesh) {
-          if (isMobileDevice) {
+          if (isMobileDevice || !this.mirrorRenderTarget) {
             this.mirrorGlassMesh.material = new THREE.MeshStandardMaterial({
-              color: 0xECE5DC,
-              roughness: 0.18,
-              metalness: 0.75
+              color: 0xF2ECE4,
+              roughness: 0.12,
+              metalness: 0.85
             });
           } else {
             this.mirrorGlassMesh.material = new THREE.MeshBasicMaterial({
@@ -3128,8 +3141,8 @@
           this.hasDragged = true;
         }
 
-        // Horizontal rotation around avatar
-        this.targetRotationY += deltaX * 0.008;
+        // Horizontal rotation around avatar (responsive, low-latency tracking)
+        this.targetRotationY += deltaX * 0.016;
         this.lastPointerX = e.clientX;
         this.lastPointerY = e.clientY;
       });
@@ -3168,7 +3181,7 @@
             this.hasDragged = true;
           }
 
-          const rotStep = deltaX * 0.012;
+          const rotStep = deltaX * 0.020;
           this.targetRotationY += rotStep;
           this.rotationVelocityY = rotStep;
           this.lastPointerX = e.touches[0].clientX;
@@ -4158,11 +4171,11 @@
         this.renderer.shadowMap.autoUpdate = (this._shadowFrameThrottle % 3 === 0);
       }
 
-      // 0. Stabilized Mannequin Rotation (Zero Dizzy Spinning Drift)
+      // 0. Stabilized Mannequin Rotation (Natural fluid deceleration, zero lag)
       if (Math.abs(this.rotationVelocityY || 0) > 0.0005 && !this.isPointerDown) {
         this.targetRotationY += this.rotationVelocityY;
-        this.rotationVelocityY *= 0.45; // Fast clean deceleration without perpetual spinning
-        if (Math.abs(this.rotationVelocityY) < 0.0008) this.rotationVelocityY = 0;
+        this.rotationVelocityY *= 0.82; // Natural, fluid momentum deceleration
+        if (Math.abs(this.rotationVelocityY) < 0.0004) this.rotationVelocityY = 0;
       } else if (!this.isPointerDown) {
         this.rotationVelocityY = 0;
       }
@@ -4183,7 +4196,7 @@
           this.avatarRotationY = this.avatarModel.animations.avatarRotationY;
         }
       } else {
-        const lerpSpeed = 26.0;
+        const lerpSpeed = 32.0;
         const factor = 1.0 - Math.exp(-lerpSpeed * Math.min(delta || 0.016, 0.1));
         this.avatarRotationY += (this.targetRotationY - this.avatarRotationY) * factor;
         if (this.avatarRoot) {
